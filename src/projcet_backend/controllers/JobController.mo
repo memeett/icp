@@ -1,8 +1,6 @@
 import HashMap "mo:base/HashMap";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
-
-import Error "mo:base/Error";
 import Result "mo:base/Result";
 import Int "mo:base/Int";
 import Option "mo:base/Option";

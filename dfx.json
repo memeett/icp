@@ -15,6 +15,10 @@
       "main": "src/projcet_backend/main.mo",
       "type": "motoko"
     },
+    "auth": {  
+      "main": "src/project_backend/auth.mo",
+      "type": "motoko"
+    },
     "projcet_frontend": {
       "dependencies": [
         "projcet_backend"

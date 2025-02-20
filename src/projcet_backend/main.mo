@@ -5,7 +5,6 @@ import Time "mo:base/Time";
 import HashMap "mo:base/HashMap";
 import Text "mo:base/Text";
 import Option "mo:base/Option";
-import User "model/User";
 import Job "model/Job";
 import Iter "mo:base/Iter";
 actor {

@@ -1,17 +1,33 @@
 import { HttpAgent } from '@dfinity/agent';
 import { AuthClient } from '@dfinity/auth-client';
-import { auth } from '../../../../declarations/auth/'
 import { useEffect, useState } from 'react';
+import { user } from '../../../../declarations/user';
+import { session } from '../../../../declarations/session';
 
 export default function LoginPage() {
     const [principal, setPrinciple] = useState('')
 
-    useEffect(() =>{
-        auth.getToken().then((result) =>{
-            setPrinciple(result)
-        })
-        
-    }, [])
+    const getCookie = (name) => {
+        const cookies = document.cookie.split('; ');
+        for (let cookie of cookies) {
+            const [key, value] = cookie.split('=');
+            if (key === name) {
+                return decodeURIComponent(value);
+            }
+        }
+        return null;
+    };
+
+    useEffect(() => {
+        const sessionId = getCookie('sessionId');
+        if (sessionId) {
+            session.validateSession(sessionId).then((res) => {
+                console.log("Session validation result:", res);
+            }).catch((err) => {
+                console.error("Session validation failed:", err);
+            });
+        }
+    }, []);
 
     const loginButton = async (e) => {
         e.preventDefault();
@@ -28,14 +44,18 @@ export default function LoginPage() {
         const identity = authClient.getIdentity()
         const principalId = identity.getPrincipal().toString();
         setPrinciple(principalId)
-        
+        user.login(principalId).then((res) => {
+            if (!res) {
+                console.log("Login Failed");
+            } else {
+                console.log(res);
 
-        try {
-            await auth.setToken(principalId);
-            console.log("Token set successfully");
-        } catch (error) {
-            console.error("Error setting token:", error);
-        }
+                // Store the response in a cookie
+                document.cookie = `sessionId=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure`;
+            }
+        }).catch((err) => {
+            console.error("Login request failed:", err);
+        });
 
     };
 

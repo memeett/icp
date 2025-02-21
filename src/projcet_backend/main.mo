@@ -9,7 +9,7 @@ import Job "model/Job";
 import Iter "mo:base/Iter";
 actor {
   public query func greet(name : Text) : async Text {
-      Debug.print("asdasdsada");
+    Debug.print("asdasdsada");
     return "Hello, " # name # "!";
   };
 

@@ -15,8 +15,8 @@
       "main": "src/projcet_backend/main.mo",
       "type": "motoko"
     },
-    "auth": {  
-      "main": "src/projcet_backend/auth.mo",
+    "session": {  
+      "main": "src/projcet_backend/session.mo",
       "type": "motoko"
     },
     "user": {  

@@ -4,7 +4,7 @@ import App from "./App.tsx";
 import "./index.scss";
 import { createBrowserRouter } from "react-router-dom";
 import { RouterProvider } from "react-router-dom";
-import LandingPage from "./Pages/Landing/LandingPage.tsx";
+import LandingPage from "./Pages/Landing/LoginPage.tsx";
 
 const route = createBrowserRouter([
   {

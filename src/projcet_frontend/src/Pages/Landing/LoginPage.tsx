@@ -1,5 +1,5 @@
 import { AuthClient } from "@dfinity/auth-client";
-import { auth } from "../../../../declarations/auth";
+import { auth } from "../../../../declarations/auth/index.js";
 import { useEffect, useState } from "react";
 
 export default function LandingPage() {

@@ -1,23 +1,32 @@
 import { useState } from "react";
-import { projcet_backend } from "declarations/projcet_backend";
-import "./output.css";
+import { projcet_backend } from "../../declarations/projcet_backend";
+import "./style.css";
 
 function App() {
   const [greeting, setGreeting] = useState("");
 
-  function handleSubmit(event) {
+  interface FormElements extends HTMLFormControlsCollection {
+    name: HTMLInputElement;
+  }
+
+  interface GreetingForm extends HTMLFormElement {
+    elements: FormElements;
+  }
+
+  function handleSubmit(event: React.FormEvent<GreetingForm>): boolean {
     event.preventDefault();
-    const name = event.target.elements.name.value;
-    projcet_backend.greet(name).then((greeting) => {
+    const name = event.currentTarget.elements.name.value;
+    projcet_backend.greet(name).then((greeting: string) => {
       setGreeting(greeting);
     });
+
     return false;
   }
 
   return (
     <main className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
       <img src="/logo2.svg" alt="DFINITY logo" className="w-64 mb-4" />
-      
+
       <form
         onSubmit={handleSubmit}
         className="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center space-y-4"
@@ -32,7 +41,7 @@ function App() {
         />
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-200 hover:bg-red-200 text-white rounded-lg transition"
+          className="px-4 py-2 bg-blue-300 hover:bg-red-200 text-black rounded-lg transition"
         >
           Click Me!
         </button>

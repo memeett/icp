@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { projcet_backend } from "../../declarations/projcet_backend";
-import "./style.css";
 
 function App() {
   const [greeting, setGreeting] = useState("");

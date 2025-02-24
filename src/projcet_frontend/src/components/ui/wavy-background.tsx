@@ -2,7 +2,7 @@
 import { cn } from "../../lib/tvMerge";
 import React, { useEffect, useRef, useState } from "react";
 import { createNoise3D } from "simplex-noise";
-import "../../style.css";
+
 
 export const WavyBackground = ({
   children,

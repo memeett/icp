@@ -1,12 +1,11 @@
-"use client";
 import { HttpAgent } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
 import { useEffect, useState } from "react";
 import { user } from "../../../../declarations/user/index.js";
 import { session } from "../../../../declarations/session";
 import Navbar from "../../components/Navbar";
-import "../../style.css";
 import { WavyBackground } from "../../components/ui/wavy-background.js";
+import { AuroraText } from "../../components/ui/aurora-text.js";
 
 export default function LoginPage() {
   const [principal, setPrinciple] = useState("");
@@ -78,18 +77,18 @@ export default function LoginPage() {
       {/* Main Content - This is the only scrollable section */}
       <div className="flex-grow overflow-x-hidden scrollbar-hide">
         {/* Hero Section */}
-        <div className="relative bg-[#DBE2EF] min-h-screen">
+        <div className="relative bg-[#F9F7F7] min-h-screen">
           <WavyBackground className="w-screen mx-auto pb-40 px-16 align-middle mt-24">
-            <p className="text-2xl md:text-4xl lg:text-7xl text-white font-bold inter-var text-left">
+            <p className="inline text-2xl md:text-4xl lg:text-7xl text-white font-bold inter-var text-left">
               With Love, Passion and{" "}
-              <span className="font-bold text-[#64B6F7]">Talent</span>
             </p>
+            <AuroraText className="inline text-7xl font-bold">
+              Talent
+            </AuroraText>
             <p className="text-base md:text-lg mt-4 text-white font-normal inter-var text-left">
               Leverage the power of canvas to create a beautiful hero section
             </p>
           </WavyBackground>
-
-
         </div>
       </div>
     </div>

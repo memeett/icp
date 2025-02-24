@@ -1,45 +1,29 @@
 import React, { useState } from "react";
 import { X, Menu } from "lucide-react";
+import { AnimatedNavLink } from "./ui/animated-anchor";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="bg-[#112D4E] text-white fixed w-full z-50">
+    <nav className="bg-[#F9F7F7] text-black fixed w-full z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <h1 className="text-2xl font-bold">FreelanceHub</h1>
+            <h1 className="text-4xl font-thin tracking-tighter">
+              <span className="text-[#3F72AF]">E</span>RGASIA.
+            </h1>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-center space-x-4">
-              <a
-                href="#"
-                className="hover:bg-[#3F72AF] px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Find Work
-              </a>
-              <a
-                href="#"
-                className="hover:bg-[#3F72AF] px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Post a Job
-              </a>
-              <a
-                href="#"
-                className="hover:bg-[#3F72AF] px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Browse Freelancers
-              </a>
-              <a
-                href="#"
-                className="hover:bg-[#3F72AF] px-3 py-2 rounded-md text-sm font-medium"
-              >
-                How it Works
-              </a>
+            <div className="ml-10 flex justify-around items-center">
+              
+              <AnimatedNavLink href="#">Find Work</AnimatedNavLink>
+              <AnimatedNavLink href="#">Post a Job</AnimatedNavLink>
+              <AnimatedNavLink href="#">Browse Freelancers</AnimatedNavLink>
+              <AnimatedNavLink href="#">How it Works</AnimatedNavLink>
             </div>
           </div>
 

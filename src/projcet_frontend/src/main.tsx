@@ -5,11 +5,13 @@ import "./index.scss";
 import { createBrowserRouter } from "react-router-dom";
 import { RouterProvider } from "react-router-dom";
 import LandingPage from "./Pages/LoginPage/LoginPage.tsx";
+import LoginPage from "./Pages/LoginPage/FaceTes.tsx";
+import FaceTes from "./Pages/LoginPage/FaceTes.tsx";
 
 const route = createBrowserRouter([
   {
     path: "/",
-    element: <LandingPage />,
+    element: <FaceTes />,
   },
 ]);
 

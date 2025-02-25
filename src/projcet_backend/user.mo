@@ -13,6 +13,7 @@ actor UserModel{
         rating: Float;
         createdAt: Int;
         updatedAt: Int;
+        isFaceRecognitionOn: Bool;
     };
 
     let session = actor ("aax3a-h4aaa-aaaaa-qaahq-cai") : actor {
@@ -56,6 +57,7 @@ actor UserModel{
             rating = 0.0;
             createdAt = timestamp;
             updatedAt = timestamp;
+            isFaceRecognitionOn = false;
         };
 
         users.put(newid, newUser);
@@ -102,6 +104,7 @@ actor UserModel{
                             rating = currUser.rating;
                             createdAt = currUser.createdAt;
                             updatedAt = timestamp;
+                            isFaceRecognitionOn = currUser.isFaceRecognitionOn;
                         };
                         users.put(userId, updatedUser);
                         #ok(updatedUser)

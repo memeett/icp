@@ -7,7 +7,7 @@ import Navbar from "../../components/Navbar";
 import { Search } from "lucide-react";
 import "../../style.css"
 
-export default function LoginPage() {
+export default function s (){
   const [principal, setPrinciple] = useState("");
 
   const getCookie = (name: string) => {

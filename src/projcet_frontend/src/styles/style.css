@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+
+
+/* Thin scrollbar with thumb near the edge */
+.scrollbar-cool::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+  border: 2px solid #FFF;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+
+.scrollbar-cool::-webkit-scrollbar-track {
+  background: transparent; /* Transparent track */
+  margin: 4px 0; 
+}
+
+.scrollbar-cool::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.scrollbar-cool::-webkit-scrollbar-thumb:hover {
+  
+  background: #555;
+  border-radius: 4px;
+  background-clip: padding-box;
+}
+

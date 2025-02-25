@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
-import { loginBtnClick, validateSession } from "../controller/userController";
+import { loginBtnClick, validateSession } from "../controller/userController.js";
 
 export default function UserTesting() {
     const navigate = useNavigate(); // Initialize navigate
 
     useEffect(() => {
+
         validateSession().then((val) =>{
             console.log(val)
             if(val){
@@ -32,5 +33,6 @@ export default function UserTesting() {
                 </button>
             </div>
         </>
+
     );
 }

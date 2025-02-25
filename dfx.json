@@ -20,7 +20,11 @@
       "type": "motoko"
     },
     "user": {  
-      "main": "src/projcet_backend/user.mo",
+      "main": "src/projcet_backend/User/main.mo",
+      "type": "motoko"
+    },
+    "job": {  
+      "main": "src/projcet_backend/Job/main.mo",
       "type": "motoko"
     },
     "projcet_frontend": {

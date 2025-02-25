@@ -1,8 +1,3 @@
-import { HttpAgent } from "@dfinity/agent";
-import { AuthClient } from "@dfinity/auth-client";
-import { useEffect, useState } from "react";
-import { user } from "../../../../declarations/user/index.js";
-import { session } from "../../../../declarations/session";
 import Navbar from "../../components/Navbar";
 import { WavyBackground } from "../../components/ui/wavy-background.js";
 import { AuroraText } from "../../components/ui/aurora-text.js";
@@ -10,64 +5,7 @@ import { AuthenticationModal } from "../../components/modals/AuthenticationModal
 import { ModalProvider } from "../../contexts/modal-context.js";
 
 export default function LoginPage() {
-  const [principal, setPrinciple] = useState("");
 
-  const getCookie = (name: string) => {
-    const cookies = document.cookie.split("; ");
-    for (let cookie of cookies) {
-      const [key, value] = cookie.split("=");
-      if (key === name) {
-        return decodeURIComponent(value);
-      }
-    }
-    return null;
-  };
-
-  useEffect(() => {
-    const sessionId = getCookie("sessionId");
-    if (sessionId) {
-      session
-        .validateSession(sessionId)
-        .then((res) => {
-          console.log("Session validation result:", res);
-        })
-        .catch((err) => {
-          console.error("Session validation failed:", err);
-        });
-    }
-  }, []);
-
-  const loginButton = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-
-    let authClient = await AuthClient.create();
-
-    await new Promise((resolve) => {
-      authClient.login({
-        identityProvider: process.env.II_URL,
-        onSuccess: resolve,
-      });
-    });
-
-    const identity = authClient.getIdentity();
-    const principalId = identity.getPrincipal().toString();
-    setPrinciple(principalId);
-    user
-      .login(principalId)
-      .then((res) => {
-        if (!res) {
-          console.log("Login Failed");
-        } else {
-          console.log(res);
-          document.cookie = `sessionId=${encodeURIComponent(
-            JSON.stringify(res)
-          )}; path=/; Secure`;
-        }
-      })
-      .catch((err) => {
-        console.error("Login request failed:", err);
-      });
-  };
 
   return (
     <ModalProvider>

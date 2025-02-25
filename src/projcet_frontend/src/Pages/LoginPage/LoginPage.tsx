@@ -7,7 +7,7 @@ import Navbar from "../../components/Navbar";
 import { WavyBackground } from "../../components/ui/wavy-background.js";
 import { AuroraText } from "../../components/ui/aurora-text.js";
 
-export default function LoginPage() {
+export default function s (){
   const [principal, setPrinciple] = useState("");
 
   const getCookie = (name: string) => {

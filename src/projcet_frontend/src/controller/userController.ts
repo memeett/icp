@@ -49,7 +49,6 @@ export const validateSession = async (): Promise<boolean> => {
             console.log("No sessionId found in cookies.");
             return false;
         }
-
         // Remove surrounding double quotes if they exist
         const cleanSession = sessionId.replace(/^"|"$/g, '');
         

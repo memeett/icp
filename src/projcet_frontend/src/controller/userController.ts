@@ -48,8 +48,9 @@ export const validateSession = async () => {
             console.log("No sessionId found in cookies.");
             return false;
         }
-
-        const isValid = await session.validateSession(sessionId);
+        const cleanSession = sessionId.replace(/^"|"$/g, '');
+        console.log(cleanSession)
+        const isValid = await session.validateSession(cleanSession);
         if (isValid) {
             console.log("Session is valid.");
             return true;

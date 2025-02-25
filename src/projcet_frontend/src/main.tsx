@@ -16,7 +16,8 @@ const route = createBrowserRouter([
   {
     path: "/FindJobPage",
     element: <FindJobPage/>,
-  }
+  },
+  {
     path: "/testing/ka",
     element: <UserTesting />,
   },

@@ -8,7 +8,7 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 
 actor Authentication{
-    type SessionData = {
+    public type SessionData = {
         userId: Text;
         createdAt: Time.Time;
         expiresAt: Time.Time;
@@ -91,5 +91,7 @@ actor Authentication{
         sessions.delete(sessionId);
     };
 
-    
+    public func getAllSessions(): async [SessionData]{
+        Iter.toArray(sessions.vals());
+    };
 }

@@ -30,6 +30,9 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    watch: {
+      usePolling: true, // Ensures file changes are detected
+    }
   },
   plugins: [
     react(),

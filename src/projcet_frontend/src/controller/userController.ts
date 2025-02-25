@@ -1,6 +1,6 @@
 import { AuthClient } from "@dfinity/auth-client";
-import { user } from "../../../declarations/user";
-import { session } from "../../../declarations/session";
+import { user } from "../../../declarations/user/index.js";
+import { session } from "../../../declarations/session/index.js";
 
 const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");

@@ -78,6 +78,10 @@ export const validateSession = async (): Promise<boolean> => {
         const cleanSession = sessionId.replace(/^"|"$/g, '');
         const isValid = await session.validateSession(cleanSession);
 
+        if (!isValid) {
+            document.cookie = "sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
+        }
+
         return Boolean(isValid);
     } catch (error) {
         console.error("Session validation failed:", error);

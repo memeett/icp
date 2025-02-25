@@ -41,22 +41,22 @@ export const loginBtnClick = async (setPrinciple: (principalId: string) => void)
     }
 };
 
-export const validateSession = async () => {
+export const validateSession = async (): Promise<boolean> => {
     try {
         const sessionId = getCookie("sessionId");
+
         if (!sessionId) {
             console.log("No sessionId found in cookies.");
             return false;
         }
 
-        const isValid = await session.validateSession(sessionId);
-        if (isValid) {
-            console.log("Session is valid.");
-            return true;
-        } else {
-            console.log("Session is invalid.");
-            return false;
-        }
+        // Remove surrounding double quotes if they exist
+        const cleanSession = sessionId.replace(/^"|"$/g, '');
+        
+        // Await the result properly
+        const isValid = await session.validateSession(cleanSession);
+        
+        return isValid; // Ensure it returns a boolean
     } catch (error) {
         console.error("Session validation failed:", error);
         return false;

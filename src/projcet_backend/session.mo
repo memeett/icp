@@ -9,6 +9,7 @@ import Result "mo:base/Result";
 
 actor Authentication{
     public type SessionData = {
+        sessionId: Text;
         userId: Text;
         createdAt: Time.Time;
         expiresAt: Time.Time;
@@ -48,18 +49,28 @@ actor Authentication{
 
 
     public shared func createSession(userId: Text) : async Text {
-        let sessionId = await generateSessionId(); 
+    // Check for existing session with the same userId and remove it
+        for ((sessionId, sessionData) in sessions.entries()) {
+            if (sessionData.userId == userId) {
+                sessions.delete(sessionId);
+            };
+        };
+
+        // Generate a new session ID
+        let newsessionId = await generateSessionId(); 
         let now = Time.now();
         
         let sessionData : SessionData = {
+            sessionId = newsessionId;
             userId = userId;
             createdAt = now;
             expiresAt = now + SESSION_DURATION;
         };
 
-        sessions.put(sessionId, sessionData);
-        sessionId
+        sessions.put(newsessionId, sessionData);
+        newsessionId
     };
+
 
     public shared query func getUserIdBySession(sessionId: Text) : async Result.Result<Text, Text>{
         switch(sessions.get(sessionId)){

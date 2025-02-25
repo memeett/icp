@@ -64,7 +64,7 @@ actor UserModel{
         }
     };
 
-    public func login(id : Text) : async Result.Result<Text, Text> {
+    public func login(id : Text) : async Text {
         let currUser = switch(users.get(id)) {
             case (?user) user;  
             case null {
@@ -75,7 +75,7 @@ actor UserModel{
 
         let sessionId = await session.createSession(currUser.id);
 
-        return #ok(sessionId);
+        return sessionId;
     };
 
     public func updateUser(sessionid: Text, payload: User.UpdateUserPayload) : async Result.Result<User.User, Text> {

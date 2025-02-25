@@ -7,6 +7,7 @@ module{
         rating: Float;
         createdAt: Int;
         updatedAt: Int;
+        isFaceRecognitionOn: Bool;
     };
 
     public type UpdateUserPayload = {

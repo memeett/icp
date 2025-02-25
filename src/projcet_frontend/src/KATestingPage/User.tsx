@@ -1,10 +1,20 @@
 import { AuthClient } from "@dfinity/auth-client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { user } from "../../../declarations/user";
-import { loginBtnClick } from "../controller/userController";
+import { loginBtnClick, validateSession } from "../controller/userController";
+import { useNavigate } from "react-router-dom";
 
 export default function UserTesting() {
     const [principle, setPrinciple] = useState('')
+    const navigate = useNavigate()
+    useEffect(() =>{
+        validateSession().then((res) =>{
+            console.log(res)
+            if(res){
+                navigate('/')
+            }
+        })
+    }, [])
 
     return (
         <>

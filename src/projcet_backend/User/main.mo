@@ -1,28 +1,19 @@
+import User "./user";
 import HashMap "mo:base/HashMap";
 import Text "mo:base/Text";
-import Time "mo:base/Time";
-import Result "mo:base/Result";
 import Iter "mo:base/Iter";
-
+import Result "mo:base/Result";
+import Time "mo:base/Time";
+import Option "mo:base/Option";
 actor UserModel{
-    public type User = {
-        id: Text;
-        username: Text;
-        email: Text;
-        wallet: Text;
-        rating: Float;
-        createdAt: Int;
-        updatedAt: Int;
-    };
-
     let session = actor ("aax3a-h4aaa-aaaaa-qaahq-cai") : actor {
         createSession : (userid : Text) -> async Text;
         getUserIdBySession : (sessionId: Text) -> async Result.Result<Text, Text>
     };
 
-    private stable var usersEntries : [(Text, User)] = [];
+    private stable var usersEntries : [(Text, User.User)] = [];
     
-    private var users = HashMap.fromIter<Text, User>(
+    private var users = HashMap.fromIter<Text, User.User>(
         usersEntries.vals(),
         0,
         Text.equal,
@@ -36,7 +27,7 @@ actor UserModel{
 
     // Restore state after upgrade
     system func postupgrade() {
-        users := HashMap.fromIter<Text, User>(
+        users := HashMap.fromIter<Text, User.User>(
             usersEntries.vals(),
             0,
             Text.equal,
@@ -45,10 +36,10 @@ actor UserModel{
         usersEntries := [];
     };
 
-    public func createUser(newid : Text) : async User{
+    public func createUser(newid : Text) : async User.User{
         let timestamp = Time.now();
 
-        let newUser : User = {
+        let newUser : User.User = {
             id= newid;
             username = "";  
             email = "";
@@ -62,11 +53,11 @@ actor UserModel{
         newUser
     };
 
-    public func getAllUser(): async [User]{
+    public func getAllUser(): async [User.User]{
         Iter.toArray(users.vals());
     };
 
-    public func getUserById(userId: Text) : async Result.Result<User, Text> {
+    public func getUserById(userId: Text) : async Result.Result<User.User, Text> {
         switch (users.get(userId)) {
             case (?user) { #ok(user) };
             case null { #err("User not found") };
@@ -87,17 +78,17 @@ actor UserModel{
         return #ok(sessionId);
     };
 
-    public func updateUser(sessionid: Text, username: Text) : async Result.Result<User, Text> {
+    public func updateUser(sessionid: Text, payload: User.UpdateUserPayload) : async Result.Result<User.User, Text> {
         let userIdResult = await session.getUserIdBySession(sessionid);
         switch (userIdResult) {
             case (#ok(userId)) {
                 switch (users.get(userId)) {
                     case (?currUser) {
                         let timestamp = Time.now();
-                        let updatedUser: User = {
+                        let updatedUser: User.User = {
                             id = currUser.id;
-                            username = username;
-                            email = currUser.email;
+                            username = Option.get(payload.username, currUser.username);
+                            email = Option.get(payload.email, currUser.email);
                             wallet = currUser.wallet;
                             rating = currUser.rating;
                             createdAt = currUser.createdAt;
@@ -112,5 +103,4 @@ actor UserModel{
             case (#err(msg)) { #err(msg) };
         }
     };
-
-};
+}

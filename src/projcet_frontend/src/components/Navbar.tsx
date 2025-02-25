@@ -1,9 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { X, Menu } from "lucide-react";
 import { AnimatedNavLink } from "./ui/animated-anchor";
+import { loginBtnClick } from "../controller/userController";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const navigateToTesting = () =>{
+    const nav = useNavigate()
+    nav('/testing/ka')
+  }
 
   return (
     <nav className="sticky bg-[#F9F7F7] text-black w-full z-50">
@@ -25,7 +32,7 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <button className="bg-transparent hover:bg-opacity-90 px-4 py-2 rounded-md text-sm font-medium">
+            <button onClick={navigateToTesting} className="bg-transparent hover:bg-opacity-90 px-4 py-2 rounded-md text-sm font-medium">
               Log in
             </button>
           </div>

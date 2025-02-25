@@ -1,3 +1,4 @@
+import Job "./model";
 import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
 import Text "mo:base/Text";
@@ -5,32 +6,12 @@ import Result "mo:base/Result";
 import Int "mo:base/Int";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
+
 actor JobModel{
-    public type Job = {
-        id: Text;
-        jobName: Text;
-        jobDescription: Text;
-        jobSalary: Float;
-        jobRating: Float;
-        jobTags: JobTags;
-        jobSlots: Int;
-        createdAt: Int;
-        updatedAt: Int;
-    };
-
-    public type JobTags = {
-        #web;
-        #mobile;
-        #desktop;
-        #game;
-        #ai;
-        #iot;
-    };
-
     private stable var nextId : Nat = 0;
-    private stable var jobsEntries : [(Text, Job)] = [];
+    private stable var jobsEntries : [(Text, Job.Job)] = [];
     
-    private var jobs = HashMap.fromIter<Text, Job>(
+    private var jobs = HashMap.fromIter<Text, Job.Job>(
         jobsEntries.vals(),
         0,
         Text.equal,
@@ -44,7 +25,7 @@ actor JobModel{
 
     // Restore state after upgrade
     system func postupgrade() {
-        jobs := HashMap.fromIter<Text, Job>(
+        jobs := HashMap.fromIter<Text, Job.Job>(
             jobsEntries.vals(),
             0,
             Text.equal,
@@ -53,19 +34,11 @@ actor JobModel{
         jobsEntries := [];
     };
 
-    type CreateJobPayload = {
-        jobName: Text;
-        jobDescription: Text;
-        jobSalary: Float;
-        jobTags: JobTags;
-        jobSlots: Int;
-    };
-
-    public func createJob (payload : CreateJobPayload) : async Result.Result<Job, Text> {
+    public func createJob (payload : Job.CreateJobPayload) : async Result.Result<Job.Job, Text> {
         let jobId = Int.toText(nextId);
         let timestamp = Time.now();
         
-        let newJob : Job = {
+        let newJob : Job.Job = {
             id = jobId;
             jobName = payload.jobName;
             jobDescription = payload.jobDescription;
@@ -83,7 +56,7 @@ actor JobModel{
         #ok(newJob);
     };
 
-    public query func getJob (jobId : Text) : async Result.Result<Job, Text> {
+    public query func getJob (jobId : Text) : async Result.Result<Job.Job, Text> {
         switch (jobs.get(jobId)) {
             case (?job) { #ok(job) };
             case null { #err("Job not found") };
@@ -99,25 +72,16 @@ actor JobModel{
         };
         case null { #err("Job not found") };
         }
-    };
+    };    
 
-  //Get All Jobs
-    public query func getAllJobs() : async [Job] {
+    public query func getAllJobs() : async [Job.Job] {
         Iter.toArray(jobs.vals());
     };
 
-    public type UpdateJobPayload = {
-        jobName: ?Text;
-        jobDescription: ?Text;
-        jobSalary: ?Float;
-        jobTags: ?JobTags;
-        jobSlots: ?Int;
-    };
-
-    public func updateJob (jobId : Text, payload : UpdateJobPayload) : async Result.Result<Job, Text> {
+    public func updateJob (jobId : Text, payload : Job.UpdateJobPayload) : async Result.Result<Job.Job, Text> {
         switch (jobs.get(jobId)) {
             case (?existingJob) {
-                let updatedJob : Job = {
+                let updatedJob : Job.Job = {
                 id = existingJob.id;
                 jobName = Option.get(payload.jobName, existingJob.jobName);
                 jobDescription = Option.get(payload.jobDescription, existingJob.jobDescription);
@@ -135,5 +99,4 @@ actor JobModel{
             case null { #err("Job not found") };
         }
     };
-
 }

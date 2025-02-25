@@ -4,11 +4,16 @@ import { createBrowserRouter } from "react-router-dom";
 import { RouterProvider } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage/LoginPage.tsx";
 import "./styles/style.css";
+import UserTesting from "./KATestingPage/User.tsx";
 
 const route = createBrowserRouter([
   {
     path: "/",
     element: <LoginPage />,
+  },
+  {
+    path: "/testing/ka",
+    element: <UserTesting />,
   },
 ]);
 

@@ -24,7 +24,7 @@
       "type": "motoko"
     },
     "job": {  
-      "main": "src/projcet_backend/job.mo",
+      "main": "src/projcet_backend/Job/main.mo",
       "type": "motoko"
     },
     "projcet_frontend": {

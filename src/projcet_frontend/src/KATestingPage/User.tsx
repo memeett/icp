@@ -20,7 +20,11 @@ export default function UserTesting() {
                 <button
                     onClick={(e) => {
                         e.preventDefault();
-                        loginBtnClick();
+                        loginBtnClick().then((suc) =>{
+                            if(suc){
+                                navigate('/')
+                            }
+                        });
                     }}
                     className="bg-[#64B6F7] hover:bg-opacity-90 px-4 py-2 rounded-md text-sm font-medium"
                 >

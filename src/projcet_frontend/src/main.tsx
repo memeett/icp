@@ -4,12 +4,17 @@ import { createBrowserRouter } from "react-router-dom";
 import { RouterProvider } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage/LoginPage.tsx";
 import "./styles/style.css";
+import FindJobPage from "./Pages/FindJobPage/FindJobPage.tsx";
 
 const route = createBrowserRouter([
   {
     path: "/",
     element: <LoginPage />,
   },
+  {
+    path: "/FindJobPage",
+    element: <FindJobPage/>,
+  }
 ]);
 
 const rootElement = document.getElementById("root");

@@ -2,9 +2,16 @@ import { X, Menu, PenLine } from "lucide-react";
 import { motion } from "framer-motion";
 import { AnimatedNavLink } from "./ui/animated-anchor";
 import { useModal } from "../contexts/modal-context";
+import { loginBtnClick } from "../controller/userController";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const { setOpen } = useModal();
+
+  const navigateToTesting = () =>{
+    const nav = useNavigate()
+    nav('/testing/ka')
+  }
 
   return (
     <nav className="sticky bg-[#F9F7F7] text-black w-full z-50">
@@ -26,6 +33,7 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
+
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <button
                 onClick={() => setOpen(true)}

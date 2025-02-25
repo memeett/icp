@@ -1,4 +1,4 @@
-import User "./user";
+import User "./model";
 import HashMap "mo:base/HashMap";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";

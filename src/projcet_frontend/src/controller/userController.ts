@@ -14,7 +14,7 @@ const getCookie = (name: string): string | null => {
 };
 
 
-export const loginBtnClick = async (setPrinciple: (principalId: string) => void) => {
+export const loginBtnClick = async () => {
     try {
         let authClient = await AuthClient.create();
 
@@ -27,7 +27,6 @@ export const loginBtnClick = async (setPrinciple: (principalId: string) => void)
 
         const identity = authClient.getIdentity();
         const principalId = identity.getPrincipal().toString();
-        setPrinciple(principalId);
 
         const res = await user.login(principalId);
         if (!res) {
@@ -49,11 +48,8 @@ export const validateSession = async (): Promise<boolean> => {
             console.log("No sessionId found in cookies.");
             return false;
         }
-
-        // Remove surrounding double quotes if they exist
         const cleanSession = sessionId.replace(/^"|"$/g, '');
         
-        // Await the result properly
         const isValid = await session.validateSession(cleanSession);
         
         return isValid; // Ensure it returns a boolean

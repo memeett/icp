@@ -11,10 +11,6 @@ const route = createBrowserRouter([
     path: "/",
     element: <LoginPage />,
   },
-  {
-    path: "/testing/ka",
-    element: <UserTesting />,
-  },
 ]);
 
 const rootElement = document.getElementById("root");

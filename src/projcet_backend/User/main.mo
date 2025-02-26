@@ -5,6 +5,7 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
+
 actor UserModel{
     let session = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
         createSession : (userid : Text) -> async Text;
@@ -41,8 +42,10 @@ actor UserModel{
 
         let newUser : User.User = {
             id= newid;
+            profilePicture= "": Blob;
             username = "";  
             email = "";
+            description= "";
             wallet = "";
             rating = 0.0;
             createdAt = timestamp;
@@ -88,8 +91,10 @@ actor UserModel{
                         let timestamp = Time.now();
                         let updatedUser: User.User = {
                             id = currUser.id;
+                            profilePicture = currUser.profilePicture;
                             username = Option.get(payload.username, currUser.username);
                             email = Option.get(payload.email, currUser.email);
+                            description = Option.get(payload.description, currUser.description);
                             wallet = currUser.wallet;
                             rating = currUser.rating;
                             createdAt = currUser.createdAt;

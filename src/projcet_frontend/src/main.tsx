@@ -7,7 +7,7 @@ import "./styles/style.css";
 import FindJobPage from "./Pages/FindJobPage/FindJobPage.tsx";
 import UserTesting from "./KATestingPage/User.tsx";
 import ProfilePage from "./Pages/LoginPage/ProfilePage.tsx";
-
+import PostJobPage from "./Pages/PostJobPage/PostJobPage.tsx";
 
 const route = createBrowserRouter([
   {
@@ -23,6 +23,10 @@ const route = createBrowserRouter([
     element: <FindJobPage />,
   },
   {
+    path: "/PostJobPage",
+    element: <PostJobPage/>
+  },
+  {
     path: "/testing/ka",
     element: <UserTesting />,
   },
@@ -32,9 +36,8 @@ const route = createBrowserRouter([
 const rootElement = document.getElementById("root");
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
+
       <RouterProvider router={route}></RouterProvider>
-    </React.StrictMode>
   );
 } else {
   console.error("Root element not found");

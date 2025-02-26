@@ -24,7 +24,7 @@ const route = createBrowserRouter([
   },
   {
     path: "/PostJobPage",
-    element: <PostJobPage/>
+    element: <PostJobPage/>,
   },
   {
     path: "/testing/ka",

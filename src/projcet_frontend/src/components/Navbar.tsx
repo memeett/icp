@@ -24,8 +24,8 @@ const Navbar = () => {
 
           <div className="hidden md:block">
             <div className="ml-10 flex justify-around items-center">
-              <AnimatedNavLink href="#">Find Work</AnimatedNavLink>
-              <AnimatedNavLink href="#">Post a Job</AnimatedNavLink>
+              <AnimatedNavLink href="/FindJobPage">Find Work</AnimatedNavLink>
+              <AnimatedNavLink href="/PostJobPage">Post a Job</AnimatedNavLink>
               <AnimatedNavLink href="#">Browse Freelancers</AnimatedNavLink>
               <AnimatedNavLink href="#">How it Works</AnimatedNavLink>
             </div>

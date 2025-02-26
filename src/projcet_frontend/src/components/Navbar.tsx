@@ -2,7 +2,6 @@ import { X, Menu, PenLine } from "lucide-react";
 import { motion } from "framer-motion";
 import { AnimatedNavLink } from "./ui/animated-anchor";
 import { useModal } from "../contexts/modal-context";
-import { loginBtnClick } from "../controller/userController";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {

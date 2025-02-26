@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage/LoginPage.tsx";
 import "./styles/style.css";
 import UserTesting from "./KATestingPage/User.tsx";
+import ProfilePage from "./Pages/ProfilePage.tsx/ProfilePage.tsx";
 
 const route = createBrowserRouter([
   {
@@ -14,6 +15,10 @@ const route = createBrowserRouter([
   {
     path:"/testing/ka",
     element:<UserTesting/>
+  },
+  {
+    path:"/profile",
+    element:<ProfilePage/>
   }
 ]);
 

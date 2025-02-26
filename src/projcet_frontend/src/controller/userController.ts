@@ -4,6 +4,7 @@ import { user } from "../../../declarations/user";
 import { session } from "../../../declarations/session";
 import { HttpAgent } from "@dfinity/agent";
 import { useState } from "react";
+import { User } from "../../../declarations/user/user.did";
 
 export const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");
@@ -97,3 +98,36 @@ export const logout = async (): Promise<void> => {
         console.error("Logout failed:", error);
     }
 };
+
+
+export const getPrincipalId = async (): Promise<string> => {
+    try {
+        const currSession = localStorage.getItem("session");
+        if (!currSession) {
+            throw new Error("No session found in local storage");
+        }
+        const result = await session.getUserIdBySession(JSON.parse(currSession));
+        
+        if ("ok" in result) {
+            const principalId = result.ok; 
+            console.log("Principal ID:", principalId);
+            return principalId;
+        } else {
+            console.error("Error:", result.err); 
+            return "";
+        }
+    } catch (error) {
+        console.error("Error fetching principal:", error);
+        return "";
+    }
+};
+
+export const getUser = async (id: string): Promise<void> => {
+    try {
+        const res = await user.getUserById(id);
+        console.log("User fetched:", res);
+
+    } catch (error) {
+        console.error("Error fetching user:", error);
+    }
+}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
 import { Plus, Trash, X } from "lucide-react";
+import { ModalProvider } from "../../contexts/modal-context";
 
 
 const jobCategory = ["Web", "Mobile", "AI", "Game", "IOT", "Desktop", "Network"]
@@ -50,6 +51,9 @@ export default function PostJobPage() {
     };
 
     return (
+        <ModalProvider>
+
+        
         <div className="flex flex-col min-h-screen ">
             {/* Navbar - Stays on top, does not scroll */}
             <div className="flex-none w-full bg-white shadow-md z-50">
@@ -261,5 +265,6 @@ export default function PostJobPage() {
                 <Footer />
             </div>
         </div>
+        </ModalProvider>
     );
 }

@@ -6,7 +6,7 @@ import LoginPage from "./Pages/LoginPage/LoginPage.tsx";
 import "./styles/style.css";
 import FindJobPage from "./Pages/FindJobPage/FindJobPage.tsx";
 import UserTesting from "./KATestingPage/User.tsx";
-import ProfilePage from "./Pages/ProfilePage.tsx/ProfilePage.tsx";
+import ProfilePage from "./Pages/LoginPage/ProfilePage.tsx";
 
 
 const route = createBrowserRouter([
@@ -15,12 +15,12 @@ const route = createBrowserRouter([
     element: <LoginPage />,
   },
   {
-    path:"/profile",
-    element:<ProfilePage/>
+    path: "/profile",
+    element: <ProfilePage />
   },
   {
     path: "/FindJobPage",
-    element: <FindJobPage/>,
+    element: <FindJobPage />,
   },
   {
     path: "/testing/ka",

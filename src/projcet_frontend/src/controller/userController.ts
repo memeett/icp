@@ -1,5 +1,4 @@
 import { AuthClient } from "@dfinity/auth-client";
-
 import { user } from "../../../declarations/user";
 import { session } from "../../../declarations/session";
 import { HttpAgent } from "@dfinity/agent";

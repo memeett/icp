@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FaStar, FaRegStar } from "react-icons/fa"; // Icons for rating
-import Navbar from "../../components/Navbar";
+import Navbar from "../../components/Navbar.js";
 
 export default function BiodataPage() {
     const [activeSection, setActiveSection] = useState("biodata"); // Default section

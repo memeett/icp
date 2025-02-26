@@ -4,6 +4,7 @@ import { ModalBody, ModalContent, ModalFooter } from "../ui/animated-modal";
 import { motion } from "framer-motion";
 import { CameraIcon, GlobeIcon } from "lucide-react";
 import { useModal } from "../../contexts/modal-context";
+import { loginBtnClick } from "../../controller/userController";
 
 export function AuthenticationModal() {
   const { open, setOpen } = useModal();
@@ -29,7 +30,7 @@ export function AuthenticationModal() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2">
+                <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-4 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2" onClick={loginBtnClick}>
                   <GlobeIcon className="w-6 h-6" />
                   <span>Internet Identity</span>
                 </button>

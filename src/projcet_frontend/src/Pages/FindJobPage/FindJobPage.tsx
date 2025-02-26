@@ -3,6 +3,7 @@ import Navbar from "../../components/Navbar";
 import { useState } from "react";
 import JobCard from "../../components/JobCard";
 import Footer from "../../components/Footer";
+import { ModalProvider } from "../../contexts/modal-context";
 
 const recommendationJobs: Job[] = [
     { id: "1", jobName: "Frontend Developer", jobTags: "Full-time", jobRating: 4.5, jobSalary: 60, jobDescription: "Build and maintain web applications.", jobSlots: 1, createdAt: 1, updatedAt: 1 },
@@ -43,6 +44,9 @@ export default function FindJobPage() {
     };
 
     return (
+        <ModalProvider>
+
+        
         <div className="flex flex-col min-h-screen ">
             {/* Navbar - Stays on top, does not scroll */}
             <div className="flex-none w-full bg-white shadow-md z-50">
@@ -148,5 +152,6 @@ export default function FindJobPage() {
                 <Footer />
             </div>
         </div>
+        </ModalProvider>
     );
 }

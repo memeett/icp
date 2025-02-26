@@ -49,14 +49,12 @@ actor Authentication{
 
 
     public shared func createSession(userId: Text) : async Text {
-    // Check for existing session with the same userId and remove it
         for ((sessionId, sessionData) in sessions.entries()) {
             if (sessionData.userId == userId) {
                 sessions.delete(sessionId);
             };
         };
 
-        // Generate a new session ID
         let newsessionId = await generateSessionId(); 
         let now = Time.now();
         

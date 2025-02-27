@@ -5,57 +5,19 @@ interface CardCarouselProps {
   cards: React.ReactNode[];
   cardWidth: number;
   gap: number;
-  containerWidth?: number; // Optional: if you want to explicitly set container width
+  visibleCards?: number;
 }
 
 const CardCarousel: React.FC<CardCarouselProps> = ({
   cards,
   cardWidth,
   gap,
-  containerWidth,
+  visibleCards = 4,
 }) => {
   const carouselRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [visibleCards, setVisibleCards] = useState(0);
-  const [effectiveGap, setEffectiveGap] = useState(gap);
-
-  // Calculate how many cards can fit in the container
-  useEffect(() => {
-    const calculateVisibleCards = () => {
-      if (containerRef.current) {
-        const availableWidth =
-          containerWidth || containerRef.current.clientWidth;
-
-        // Calculate how many cards can fit (including gaps)
-        const cardsWithGap = availableWidth / (cardWidth + gap);
-
-        // Floor the number to get whole cards only
-        const wholeCards = Math.floor(cardsWithGap);
-
-        // Calculate the remaining space
-        const remainingSpace =
-          availableWidth - (wholeCards * cardWidth + (wholeCards - 1) * gap);
-
-        // Adjust gap if we have multiple cards
-        if (wholeCards > 1) {
-          // Recalculate gap to distribute remaining space evenly
-          const newGap = gap + remainingSpace / (wholeCards - 1);
-          setEffectiveGap(newGap);
-        } else {
-          setEffectiveGap(gap);
-        }
-
-        setVisibleCards(wholeCards);
-      }
-    };
-
-    calculateVisibleCards();
-    window.addEventListener("resize", calculateVisibleCards);
-    return () => window.removeEventListener("resize", calculateVisibleCards);
-  }, [cardWidth, gap, containerWidth, cards.length]);
 
   // Update maxScroll when component mounts or dependencies change
   useEffect(() => {
@@ -76,7 +38,7 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [cards, cardWidth, effectiveGap, visibleCards]);
+  }, [cards, cardWidth, gap, visibleCards]);
 
   const handleScroll = () => {
     if (carouselRef.current) {
@@ -90,7 +52,7 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
       setIsAnimating(true);
 
       // Calculate the scroll position to the previous card
-      const itemWidth = cardWidth + effectiveGap;
+      const itemWidth = cardWidth + gap;
       const currentIndex = Math.round(scrollPosition / itemWidth);
       const targetIndex = Math.max(currentIndex - 1, 0);
       const newPosition = targetIndex * itemWidth;
@@ -104,7 +66,7 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
       // Reset animation state after animation completes
       setTimeout(() => {
         setIsAnimating(false);
-      }, 500);
+      }, 500); // Match this to your transition duration
     }
   };
 
@@ -114,7 +76,7 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
       setIsAnimating(true);
 
       // Calculate the scroll position to the next card
-      const itemWidth = cardWidth + effectiveGap;
+      const itemWidth = cardWidth + gap;
       const currentIndex = Math.round(scrollPosition / itemWidth);
       const maxIndex = Math.floor(maxScroll / itemWidth);
       const targetIndex = Math.min(currentIndex + 1, maxIndex);
@@ -129,26 +91,20 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
       // Reset animation state after animation completes
       setTimeout(() => {
         setIsAnimating(false);
-      }, 500);
+      }, 500); // Match this to your transition duration
     }
   };
-
   return (
-    <div className="relative w-[90%] px-4" ref={containerRef}>
-      {/* Display calculated visible cards (for debugging) */}
-      {/* <div className="text-sm text-gray-500 mb-2">
-        Visible cards: {visibleCards}, Effective gap: {effectiveGap.toFixed(2)}px
-      </div> */}
-
+    <div className="relative w-[90%] px-4">
       {/* Left navigation button */}
       <button
         onClick={scrollPrev}
         className={`absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-opacity ${
           scrollPosition <= 0
-            ? "opacity-50 cursor-not-allowed"
+            ? "hidden"
             : "opacity-100 hover:bg-gray-100"
         }`}
-        disabled={scrollPosition <= 0 || isAnimating}
+        disabled={scrollPosition <= 0}
         aria-label="Previous"
       >
         <ChevronLeft className="h-6 w-6" />
@@ -163,7 +119,7 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
           ref={carouselRef}
           className="flex snap-x snap-mandatory overflow-x-auto scrollbar-hide py-4"
           style={{
-            gap: `${effectiveGap}px`,
+            gap: `${gap}px`,
             scrollSnapType: "x mandatory",
             scrollBehavior: "smooth",
             WebkitOverflowScrolling: "touch",
@@ -191,11 +147,11 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
       <button
         onClick={scrollNext}
         className={`absolute right-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-opacity ${
-          scrollPosition >= maxScroll
-            ? "opacity-50 cursor-not-allowed"
+          scrollPosition >= maxScroll - 1
+            ? "hidden"
             : "opacity-100 hover:bg-gray-100"
         }`}
-        disabled={scrollPosition >= maxScroll || isAnimating}
+        disabled={scrollPosition >= maxScroll}
         aria-label="Next"
       >
         <ChevronRight className="h-6 w-6" />
@@ -203,16 +159,5 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
     </div>
   );
 };
-
-// Add CSS for hiding scrollbar
-const globalStyles = `
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-`;
 
 export default CardCarousel;

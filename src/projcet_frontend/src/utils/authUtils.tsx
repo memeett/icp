@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCookie, validateCookie, loginWithInternetIdentity, logout } from "../controller/userController";
+import { getCookie, validateCookie, loginWithInternetIdentity, logout,fetchUserBySession } from "../controller/userController";
 
 
 export const authUtils = () => {
@@ -11,6 +11,12 @@ export const authUtils = () => {
         if (!cookie && !session) {
             logout();
         }
+        fetchUserBySession().then((user) => {
+            if (!user) {
+                logout();
+            }
+            
+        });
         if (cookie == session && cookie && session) {
             navigate('/');
         }

@@ -18,6 +18,7 @@ export const getCookie = (name: string): string | null => {
 };
 
 
+
 export const loginWithInternetIdentity = async (): Promise<boolean> => {
     try {
         const authClient = await AuthClient.create();
@@ -39,24 +40,13 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         }
 
         console.log("Authenticated Principal:", principalId);
+
+
         const res = await user.login(principalId);
         if (!res) {
             console.log("Login Failed");
             return false;
         }
-
-        const userIdResult = await session.getUserIdBySession(res);
-        console.log(userIdResult)
-        if ("ok" in userIdResult) {
-            const userId = userIdResult.ok;  
-            const userDetail = await user.getUserById(userId);
-            localStorage.setItem("current_user", JSON.stringify(userDetail))
-            console.log(userDetail);
-        } else {
-            console.error("Error fetching user ID:", userIdResult.err);
-            return false;
-        }
-        
 
         console.log("Login successful:", res);
         document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
@@ -67,6 +57,8 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         return false;
     }
 };
+
+
 
 export const validateCookie = async (): Promise<boolean> => {
     try {
@@ -103,14 +95,9 @@ export const validateCookie = async (): Promise<boolean> => {
 
 export const logout = async (): Promise<void> => {
     try {
-        const sessionId = localStorage.getItem("session");
-        if (!sessionId) {
-            console.log("No session found in local storage.");
-            return;
-        }
-        await session.logout(sessionId);
         localStorage.removeItem("session");
         document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
+
         console.log("Logged out successfully.");
     } catch (error) {
         console.error("Logout failed:", error);
@@ -119,6 +106,14 @@ export const logout = async (): Promise<void> => {
 
 
 export const fetchUserBySession = async (): Promise<User | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    
     try {
         const currSession = localStorage.getItem("session");
         if (!currSession) {
@@ -135,24 +130,17 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
             if ("ok" in userRes) {
                 const userData = userRes.ok;
-
-                const profilePictureData =
-                    userData.profilePicture instanceof Uint8Array
-                        ? userData.profilePicture
-                        : new Uint8Array(userData.profilePicture);
-
-                const profilePictureBlob = new Blob([profilePictureData], { type: "image/jpeg" });
-
-                const user: User = {
+            
+                // Convert `bigint` timestamps to `Date`
+                const convertedUser = {
                     ...userData,
-                    profilePicture: profilePictureBlob,
-                    createdAt: new Date(Number(userData.createdAt)),
-                    updatedAt: new Date(Number(userData.updatedAt)),
+                    createdAt: new Date(Number(userData.createdAt)), // Convert bigint to Date
+                    updatedAt: new Date(Number(userData.updatedAt)), // Convert bigint to Date
                 };
-
-                console.log("User fetched:", user);
-                return user;
-            } else {
+            
+                console.log("User fetched:", convertedUser);
+                return convertedUser; // ✅ Now matches frontend's `User` interface
+            }else {
                 console.error("Error fetching user:", userRes.err);
                 return null;
             }
@@ -162,22 +150,31 @@ export const fetchUserBySession = async (): Promise<User | null> => {
         }
     } catch (error) {
         console.error("Error fetching user by session:", error);
-        return null;
-    }
+        return null;
+    }
 };
 
 
 export const updateUserProfile = async (username: string, description: string): Promise<void> => {
-    const cookie = getCookie("cookie");
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+
+    const cookie = localStorage.getItem("session");
     if (cookie) {
         try {
+            const cleanSession = cookie.replace(/^"|"$/g, '');
             const formattedPayload :UpdateUserPayload = {
                 username: username ? [username] : [],
                 email: [],
                 description: description ? [description] : [],
             };
 
-            await user.updateUser(cookie, formattedPayload);
+            await user.updateUser(cleanSession, formattedPayload);
         } catch (err) {
             console.error("Error updating user profile:", err);
         }

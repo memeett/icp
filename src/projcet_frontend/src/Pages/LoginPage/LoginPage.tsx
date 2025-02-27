@@ -7,6 +7,7 @@ import Footer from "../../components/Footer.tsx";
 import { ProfileCard } from "../../components/cards/ProfileCard.tsx";
 import CardCarousel from "../../components/cards/CardCarousel.tsx";
 import image from "../../assets/pic.jpeg";
+import { authUtils } from "../../utils/authUtils.js";
 import { PenLine } from "lucide-react";
 import { TypingAnimation } from "../../components/ui/typing-text.tsx";
 import { motion } from "framer-motion";
@@ -71,6 +72,7 @@ const FloatingBubbles = () => {
 };
 
 export default function LoginPage() {
+  authUtils();
   const [isHovered, setIsHovered] = useState(false);
   const freelancers = [
     {

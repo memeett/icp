@@ -4,7 +4,7 @@ export interface User{
     username: string;
     email: string;
     description: string;
-    wallet: string;
+    wallet: number;
     rating: number;
     createdAt: Date;
     updatedAt: Date;

@@ -5,6 +5,7 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
+import Debug "mo:base/Debug";
 import Nat64 "mo:base/Nat64";
 import Float "mo:base/Float";
 
@@ -45,7 +46,7 @@ actor UserModel {
 
         let newUser : User.User = {
             id= newid;
-            profilePicture= "": Blob;
+            profilePicture= "/assets/profilePicture/default_profile_pict.jpg";
             username = "";  
             email = "";
             description= "";
@@ -146,6 +147,18 @@ actor UserModel {
             case null { 0.0 };
         };
     };
+
+    public func deleteUser(userID: Text) : async (){
+        switch(users.get(userID)){
+            case(?user){
+                users.delete(userID);
+                Debug.print(user.username);
+            };
+            case null{
+
+            };
+        }
+    }
 
     public shared func transfer_ckbtc(from : Text, to : Text, amount : Nat64) : async Result.Result<Text, Text> {
         switch (users.get(from)) {

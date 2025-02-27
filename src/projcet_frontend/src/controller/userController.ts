@@ -46,6 +46,7 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         }
 
         const userIdResult = await session.getUserIdBySession(res);
+        console.log(userIdResult)
         if ("ok" in userIdResult) {
             const userId = userIdResult.ok;  
             const userDetail = await user.getUserById(userId);
@@ -158,8 +159,8 @@ export const fetchUserBySession = async (): Promise<User | null> => {
         }
     } catch (error) {
         console.error("Error fetching user by session:", error);
-        return null;
-    }
+        return null;
+    }
 };
 
 

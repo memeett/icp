@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { logout, getCookie, validateCookie, loginWithInternetIdentity } from "../controller/userController";
+import { authUtils } from "../utils/authUtils";
 
 export default function UserTesting() {
     const navigate = useNavigate();
@@ -10,26 +11,9 @@ export default function UserTesting() {
     useEffect(() => {
         console.log("Cookie:", cookie);
         console.log("Session:", session);
-
-        // if (!cookie && !session) {
-        //     logout();
-        // }
-        // if (cookie == session && cookie && session) {
-        //     navigate('/');
-        // }
-        // else if (cookie && !session) {
-        //     console.log("Validating cookie");
-        //     validateCookie().then((val) => {
-        //         if (val) {
-        //             navigate('/');
-        //         }
-        //     });
-        // }
-        // else if (cookie && (cookie !== session)) {
-        //     console.log("logging out");
-        //     logout();
-        // }
     }, []);
+
+    authUtils();
 
     // const getPrincipalIdBtnClick = async () => {
     //     try {

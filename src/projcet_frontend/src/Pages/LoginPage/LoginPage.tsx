@@ -124,7 +124,7 @@ export default function LoginPage() {
             />
           </div>
           <div className="relative my-12 flex flex-col">
-            <div className="flex flex-row gap-x-24 justify-center mt-24">
+            <div className="flex flex-row gap-x-24 justify-center">
               <div className="w-xl h-72 bg-red-500"></div>
               <div className="w-xl h-72 bg-red-500"></div>
             </div>

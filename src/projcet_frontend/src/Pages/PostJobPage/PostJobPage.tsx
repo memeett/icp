@@ -3,6 +3,8 @@ import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
 import { Plus, Trash, X } from "lucide-react";
 import { ModalProvider } from "../../contexts/modal-context";
+import { createJob } from "../../controller/jobController";
+// import { createJob } from "../../controller/jobController";
 
 
 const jobCategory = ["Web", "Mobile", "AI", "Game", "IOT", "Desktop", "Network"]
@@ -50,6 +52,14 @@ export default function PostJobPage() {
         }
     };
 
+    const [jobName, setJobName] = useState("")
+    const [jobSalary, setJobSalary] = useState<number>(0)
+    const [jobSlots, setJobSlots] = useState<number>(0)
+
+    const postJobButton = () => {
+        console.log(localStorage.getItem("current_user"))
+        // createJob(jobName, requirements, selectedCategories, jobSalary, jobSlots)
+    }
     return (
         <ModalProvider>
 
@@ -74,6 +84,7 @@ export default function PostJobPage() {
                             type="text"
                             className="border-2 border-gray-400 rounded-lg w-[40%] h-12 px-4 text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none transition-all duration-300"
                             placeholder="Type your job name here"
+                            onChange={(e) => setJobName(e.target.value)}
                         />
 
                     </div>
@@ -207,7 +218,8 @@ export default function PostJobPage() {
                         )}
                     </div>
                 </div>
-
+                
+                {/* Job Salary Section */}
                 <div className="shadow-lg border-2 border-gray-400 rounded-xl bg-white w-[55vw] mt-10 p-8">
 
                     <div className="mt-6 flex justify-between items-start  mx-8">
@@ -217,6 +229,7 @@ export default function PostJobPage() {
                             type="number"
                             className="border-2 border-gray-400 rounded-lg w-[40%] h-12 px-4 text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none transition-all duration-300"
                             placeholder="Insert number of your job salary here"
+                            onChange={(e) => setJobSalary(e.target.valueAsNumber)}
                         />
 
                     </div>
@@ -225,7 +238,8 @@ export default function PostJobPage() {
 
                     </div>
                 </div>
-
+                
+                {/* Job Slots Section */}
                 <div className="shadow-lg border-2 border-gray-400 rounded-xl bg-white w-[55vw] mt-10 p-8">
 
                     <div className="mt-6 flex justify-between items-start  mx-8">
@@ -235,6 +249,7 @@ export default function PostJobPage() {
                             type="number"
                             className="border-2 border-gray-400 rounded-lg w-[40%] h-12 px-4 text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none transition-all duration-300"
                             placeholder="Insert number of your job salary here"
+                            onChange={(e) => setJobSlots(e.target.valueAsNumber)}
                         />
 
                     </div>
@@ -243,7 +258,9 @@ export default function PostJobPage() {
 
                     </div>
                 </div>
+                
 
+                {/* Post Button  */}
                 <div className="shadow-lg border-2 border-gray-400 rounded-xl bg-white w-[55vw] mt-10 p-8">
 
                     <div className="mt-6 flex flex-col items-start  mx-8">
@@ -252,6 +269,7 @@ export default function PostJobPage() {
                         <div className="mt-4 flex justify-between w-[100%]">
                             <p className="text-lg font-medium mb-2 w-[50%]">If all the data is correct, press the button to create the job</p>
                             <button className="mt-4 flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-300 mx-8"
+                            // onClick={postJobButton}
                             >Post Job</button>
                         </div>
 

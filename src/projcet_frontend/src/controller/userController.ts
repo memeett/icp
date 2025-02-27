@@ -1,10 +1,9 @@
 import { AuthClient } from "@dfinity/auth-client";
-
+import { UpdateUserPayload, User } from "../interface/User";
 import { user } from "../../../declarations/user";
 import { session } from "../../../declarations/session";
 import { HttpAgent } from "@dfinity/agent";
 import { useState } from "react";
-import { User } from "../../../declarations/user/user.did";
 
 export const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");
@@ -15,10 +14,11 @@ export const getCookie = (name: string): string | null => {
         }
     }
     return null;
+    
 };
 
 
-export const loginBtnClick = async (): Promise<boolean> => {
+export const loginWithInternetIdentity = async (): Promise<boolean> => {
     try {
         const authClient = await AuthClient.create();
 
@@ -112,34 +112,70 @@ export const logout = async (): Promise<void> => {
 };
 
 
-export const getPrincipalId = async (): Promise<string> => {
+export const fetchUserBySession = async (): Promise<User | null> => {
     try {
         const currSession = localStorage.getItem("session");
         if (!currSession) {
             throw new Error("No session found in local storage");
         }
+
         const result = await session.getUserIdBySession(JSON.parse(currSession));
-        
+
         if ("ok" in result) {
-            const principalId = result.ok; 
+            const principalId = result.ok;
             console.log("Principal ID:", principalId);
-            return principalId;
+
+            const userRes = await user.getUserById(principalId);
+
+            if ("ok" in userRes) {
+                const userData = userRes.ok;
+
+                // Ensure profilePicture is a Uint8Array
+                const profilePictureData =
+                    userData.profilePicture instanceof Uint8Array
+                        ? userData.profilePicture
+                        : new Uint8Array(userData.profilePicture);
+
+                // Convert profilePicture to Blob
+                const profilePictureBlob = new Blob([profilePictureData], { type: "image/jpeg" });
+
+                const user: User = {
+                    ...userData,
+                    profilePicture: profilePictureBlob, // ✅ Converted to Blob
+                    createdAt: new Date(Number(userData.createdAt)), // Convert BigInt to Date
+                    updatedAt: new Date(Number(userData.updatedAt)), // Convert BigInt to Date
+                };
+
+                console.log("User fetched:", user);
+                return user;
+            } else {
+                console.error("Error fetching user:", userRes.err);
+                return null;
+            }
         } else {
-            console.error("Error:", result.err); 
-            return "";
+            console.error("Error:", result.err);
+            return null;
         }
     } catch (error) {
-        console.error("Error fetching principal:", error);
-        return "";
+        console.error("Error fetching user by session:", error);
+        return null;
     }
 };
 
-export const getUser = async (id: string): Promise<void> => {
-    try {
-        const res = await user.getUserById(id);
-        console.log("User fetched:", res);
 
-    } catch (error) {
-        console.error("Error fetching user:", error);
+export const updateUserProfile = async (username: string, description: string): Promise<void> => {
+    const cookie = getCookie("cookie");
+    if (cookie) {
+        try {
+            const formattedPayload :UpdateUserPayload = {
+                username: username ? [username] : [],
+                email: [],
+                description: description ? [description] : [],
+            };
+
+            await user.updateUser(cookie, formattedPayload);
+        } catch (err) {
+            console.error("Error updating user profile:", err);
+        }
     }
-}
+};

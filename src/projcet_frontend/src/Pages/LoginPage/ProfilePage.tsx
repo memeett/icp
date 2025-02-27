@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { FaStar, FaRegStar, FaEdit } from "react-icons/fa"; // Icons for rating
+import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa"; // Icons for rating
 import Navbar from "../../components/Navbar.js";
 import { ModalProvider } from "../../contexts/modal-context.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import { User } from "../../interface/User.js";
 import { fetchUserBySession, updateUserProfile } from "../../controller/userController.js";
+import image from "../../assets/default_profile_pict.jpg"
 
 export default function ProfilePage() {
     const [activeSection, setActiveSection] = useState("biodata");
@@ -14,6 +15,7 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [tempUsername, setTempUsername] = useState("");
     const [tempDescription, setTempDescription] = useState("");
+
 
     useEffect(() => {
         fetchUserBySession().then((user) => {
@@ -51,9 +53,6 @@ export default function ProfilePage() {
         );
     };
 
-    const profileImageUrl = user?.profilePicture?.size
-        ? URL.createObjectURL(user.profilePicture)
-        : "https://via.placeholder.com/100";
 
     return (
         <ModalProvider>
@@ -98,7 +97,7 @@ export default function ProfilePage() {
                                     >
                                         <div className="relative">
                                             <img
-                                                src={profileImageUrl}
+                                                src= {user.profilePicture}
                                                 alt="Profile"
                                                 className="w-40 h-40 md:w-48 md:h-48 rounded-full border-4 border-gray-300 object-cover"
                                             />
@@ -114,19 +113,20 @@ export default function ProfilePage() {
                                                         value={isEditing ? tempUsername : username}
                                                         onChange={(e) => setTempUsername(e.target.value)}
                                                         disabled={!isEditing}
+                                                        placeholder="Enter your username"
                                                         className={`w-full text-base font-medium text-gray-900 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${isEditing ? "border-blue-400 focus:ring-blue-400" : "border-gray-300 bg-gray-100"}`}
                                                     />
                                                 </div>
 
                                                 <div>
                                                     <label className="block text-gray-700 font-medium mb-1 text-sm">Email</label>
-                                                    <input
-                                                        type="email"
-                                                        name="email"
-                                                        value={user.email}
-                                                        disabled
-                                                        className="w-full text-base text-gray-600 border border-gray-300 rounded-lg px-4 py-2 bg-gray-100"
-                                                    />
+                                                    <button
+                                                        className="flex items-center justify-center w-1/4 text-gray-600 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-100 transition-all duration-200 "
+                                                        onClick={() => alert("Implement Google Login")}
+                                                    >
+                                                        <FaGoogle className="mr-2" />
+                                                        Bind with Google
+                                                    </button>
                                                 </div>
 
                                                 <div>
@@ -136,6 +136,7 @@ export default function ProfilePage() {
                                                         value={isEditing ? tempDescription : description}
                                                         onChange={(e) => setTempDescription(e.target.value)}
                                                         disabled={!isEditing}
+                                                        placeholder="Enter your description..."
                                                         className={`w-full text-gray-700 text-sm border rounded-lg px-4 py-2 resize-none focus:outline-none focus:ring-2 ${isEditing ? "border-blue-400 focus:ring-blue-400" : "border-gray-300 bg-gray-100"}`}
                                                         rows={3}
                                                     />
@@ -172,7 +173,9 @@ export default function ProfilePage() {
                                     </div>
                                 </>
                             ) : (
-                                <div className="text-gray-500 text-lg text-center">No user data available. Please log in.</div>
+                                <div className="text-gray-500 text-lg text-center">No user data available. Please log in.
+                                </div>
+
                             )
                         ) : (
                             <p className="text-gray-500">Loading user data...</p>

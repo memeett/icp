@@ -159,10 +159,10 @@ actor UserModel {
                             let updatedFromUser : User.User = {
                                 id = fromUser.id;
                                 profilePicture = fromUser.profilePicture;
-                                username = fromUser.usernam
+                                username = fromUser.username;
                                 description = fromUser.description;
                                 email = fromUser.email;
-                                wallet = fromUser.wallet;
+                                wallet = fromNewBalance;
                                 rating = fromUser.rating;
                                 createdAt = fromUser.createdAt;
                                 updatedAt = Time.now();
@@ -198,7 +198,7 @@ actor UserModel {
             };
         };
     };
-    
+
     public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
         minter_fee : Nat64;
         bitcoin_fee : Nat64;

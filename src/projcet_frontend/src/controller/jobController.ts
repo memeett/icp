@@ -61,9 +61,9 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
 //     }
 // };
 
-export const updateJob = async (jobId: string, payload: UpdateJobPayload): Promise<Job | null> => {
+export const updateJob = async (jobId: string, payload: UpdateJobPayload, jobStatus: string): Promise<Job | null> => {
     try {
-        const result = await job.updateJob(jobId, payload);
+        const result = await job.updateJob(jobId, payload, jobStatus);
         if ("ok" in result) {
             console.log("Job updated:", result.ok);
             return result.ok;

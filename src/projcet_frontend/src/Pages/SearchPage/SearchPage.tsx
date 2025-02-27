@@ -5,40 +5,47 @@ import { AiOutlineFolder, AiOutlineHeart, AiOutlineLike } from 'react-icons/ai';
 import { IoLocationOutline } from 'react-icons/io5';
 import { BsCheckCircleFill, BsStar, BsStarFill } from 'react-icons/bs';
 
-interface JobPost {
-  id: number;
-  title: string;
-  timePosted: string;
-  paymentVerified: boolean;
-  rating: number;
-  spent: string;
-  location: string;
-  price: string;
-  level: string;
-  budget: string;
-  description: string;
-  skills: string[];
+interface JobCategory {
+    id: string;
+    jobCategoryName: string;
+}
+
+interface Job {
+    id: string;
+    jobName: string;
+    jobDescription: string[];
+    jobSalary: number;
+    jobRating: number;
+    jobTags: JobCategory[];
+    jobSlots: number;
+    createdAt: number;
+    updatedAt: number;
 }
 
 const SearchPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const jobPosts: JobPost[] = [
+  const jobs: Job[] = [
     {
-      id: 1,
-      title: 'HTML Code Integration for Google Search Console',
-      timePosted: '2 minutes ago',
-      paymentVerified: true,
-      rating: 4.2,
-      spent: '$200K+',
-      location: 'United Kingdom',
-      price: 'Fixed price',
-      level: 'Intermediate',
-      budget: '$10.00',
-      description: 'We are looking for a skilled freelancer to add HTML code to our website to verify it with Google Search Console. The ideal candidate will have a strong understanding of HTML, website structure, and SEO principles. You will be responsible for ensuring the code is correctly implemented to facilitate smooth...',
-      skills: ['HTML', 'JavaScript', 'PHP', 'CSS', 'WordPress']
+      id: "1",
+      jobName: "Senior Frontend Developer",
+      jobDescription: [
+        "We are looking for an experienced Frontend Developer",
+        "Must have strong knowledge in React and TypeScript",
+        "5+ years of experience required"
+      ],
+      jobSalary: 8000,
+      jobRating: 4.5,
+      jobTags: [
+        { id: "1", jobCategoryName: "React" },
+        { id: "2", jobCategoryName: "TypeScript" },
+        { id: "3", jobCategoryName: "Frontend" }
+      ],
+      jobSlots: 2,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     },
-
+    // Add more jobs as needed
   ];
 
   return (
@@ -50,18 +57,18 @@ const SearchPage: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="front end developer"
-            className="w-full px-12 py-3 rounded-full border border-gray-300"
+            placeholder="Search jobs..."
+            className="w-full px-12 py-3 rounded-full border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
           />
           <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
           {searchQuery && (
             <FiX
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl cursor-pointer"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl cursor-pointer hover:text-gray-600"
               onClick={() => setSearchQuery('')}
             />
           )}
         </div>
-        <button className="flex items-center gap-2 text-green-600">
+        <button className="flex items-center gap-2 text-green-600 hover:text-green-700 transition duration-200">
           <BiSlider className="text-xl" />
           <span>Advanced search</span>
         </button>
@@ -69,11 +76,11 @@ const SearchPage: React.FC = () => {
 
       {/* Save Search and Saved Jobs */}
       <div className="flex justify-between mb-8">
-        <button className="flex items-center gap-2 text-green-600">
+        <button className="flex items-center gap-2 text-green-600 hover:text-green-700 transition duration-200">
           <AiOutlineFolder />
           <span>Save search</span>
         </button>
-        <button className="flex items-center gap-2 text-green-600">
+        <button className="flex items-center gap-2 text-green-600 hover:text-green-700 transition duration-200">
           <AiOutlineHeart />
           <span>Saved jobs</span>
         </button>
@@ -81,58 +88,53 @@ const SearchPage: React.FC = () => {
 
       {/* Job Posts */}
       <div className="space-y-6">
-        {jobPosts.map((job) => (
-          <div key={job.id} className="border border-gray-200 rounded-lg p-6">
+        {jobs.map((job) => (
+          <div key={job.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition duration-300 cursor-pointer group">
             <div className="flex justify-between mb-4">
               <div>
-                <p className="text-gray-500 text-sm">Posted {job.timePosted}</p>
-                <h2 className="text-xl font-semibold mt-1">{job.title}</h2>
+                <p className="text-gray-500 text-sm">
+                  Posted {new Date(job.createdAt).toLocaleDateString()}
+                </p>
+                <h2 className="text-xl font-semibold mt-1 group-hover:text-green-600 transition duration-200">
+                  {job.jobName}
+                </h2>
               </div>
               <div className="flex gap-2">
-                <button className="p-2 rounded-full border border-gray-200">
-                  <AiOutlineLike />
+                <button className="p-2 rounded-full border border-gray-200 hover:bg-green-50 hover:border-green-500 transition duration-200">
+                  <AiOutlineLike className="group-hover:text-green-600" />
                 </button>
-                <button className="p-2 rounded-full border border-gray-200">
-                  <AiOutlineHeart />
+                <button className="p-2 rounded-full border border-gray-200 hover:bg-green-50 hover:border-green-500 transition duration-200">
+                  <AiOutlineHeart className="group-hover:text-green-600" />
                 </button>
               </div>
             </div>
 
             <div className="flex items-center gap-4 mb-4">
-              {job.paymentVerified && (
-                <div className="flex items-center gap-1">
-                  <BsCheckCircleFill className="text-green-600" />
-                  <span>Payment verified</span>
-                </div>
-              )}
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
-                  i < Math.floor(job.rating) ? 
+                  i < Math.floor(job.jobRating) ? 
                     <BsStarFill key={i} className="text-yellow-400" /> : 
                     <BsStar key={i} className="text-gray-300" />
                 ))}
-                <span>{job.rating}</span>
+                <span className="ml-1">{job.jobRating}</span>
               </div>
-              <span>{job.spent} spent</span>
-              <div className="flex items-center gap-1">
-                <IoLocationOutline />
-                <span>{job.location}</span>
-              </div>
+              <span className="text-green-600">Slots: {job.jobSlots}</span>
+              <span className="text-green-600">${job.jobSalary}/month</span>
             </div>
 
-            <p className="text-gray-600 mb-4">
-              {job.price} - {job.level} - Est. budget: {job.budget}
-            </p>
+            <div className="mb-4">
+              {job.jobDescription.map((desc, index) => (
+                <p key={index} className="text-gray-700 mb-2">• {desc}</p>
+              ))}
+            </div>
 
-            <p className="text-gray-700 mb-4">{job.description}</p>
-
-            <div className="flex gap-2">
-              {job.skills.map((skill) => (
+            <div className="flex flex-wrap gap-2">
+              {job.jobTags.map((tag) => (
                 <span
-                  key={skill}
-                  className="px-4 py-1 bg-gray-100 rounded-full text-gray-600"
+                  key={tag.id}
+                  className="px-4 py-1 bg-gray-100 rounded-full text-gray-600 hover:bg-green-100 hover:text-green-700 transition duration-200"
                 >
-                  {skill}
+                  {tag.jobCategoryName}
                 </span>
               ))}
             </div>

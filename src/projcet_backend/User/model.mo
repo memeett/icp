@@ -5,6 +5,7 @@ module{
         email: Text;
         wallet: Text;
         rating: Float;
+        
         createdAt: Int;
         updatedAt: Int;
         isFaceRecognitionOn: Bool;

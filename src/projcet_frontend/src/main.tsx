@@ -10,7 +10,6 @@ import PostJobPage from "./Pages/PostJobPage/PostJobPage.tsx";
 import { ModalProvider } from "./contexts/modal-context.tsx";
 import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
 
-
 const route = createBrowserRouter([
   {
     path: "/",
@@ -28,7 +27,6 @@ const route = createBrowserRouter([
     path: "/PostJobPage",
     element: <PostJobPage />,
   },
-  {
 ]);
 
 const rootElement = document.getElementById("root");

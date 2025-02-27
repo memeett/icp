@@ -84,12 +84,44 @@ const ProcessFlow = () => {
             key={index}
             className={`${step.color} rounded-2xl shadow-lg p-6 cursor-pointer relative`}
             initial={{ opacity: 0, y: 30 }}
-            animate={
-              isInView && currentStep >= index ? { opacity: 1, y: 0 } : {}
-            }
-            transition={{ duration: 0.5, delay: index * 0.2 }}
+            animate={{
+              opacity: currentStep >= index ? 1 : 0.6,
+              y: 0,
+              scale: currentStep === index ? 1.05 : 1,
+              boxShadow:
+                currentStep === index
+                  ? "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+                  : "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+            }}
+            whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.3 }}
             onClick={() => setCurrentStep(index)}
           >
+            {currentStep >= index && (
+              <div className="absolute inset-0 overflow-hidden">
+                {[...Array(10)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-3 h-3 rounded-full bg-white/20"
+                    style={{
+                      top: `${Math.random() * 100}%`,
+                      left: `${Math.random() * 100}%`,
+                    }}
+                    animate={{
+                      y: [0, -30],
+                      opacity: [0, 0.5, 0],
+                    }}
+                    transition={{
+                      duration: 2 + Math.random() * 2,
+                      repeat: Infinity,
+                      repeatType: "loop",
+                      ease: "easeInOut",
+                      delay: Math.random() * 2,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
             <div className="bg-white/20 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
               {step.icon}
             </div>
@@ -111,6 +143,7 @@ const ProcessFlow = () => {
             </AnimatePresence>
           </motion.div>
         ))}
+
         {steps.map((step, index) => (
           <div
             key={index}

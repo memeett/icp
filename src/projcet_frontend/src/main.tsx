@@ -28,7 +28,6 @@ const route = createBrowserRouter([
     path: "/PostJobPage",
     element: <PostJobPage />,
   },
-  {
 ]);
 
 const rootElement = document.getElementById("root");

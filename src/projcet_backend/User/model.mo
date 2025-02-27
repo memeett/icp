@@ -3,7 +3,7 @@ module{
         id: Text;
         username: Text;
         email: Text;
-        wallet: Text;
+        wallet: Float;
         rating: Float;
         createdAt: Int;
         updatedAt: Int;

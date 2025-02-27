@@ -5,8 +5,8 @@ module{
         profilePicture: Text;
         username: Text;
         email: Text;
+        wallet: Float;
         description: Text;
-        wallet: Text;
         rating: Float;
         createdAt: Time.Time;
         updatedAt: Time.Time;

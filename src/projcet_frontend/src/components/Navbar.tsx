@@ -2,15 +2,26 @@ import { X, Menu, PenLine } from "lucide-react";
 import { motion } from "framer-motion";
 import { AnimatedNavLink } from "./ui/animated-anchor";
 import { useModal } from "../contexts/modal-context";
+import { getCookie } from "../controller/userController";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const Navbar = () => {
   const { setOpen } = useModal();
+  const [isAlreadyLogin, setIsAlreadyLogin] = useState(false);
+  const nav = useNavigate()
 
-  const navigateToTesting = () =>{
-    const nav = useNavigate()
-    nav('/testing/ka')
-  }
+  useEffect(() => {
+    const cookie = getCookie("cookie");
+    const session = localStorage.getItem("session");
+    console.log(localStorage.getItem("current_user"))
+    if (cookie == session && cookie && session) {
+      setIsAlreadyLogin(true)
+    }
+    // else{
+    //   nav('/')
+    // }
+  }, []);
 
   return (
     <nav className="sticky bg-[#F9F7F7] text-black w-full z-50">
@@ -32,18 +43,27 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
+            {isAlreadyLogin ? (
+              <div className="flex gap-3 items-center">
 
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <button
-                onClick={() => setOpen(true)}
-                className="w-full bg-transparent hover:bg-opacity-90 hover:border-2 px-4 py-2 rounded-2xl text-sm font-medium border-solid border border-black"
-              >
-                <div className="flex items-center justify-center text-center">
-                  Sign in <PenLine className="inline stroke-2 w-4" />
+                  <a href="#">Username</a>
+                  <img src="/defaultuserimg.png" alt="tes" className="w-10 h-10"/>
                 </div>
-              </button>
-            </motion.div>
+
+            ) : (
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <button
+                    onClick={() => setOpen(true)}
+                    className="w-full bg-transparent hover:bg-opacity-90 hover:border-2 px-4 py-2 rounded-2xl text-sm font-medium border-solid border border-black"
+                  >
+                    <div className="flex items-center justify-center text-center">
+                      Sign in <PenLine className="inline stroke-2 w-4" />
+                    </div>
+                  </button>
+                </motion.div>
+            )}
           </div>
+
         </div>
       </div>
     </nav>

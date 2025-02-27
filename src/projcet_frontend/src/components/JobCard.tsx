@@ -1,3 +1,5 @@
+import { Job } from "../interface/job/Job";
+
 export default function JobCard({ job }: { job: Job }) {
 
 

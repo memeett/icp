@@ -1,10 +1,10 @@
 export interface User{
     id: string;
-    profilePicture: string;
+    profilePicture: Blob;
     username: string;
     email: string;
     description: string;
-    wallet: number;
+    wallet: string;
     rating: number;
     createdAt: Date;
     updatedAt: Date;

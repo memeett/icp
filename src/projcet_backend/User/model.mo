@@ -1,16 +1,16 @@
-import Time "mo:base/Time";
 module{
     public type User = {
         id: Text;
-        profilePicture: Text;
+        profilePicture: Blob;
         username: Text;
         email: Text;
-        wallet: Float;
         description: Text;
+        wallet: Text;
         rating: Float;
-        createdAt: Time.Time;
-        updatedAt: Time.Time;
+        createdAt: Int;
+        updatedAt: Int;
         isFaceRecognitionOn: Bool;
+
     };
 
     public type UpdateUserPayload = {

@@ -2,7 +2,7 @@ import { X, Menu, PenLine } from "lucide-react";
 import { motion } from "framer-motion";
 import { AnimatedNavLink } from "./ui/animated-anchor";
 import { useModal } from "../contexts/modal-context";
-import { getCookie, loginBtnClick } from "../controller/userController";
+import { getCookie } from "../controller/userController";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 

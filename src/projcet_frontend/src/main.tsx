@@ -7,6 +7,7 @@ import "./styles/style.css";
 import FindJobPage from "./Pages/FindJobPage/FindJobPage.tsx";
 import ProfilePage from "./Pages/LoginPage/ProfilePage.tsx";
 import PostJobPage from "./Pages/PostJobPage/PostJobPage.tsx";
+import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
 
 const route = createBrowserRouter([
   {
@@ -24,6 +25,19 @@ const route = createBrowserRouter([
   {
     path: "/PostJobPage",
     element: <PostJobPage/>,
+  },
+  {
+    path: "/testing/ka",
+    element: <UserTesting />,
+  },
+  {
+    path: "/testing/pp",
+    element: <CreateJobForm />,
+  },
+  {
+    path: "/testing/lo",
+    element: <SearchPage />,
+
   }
 ]);
 

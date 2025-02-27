@@ -2,7 +2,6 @@ import { X, Menu, PenLine } from "lucide-react";
 import { motion } from "framer-motion";
 import { AnimatedNavLink } from "./ui/animated-anchor";
 import { useModal } from "../contexts/modal-context";
-import { loginBtnClick } from "../controller/userController";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
@@ -25,8 +24,8 @@ const Navbar = () => {
 
           <div className="hidden md:block">
             <div className="ml-10 flex justify-around items-center">
-              <AnimatedNavLink href="#">Find Work</AnimatedNavLink>
-              <AnimatedNavLink href="#">Post a Job</AnimatedNavLink>
+              <AnimatedNavLink href="/FindJobPage">Find Work</AnimatedNavLink>
+              <AnimatedNavLink href="/PostJobPage">Post a Job</AnimatedNavLink>
               <AnimatedNavLink href="#">Browse Freelancers</AnimatedNavLink>
               <AnimatedNavLink href="#">How it Works</AnimatedNavLink>
             </div>

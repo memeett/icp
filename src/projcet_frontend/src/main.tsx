@@ -5,8 +5,6 @@ import { RouterProvider } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage/LoginPage.tsx";
 import "./styles/style.css";
 import FindJobPage from "./Pages/FindJobPage/FindJobPage.tsx";
-import UserTesting from "./KATestingPage/User.tsx";
-import CreateJobForm from "./KATestingPage/JobPage.tsx";
 import ProfilePage from "./Pages/LoginPage/ProfilePage.tsx";
 import PostJobPage from "./Pages/PostJobPage/PostJobPage.tsx";
 import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
@@ -39,8 +37,8 @@ const route = createBrowserRouter([
   {
     path: "/testing/lo",
     element: <SearchPage />,
-  }
 
+  }
 ]);
 
 const rootElement = document.getElementById("root");

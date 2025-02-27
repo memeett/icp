@@ -45,6 +45,19 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
             return false;
         }
 
+        const userIdResult = await session.getUserIdBySession(res);
+        console.log(userIdResult)
+        if ("ok" in userIdResult) {
+            const userId = userIdResult.ok;  
+            const userDetail = await user.getUserById(userId);
+            localStorage.setItem("current_user", JSON.stringify(userDetail))
+            console.log(userDetail);
+        } else {
+            console.error("Error fetching user ID:", userIdResult.err);
+            return false;
+        }
+        
+
         console.log("Login successful:", res);
         document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
         localStorage.setItem("session", JSON.stringify(res));
@@ -90,9 +103,14 @@ export const validateCookie = async (): Promise<boolean> => {
 
 export const logout = async (): Promise<void> => {
     try {
+        const sessionId = localStorage.getItem("session");
+        if (!sessionId) {
+            console.log("No session found in local storage.");
+            return;
+        }
+        await session.logout(sessionId);
         localStorage.removeItem("session");
         document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-
         console.log("Logged out successfully.");
     } catch (error) {
         console.error("Logout failed:", error);
@@ -118,20 +136,18 @@ export const fetchUserBySession = async (): Promise<User | null> => {
             if ("ok" in userRes) {
                 const userData = userRes.ok;
 
-                // Ensure profilePicture is a Uint8Array
                 const profilePictureData =
                     userData.profilePicture instanceof Uint8Array
                         ? userData.profilePicture
                         : new Uint8Array(userData.profilePicture);
 
-                // Convert profilePicture to Blob
                 const profilePictureBlob = new Blob([profilePictureData], { type: "image/jpeg" });
 
                 const user: User = {
                     ...userData,
-                    profilePicture: profilePictureBlob, // ✅ Converted to Blob
-                    createdAt: new Date(Number(userData.createdAt)), // Convert BigInt to Date
-                    updatedAt: new Date(Number(userData.updatedAt)), // Convert BigInt to Date
+                    profilePicture: profilePictureBlob,
+                    createdAt: new Date(Number(userData.createdAt)),
+                    updatedAt: new Date(Number(userData.updatedAt)),
                 };
 
                 console.log("User fetched:", user);
@@ -146,8 +162,8 @@ export const fetchUserBySession = async (): Promise<User | null> => {
         }
     } catch (error) {
         console.error("Error fetching user by session:", error);
-        return null;
-    }
+        return null;
+    }
 };
 
 

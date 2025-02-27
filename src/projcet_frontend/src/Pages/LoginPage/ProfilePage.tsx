@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaStar, FaRegStar } from "react-icons/fa"; // Icons for rating
+import { FaStar, FaRegStar } from "react-icons/fa"; 
 import Navbar from "../../components/Navbar.js";
 
 export default function BiodataPage() {
@@ -28,6 +28,7 @@ export default function BiodataPage() {
     };
 
     return (
+        
         <div className="flex flex-col h-screen">
             {/* Navbar */}
             <div className="flex-none w-full bg-white shadow-md z-50">

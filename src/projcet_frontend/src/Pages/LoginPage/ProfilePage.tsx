@@ -5,6 +5,7 @@ import { ModalProvider } from "../../contexts/modal-context.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import { User } from "../../interface/User.js";
 import { fetchUserBySession, updateUserProfile } from "../../controller/userController.js";
+import image from "../../assets/default_profile_pict.jpg"
 
 export default function ProfilePage() {
     const [activeSection, setActiveSection] = useState("biodata");
@@ -96,7 +97,7 @@ export default function ProfilePage() {
                                     >
                                         <div className="relative">
                                             <img
-                                                src={URL.createObjectURL(user.profilePicture)}
+                                                src= {user.profilePicture}
                                                 alt="Profile"
                                                 className="w-40 h-40 md:w-48 md:h-48 rounded-full border-4 border-gray-300 object-cover"
                                             />

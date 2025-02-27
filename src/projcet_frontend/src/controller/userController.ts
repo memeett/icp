@@ -40,16 +40,9 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         }
 
         console.log("Authenticated Principal:", principalId);
-        
-        const defaultImageUrl = "/assets/default_profile_pict.jpg";
-        // Fetch the image and convert to Blob
-        const response = await fetch(defaultImageUrl);
-        const blob = await response.blob();
-        // Convert the Blob to an ArrayBuffer then to a Uint8Array
-        const arrayBuffer = await blob.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
 
-        const res = await user.login(principalId, uint8Array);
+
+        const res = await user.login(principalId);
         if (!res) {
             console.log("Login Failed");
             return false;
@@ -64,6 +57,8 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         return false;
     }
 };
+
+
 
 export const validateCookie = async (): Promise<boolean> => {
     try {
@@ -135,26 +130,17 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
             if ("ok" in userRes) {
                 const userData = userRes.ok;
-
-                // Ensure profilePicture is a Uint8Array
-                const profilePictureData =
-                    userData.profilePicture instanceof Uint8Array
-                        ? userData.profilePicture
-                        : new Uint8Array(userData.profilePicture);
-
-                // Convert profilePicture to Blob
-                const profilePictureBlob = new Blob([profilePictureData], { type: "image/jpeg" });
-
-                const user: User = {
+            
+                // Convert `bigint` timestamps to `Date`
+                const convertedUser = {
                     ...userData,
-                    profilePicture: profilePictureBlob, // ✅ Converted to Blob
-                    createdAt: new Date(Number(userData.createdAt)), // Convert BigInt to Date
-                    updatedAt: new Date(Number(userData.updatedAt)), // Convert BigInt to Date
+                    createdAt: new Date(Number(userData.createdAt)), // Convert bigint to Date
+                    updatedAt: new Date(Number(userData.updatedAt)), // Convert bigint to Date
                 };
-
-                console.log("User fetched:", user);
-                return user;
-            } else {
+            
+                console.log("User fetched:", convertedUser);
+                return convertedUser; // ✅ Now matches frontend's `User` interface
+            }else {
                 console.error("Error fetching user:", userRes.err);
                 return null;
             }

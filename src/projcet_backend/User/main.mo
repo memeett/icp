@@ -199,6 +199,17 @@ actor UserModel {
         };
     };
 
+    public func deleteUser(userID: Text) : async (){
+        switch(users.get(userID)){
+            case(?_){
+                users.delete(userID);
+            };
+            case null{
+
+            };
+        }
+    };
+
     // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
     //     minter_fee : Nat64;
     //     bitcoin_fee : Nat64;

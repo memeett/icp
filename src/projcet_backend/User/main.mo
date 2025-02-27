@@ -158,7 +158,7 @@ actor UserModel {
 
             };
         }
-    }
+    };
 
     public shared func transfer_ckbtc(from : Text, to : Text, amount : Nat64) : async Result.Result<Text, Text> {
         switch (users.get(from)) {

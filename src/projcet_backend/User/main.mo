@@ -5,6 +5,7 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
+import Debug "mo:base/Debug";
 
 actor UserModel{
     let session = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
@@ -37,12 +38,12 @@ actor UserModel{
         usersEntries := [];
     };
 
-    public func createUser(newid : Text, profilePic: Blob) : async User.User{
+    public func createUser(newid : Text) : async User.User{
         let timestamp = Time.now();
 
         let newUser : User.User = {
             id= newid;
-            profilePicture= profilePic;
+            profilePicture= "/assets/profilePicture/default_profile_pict.jpg";
             username = "";  
             email = "";
             description= "";
@@ -68,11 +69,11 @@ actor UserModel{
         }
     };
 
-    public func login(id : Text, profilePic: Blob) : async Text {
+    public func login(id : Text) : async Text {
         let currUser = switch(users.get(id)) {
             case (?user) user;  
             case null {
-                let newUser = await createUser(id, profilePic);
+                let newUser = await createUser(id);
                 newUser
             };
         };
@@ -110,4 +111,16 @@ actor UserModel{
             case (#err(msg)) { #err(msg) };
         }
     };
+
+    public func deleteUser(userID: Text) : async (){
+        switch(users.get(userID)){
+            case(?user){
+                users.delete(userID);
+                Debug.print(user.username);
+            };
+            case null{
+
+            };
+        }
+    }
 }

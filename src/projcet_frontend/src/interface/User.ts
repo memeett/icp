@@ -1,6 +1,6 @@
 export interface User{
     id: string;
-    profilePicture: Blob;
+    profilePicture: string;
     username: string;
     email: string;
     description: string;

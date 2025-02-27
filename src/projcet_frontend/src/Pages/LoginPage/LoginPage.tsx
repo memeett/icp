@@ -7,8 +7,11 @@ import Footer from "../../components/Footer.tsx";
 import { ProfileCard } from "../../components/cards/ProfileCard.tsx";
 import CardCarousel from "../../components/cards/CardCarousel.tsx";
 import image from "../../assets/pic.jpeg";
+import { authUtils } from "../../utils/authUtils.js";
 
 export default function LoginPage() {
+
+  authUtils();
   const freelancers = [
     {
       id: "1",

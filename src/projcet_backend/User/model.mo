@@ -7,6 +7,7 @@ module{
         wallet: Float;
         description: Text;
         rating: Float;
+        
         createdAt: Int;
         updatedAt: Int;
         isFaceRecognitionOn: Bool;

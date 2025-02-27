@@ -44,7 +44,7 @@ export function AuthenticationModal() {
 
                   <GlobeIcon className="w-6 h-6" />
                   <span>Internet Identity</span>
-                </button> */}
+                </button>
               </motion.div>
 
               {/* Google Login */}

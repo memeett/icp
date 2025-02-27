@@ -40,9 +40,15 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         }
 
         console.log("Authenticated Principal:", principalId);
+        const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
+        const response = await fetch(defaultImagePath);
+        const imageBlob = await response.blob();
+        
+        // Convert Blob to ArrayBuffer
+        const arrayBuffer = await imageBlob.arrayBuffer();
+        const profilePicBlob = new Uint8Array(arrayBuffer);
 
-
-        const res = await user.login(principalId);
+        const res = await user.login(principalId, profilePicBlob);
         if (!res) {
             console.log("Login Failed");
             return false;
@@ -130,17 +136,35 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
             if ("ok" in userRes) {
                 const userData = userRes.ok;
-            
-                // Convert `bigint` timestamps to `Date`
-                const convertedUser = {
+                
+                // Convert the profile picture data to Blob
+                let profilePictureBlob: Blob;
+                if (userData.profilePicture) {
+                    // Convert number[] to Uint8Array first
+                    const uint8Array = new Uint8Array(userData.profilePicture);
+                    profilePictureBlob = new Blob([uint8Array.buffer], { 
+                        type: 'image/jpeg' // Adjust type as needed
+                    });
+                } else {
+                    // Create an empty Blob if no profile picture
+                    profilePictureBlob = new Blob([], { type: 'image/jpeg' });
+                }
+
+                // Convert `bigint` timestamps to `Date` and include the Blob
+                const convertedUser: User = {
                     ...userData,
-                    createdAt: new Date(Number(userData.createdAt)), // Convert bigint to Date
-                    updatedAt: new Date(Number(userData.updatedAt)), // Convert bigint to Date
+                    profilePicture: profilePictureBlob,
+                    createdAt: new Date(Number(userData.createdAt)),
+                    updatedAt: new Date(Number(userData.updatedAt)),
                 };
             
-                console.log("User fetched:", convertedUser);
-                return convertedUser; // ✅ Now matches frontend's `User` interface
-            }else {
+                console.log("User fetched:", {
+                    ...convertedUser,
+                    profilePicture: 'Blob data' // For cleaner logging
+                });
+                
+                return convertedUser;
+            } else {
                 console.error("Error fetching user:", userRes.err);
                 return null;
             }
@@ -153,6 +177,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
         return null;
     }
 };
+
 
 
 export const updateUserProfile = async (username: string, description: string): Promise<void> => {
@@ -174,7 +199,7 @@ export const updateUserProfile = async (username: string, description: string): 
                 description: description ? [description] : [],
             };
 
-            await user.updateUser(cleanSession, formattedPayload);
+            // await user.updateUser(cleanSession, formattedPayload);
         } catch (err) {
             console.error("Error updating user profile:", err);
         }

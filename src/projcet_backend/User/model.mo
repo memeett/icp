@@ -4,8 +4,8 @@ module{
         profilePicture: Blob;
         username: Text;
         email: Text;
+        wallet: Float;
         description: Text;
-        wallet: Text;
         rating: Float;
         createdAt: Int;
         updatedAt: Int;

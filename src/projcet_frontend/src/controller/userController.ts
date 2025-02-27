@@ -18,6 +18,7 @@ export const getCookie = (name: string): string | null => {
 };
 
 
+
 export const loginWithInternetIdentity = async (): Promise<boolean> => {
     try {
         const authClient = await AuthClient.create();
@@ -39,7 +40,16 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         }
 
         console.log("Authenticated Principal:", principalId);
-        const res = await user.login(principalId);
+        
+        const defaultImageUrl = "/assets/default_profile_pict.jpg";
+        // Fetch the image and convert to Blob
+        const response = await fetch(defaultImageUrl);
+        const blob = await response.blob();
+        // Convert the Blob to an ArrayBuffer then to a Uint8Array
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+
+        const res = await user.login(principalId, uint8Array);
         if (!res) {
             console.log("Login Failed");
             return false;
@@ -101,6 +111,14 @@ export const logout = async (): Promise<void> => {
 
 
 export const fetchUserBySession = async (): Promise<User | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    
     try {
         const currSession = localStorage.getItem("session");
         if (!currSession) {
@@ -152,16 +170,25 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
 
 export const updateUserProfile = async (username: string, description: string): Promise<void> => {
-    const cookie = getCookie("cookie");
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+
+    const cookie = localStorage.getItem("session");
     if (cookie) {
         try {
+            const cleanSession = cookie.replace(/^"|"$/g, '');
             const formattedPayload :UpdateUserPayload = {
                 username: username ? [username] : [],
                 email: [],
                 description: description ? [description] : [],
             };
 
-            await user.updateUser(cookie, formattedPayload);
+            await user.updateUser(cleanSession, formattedPayload);
         } catch (err) {
             console.error("Error updating user profile:", err);
         }

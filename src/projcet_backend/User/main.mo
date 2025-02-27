@@ -37,12 +37,12 @@ actor UserModel{
         usersEntries := [];
     };
 
-    public func createUser(newid : Text) : async User.User{
+    public func createUser(newid : Text, profilePic: Blob) : async User.User{
         let timestamp = Time.now();
 
         let newUser : User.User = {
             id= newid;
-            profilePicture= "": Blob;
+            profilePicture= profilePic;
             username = "";  
             email = "";
             description= "";
@@ -68,11 +68,11 @@ actor UserModel{
         }
     };
 
-    public func login(id : Text) : async Text {
+    public func login(id : Text, profilePic: Blob) : async Text {
         let currUser = switch(users.get(id)) {
             case (?user) user;  
             case null {
-                let newUser = await createUser(id);
+                let newUser = await createUser(id, profilePic);
                 newUser
             };
         };

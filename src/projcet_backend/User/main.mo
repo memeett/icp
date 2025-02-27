@@ -199,10 +199,10 @@ actor UserModel {
         };
     };
 
-    public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
-        minter_fee : Nat64;
-        bitcoin_fee : Nat64;
-    } {
-        { minter_fee = 1000; bitcoin_fee = 2000 };
-    };
+    // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
+    //     minter_fee : Nat64;
+    //     bitcoin_fee : Nat64;
+    // } {
+    //     { minter_fee = 1000; bitcoin_fee = 2000 };
+    // };
 };

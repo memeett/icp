@@ -6,7 +6,7 @@ import LoginPage from "./Pages/LoginPage/LoginPage.tsx";
 import "./styles/style.css";
 import FindJobPage from "./Pages/FindJobPage/FindJobPage.tsx";
 import UserTesting from "./KATestingPage/User.tsx";
-import CreateJobForm from "./KATestingPage/JobPage.tsx";
+// import CreateJobForm from "./KATestingPage/JobPage.tsx";
 import ProfilePage from "./Pages/LoginPage/ProfilePage.tsx";
 import PostJobPage from "./Pages/PostJobPage/PostJobPage.tsx";
 import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
@@ -28,14 +28,14 @@ const route = createBrowserRouter([
     path: "/PostJobPage",
     element: <PostJobPage/>,
   },
-  {
-    path: "/testing/ka",
-    element: <UserTesting />,
-  },
-  {
-    path: "/testing/pp",
-    element: <CreateJobForm />,
-  },
+  // {
+  //   path: "/testing/ka",
+  //   element: <UserTesting />,
+  // },
+  // {
+  //   path: "/testing/pp",
+  //   element: <CreateJobForm />,
+  // },
   {
     path: "/testing/lo",
     element: <SearchPage />,

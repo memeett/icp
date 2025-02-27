@@ -9,10 +9,20 @@ import Option "mo:base/Option";
 
 actor JobModel{
     private stable var nextId : Nat = 0;
+    private stable var nextCategoryId : Nat = 0;
+
     private stable var jobsEntries : [(Text, Job.Job)] = [];
-    
+    private stable var jobCategoriesEntries : [(Text, Job.JobCategory)] = [];
+
     private var jobs = HashMap.fromIter<Text, Job.Job>(
         jobsEntries.vals(),
+        0,
+        Text.equal,
+        Text.hash
+    );
+
+    private var jobCategories = HashMap.fromIter<Text, Job.JobCategory>(
+        jobCategoriesEntries.vals(),
         0,
         Text.equal,
         Text.hash
@@ -21,6 +31,7 @@ actor JobModel{
     // Save state before upgrade
     system func preupgrade() {
         jobsEntries := Iter.toArray(jobs.entries());
+        jobCategoriesEntries := Iter.toArray(jobCategories.entries());
     };
 
     // Restore state after upgrade
@@ -31,7 +42,16 @@ actor JobModel{
             Text.equal,
             Text.hash
         );
+        
+        jobCategories := HashMap.fromIter<Text, Job.JobCategory>(
+            jobCategoriesEntries.vals(),
+            0,
+            Text.equal,
+            Text.hash
+        );
+
         jobsEntries := [];
+        jobCategoriesEntries := [];
     };
 
     public func createJob (payload : Job.CreateJobPayload) : async Result.Result<Job.Job, Text> {
@@ -46,6 +66,8 @@ actor JobModel{
             jobRating = 0.0;
             jobTags = payload.jobTags;
             jobSlots = payload.jobSlots;
+            jobStatus = "Ongoing";
+            userId = payload.userId; 
             createdAt = timestamp;
             updatedAt = timestamp;
         };
@@ -56,12 +78,48 @@ actor JobModel{
         #ok(newJob);
     };
 
+    public func createJobCategory(categoryName : Text) : async Result.Result<Job.JobCategory, Text> {
+        let categoryId = Int.toText(nextCategoryId);
+        
+        let newCategory : Job.JobCategory = {
+            id = categoryId;
+            jobCategoryName = categoryName;
+        };
+
+        jobCategories.put(categoryId, newCategory);
+        nextCategoryId += 1;
+        
+        #ok(newCategory);
+    };
+
     public query func getJob (jobId : Text) : async Result.Result<Job.Job, Text> {
         switch (jobs.get(jobId)) {
             case (?job) { #ok(job) };
             case null { #err("Job not found") };
         }
     };
+
+    public query func getJobCategory(categoryId : Text) : async Result.Result<Job.JobCategory, Text> {
+        switch (jobCategories.get(categoryId)) {
+            case (?category) { #ok(category) };
+            case null { #err("Category not found") };
+        }
+    };
+
+    public query func findJobCategoryByName(categoryName: Text) : async Result.Result<Job.JobCategory, Text> {
+        let filteredCategories = Iter.toArray(Iter.filter<Job.JobCategory>(
+            jobCategories.vals(), 
+            func(category) { category.jobCategoryName == categoryName }
+        ));
+
+        if (filteredCategories.size() > 0) {
+            #ok(filteredCategories[0])  
+        } else {
+            #err("Category not found")
+        }
+    };
+
+
 
     //Delete Job
      public func deleteJob (jobId : Text) : async Result.Result<(), Text> {
@@ -78,7 +136,12 @@ actor JobModel{
         Iter.toArray(jobs.vals());
     };
 
-    public func updateJob (jobId : Text, payload : Job.UpdateJobPayload) : async Result.Result<Job.Job, Text> {
+    public query func getAllJobCategories() : async [Job.JobCategory] {
+        Iter.toArray(jobCategories.vals());
+    };
+
+
+    public func updateJob (jobId : Text, payload : Job.UpdateJobPayload, jobStatus : Text) : async Result.Result<Job.Job, Text> {
         switch (jobs.get(jobId)) {
             case (?existingJob) {
                 let updatedJob : Job.Job = {
@@ -89,6 +152,8 @@ actor JobModel{
                 jobRating = existingJob.jobRating;
                 jobTags = Option.get(payload.jobTags, existingJob.jobTags);
                 jobSlots = Option.get(payload.jobSlots, existingJob.jobSlots);
+                jobStatus = jobStatus;
+                userId = Option.get(payload.userId, existingJob.userId);
                 createdAt = existingJob.createdAt;
                 updatedAt = Time.now();
                 };

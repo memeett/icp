@@ -7,11 +7,13 @@ import Footer from "../../components/Footer.tsx";
 import { ProfileCard } from "../../components/cards/ProfileCard.tsx";
 import CardCarousel from "../../components/cards/CardCarousel.tsx";
 import image from "../../assets/pic.jpeg";
+import { authUtils } from "../../utils/authUtils.js";
 import { PenLine } from "lucide-react";
 import { TypingAnimation } from "../../components/ui/typing-text.tsx";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import ProcessFlow from "../../components/cards/TransactionStepCard.tsx";
+import WhyChoose from "../../components/cards/ChooseErgasia.tsx";
 
 const BackgroundPattern = () => (
   <svg
@@ -70,6 +72,7 @@ const FloatingBubbles = () => {
 };
 
 export default function LoginPage() {
+  authUtils();
   const [isHovered, setIsHovered] = useState(false);
   const freelancers = [
     {
@@ -236,7 +239,7 @@ export default function LoginPage() {
 
               <motion.button
                 onClick={() => setOpen(true)}
-                className="bg-transparent hover:bg-white px-8 py-4 rounded-2xl font-medium border-solid border-2 text-white border-white hover:text-[#41b8aa] mt-4 relative overflow-hidden group"
+                className="bg-white px-8 py-4 rounded-2xl font-medium border-solid border-2 border-white hover:text-black text-[#41b8aa] mt-4 relative overflow-hidden group"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -253,7 +256,7 @@ export default function LoginPage() {
                   }}
                 />
 
-                <div className="flex items-center justify-center text-center text-xl relative z-10">
+                <div className="flex items-center justify-center text-center text-xl relative z-10 ">
                   Sign in <PenLine className="inline stroke-2 w-4 ml-2" />
                 </div>
               </motion.button>
@@ -263,10 +266,7 @@ export default function LoginPage() {
 
         <div className="relative my-12 flex flex-col">
           <ProcessFlow />
-          <div className="flex flex-row gap-x-24 justify-center mt-24">
-            <div className="w-xl h-72 bg-red-500"></div>
-            <div className="w-xl h-72 bg-red-500"></div>
-          </div>
+          <WhyChoose />
         </div>
 
         <h2 className="text-center text-4xl mt-16 mb-6">

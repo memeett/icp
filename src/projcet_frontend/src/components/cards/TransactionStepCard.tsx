@@ -76,8 +76,10 @@ const ProcessFlow = () => {
   ];
 
   return (
-    <div ref={ref} className="w-full max-w-6xl mx-auto">
-      <h2 className="text-4xl text-center mb-12">How It Works</h2>
+    <div ref={ref} className="relative w-full max-w-6xl mx-auto">
+      <h2 className="text-5xl font-bold text-center my-12 bg-clip-text bg-gradient-to-r from-cyan-200 to-black">
+        How It Works
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {steps.map((step, index) => (
           <motion.div

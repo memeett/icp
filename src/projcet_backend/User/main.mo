@@ -5,19 +5,22 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
-actor UserModel{
+import Nat64 "mo:base/Nat64";
+import Float "mo:base/Float";
+
+actor UserModel {
     let session = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
         createSession : (userid : Text) -> async Text;
-        getUserIdBySession : (sessionId: Text) -> async Result.Result<Text, Text>
+        getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
     };
 
     private stable var usersEntries : [(Text, User.User)] = [];
-    
+
     private var users = HashMap.fromIter<Text, User.User>(
         usersEntries.vals(),
         0,
         Text.equal,
-        Text.hash
+        Text.hash,
     );
 
     // Save state before upgrade
@@ -31,19 +34,19 @@ actor UserModel{
             usersEntries.vals(),
             0,
             Text.equal,
-            Text.hash
+            Text.hash,
         );
         usersEntries := [];
     };
 
-    public func createUser(newid : Text) : async User.User{
+    public func createUser(newid : Text) : async User.User {
         let timestamp = Time.now();
 
         let newUser : User.User = {
-            id= newid;
-            username = "";  
+            id = newid;
+            username = "";
             email = "";
-            wallet = "";
+            wallet = 0.0;
             rating = 0.0;
             createdAt = timestamp;
             updatedAt = timestamp;
@@ -51,26 +54,26 @@ actor UserModel{
         };
 
         users.put(newid, newUser);
-        newUser
+        newUser;
     };
 
-    public func getAllUser(): async [User.User]{
+    public func getAllUser() : async [User.User] {
         Iter.toArray(users.vals());
     };
 
-    public func getUserById(userId: Text) : async Result.Result<User.User, Text> {
+    public func getUserById(userId : Text) : async Result.Result<User.User, Text> {
         switch (users.get(userId)) {
             case (?user) { #ok(user) };
             case null { #err("User not found") };
-        }
+        };
     };
 
     public func login(id : Text) : async Text {
-        let currUser = switch(users.get(id)) {
-            case (?user) user;  
+        let currUser = switch (users.get(id)) {
+            case (?user) user;
             case null {
                 let newUser = await createUser(id);
-                newUser
+                newUser;
             };
         };
 
@@ -79,14 +82,14 @@ actor UserModel{
         return sessionId;
     };
 
-    public func updateUser(sessionid: Text, payload: User.UpdateUserPayload) : async Result.Result<User.User, Text> {
+    public func updateUser(sessionid : Text, payload : User.UpdateUserPayload) : async Result.Result<User.User, Text> {
         let userIdResult = await session.getUserIdBySession(sessionid);
         switch (userIdResult) {
             case (#ok(userId)) {
                 switch (users.get(userId)) {
                     case (?currUser) {
                         let timestamp = Time.now();
-                        let updatedUser: User.User = {
+                        let updatedUser : User.User = {
                             id = currUser.id;
                             username = Option.get(payload.username, currUser.username);
                             email = Option.get(payload.email, currUser.email);
@@ -97,12 +100,100 @@ actor UserModel{
                             isFaceRecognitionOn = currUser.isFaceRecognitionOn;
                         };
                         users.put(userId, updatedUser);
-                        #ok(updatedUser)
+                        #ok(updatedUser);
                     };
                     case null { #err("User not found") };
-                }
+                };
             };
             case (#err(msg)) { #err(msg) };
-        }
+        };
     };
-}
+
+    public shared func mint_ckbtc(to : Text, amount : Nat64) : async Result.Result<Text, Text> {
+        switch (users.get(to)) {
+            case (?user) {
+                let timestamp = Time.now();
+                let newBalance = user.wallet + Float.fromInt(Nat64.toNat(amount));
+                let updatedUser : User.User = {
+                    id = user.id;
+                    username = user.username;
+                    email = user.email;
+                    wallet = newBalance;
+                    rating = user.rating;
+                    createdAt = user.createdAt;
+                    updatedAt = timestamp;
+                    isFaceRecognitionOn = user.isFaceRecognitionOn;
+                };
+                users.put(to, updatedUser);
+                #ok("Minted ckBTC successfully and added to wallet");
+            };
+            case null {
+                #err("User not found");
+            };
+        };
+    };
+
+    public shared query func get_balance(userId : Text) : async Float {
+        switch (users.get(userId)) {
+            case (?user) { user.wallet };
+            case null { 0.0 };
+        };
+    };
+
+    public shared func transfer_ckbtc(from : Text, to : Text, amount : Nat64) : async Result.Result<Text, Text> {
+        switch (users.get(from)) {
+            case (?fromUser) {
+                if (fromUser.wallet < Float.fromInt(Nat64.toNat(amount))) {
+                    #err("Insufficient balance");
+                } else {
+                    switch (users.get(to)) {
+                        case (?toUser) {
+                            // Deduct from sender
+                            let fromNewBalance = fromUser.wallet - Float.fromInt(Nat64.toNat(amount));
+                            let updatedFromUser : User.User = {
+                                id = fromUser.id;
+                                username = fromUser.username;
+                                email = fromUser.email;
+                                wallet = fromUser.wallet;
+                                rating = fromUser.rating;
+                                createdAt = fromUser.createdAt;
+                                updatedAt = Time.now();
+                                isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
+                            };
+                            users.put(from, updatedFromUser);
+
+                            // Add to receiver
+                            let toNewBalance = toUser.wallet + Float.fromInt(Nat64.toNat(amount));
+                            let updatedToUser : User.User = {
+                                id = toUser.id;
+                                username = toUser.username;
+                                email = toUser.email;
+                                wallet = toNewBalance;
+                                rating = toUser.rating;
+                                createdAt = toUser.createdAt;
+                                updatedAt = Time.now();
+                                isFaceRecognitionOn = toUser.isFaceRecognitionOn;
+                            };
+                            users.put(to, updatedToUser);
+
+                            #ok("Transferred ckBTC successfully");
+                        };
+                        case null {
+                            #err("Recipient not found");
+                        };
+                    };
+                };
+            };
+            case null {
+                #err("Sender not found");
+            };
+        };
+    };
+    
+    public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
+        minter_fee : Nat64;
+        bitcoin_fee : Nat64;
+    } {
+        { minter_fee = 1000; bitcoin_fee = 2000 };
+    };
+};

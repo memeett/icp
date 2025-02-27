@@ -9,7 +9,9 @@ import FindJobPage from "./Pages/FindJobPage/FindJobPage.tsx";
 // import CreateJobForm from "./KATestingPage/JobPage.tsx";
 import ProfilePage from "./Pages/LoginPage/ProfilePage.tsx";
 import PostJobPage from "./Pages/PostJobPage/PostJobPage.tsx";
+import { ModalProvider } from "./contexts/modal-context.tsx";
 import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
+
 
 const route = createBrowserRouter([
   {
@@ -18,7 +20,7 @@ const route = createBrowserRouter([
   },
   {
     path: "/profile",
-    element: <ProfilePage />
+    element: <ProfilePage />,
   },
   {
     path: "/FindJobPage",
@@ -26,19 +28,16 @@ const route = createBrowserRouter([
   },
   {
     path: "/PostJobPage",
-    element: <PostJobPage/>,
+    element: <PostJobPage />,
   },
-  {
-    path: "/testing/lo",
-    element: <SearchPage />,
-  }
 ]);
 
 const rootElement = document.getElementById("root");
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
-
+    <ModalProvider>
       <RouterProvider router={route}></RouterProvider>
+    </ModalProvider>
   );
 } else {
   console.error("Root element not found");

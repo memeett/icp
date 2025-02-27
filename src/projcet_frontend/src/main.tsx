@@ -9,6 +9,7 @@ import UserTesting from "./KATestingPage/User.tsx";
 import CreateJobForm from "./KATestingPage/JobPage.tsx";
 import ProfilePage from "./Pages/LoginPage/ProfilePage.tsx";
 import PostJobPage from "./Pages/PostJobPage/PostJobPage.tsx";
+import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
 
 const route = createBrowserRouter([
   {
@@ -34,6 +35,10 @@ const route = createBrowserRouter([
   {
     path: "/testing/pp",
     element: <CreateJobForm />,
+  },
+  {
+    path: "/testing/lo",
+    element: <SearchPage />,
   }
 
 ]);

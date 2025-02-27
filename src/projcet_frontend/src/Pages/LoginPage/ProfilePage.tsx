@@ -5,7 +5,7 @@ import { ModalProvider } from "../../contexts/modal-context.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import { User } from "../../interface/User.js";
 import { fetchUserBySession, updateUserProfile } from "../../controller/userController.js";
-import image from "../../assets/default_profile_pict.jpg"
+import Footer from "../../components/Footer.js";
 
 export default function ProfilePage() {
     const [activeSection, setActiveSection] = useState("biodata");
@@ -15,6 +15,16 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [tempUsername, setTempUsername] = useState("");
     const [tempDescription, setTempDescription] = useState("");
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files[0]) {
+            const file = event.target.files[0];
+            setSelectedImage(file);
+            setPreviewImage(URL.createObjectURL(file)); // Show preview
+        }
+    };
 
 
     useEffect(() => {
@@ -33,15 +43,27 @@ export default function ProfilePage() {
         setTempDescription(description);
     };
 
-    const handleSave = () => {
-        updateUserProfile(tempUsername, tempDescription).then(() => {
-            window.location.reload()
-        })
+
+    const handleSave = async () => {
+        try {
+            if(selectedImage){
+                URL.createObjectURL(selectedImage)
+            }
+            
+            // await updateUserProfile(tempUsername, tempDescription, imageData);
+            window.location.reload();
+        } catch (err) {
+            console.error("Error saving profile:", err);
+        }
     };
 
     const handleCancel = () => {
         setIsEditing(false);
+        setTempUsername(username);
+        setTempDescription(description);
+        // setPreviewImage(user?.profilePicture || null);
     };
+    
 
     const renderStars = (rating: number) => {
         return [...Array(5)].map((_, i) =>
@@ -52,7 +74,6 @@ export default function ProfilePage() {
             )
         );
     };
-
 
     return (
         <ModalProvider>
@@ -95,12 +116,33 @@ export default function ProfilePage() {
                                     <div
                                         className={`relative bg-white shadow rounded-xl p-8 flex flex-col md:flex-row items-center md:items-start gap-6 border ${isEditing ? "border-blue-500 shadow-lg" : "border-gray-300"}`}
                                     >
-                                        <div className="relative">
-                                            <img
-                                                src= {user.profilePicture}
-                                                alt="Profile"
-                                                className="w-40 h-40 md:w-48 md:h-48 rounded-full border-4 border-gray-300 object-cover"
-                                            />
+                                        <div className="relative flex flex-col items-center">
+                                            <div className="relative">
+                                                <img
+                                                    src={URL.createObjectURL(user.profilePicture)}
+                                                    alt="Profile"
+                                                    className="w-40 h-40 md:w-48 md:h-48 rounded-full border-4 border-gray-300 object-cover"
+                                                />
+
+                                            </div>
+
+                                            {isEditing && (
+                                                <>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleImageChange}
+                                                        className="hidden"
+                                                        id="imageUpload"
+                                                    />
+                                                    <label
+                                                        htmlFor="imageUpload"
+                                                        className="mt-5 bg-gray-200 px-4 py-2 rounded-lg text-sm text-gray-700 cursor-pointer hover:bg-gray-300"
+                                                    >
+                                                        Change Image
+                                                    </label>
+                                                </>
+                                            )}
                                         </div>
 
                                         <div className="flex-1 w-full">
@@ -121,7 +163,7 @@ export default function ProfilePage() {
                                                 <div>
                                                     <label className="block text-gray-700 font-medium mb-1 text-sm">Email</label>
                                                     <button
-                                                        className="flex items-center justify-center w-1/4 text-gray-600 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-100 transition-all duration-200 "
+                                                        className="flex items-center justify-center w-1/4 text-gray-600 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-100 transition-all duration-200"
                                                         onClick={() => alert("Implement Google Login")}
                                                     >
                                                         <FaGoogle className="mr-2" />
@@ -145,8 +187,12 @@ export default function ProfilePage() {
 
                                             {isEditing && (
                                                 <div className="flex justify-end mt-4">
-                                                    <button className="bg-blue-500 text-white px-4 py-2 rounded-lg mr-2" onClick={handleSave}>Save</button>
-                                                    <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg" onClick={handleCancel}>Cancel</button>
+                                                    <button className="bg-blue-500 text-white px-4 py-2 rounded-lg mr-2" onClick={handleSave}>
+                                                        Save
+                                                    </button>
+                                                    <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg" onClick={handleCancel}>
+                                                        Cancel
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
@@ -158,6 +204,7 @@ export default function ProfilePage() {
                                             />
                                         )}
                                     </div>
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                                         <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
                                             <h3 className="text-lg font-semibold text-gray-800 mb-2">Rating</h3>
@@ -169,21 +216,20 @@ export default function ProfilePage() {
                                             <h3 className="text-lg font-semibold text-gray-800 mb-2">Balance</h3>
                                             <p className="text-3xl font-bold text-green-600">$120</p>
                                         </div>
-
                                     </div>
                                 </>
                             ) : (
-                                <div className="text-gray-500 text-lg text-center">No user data available. Please log in.
-                                </div>
-
+                                <div className="text-gray-500 text-lg text-center">No user data available. Please log in.</div>
                             )
                         ) : (
                             <p className="text-gray-500">Loading user data...</p>
                         )}
                     </div>
                 </div>
+
                 <AuthenticationModal />
             </div>
+            <Footer />
         </ModalProvider>
     );
 }

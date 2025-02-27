@@ -6,23 +6,20 @@ import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
-import Nat64 "mo:base/Nat64";
-import Float "mo:base/Float";
 
-actor UserModel {
-
+actor UserModel{
     let session = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
         createSession : (userid : Text) -> async Text;
-        getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
+        getUserIdBySession : (sessionId: Text) -> async Result.Result<Text, Text>
     };
 
     private stable var usersEntries : [(Text, User.User)] = [];
-
+    
     private var users = HashMap.fromIter<Text, User.User>(
         usersEntries.vals(),
         0,
         Text.equal,
-        Text.hash,
+        Text.hash
     );
 
     // Save state before upgrade
@@ -36,21 +33,21 @@ actor UserModel {
             usersEntries.vals(),
             0,
             Text.equal,
-            Text.hash,
+            Text.hash
         );
         usersEntries := [];
     };
 
-    public func createUser(newid : Text) : async User.User {
+    public func createUser(newid : Text, profilePic: Blob) : async User.User{
         let timestamp = Time.now();
 
         let newUser : User.User = {
             id= newid;
-            profilePicture= "/assets/profilePicture/default_profile_pict.jpg";
+            profilePicture= profilePic;
             username = "";  
             email = "";
             description= "";
-            wallet = 0.0;
+            wallet = "";
             rating = 0.0;
             createdAt = timestamp;
             updatedAt = timestamp;
@@ -58,26 +55,26 @@ actor UserModel {
         };
 
         users.put(newid, newUser);
-        newUser;
+        newUser
     };
 
-    public func getAllUser() : async [User.User] {
+    public func getAllUser(): async [User.User]{
         Iter.toArray(users.vals());
     };
 
-    public func getUserById(userId : Text) : async Result.Result<User.User, Text> {
+    public func getUserById(userId: Text) : async Result.Result<User.User, Text> {
         switch (users.get(userId)) {
             case (?user) { #ok(user) };
             case null { #err("User not found") };
-        };
+        }
     };
 
-    public func login(id : Text) : async Text {
-        let currUser = switch (users.get(id)) {
-            case (?user) user;
+    public func login(id : Text, profilePic: Blob) : async Text {
+        let currUser = switch(users.get(id)) {
+            case (?user) user;  
             case null {
-                let newUser = await createUser(id);
-                newUser;
+                let newUser = await createUser(id, profilePic);
+                newUser
             };
         };
 
@@ -86,14 +83,14 @@ actor UserModel {
         return sessionId;
     };
 
-    public func updateUser(sessionid : Text, payload : User.UpdateUserPayload) : async Result.Result<User.User, Text> {
+    public func updateUser(sessionid: Text, payload: User.UpdateUserPayload) : async Result.Result<User.User, Text> {
         let userIdResult = await session.getUserIdBySession(sessionid);
         switch (userIdResult) {
             case (#ok(userId)) {
                 switch (users.get(userId)) {
                     case (?currUser) {
                         let timestamp = Time.now();
-                        let updatedUser : User.User = {
+                        let updatedUser: User.User = {
                             id = currUser.id;
                             profilePicture = currUser.profilePicture;
                             username = Option.get(payload.username, currUser.username);
@@ -106,46 +103,13 @@ actor UserModel {
                             isFaceRecognitionOn = currUser.isFaceRecognitionOn;
                         };
                         users.put(userId, updatedUser);
-                        #ok(updatedUser);
+                        #ok(updatedUser)
                     };
                     case null { #err("User not found") };
-                };
+                }
             };
             case (#err(msg)) { #err(msg) };
-        };
-    };
-
-    public shared func mint_ckbtc(to : Text, amount : Nat64) : async Result.Result<Text, Text> {
-        switch (users.get(to)) {
-            case (?user) {
-                let timestamp = Time.now();
-                let newBalance = user.wallet + Float.fromInt(Nat64.toNat(amount));
-                let updatedUser : User.User = {
-                    id = user.id;
-                    profilePicture = user.profilePicture;
-                    username = user.username;
-                    email = user.email;
-                    description = user.description;
-                    wallet = newBalance;
-                    rating = user.rating;
-                    createdAt = user.createdAt;
-                    updatedAt = timestamp;
-                    isFaceRecognitionOn = user.isFaceRecognitionOn;
-                };
-                users.put(to, updatedUser);
-                #ok("Minted ckBTC successfully and added to wallet");
-            };
-            case null {
-                #err("User not found");
-            };
-        };
-    };
-
-    public shared query func get_balance(userId : Text) : async Float {
-        switch (users.get(userId)) {
-            case (?user) { user.wallet };
-            case null { 0.0 };
-        };
+        }
     };
 
     public func deleteUser(userID: Text) : async (){
@@ -158,64 +122,5 @@ actor UserModel {
 
             };
         }
-    };
-
-    public shared func transfer_ckbtc(from : Text, to : Text, amount : Nat64) : async Result.Result<Text, Text> {
-        switch (users.get(from)) {
-            case (?fromUser) {
-                if (fromUser.wallet < Float.fromInt(Nat64.toNat(amount))) {
-                    #err("Insufficient balance");
-                } else {
-                    switch (users.get(to)) {
-                        case (?toUser) {
-                            let fromNewBalance = fromUser.wallet - Float.fromInt(Nat64.toNat(amount));
-                            let updatedFromUser : User.User = {
-                                id = fromUser.id;
-                                profilePicture = fromUser.profilePicture;
-                                username = fromUser.username;
-                                description = fromUser.description;
-                                email = fromUser.email;
-                                wallet = fromNewBalance;
-                                rating = fromUser.rating;
-                                createdAt = fromUser.createdAt;
-                                updatedAt = Time.now();
-                                isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
-                            };
-                            users.put(from, updatedFromUser);
-
-                            let toNewBalance = toUser.wallet + Float.fromInt(Nat64.toNat(amount));
-                            let updatedToUser : User.User = {
-                                id = toUser.id;
-                                profilePicture = toUser.profilePicture;
-                                username = toUser.username;
-                                description = toUser.description;
-                                email = toUser.email;
-                                wallet = toNewBalance;
-                                rating = toUser.rating;
-                                createdAt = toUser.createdAt;
-                                updatedAt = Time.now();
-                                isFaceRecognitionOn = toUser.isFaceRecognitionOn;
-                            };
-                            users.put(to, updatedToUser);
-
-                            #ok("Transferred ckBTC successfully");
-                        };
-                        case null {
-                            #err("Recipient not found");
-                        };
-                    };
-                };
-            };
-            case null {
-                #err("Sender not found");
-            };
-        };
-    };
-
-    // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
-    //     minter_fee : Nat64;
-    //     bitcoin_fee : Nat64;
-    // } {
-    //     { minter_fee = 1000; bitcoin_fee = 2000 };
-    // };
-};
+    }
+}

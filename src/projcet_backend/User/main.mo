@@ -9,6 +9,7 @@ import Nat64 "mo:base/Nat64";
 import Float "mo:base/Float";
 
 actor UserModel {
+
     let session = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
         createSession : (userid : Text) -> async Text;
         getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
@@ -43,9 +44,11 @@ actor UserModel {
         let timestamp = Time.now();
 
         let newUser : User.User = {
-            id = newid;
-            username = "";
+            id= newid;
+            profilePicture= "": Blob;
+            username = "";  
             email = "";
+            description= "";
             wallet = 0.0;
             rating = 0.0;
             createdAt = timestamp;
@@ -91,8 +94,10 @@ actor UserModel {
                         let timestamp = Time.now();
                         let updatedUser : User.User = {
                             id = currUser.id;
+                            profilePicture = currUser.profilePicture;
                             username = Option.get(payload.username, currUser.username);
                             email = Option.get(payload.email, currUser.email);
+                            description = Option.get(payload.description, currUser.description);
                             wallet = currUser.wallet;
                             rating = currUser.rating;
                             createdAt = currUser.createdAt;
@@ -116,8 +121,10 @@ actor UserModel {
                 let newBalance = user.wallet + Float.fromInt(Nat64.toNat(amount));
                 let updatedUser : User.User = {
                     id = user.id;
+                    profilePicture = user.profilePicture;
                     username = user.username;
                     email = user.email;
+                    description = user.description;
                     wallet = newBalance;
                     rating = user.rating;
                     createdAt = user.createdAt;
@@ -148,11 +155,12 @@ actor UserModel {
                 } else {
                     switch (users.get(to)) {
                         case (?toUser) {
-                            // Deduct from sender
                             let fromNewBalance = fromUser.wallet - Float.fromInt(Nat64.toNat(amount));
                             let updatedFromUser : User.User = {
                                 id = fromUser.id;
-                                username = fromUser.username;
+                                profilePicture = fromUser.profilePicture;
+                                username = fromUser.usernam
+                                description = fromUser.description;
                                 email = fromUser.email;
                                 wallet = fromUser.wallet;
                                 rating = fromUser.rating;
@@ -162,11 +170,12 @@ actor UserModel {
                             };
                             users.put(from, updatedFromUser);
 
-                            // Add to receiver
                             let toNewBalance = toUser.wallet + Float.fromInt(Nat64.toNat(amount));
                             let updatedToUser : User.User = {
                                 id = toUser.id;
+                                profilePicture = toUser.profilePicture;
                                 username = toUser.username;
+                                description = toUser.description;
                                 email = toUser.email;
                                 wallet = toNewBalance;
                                 rating = toUser.rating;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginBtnClick, logout, getCookie, validateCookie,getUser,getPrincipalId } from "../controller/userController";
+import { logout, getCookie, validateCookie, loginWithInternetIdentity } from "../controller/userController";
 
 export default function UserTesting() {
     const navigate = useNavigate();
@@ -31,17 +31,17 @@ export default function UserTesting() {
         // }
     }, []);
 
-    const getPrincipalIdBtnClick = async () => {
-        try {
-            const principalId = await getPrincipalId();
-            console.log("Principal ID:", principalId);
-            getUser(principalId).then((user) => {
-                console.log("User:", user);
-            });
-        } catch (error) {
-            console.error("Failed to get principal ID:", error);
-        }
-    };
+    // const getPrincipalIdBtnClick = async () => {
+    //     try {
+    //         const principalId = await getPrincipalId();
+    //         console.log("Principal ID:", principalId);
+    //         getUser(principalId).then((user) => {
+    //             console.log("User:", user);
+    //         });
+    //     } catch (error) {
+    //         console.error("Failed to get principal ID:", error);
+    //     }
+    // };
 
 
     return (
@@ -50,7 +50,7 @@ export default function UserTesting() {
                 <button
                     onClick={(e) => {
                         e.preventDefault();
-                        loginBtnClick().then((suc) => {
+                        loginWithInternetIdentity().then((suc) => {
                             if (suc) {
                                 navigate('/');
                             }
@@ -60,12 +60,8 @@ export default function UserTesting() {
                 >
                     Join Now
                 </button>
-                <button onClick={(e) => {
-                    e.preventDefault();
-                    getPrincipalIdBtnClick().then(() => {
-                        navigate('/');
-                    });
-                }} className="bg-[#64B6F7] hover:bg-opacity-90 px-4 py-2 rounded-md text-sm font-medium">
+                <button
+                    className="bg-[#64B6F7] hover:bg-opacity-90 px-4 py-2 rounded-md text-sm font-medium">
                     getPrincipalId
                 </button>
             </div>

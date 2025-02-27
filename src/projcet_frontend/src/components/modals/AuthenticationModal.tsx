@@ -39,9 +39,7 @@ export function AuthenticationModal() {
                   });
                 }}
               >
-
                 <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-4 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2" onClick={loginWithInternetIdentity}>
-
                   <GlobeIcon className="w-6 h-6" />
                   <span>Internet Identity</span>
                 </button>

@@ -229,6 +229,7 @@ export default function ProfilePage() {
                                                         rows={3}
                                                     />
                                                 </div>
+                                                
                                             </div>
 
                                             {isEditing && (

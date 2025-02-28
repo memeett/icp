@@ -3,7 +3,7 @@ import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa"; // Icons f
 import Navbar from "../../components/Navbar.js";
 import { ModalProvider } from "../../contexts/modal-context.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
-import { User } from "../../interface/User.js";
+import { UpdateUserPayload, User } from "../../interface/User.js";
 import { fetchUserBySession, updateUserProfile } from "../../controller/userController.js";
 import Footer from "../../components/Footer.js";
 
@@ -17,15 +17,20 @@ export default function ProfilePage() {
     const [tempDescription, setTempDescription] = useState("");
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [faceRecognitionOn, setFaceRecognitionOn] = useState(false);
+
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
             setSelectedImage(file);
-            setPreviewImage(URL.createObjectURL(file)); // Show preview
+            setPreviewImage(URL.createObjectURL(file));
         }
     };
 
+    const googleRegister = () => {
+        window.location.href = 'http://localhost:8888/auth/google';
+    };
 
     useEffect(() => {
         fetchUserBySession().then((user) => {
@@ -33,6 +38,7 @@ export default function ProfilePage() {
                 setUser(user as User);
                 setUsername(user.username);
                 setDescription(user.description);
+                setFaceRecognitionOn(user.isFaceRecognitionOn)
             }
         });
     }, []);
@@ -43,14 +49,43 @@ export default function ProfilePage() {
         setTempDescription(description);
     };
 
+    const convertImageToBlob = async (file: File): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (reader.result instanceof ArrayBuffer) {
+                    const blob = new Blob([reader.result], { type: file.type });
+                    resolve(blob);
+                } else {
+                    reject(new Error('Failed to convert image to blob'));
+                }
+            };
+            reader.onerror = () => reject(reader.error);
+            reader.readAsArrayBuffer(file);
+        });
+    };
+
+    const blobToUint8Array = async (blob: Blob): Promise<Uint8Array> => {
+        const arrayBuffer = await blob.arrayBuffer();
+        return new Uint8Array(arrayBuffer);
+    };
 
     const handleSave = async () => {
         try {
-            if(selectedImage){
-                URL.createObjectURL(selectedImage)
+            let imageData: Uint8Array | null = null;
+
+            if (selectedImage) {
+                const imageBlob = await convertImageToBlob(selectedImage);
+                imageData = await blobToUint8Array(imageBlob);
             }
-            
-            // await updateUserProfile(tempUsername, tempDescription, imageData);
+
+            const formattedPayload: UpdateUserPayload = {
+                username: tempUsername ? [tempUsername] : [],
+                profilePicture: imageData ? [imageData] : [],
+                description: tempDescription ? [tempDescription] : [],
+            };
+
+            await updateUserProfile(formattedPayload);
             window.location.reload();
         } catch (err) {
             console.error("Error saving profile:", err);
@@ -61,9 +96,13 @@ export default function ProfilePage() {
         setIsEditing(false);
         setTempUsername(username);
         setTempDescription(description);
-        // setPreviewImage(user?.profilePicture || null);
+        setSelectedImage(null);
+        setPreviewImage(null); // Clear the preview image
     };
-    
+
+    const handleToggle = () => {
+        setFaceRecognitionOn((prev) => !prev);
+    };
 
     const renderStars = (rating: number) => {
         return [...Array(5)].map((_, i) =>
@@ -76,7 +115,7 @@ export default function ProfilePage() {
     };
 
     return (
-        <ModalProvider>
+        <div>
             <div className="flex flex-col h-screen">
                 <div className="flex-none w-full bg-white shadow-md z-50">
                     <Navbar />
@@ -119,7 +158,7 @@ export default function ProfilePage() {
                                         <div className="relative flex flex-col items-center">
                                             <div className="relative">
                                                 <img
-                                                    src={URL.createObjectURL(user.profilePicture)}
+                                                    src={previewImage || (user?.profilePicture ? URL.createObjectURL(user.profilePicture) : '')}
                                                     alt="Profile"
                                                     className="w-40 h-40 md:w-48 md:h-48 rounded-full border-4 border-gray-300 object-cover"
                                                 />
@@ -164,7 +203,7 @@ export default function ProfilePage() {
                                                     <label className="block text-gray-700 font-medium mb-1 text-sm">Email</label>
                                                     <button
                                                         className="flex items-center justify-center w-1/4 text-gray-600 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-100 transition-all duration-200"
-                                                        onClick={() => alert("Implement Google Login")}
+                                                        onClick={googleRegister}
                                                     >
                                                         <FaGoogle className="mr-2" />
                                                         Bind with Google
@@ -214,7 +253,20 @@ export default function ProfilePage() {
 
                                         <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
                                             <h3 className="text-lg font-semibold text-gray-800 mb-2">Balance</h3>
-                                            <p className="text-3xl font-bold text-green-600">$120</p>
+                                            <p className="text-3xl font-bold text-green-600">{user.wallet} ckBtc</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between bg-white shadow rounded-lg mt-3 p-6 border border-gray-200">
+                                        <h3 className="text-lg font-semibold text-gray-800 mb-2">Face Recognition</h3>
+                                        <div
+                                            className={`w-12 h-6 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition ${faceRecognitionOn ? "bg-green-600" : "bg-gray-300"
+                                                }`}
+                                            onClick={handleToggle}
+                                        >
+                                            <div
+                                                className={`w-5 h-5 bg-white rounded-full shadow-md transform transition ${faceRecognitionOn ? "translate-x-6" : "translate-x-0"
+                                                    }`}
+                                            ></div>
                                         </div>
                                     </div>
                                 </>
@@ -230,6 +282,6 @@ export default function ProfilePage() {
                 <AuthenticationModal />
             </div>
             <Footer />
-        </ModalProvider>
+        </div>
     );
 }

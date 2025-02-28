@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface CardCarouselProps {
   cards: React.ReactNode[];
@@ -19,25 +20,21 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
   const [maxScroll, setMaxScroll] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Update maxScroll when component mounts or dependencies change
-  useEffect(() => {
-    if (carouselRef.current) {
-      setMaxScroll(
-        carouselRef.current.scrollWidth - carouselRef.current.clientWidth
-      );
-    }
+  // Calculate container width based on visible cards
+  const containerWidth = cardWidth * visibleCards + gap * (visibleCards - 1);
 
-    // Add resize event listener
-    const handleResize = () => {
+  useEffect(() => {
+    const updateMaxScroll = () => {
       if (carouselRef.current) {
-        setMaxScroll(
-          carouselRef.current.scrollWidth - carouselRef.current.clientWidth
-        );
+        const max =
+          carouselRef.current.scrollWidth - carouselRef.current.clientWidth;
+        setMaxScroll(max);
       }
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    updateMaxScroll();
+    window.addEventListener("resize", updateMaxScroll);
+    return () => window.removeEventListener("resize", updateMaxScroll);
   }, [cards, cardWidth, gap, visibleCards]);
 
   const handleScroll = () => {
@@ -46,116 +43,97 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
     }
   };
 
-  // Scroll to the previous set of cards
   const scrollPrev = () => {
-    if (carouselRef.current && !isAnimating) {
-      setIsAnimating(true);
+    if (!carouselRef.current || isAnimating) return;
 
-      // Calculate the scroll position to the previous card
-      const itemWidth = cardWidth + gap;
-      const currentIndex = Math.round(scrollPosition / itemWidth);
-      const targetIndex = Math.max(currentIndex - 1, 0);
-      const newPosition = targetIndex * itemWidth;
+    setIsAnimating(true);
+    const scrollAmount = cardWidth * visibleCards + gap * visibleCards;
+    const newPosition = Math.max(scrollPosition - scrollAmount, 0);
 
-      carouselRef.current.style.scrollBehavior = "smooth";
-      carouselRef.current.scrollTo({
-        left: newPosition,
-        behavior: "smooth",
-      });
+    carouselRef.current.scrollTo({
+      left: newPosition,
+      behavior: "smooth",
+    });
 
-      // Reset animation state after animation completes
-      setTimeout(() => {
-        setIsAnimating(false);
-      }, 500); // Match this to your transition duration
-    }
+    setTimeout(() => setIsAnimating(false), 500);
   };
 
-  // Scroll to the next set of cards
   const scrollNext = () => {
-    if (carouselRef.current && !isAnimating) {
-      setIsAnimating(true);
+    if (!carouselRef.current || isAnimating) return;
 
-      // Calculate the scroll position to the next card
-      const itemWidth = cardWidth + gap;
-      const currentIndex = Math.round(scrollPosition / itemWidth);
-      const maxIndex = Math.floor(maxScroll / itemWidth);
-      const targetIndex = Math.min(currentIndex + 1, maxIndex);
-      const newPosition = targetIndex * itemWidth;
+    setIsAnimating(true);
+    const scrollAmount = cardWidth * visibleCards + gap * visibleCards;
+    const newPosition = Math.min(scrollPosition + scrollAmount, maxScroll);
 
-      carouselRef.current.style.scrollBehavior = "smooth";
-      carouselRef.current.scrollTo({
-        left: newPosition,
-        behavior: "smooth",
-      });
+    carouselRef.current.scrollTo({
+      left: newPosition,
+      behavior: "smooth",
+    });
 
-      // Reset animation state after animation completes
-      setTimeout(() => {
-        setIsAnimating(false);
-      }, 500); // Match this to your transition duration
-    }
+    setTimeout(() => setIsAnimating(false), 500);
   };
+
   return (
-    <div className="relative w-[90%] px-4">
-      {/* Left navigation button */}
-      <button
+    <div className="relative mx-auto px-8">
+      {" "}
+      {/* Centered container with max width */}
+      {/* Navigation Buttons */}
+      <motion.button
         onClick={scrollPrev}
-        className={`absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-opacity ${
-          scrollPosition <= 0
-            ? "hidden"
-            : "opacity-100 hover:bg-gray-100"
+        className={`absolute left-0 top-1/2 z-10 -translate-y-1/2 p-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-xl hover:shadow-2xl transition-all ${
+          scrollPosition <= 0 ? "opacity-0 cursor-auto" : "opacity-100"
         }`}
         disabled={scrollPosition <= 0}
         aria-label="Previous"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        style={{ left: `-1.5rem` }} // Position outside container
       >
-        <ChevronLeft className="h-6 w-6" />
-      </button>
-
-      {/* Carousel container */}
-      <div
-        className="relative overflow-hidden h-auto"
-        style={{ padding: `0 ${gap}px` }}
-      >
-        <div
-          ref={carouselRef}
-          className="flex snap-x snap-mandatory overflow-x-auto scrollbar-hide py-4"
-          style={{
-            gap: `${gap}px`,
-            scrollSnapType: "x mandatory",
-            scrollBehavior: "smooth",
-            WebkitOverflowScrolling: "touch",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-          onScroll={handleScroll}
-        >
-          {cards.map((card, index) => (
-            <div
-              key={index}
-              className="flex-shrink-0 snap-start"
-              style={{
-                width: `${cardWidth}px`,
-                scrollSnapAlign: "start",
-              }}
-            >
-              {card}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Right navigation button */}
-      <button
+        <ChevronLeft className="h-7 w-7 text-white stroke-[2]" />
+      </motion.button>
+      <motion.button
         onClick={scrollNext}
-        className={`absolute right-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-opacity ${
+        className={`absolute right-0 top-1/2 z-10 -translate-y-1/2 p-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-xl hover:shadow-2xl transition-all ${
           scrollPosition >= maxScroll - 1
-            ? "hidden"
-            : "opacity-100 hover:bg-gray-100"
+            ? "opacity-0 cursor-auto"
+            : "opacity-100"
         }`}
         disabled={scrollPosition >= maxScroll}
         aria-label="Next"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        style={{ right: `-1.5rem` }} // Position outside container
       >
-        <ChevronRight className="h-6 w-6" />
-      </button>
+        <ChevronRight className="h-7 w-7 text-white stroke-[2]" />
+      </motion.button>
+      {/* Carousel Container */}
+      <div
+        ref={carouselRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto  overflow-y-hidden scrollbar-hide snap-x snap-mandatory"
+        style={{
+          width: `${containerWidth}px`,
+          margin: "0 auto",
+          scrollSnapType: "x mandatory",
+          scrollBehavior: "smooth",
+          paddingLeft: `${gap / 2}px`,
+          paddingRight: `${gap / 2}px`,
+        }}
+      >
+        {cards.map((card, index) => (
+          <div
+            key={index}
+            className="flex-shrink-0 snap-start"
+            style={{
+              width: `${cardWidth}px`,
+              marginRight: `${index < cards.length - 1 ? gap : 0}px`,
+              scrollSnapAlign: "start",
+            }}
+          >
+            {card}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

@@ -27,6 +27,10 @@
       "main": "src/projcet_backend/Job/main.mo",
       "type": "motoko"
     },
+    "applier": {  
+      "main": "src/projcet_backend/Applier/main.mo",
+      "type": "motoko"
+    },
     "projcet_frontend": {
       "dependencies": [
         "projcet_backend"

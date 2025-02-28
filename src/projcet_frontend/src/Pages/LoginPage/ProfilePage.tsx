@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa"; 
+import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa";
 import Navbar from "../../components/Navbar.js";
 import { ModalProvider } from "../../contexts/modal-context.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
@@ -19,7 +19,7 @@ export default function ProfilePage() {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [faceRecognitionOn, setFaceRecognitionOn] = useState(false);
-    
+
     const { current_user } = authUtils();
     const [dob, setDob] = useState("");
     const [tempDob, setTempDob] = useState<string>("");
@@ -38,11 +38,11 @@ export default function ProfilePage() {
             const user = JSON.parse(current_user).ok;
             user.profilePicture = new Blob([new Uint8Array(user.profilePicture)]);
             setUser(user as User);
-                setUsername(user.username);
-                setDescription(user.description);
-                setDob(user.dob);
-                setFaceRecognitionOn(user.isFaceRecognitionOn)
-          }
+            setUsername(user.username);
+            setDescription(user.description);
+            setDob(user.dob);
+            setFaceRecognitionOn(user.isFaceRecognitionOn)
+        }
     }, [current_user]);
 
     const handleEdit = () => {
@@ -81,6 +81,8 @@ export default function ProfilePage() {
                 imageData = await blobToUint8Array(imageBlob);
             }
 
+            console.log("Image data:", imageData);
+
             const formattedPayload: UpdateUserPayload = {
                 username: tempUsername ? [tempUsername] : [],
                 profilePicture: imageData ? [imageData] : [],
@@ -89,6 +91,7 @@ export default function ProfilePage() {
             };
 
             await updateUserProfile(formattedPayload);
+            localStorage.setItem("current_user", JSON.stringify({ ok: { ...user,profilePicture: imageData , username: tempUsername, description: tempDescription, dob: tempDob } }));
             window.location.reload();
         } catch (err) {
             console.error("Error saving profile:", err);
@@ -100,7 +103,7 @@ export default function ProfilePage() {
         setTempUsername(username);
         setTempDescription(description);
         setSelectedImage(null);
-        setPreviewImage(null); 
+        setPreviewImage(null);
     };
 
     const handleToggle = () => {
@@ -214,8 +217,8 @@ export default function ProfilePage() {
                                                         onChange={(e) => setTempDob(e.target.value)}
                                                         disabled={!isEditing}
                                                         className={`w-full text-base font-medium text-gray-900 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${isEditing
-                                                                ? "border-blue-400 focus:ring-blue-400"
-                                                                : "border-gray-300 bg-gray-100"
+                                                            ? "border-blue-400 focus:ring-blue-400"
+                                                            : "border-gray-300 bg-gray-100"
                                                             }`}
                                                     />
                                                 </div>

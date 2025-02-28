@@ -30,10 +30,6 @@ const route = createBrowserRouter([
   {
     path: "/PostJobPage",
     element: <PostJobPage />,
-  },
-  {
-    path:"/lo/izin/testing",
-    element: <FaceTes/>
   }
 ]);
 

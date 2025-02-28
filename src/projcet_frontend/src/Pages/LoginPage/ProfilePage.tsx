@@ -259,6 +259,7 @@ export default function ProfilePage() {
                       </p>
                     </div>
 
+
                     <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">
                         Balance

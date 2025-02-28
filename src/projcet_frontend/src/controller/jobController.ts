@@ -1,12 +1,19 @@
-import { LocalStorage } from "@dfinity/auth-client";
+import { AuthClient, LocalStorage } from "@dfinity/auth-client";
 import { job } from "../../../declarations/job";
 import { Job, CreateJobPayload, UpdateJobPayload, JobCategory } from "../../../declarations/job/job.did";
 import { User } from "../interface/User";
+import { HttpAgent } from "@dfinity/agent";
 
 
 
 export const createJob = async (jobName:string, jobDescription:string[], jobTags:string[], jobSalary: number, jobSlots: number): Promise<string[]> => {
-    
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
     try {
 
 
@@ -70,6 +77,13 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
 };
 
 export const updateJob = async (jobId: string, payload: UpdateJobPayload, jobStatus: string): Promise<Job | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
     try {
         const result = await job.updateJob(jobId, payload, jobStatus);
         if ("ok" in result) {
@@ -94,6 +108,22 @@ export const viewAllJobs = async (): Promise<Job[] | null> => {
         console.error("Failed to get all jobs:", error);
         return null;
     }
+}
+
+export const getJobDetail = async (jobId: string):Promise<Job | null> =>{
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    
+    const result = await job.getJob(jobId)
+    if("ok" in result){
+        return result.ok
+    }
+    return null
 }
 
 export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {

@@ -39,7 +39,7 @@ export default function CallToAction() {
       </motion.button>
 
       {/* OR Divider */}
-      <div className="text-cyan-400/80 font-semibold">OR</div>
+      <div className="text-white font-semibold">OR</div>
 
       {/* Hire Talent Button */}
       <motion.button

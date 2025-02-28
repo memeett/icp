@@ -81,6 +81,8 @@ export default function ProfilePage() {
                 imageData = await blobToUint8Array(imageBlob);
             }
 
+            console.log("Image data:", imageData);
+
             const formattedPayload: UpdateUserPayload = {
                 username: tempUsername ? [tempUsername] : [],
                 profilePicture: imageData ? [imageData] : [],
@@ -89,6 +91,7 @@ export default function ProfilePage() {
             };
 
             await updateUserProfile(formattedPayload);
+            localStorage.setItem("current_user", JSON.stringify({ ok: { ...user,profilePicture: imageData , username: tempUsername, description: tempDescription, dob: tempDob } }));
             window.location.reload();
         } catch (err) {
             console.error("Error saving profile:", err);

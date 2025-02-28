@@ -8,6 +8,7 @@ import FindJobPage from "./Pages/FindJobPage/FindJobPage.tsx";
 import ProfilePage from "./Pages/LoginPage/ProfilePage.tsx";
 import PostJobPage from "./Pages/PostJobPage/PostJobPage.tsx";
 import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
+import { ModalProvider } from "./contexts/modal-context.tsx";
 
 const route = createBrowserRouter([
   {
@@ -24,7 +25,7 @@ const route = createBrowserRouter([
   },
   {
     path: "/PostJobPage",
-    element: <PostJobPage/>,
+    element: <PostJobPage />,
   },
   {
     path: "/testing/lo",
@@ -35,8 +36,9 @@ const route = createBrowserRouter([
 const rootElement = document.getElementById("root");
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
-
+    <ModalProvider>
       <RouterProvider router={route}></RouterProvider>
+    </ModalProvider>
   );
 } else {
   console.error("Root element not found");

@@ -91,7 +91,6 @@ export default function LoginPage() {
     // Add more freelancers as needed
   ];
   return (
-    <ModalProvider>
       <div className="flex flex-col h-screen">
         <div className="flex-none w-full bg-white shadow-md z-50">
           <Navbar />
@@ -138,6 +137,5 @@ export default function LoginPage() {
         {/* end main */}
         <AuthenticationModal />
       </div>
-    </ModalProvider>
   );
 }

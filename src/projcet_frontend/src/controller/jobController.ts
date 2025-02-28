@@ -31,17 +31,19 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
         const newJobTags: JobCategory[] = [];
 
         for (const tag of jobTags) {
-            let existingCategory = await job.getJobCategory(tag); 
+            let existingCategory = await job.findJobCategoryByName(tag); 
 
             if (!("ok" in existingCategory)) {
-                await job.createJobCategory(tag); 
-                existingCategory = await job.getJobCategory(tag); 
+                existingCategory = await job.createJobCategory(tag); 
+                
             }
 
             if ("ok" in existingCategory) {
                 newJobTags.push(existingCategory.ok); 
             }
         }
+
+        console.log(job.getAllJobCategories())
 
         if(userData){
             const parsedData = JSON.parse(userData);
@@ -73,22 +75,6 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
         return ["Failed", "Failed to create job:"];
     }
 };
-
-// export const createJob = async (payload: CreateJobPayload): Promise<Job | null> => {
-//     try {
-//         const result = await job.createJob(payload);
-//         if ("ok" in result) {
-//             console.log("Job created:", result.ok);
-//             return result.ok;
-//         } else {
-//             console.error("Error creating job:", result.err);
-//             return null;
-//         }
-//     } catch (error) {
-//         console.error("Failed to create job:", error);
-//         return null;
-//     }
-// };
 
 export const updateJob = async (jobId: string, payload: UpdateJobPayload, jobStatus: string): Promise<Job | null> => {
     const authClient = await AuthClient.create();
@@ -138,4 +124,15 @@ export const getJobDetail = async (jobId: string):Promise<Job | null> =>{
         return result.ok
     }
     return null
+}
+
+export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
+    try {
+        const result = await job.getAllJobCategories();
+        console.log("Jobs:", result);
+        return result;
+    } catch (error) {
+        console.error("Failed to get all jobs:", error);
+        return null;
+    }
 }

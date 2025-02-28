@@ -6,6 +6,8 @@ import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
+import Float "mo:base/Float";
+import Nat64 "mo:base/Nat64";
 
 actor UserModel{
     let session = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
@@ -47,7 +49,7 @@ actor UserModel{
             username = "";  
             email = "";
             description= "";
-            wallet = "";
+            wallet = 0.0;
             rating = 0.0;
             createdAt = timestamp;
             updatedAt = timestamp;
@@ -124,57 +126,57 @@ actor UserModel{
         }
     };
 
-    // public shared func transfer_ckbtc(from : Text, to : Text, amount : Nat64) : async Result.Result<Text, Text> {
-    //     switch (users.get(from)) {
-    //         case (?fromUser) {
-    //             if (fromUser.wallet < Float.fromInt(Nat64.toNat(amount))) {
-    //                 #err("Insufficient balance");
-    //             } else {
-    //                 switch (users.get(to)) {
-    //                     case (?toUser) {
-    //                         let fromNewBalance = fromUser.wallet - Float.fromInt(Nat64.toNat(amount));
-    //                         let updatedFromUser : User.User = {
-    //                             id = fromUser.id;
-    //                             profilePicture = fromUser.profilePicture;
-    //                             username = fromUser.username;
-    //                             description = fromUser.description;
-    //                             email = fromUser.email;
-    //                             wallet = fromNewBalance;
-    //                             rating = fromUser.rating;
-    //                             createdAt = fromUser.createdAt;
-    //                             updatedAt = Time.now();
-    //                             isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
-    //                         };
-    //                         users.put(from, updatedFromUser);
+    public shared func transfer_ckbtc(from : Text, to : Text, amount : Nat64) : async Result.Result<Text, Text> {
+        switch (users.get(from)) {
+            case (?fromUser) {
+                if (fromUser.wallet < Float.fromInt(Nat64.toNat(amount))) {
+                    #err("Insufficient balance");
+                } else {
+                    switch (users.get(to)) {
+                        case (?toUser) {
+                            let fromNewBalance = fromUser.wallet - Float.fromInt(Nat64.toNat(amount));
+                            let updatedFromUser : User.User = {
+                                id = fromUser.id;
+                                profilePicture = fromUser.profilePicture;
+                                username = fromUser.username;
+                                description = fromUser.description;
+                                email = fromUser.email;
+                                wallet = fromNewBalance;
+                                rating = fromUser.rating;
+                                createdAt = fromUser.createdAt;
+                                updatedAt = Time.now();
+                                isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
+                            };
+                            users.put(from, updatedFromUser);
 
-    //                         let toNewBalance = toUser.wallet + Float.fromInt(Nat64.toNat(amount));
-    //                         let updatedToUser : User.User = {
-    //                             id = toUser.id;
-    //                             profilePicture = toUser.profilePicture;
-    //                             username = toUser.username;
-    //                             description = toUser.description;
-    //                             email = toUser.email;
-    //                             wallet = toNewBalance;
-    //                             rating = toUser.rating;
-    //                             createdAt = toUser.createdAt;
-    //                             updatedAt = Time.now();
-    //                             isFaceRecognitionOn = toUser.isFaceRecognitionOn;
-    //                         };
-    //                         users.put(to, updatedToUser);
+                            let toNewBalance = toUser.wallet + Float.fromInt(Nat64.toNat(amount));
+                            let updatedToUser : User.User = {
+                                id = toUser.id;
+                                profilePicture = toUser.profilePicture;
+                                username = toUser.username;
+                                description = toUser.description;
+                                email = toUser.email;
+                                wallet = toNewBalance;
+                                rating = toUser.rating;
+                                createdAt = toUser.createdAt;
+                                updatedAt = Time.now();
+                                isFaceRecognitionOn = toUser.isFaceRecognitionOn;
+                            };
+                            users.put(to, updatedToUser);
 
-    //                         #ok("Transferred ckBTC successfully");
-    //                     };
-    //                     case null {
-    //                         #err("Recipient not found");
-    //                     };
-    //                 };
-    //             };
-    //         };
-    //         case null {
-    //             #err("Sender not found");
-    //         };
-    //     };
-    // };
+                            #ok("Transferred ckBTC successfully");
+                        };
+                        case null {
+                            #err("Recipient not found");
+                        };
+                    };
+                };
+            };
+            case null {
+                #err("Sender not found");
+            };
+        };
+    };
 
 
     // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {

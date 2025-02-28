@@ -4,6 +4,9 @@ import { BiSlider } from 'react-icons/bi';
 import { AiOutlineFolder, AiOutlineHeart, AiOutlineLike } from 'react-icons/ai';
 import { IoLocationOutline } from 'react-icons/io5';
 import { BsCheckCircleFill, BsStar, BsStarFill } from 'react-icons/bs';
+import Navbar from '../../components/Navbar';
+import { ModalProvider } from '../../contexts/modal-context';
+import { AuthenticationModal } from '../../components/modals/AuthenticationModal';
 
 interface JobCategory {
     id: string;
@@ -49,29 +52,12 @@ const SearchPage: React.FC = () => {
   ];
 
   return (
+    <ModalProvider>
+        <Navbar />
     <div className="max-w-6xl mx-auto p-6">
-      {/* Search Header */}
+
       <div className="flex items-center gap-4 mb-6">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search jobs..."
-            className="w-full px-12 py-3 rounded-full border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
-          />
-          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
-          {searchQuery && (
-            <FiX
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl cursor-pointer hover:text-gray-600"
-              onClick={() => setSearchQuery('')}
-            />
-          )}
-        </div>
-        <button className="flex items-center gap-2 text-green-600 hover:text-green-700 transition duration-200">
-          <BiSlider className="text-xl" />
-          <span>Advanced search</span>
-        </button>
+
       </div>
 
       {/* Save Search and Saved Jobs */}
@@ -142,6 +128,8 @@ const SearchPage: React.FC = () => {
         ))}
       </div>
     </div>
+    <AuthenticationModal />
+    </ModalProvider>
   );
 };
 

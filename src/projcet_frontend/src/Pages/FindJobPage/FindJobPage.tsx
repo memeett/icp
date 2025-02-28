@@ -5,6 +5,8 @@ import JobCard from "../../components/JobCard";
 import Footer from "../../components/Footer";
 import { ModalProvider } from "../../contexts/modal-context";
 import { Job } from "../../interface/job/Job";
+import { BiSlider } from "react-icons/bi";
+import { FiSearch, FiX } from "react-icons/fi";
 
 const recommendationJobs: Job[] = [
     { id: "1", jobName: "Software Engineer", jobTags: [{ id: "1", jobCategoryName: "Full-time" }], jobRating: 4.6, jobSalary: 75000, jobDescription: ["Develop software solutions.", "Collaborate with cross-functional teams."], jobSlots: 2, createdAt: Date.now(), updatedAt: Date.now() },
@@ -29,7 +31,7 @@ const listJobs: Job[] = [
 const jobTag = ["Full-time", "Part-time", "Contract", "Remote"]
 
 export default function FindJobPage() {
-
+    const [searchQuery, setSearchQuery] = useState('');
     const [startIndex, setStartIndex] = useState(0);
 
     const nextSlide = () => {
@@ -48,12 +50,36 @@ export default function FindJobPage() {
 
 
             <div className="flex flex-col min-h-screen ">
-                {/* Navbar - Stays on top, does not scroll */}
+
+                
+
                 <div className="flex-none w-full bg-white shadow-md z-50">
                     <Navbar />
                 </div>
+                <div className="container mx-auto px-4 mt-6">
+        <div className="flex items-center gap-8 mb-6">
+            <div className="flex-1 relative">
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search jobs..."
+                    className="w-full px-12 py-3 rounded-full border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
+                />
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
+                {searchQuery && (
+                    <FiX
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl cursor-pointer hover:text-gray-600"
+                        onClick={() => setSearchQuery('')}
+                    />
+                )}
+            </div>
+        </div>
+    </div>
 
-                {/* Main Content - This is the only scrollable section */}
+
+    
+
                 <div className="flex overflow-x-hidden scrollbar-hide">
 
                     {/* Filter Section                */}

@@ -29,6 +29,7 @@ export const ProfileCard = ({
         />
       </div>
 
+
       <div className="group relative text-left w-full pl-4 pt-2">
         <h3 className="text-xl font-bold text-gray-800 transition-colors duration-200 w-full">
           <a

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { FaStar, FaRegStar, FaEdit } from "react-icons/fa"; // Icons for rating
+import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa"; // Icons for rating
 import Navbar from "../../components/Navbar.js";
 import { ModalProvider } from "../../contexts/modal-context.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import { User } from "../../interface/User.js";
 import { fetchUserBySession, updateUserProfile } from "../../controller/userController.js";
+import Footer from "../../components/Footer.js";
 
 export default function ProfilePage() {
     const [activeSection, setActiveSection] = useState("biodata");
@@ -14,6 +15,18 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [tempUsername, setTempUsername] = useState("");
     const [tempDescription, setTempDescription] = useState("");
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [faceRecognitionOn, setFaceRecognitionOn] = useState(false);
+
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files[0]) {
+            const file = event.target.files[0];
+            setSelectedImage(file);
+            setPreviewImage(URL.createObjectURL(file)); // Show preview
+        }
+    };
+
 
     useEffect(() => {
         fetchUserBySession().then((user) => {
@@ -21,6 +34,7 @@ export default function ProfilePage() {
                 setUser(user as User);
                 setUsername(user.username);
                 setDescription(user.description);
+                setFaceRecognitionOn(user.isFaceRecognitionOn)
             }
         });
     }, []);
@@ -31,15 +45,30 @@ export default function ProfilePage() {
         setTempDescription(description);
     };
 
-    const handleSave = () => {
-        updateUserProfile(tempUsername, tempDescription).then(() => {
-            window.location.reload()
-        })
+
+    const handleSave = async () => {
+        try {
+            if (selectedImage) {
+                URL.createObjectURL(selectedImage)
+            }
+
+            // await updateUserProfile(tempUsername, tempDescription, imageData);
+            window.location.reload();
+        } catch (err) {
+            console.error("Error saving profile:", err);
+        }
     };
 
     const handleCancel = () => {
         setIsEditing(false);
+        setTempUsername(username);
+        setTempDescription(description);
+        // setPreviewImage(user?.profilePicture || null);
     };
+
+    const handleToggle = () => {
+        setFaceRecognitionOn((prev) => !prev);
+      };
 
     const renderStars = (rating: number) => {
         return [...Array(5)].map((_, i) =>
@@ -50,10 +79,6 @@ export default function ProfilePage() {
             )
         );
     };
-
-    const profileImageUrl = user?.profilePicture?.size
-        ? URL.createObjectURL(user.profilePicture)
-        : "https://via.placeholder.com/100";
 
     return (
             <div className="flex flex-col h-screen">
@@ -95,12 +120,33 @@ export default function ProfilePage() {
                                     <div
                                         className={`relative bg-white shadow rounded-xl p-8 flex flex-col md:flex-row items-center md:items-start gap-6 border ${isEditing ? "border-blue-500 shadow-lg" : "border-gray-300"}`}
                                     >
-                                        <div className="relative">
-                                            <img
-                                                src={profileImageUrl}
-                                                alt="Profile"
-                                                className="w-40 h-40 md:w-48 md:h-48 rounded-full border-4 border-gray-300 object-cover"
-                                            />
+                                        <div className="relative flex flex-col items-center">
+                                            <div className="relative">
+                                                <img
+                                                    src={URL.createObjectURL(user.profilePicture)}
+                                                    alt="Profile"
+                                                    className="w-40 h-40 md:w-48 md:h-48 rounded-full border-4 border-gray-300 object-cover"
+                                                />
+
+                                            </div>
+
+                                            {isEditing && (
+                                                <>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleImageChange}
+                                                        className="hidden"
+                                                        id="imageUpload"
+                                                    />
+                                                    <label
+                                                        htmlFor="imageUpload"
+                                                        className="mt-5 bg-gray-200 px-4 py-2 rounded-lg text-sm text-gray-700 cursor-pointer hover:bg-gray-300"
+                                                    >
+                                                        Change Image
+                                                    </label>
+                                                </>
+                                            )}
                                         </div>
 
                                         <div className="flex-1 w-full">
@@ -113,19 +159,20 @@ export default function ProfilePage() {
                                                         value={isEditing ? tempUsername : username}
                                                         onChange={(e) => setTempUsername(e.target.value)}
                                                         disabled={!isEditing}
+                                                        placeholder="Enter your username"
                                                         className={`w-full text-base font-medium text-gray-900 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${isEditing ? "border-blue-400 focus:ring-blue-400" : "border-gray-300 bg-gray-100"}`}
                                                     />
                                                 </div>
 
                                                 <div>
                                                     <label className="block text-gray-700 font-medium mb-1 text-sm">Email</label>
-                                                    <input
-                                                        type="email"
-                                                        name="email"
-                                                        value={user.email}
-                                                        disabled
-                                                        className="w-full text-base text-gray-600 border border-gray-300 rounded-lg px-4 py-2 bg-gray-100"
-                                                    />
+                                                    <button
+                                                        className="flex items-center justify-center w-1/4 text-gray-600 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-100 transition-all duration-200"
+                                                        onClick={() => alert("Implement Google Login")}
+                                                    >
+                                                        <FaGoogle className="mr-2" />
+                                                        Bind with Google
+                                                    </button>
                                                 </div>
 
                                                 <div>
@@ -135,6 +182,7 @@ export default function ProfilePage() {
                                                         value={isEditing ? tempDescription : description}
                                                         onChange={(e) => setTempDescription(e.target.value)}
                                                         disabled={!isEditing}
+                                                        placeholder="Enter your description..."
                                                         className={`w-full text-gray-700 text-sm border rounded-lg px-4 py-2 resize-none focus:outline-none focus:ring-2 ${isEditing ? "border-blue-400 focus:ring-blue-400" : "border-gray-300 bg-gray-100"}`}
                                                         rows={3}
                                                     />
@@ -143,8 +191,12 @@ export default function ProfilePage() {
 
                                             {isEditing && (
                                                 <div className="flex justify-end mt-4">
-                                                    <button className="bg-blue-500 text-white px-4 py-2 rounded-lg mr-2" onClick={handleSave}>Save</button>
-                                                    <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg" onClick={handleCancel}>Cancel</button>
+                                                    <button className="bg-blue-500 text-white px-4 py-2 rounded-lg mr-2" onClick={handleSave}>
+                                                        Save
+                                                    </button>
+                                                    <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg" onClick={handleCancel}>
+                                                        Cancel
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
@@ -156,6 +208,7 @@ export default function ProfilePage() {
                                             />
                                         )}
                                     </div>
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                                         <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
                                             <h3 className="text-lg font-semibold text-gray-800 mb-2">Rating</h3>
@@ -167,7 +220,19 @@ export default function ProfilePage() {
                                             <h3 className="text-lg font-semibold text-gray-800 mb-2">Balance</h3>
                                             <p className="text-3xl font-bold text-green-600">$120</p>
                                         </div>
-
+                                    </div>
+                                    <div className="flex justify-between bg-white shadow rounded-lg mt-3 p-6 border border-gray-200">
+                                        <h3 className="text-lg font-semibold text-gray-800 mb-2">Face Recognition</h3>
+                                        <div
+                                            className={`w-12 h-6 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition ${faceRecognitionOn ? "bg-green-600" : "bg-gray-300"
+                                                }`}
+                                            onClick={handleToggle}
+                                        >
+                                            <div
+                                                className={`w-5 h-5 bg-white rounded-full shadow-md transform transition ${faceRecognitionOn ? "translate-x-6" : "translate-x-0"
+                                                    }`}
+                                            ></div>
+                                        </div>
                                     </div>
                                 </>
                             ) : (
@@ -178,7 +243,12 @@ export default function ProfilePage() {
                         )}
                     </div>
                 </div>
+
                 <AuthenticationModal />
             </div>
+
+            <Footer />
+        </ModalProvider>
+
     );
 }

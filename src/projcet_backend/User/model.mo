@@ -4,10 +4,9 @@ module{
         profilePicture: Blob;
         username: Text;
         email: Text;
-        wallet: Float;
         description: Text;
+        wallet: Float;
         rating: Float;
-        
         createdAt: Int;
         updatedAt: Int;
         isFaceRecognitionOn: Bool;

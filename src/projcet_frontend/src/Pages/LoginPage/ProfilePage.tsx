@@ -6,6 +6,7 @@ import { AuthenticationModal } from "../../components/modals/AuthenticationModal
 import { UpdateUserPayload, User } from "../../interface/User.js";
 import { fetchUserBySession, updateUserProfile } from "../../controller/userController.js";
 import Footer from "../../components/Footer.js";
+import { authUtils } from "../../utils/authUtils.js";
 
 export default function ProfilePage() {
     const [activeSection, setActiveSection] = useState("biodata");
@@ -18,6 +19,8 @@ export default function ProfilePage() {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [faceRecognitionOn, setFaceRecognitionOn] = useState(false);
+    
+    const { current_user } = authUtils();
 
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,15 +36,16 @@ export default function ProfilePage() {
     };
 
     useEffect(() => {
-        fetchUserBySession().then((user) => {
-            if (user) {
-                setUser(user as User);
-                setUsername(user.username);
-                setDescription(user.description);
-                setFaceRecognitionOn(user.isFaceRecognitionOn)
-            }
-        });
-    }, []);
+        if (current_user) {
+            const user = JSON.parse(current_user).ok;
+            user.profilePicture = new Blob([new Uint8Array(user.profilePicture)]);
+            setUser(user);
+            setUsername(user.username);
+            setDescription(user.description);
+            setFaceRecognitionOn(user.isFaceRecognitionOn)
+          }
+    }, [current_user]);
+
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -97,7 +101,7 @@ export default function ProfilePage() {
         setTempUsername(username);
         setTempDescription(description);
         setSelectedImage(null);
-        setPreviewImage(null); // Clear the preview image
+        setPreviewImage(null); 
     };
 
     const handleToggle = () => {

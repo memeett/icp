@@ -18,7 +18,6 @@ export const getCookie = (name: string): string | null => {
 };
 
 
-
 export const loginWithInternetIdentity = async (): Promise<boolean> => {
     try {
         const authClient = await AuthClient.create();

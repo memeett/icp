@@ -37,6 +37,7 @@
     "@dfinity/auth-client": "^2.3.0",
     "@dfinity/identity": "^2.3.0",
     "@types/canvas-confetti": "^1.9.0",
+    "@types/date-fns": "^2.6.3",
     "@types/dotenv": "^8.2.3",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",

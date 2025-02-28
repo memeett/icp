@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa"; // Icons for rating
+import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa"; 
 import Navbar from "../../components/Navbar.js";
 import { ModalProvider } from "../../contexts/modal-context.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import { UpdateUserPayload, User } from "../../interface/User.js";
 import { fetchUserBySession, updateUserProfile } from "../../controller/userController.js";
 import Footer from "../../components/Footer.js";
+import { authUtils } from "../../utils/authUtils.js";
 
 export default function ProfilePage() {
     const [activeSection, setActiveSection] = useState("biodata");
@@ -18,6 +19,8 @@ export default function ProfilePage() {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [faceRecognitionOn, setFaceRecognitionOn] = useState(false);
+    
+    const { current_user } = authUtils();
     const [dob, setDob] = useState("");
     const [tempDob, setTempDob] = useState<string>("");
 
@@ -31,16 +34,16 @@ export default function ProfilePage() {
     };
 
     useEffect(() => {
-        fetchUserBySession().then((user) => {
-            if (user) {
-                setUser(user as User);
+        if (current_user) {
+            const user = JSON.parse(current_user).ok;
+            user.profilePicture = new Blob([new Uint8Array(user.profilePicture)]);
+            setUser(user as User);
                 setUsername(user.username);
                 setDescription(user.description);
                 setDob(user.dob);
                 setFaceRecognitionOn(user.isFaceRecognitionOn)
-            }
-        });
-    }, []);
+          }
+    }, [current_user]);
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -97,7 +100,7 @@ export default function ProfilePage() {
         setTempUsername(username);
         setTempDescription(description);
         setSelectedImage(null);
-        setPreviewImage(null); // Clear the preview image
+        setPreviewImage(null); 
     };
 
     const handleToggle = () => {

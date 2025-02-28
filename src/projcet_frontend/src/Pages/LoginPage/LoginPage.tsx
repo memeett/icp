@@ -160,9 +160,8 @@ export default function LoginPage() {
   return (
 
     <div className="flex flex-col h-screen bg-[#F9F7F7]">
-      <div className="flex-none w-ful shadow-md z-50">
+
         <Navbar />
-      </div>
       {/* main */}
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
         <div className="relative  min-h-screen">
@@ -237,7 +236,7 @@ export default function LoginPage() {
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
                 Behold the power of Cryptocurrency, only in{" "}
-                <TypingAnimation className="inline"> Ergasia.</TypingAnimation>
+                <TypingAnimation className="inline">Ergasia.</TypingAnimation>
               </motion.div>
 
               <motion.button

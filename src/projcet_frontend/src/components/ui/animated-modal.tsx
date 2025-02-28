@@ -71,7 +71,7 @@ export const ModalBody = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 m-0"
+            className="fixed h-screen w-screen inset-0 bg-black/30 backdrop-blur-sm z-50 m-0"
           />
 
           {/* Modal Content */}
@@ -138,5 +138,5 @@ export const ModalFooter = ({
   children: ReactNode;
   className?: string;
 }) => {
-  return <div className={`border-t ${className || ""}`}>{children}</div>;
+  return <div className={`${className || ""}`}>{children}</div>;
 };

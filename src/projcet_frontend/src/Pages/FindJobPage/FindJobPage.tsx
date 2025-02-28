@@ -47,7 +47,6 @@ export default function FindJobPage() {
     };
 
     return (
-        <ModalProvider>
 
 
             <div className="flex flex-col min-h-screen ">
@@ -179,6 +178,5 @@ export default function FindJobPage() {
                     <Footer />
                 </div>
             </div>
-        </ModalProvider>
     );
 }

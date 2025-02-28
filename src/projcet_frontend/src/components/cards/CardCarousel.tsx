@@ -110,7 +110,7 @@ const CardCarousel: React.FC<CardCarouselProps> = ({
       <div
         ref={carouselRef}
         onScroll={handleScroll}
-        className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+        className="flex overflow-x-auto  overflow-y-hidden scrollbar-hide snap-x snap-mandatory"
         style={{
           width: `${containerWidth}px`,
           margin: "0 auto",

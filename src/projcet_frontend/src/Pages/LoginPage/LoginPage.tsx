@@ -270,15 +270,13 @@ export default function LoginPage() {
           <WhyChoose />
         </div>
 
-
         <JobCategories />
 
 
-        <h2 className="text-center text-4xl mt-16 mb-6">
-          Hire our top rated Freelancer.
+        <div className="flex flex-col w-full justify-center text-center mt-12 mb-24">
+        <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+          Hire our Top Rated Freelancers
         </h2>
-
-        <div className="flex w-full justify-center">
           <CardCarousel
             cards={freelancers.map((freelancer) => (
               <motion.div whileHover={{ scale: 1.02 }}>

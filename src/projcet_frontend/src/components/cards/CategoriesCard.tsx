@@ -39,7 +39,7 @@ export default function JobCategoriesLight() {
   const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
 
   return (
-    <section className="relative py-20 bg-[#F9F7F7]">
+    <section className="relative py-12 bg-[#F9F7F7]">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -47,7 +47,7 @@ export default function JobCategoriesLight() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+          <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
             Featured Categories
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">

@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import ProcessFlow from "../../components/cards/TransactionStepCard.tsx";
 import WhyChoose from "../../components/cards/ChooseErgasia.tsx";
+import JobCategories from "../../components/cards/CategoriesCard.tsx";
 
 const BackgroundPattern = () => (
   <svg
@@ -157,6 +158,7 @@ export default function LoginPage() {
   ];
   const { setOpen } = useModal();
   return (
+
     <div className="flex flex-col h-screen bg-[#F9F7F7]">
       <div className="flex-none w-ful shadow-md z-50">
         <Navbar />
@@ -175,6 +177,7 @@ export default function LoginPage() {
               Empowering Freelancers & Businesses with Web3 Technology.
             </p>
           </WavyBackground>
+
         </div>
 
         <div className="relative flex flex-col items-center justify-center mt-24">
@@ -269,11 +272,13 @@ export default function LoginPage() {
           <WhyChoose />
         </div>
 
-        <h2 className="text-center text-4xl mt-16 mb-6">
-          Hire our top rated Freelancer.
-        </h2>
+        <JobCategories />
 
-        <div className="flex w-full justify-center">
+
+        <div className="flex flex-col w-full justify-center text-center mt-12 mb-24">
+        <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+          Hire our Top Rated Freelancers
+        </h2>
           <CardCarousel
             cards={freelancers.map((freelancer) => (
               <motion.div whileHover={{ scale: 1.02 }}>

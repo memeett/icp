@@ -13,6 +13,7 @@ import { ModalProvider } from "./contexts/modal-context.tsx";
 import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
 import FaceTes from "./Pages/LoginPage/FaceTes.tsx";
 
+
 const route = createBrowserRouter([
   {
     path: "/",

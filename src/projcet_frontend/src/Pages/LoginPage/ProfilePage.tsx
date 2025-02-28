@@ -115,7 +115,7 @@ export default function ProfilePage() {
     };
 
     return (
-        <ModalProvider>
+        <div>
             <div className="flex flex-col h-screen">
                 <div className="flex-none w-full bg-white shadow-md z-50">
                     <Navbar />
@@ -282,6 +282,6 @@ export default function ProfilePage() {
                 <AuthenticationModal />
             </div>
             <Footer />
-        </ModalProvider>
+        </div>
     );
 }

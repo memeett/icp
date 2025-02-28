@@ -54,6 +54,22 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
             return false;
         }
 
+
+        const userIdResult = await session.getUserIdBySession(res);
+        console.log(userIdResult)
+        if ("ok" in userIdResult) {
+            const userId = userIdResult.ok;  
+            const userDetail = await user.getUserById(userId);
+            localStorage.setItem("current_user", JSON.stringify(userDetail, (_, value) =>
+                typeof value === "bigint" ? value.toString() : value
+            ));
+            console.log(userDetail);
+        } else {
+            console.error("Error fetching user ID:", userIdResult.err);
+            return false;
+        }
+        
+
         console.log("Login successful:", res);
         document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
         localStorage.setItem("session", JSON.stringify(res));

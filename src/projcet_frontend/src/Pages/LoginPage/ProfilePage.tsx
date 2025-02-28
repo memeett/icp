@@ -18,6 +18,8 @@ export default function ProfilePage() {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [faceRecognitionOn, setFaceRecognitionOn] = useState(false);
+    const [dob, setDob] = useState("");
+    const [tempDob, setTempDob] = useState<string>("");
 
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,16 +30,13 @@ export default function ProfilePage() {
         }
     };
 
-    const googleRegister = () => {
-        window.location.href = 'http://localhost:8888/auth/google';
-    };
-
     useEffect(() => {
         fetchUserBySession().then((user) => {
             if (user) {
                 setUser(user as User);
                 setUsername(user.username);
                 setDescription(user.description);
+                setDob(user.dob);
                 setFaceRecognitionOn(user.isFaceRecognitionOn)
             }
         });
@@ -83,6 +82,7 @@ export default function ProfilePage() {
                 username: tempUsername ? [tempUsername] : [],
                 profilePicture: imageData ? [imageData] : [],
                 description: tempDescription ? [tempDescription] : [],
+                dob: tempDob ? [tempDob] : [],
             };
 
             await updateUserProfile(formattedPayload);
@@ -200,14 +200,21 @@ export default function ProfilePage() {
                                                 </div>
 
                                                 <div>
-                                                    <label className="block text-gray-700 font-medium mb-1 text-sm">Email</label>
-                                                    <button
-                                                        className="flex items-center justify-center w-1/4 text-gray-600 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-100 transition-all duration-200"
-                                                        onClick={googleRegister}
-                                                    >
-                                                        <FaGoogle className="mr-2" />
-                                                        Bind with Google
-                                                    </button>
+                                                    <label className="block text-gray-700 font-medium mb-1 text-sm">Date of Birth</label>
+                                                    <input
+                                                        type="date"
+                                                        name="dob"
+                                                        value={isEditing
+                                                            ? tempDob
+                                                            : dob
+                                                        }
+                                                        onChange={(e) => setTempDob(e.target.value)}
+                                                        disabled={!isEditing}
+                                                        className={`w-full text-base font-medium text-gray-900 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${isEditing
+                                                                ? "border-blue-400 focus:ring-blue-400"
+                                                                : "border-gray-300 bg-gray-100"
+                                                            }`}
+                                                    />
                                                 </div>
 
                                                 <div>

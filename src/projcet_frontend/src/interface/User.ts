@@ -13,6 +13,6 @@ export interface User{
 
 export interface UpdateUserPayload {
     username: [] | [string];
-    email: [] | [string];
+    profilePicture: [] | [Uint8Array | number[]];
     description: [] | [string];
-};
+}

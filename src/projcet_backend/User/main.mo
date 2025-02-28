@@ -6,6 +6,8 @@ import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
+import Float "mo:base/Float";
+import Nat64 "mo:base/Nat64";
 
 actor UserModel{
     let session = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
@@ -176,16 +178,6 @@ actor UserModel{
         };
     };
 
-    public func deleteUser(userID: Text) : async (){
-        switch(users.get(userID)){
-            case(?_){
-                users.delete(userID);
-            };
-            case null{
-
-            };
-        }
-    };
 
     // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
     //     minter_fee : Nat64;

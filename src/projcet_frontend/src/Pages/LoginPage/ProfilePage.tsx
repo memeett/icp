@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa"; // Icons for rating
+import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa"; 
 import Navbar from "../../components/Navbar.js";
 import { ModalProvider } from "../../contexts/modal-context.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";

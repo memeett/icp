@@ -248,7 +248,7 @@ export default function ProfilePage() {
             </div>
 
             <Footer />
-        </ModalProvider>
+                    
 
     );
 }

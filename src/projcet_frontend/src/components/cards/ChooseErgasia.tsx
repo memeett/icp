@@ -122,6 +122,29 @@ export default function WhyChoose() {
             </motion.div>
           ))}
         </div>
+         <div className="absolute inset-0 overflow-hidden">
+                        {[...Array(40)].map((_, i) => (
+                          <motion.div
+                            key={i}
+                            className="absolute w-5 h-5 rounded-full bg-white/20"
+                            style={{
+                              top: `${Math.random() * 100}%`,
+                              left: `${Math.random() * 100}%`,
+                            }}
+                            animate={{
+                              y: [0, -30],
+                              opacity: [0, 0.5, 0],
+                            }}
+                            transition={{
+                              duration: 2 + Math.random() * 2,
+                              repeat: Infinity,
+                              repeatType: "loop",
+                              ease: "easeInOut",
+                              delay: Math.random() * 2,
+                            }}
+                          />
+                        ))}
+                      </div>
         <div className="w-full max-w-6xl mx-auto pt-20 pb-12">
           <h2 className="text-5xl text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-100">
             Start Your Crypto Journey

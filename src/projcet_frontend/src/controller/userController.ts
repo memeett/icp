@@ -104,6 +104,7 @@ export const validateCookie = async (): Promise<boolean> => {
         if (!isValid) {
             document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
             localStorage.removeItem("session"); 
+            session.logout(cleanSession)
         } else {
             localStorage.setItem("session", cleanSession);
         }
@@ -119,8 +120,7 @@ export const logout = async (): Promise<void> => {
     try {
         localStorage.removeItem("session");
         document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-
-        console.log("Logged out successfully.");
+        localStorage.removeItem("current_user");
     } catch (error) {
         console.error("Logout failed:", error);
     }

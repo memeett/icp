@@ -54,6 +54,22 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
             return false;
         }
 
+
+        const userIdResult = await session.getUserIdBySession(res);
+        console.log(userIdResult)
+        if ("ok" in userIdResult) {
+            const userId = userIdResult.ok;  
+            const userDetail = await user.getUserById(userId);
+            localStorage.setItem("current_user", JSON.stringify(userDetail, (_, value) =>
+                typeof value === "bigint" ? value.toString() : value
+            ));
+            console.log(userDetail);
+        } else {
+            console.error("Error fetching user ID:", userIdResult.err);
+            return false;
+        }
+        
+
         console.log("Login successful:", res);
         document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
         localStorage.setItem("session", JSON.stringify(res));
@@ -180,7 +196,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
 
 
-export const updateUserProfile = async (username: string, description: string): Promise<void> => {
+export const updateUserProfile = async (payload: UpdateUserPayload): Promise<void> => {
     const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();
     const agent = new HttpAgent({ identity });
@@ -193,13 +209,7 @@ export const updateUserProfile = async (username: string, description: string): 
     if (cookie) {
         try {
             const cleanSession = cookie.replace(/^"|"$/g, '');
-            const formattedPayload :UpdateUserPayload = {
-                username: username ? [username] : [],
-                email: [],
-                description: description ? [description] : [],
-            };
-
-            // await user.updateUser(cleanSession, formattedPayload);
+            await user.updateUser(cleanSession, payload);
         } catch (err) {
             console.error("Error updating user profile:", err);
         }

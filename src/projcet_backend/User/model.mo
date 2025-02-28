@@ -5,7 +5,7 @@ module{
         username: Text;
         email: Text;
         description: Text;
-        wallet: Text;
+        wallet: Float;
         rating: Float;
         createdAt: Int;
         updatedAt: Int;

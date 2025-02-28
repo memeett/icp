@@ -56,7 +56,6 @@ export default function ProfilePage() {
         : "https://via.placeholder.com/100";
 
     return (
-        <ModalProvider>
             <div className="flex flex-col h-screen">
                 <div className="flex-none w-full bg-white shadow-md z-50">
                     <Navbar />
@@ -181,6 +180,5 @@ export default function ProfilePage() {
                 </div>
                 <AuthenticationModal />
             </div>
-        </ModalProvider>
     );
 }

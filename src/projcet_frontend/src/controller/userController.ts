@@ -50,7 +50,9 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         if ("ok" in userIdResult) {
             const userId = userIdResult.ok;  
             const userDetail = await user.getUserById(userId);
-            localStorage.setItem("current_user", JSON.stringify(userDetail))
+            localStorage.setItem("current_user", JSON.stringify(userDetail, (_, value) =>
+                typeof value === "bigint" ? value.toString() : value
+            ));
             console.log(userDetail);
         } else {
             console.error("Error fetching user ID:", userIdResult.err);

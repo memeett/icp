@@ -11,7 +11,8 @@ export function AuthenticationModal() {
 
 
   if (!open) return null;
-  return (
+
+   return (
     <div className="hidden md:flex flex-column items-center space-x-4">
       <ModalBody className="flex flex-column items-center space-x-4">
         <ModalContent className="max-w-2xl mx-auto bg-[#F9F7F7]">

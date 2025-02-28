@@ -180,7 +180,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
 
 
-export const updateUserProfile = async (username: string, description: string): Promise<void> => {
+export const updateUserProfile = async (payload: UpdateUserPayload): Promise<void> => {
     const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();
     const agent = new HttpAgent({ identity });
@@ -193,13 +193,7 @@ export const updateUserProfile = async (username: string, description: string): 
     if (cookie) {
         try {
             const cleanSession = cookie.replace(/^"|"$/g, '');
-            const formattedPayload :UpdateUserPayload = {
-                username: username ? [username] : [],
-                email: [],
-                description: description ? [description] : [],
-            };
-
-            // await user.updateUser(cleanSession, formattedPayload);
+            await user.updateUser(cleanSession, payload);
         } catch (err) {
             console.error("Error updating user profile:", err);
         }

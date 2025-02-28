@@ -95,9 +95,9 @@ actor UserModel{
                         let timestamp = Time.now();
                         let updatedUser: User.User = {
                             id = currUser.id;
-                            profilePicture = currUser.profilePicture;
+                            profilePicture = Option.get(payload.profilePicture, currUser.profilePicture);
                             username = Option.get(payload.username, currUser.username);
-                            email = Option.get(payload.email, currUser.email);
+                            email = currUser.email;
                             description = Option.get(payload.description, currUser.description);
                             wallet = currUser.wallet;
                             rating = currUser.rating;

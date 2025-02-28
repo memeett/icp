@@ -158,6 +158,7 @@ export default function LoginPage() {
   ];
   const { setOpen } = useModal();
   return (
+
     <div className="flex flex-col h-screen bg-[#F9F7F7]">
       <div className="flex-none w-ful shadow-md z-50">
         <Navbar />
@@ -176,6 +177,7 @@ export default function LoginPage() {
               Empowering Freelancers & Businesses with Web3 Technology.
             </p>
           </WavyBackground>
+
         </div>
 
         <div className="relative flex flex-col items-center justify-center mt-24">

@@ -17,6 +17,7 @@ export default function ProfilePage() {
     const [tempDescription, setTempDescription] = useState("");
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [faceRecognitionOn, setFaceRecognitionOn] = useState(false);
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
@@ -33,6 +34,7 @@ export default function ProfilePage() {
                 setUser(user as User);
                 setUsername(user.username);
                 setDescription(user.description);
+                setFaceRecognitionOn(user.isFaceRecognitionOn)
             }
         });
     }, []);
@@ -46,10 +48,10 @@ export default function ProfilePage() {
 
     const handleSave = async () => {
         try {
-            if(selectedImage){
+            if (selectedImage) {
                 URL.createObjectURL(selectedImage)
             }
-            
+
             // await updateUserProfile(tempUsername, tempDescription, imageData);
             window.location.reload();
         } catch (err) {
@@ -63,7 +65,10 @@ export default function ProfilePage() {
         setTempDescription(description);
         // setPreviewImage(user?.profilePicture || null);
     };
-    
+
+    const handleToggle = () => {
+        setFaceRecognitionOn((prev) => !prev);
+      };
 
     const renderStars = (rating: number) => {
         return [...Array(5)].map((_, i) =>
@@ -76,7 +81,6 @@ export default function ProfilePage() {
     };
 
     return (
-        <ModalProvider>
             <div className="flex flex-col h-screen">
                 <div className="flex-none w-full bg-white shadow-md z-50">
                     <Navbar />
@@ -217,6 +221,19 @@ export default function ProfilePage() {
                                             <p className="text-3xl font-bold text-green-600">$120</p>
                                         </div>
                                     </div>
+                                    <div className="flex justify-between bg-white shadow rounded-lg mt-3 p-6 border border-gray-200">
+                                        <h3 className="text-lg font-semibold text-gray-800 mb-2">Face Recognition</h3>
+                                        <div
+                                            className={`w-12 h-6 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition ${faceRecognitionOn ? "bg-green-600" : "bg-gray-300"
+                                                }`}
+                                            onClick={handleToggle}
+                                        >
+                                            <div
+                                                className={`w-5 h-5 bg-white rounded-full shadow-md transform transition ${faceRecognitionOn ? "translate-x-6" : "translate-x-0"
+                                                    }`}
+                                            ></div>
+                                        </div>
+                                    </div>
                                 </>
                             ) : (
                                 <div className="text-gray-500 text-lg text-center">No user data available. Please log in.</div>
@@ -229,7 +246,9 @@ export default function ProfilePage() {
 
                 <AuthenticationModal />
             </div>
+
             <Footer />
         </ModalProvider>
+
     );
 }

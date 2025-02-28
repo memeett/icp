@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
 interface ModalContextType {
   open: boolean;
@@ -9,7 +9,13 @@ const ModalContext = createContext<ModalContextType | null>(null);
 
 export const ModalProvider = ({ children }: { children: ReactNode }) => {
   const [open, setOpen] = useState(false);
-
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden"; // Disable scrolling when modal is open
+    } else {
+      document.body.style.overflow = "auto"; // Enable scrolling when modal is closed
+    }
+  }, [open]);
   return (
     <ModalContext.Provider value={{ open, setOpen }}>
       {children}

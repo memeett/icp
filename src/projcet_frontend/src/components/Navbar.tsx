@@ -10,10 +10,9 @@ import { authUtils } from "../utils/authUtils";
 const Navbar = () => {
   const { setOpen } = useModal();
   const [user, setUser] = useState<User | null>(null);
-  const current_user = localStorage.getItem('current_user');
   const nav = useNavigate();
 
-  const { cookie, session } = authUtils();
+  const { cookie, session, current_user } = authUtils();
   
 
   const profpicClick = useCallback(() => {

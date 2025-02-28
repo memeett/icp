@@ -23,7 +23,6 @@ export const authUtils = () => {
                 return;
             }
             if (cookie && !session || !current_user) {
-                console.log("Validating cookie");
                 const isValid = await validateCookie();
                 if (!isValid) {
                     navigate('/');

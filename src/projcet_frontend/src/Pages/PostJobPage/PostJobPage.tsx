@@ -7,51 +7,54 @@ import { createJob } from "../../controller/jobController";
 import { PopUpModal } from "../../components/modals/PopUpModal";
 // import { createJob } from "../../controller/jobController";
 
-
-const jobCategory = ["Web", "Mobile", "AI", "Game", "IOT", "Desktop", "Network"]
-
+const jobCategory = [
+  "Front-end Developer",
+  "Backend Developer",
+  "AI Engineer",
+  "Game",
+  "Graphic Designer",
+];
 
 export default function PostJobPage() {
-    // requirements
-    const [requirements, setRequirements] = useState<string[]>([""]);
+  // requirements
+  const [requirements, setRequirements] = useState<string[]>([""]);
 
-    const addRequirement = () => {
-        setRequirements([...requirements, ""]);
-    };
+  const addRequirement = () => {
+    setRequirements([...requirements, ""]);
+  };
 
-    const updateRequirement = (index: number, value: string) => {
-        const updatedRequirements = [...requirements];
-        updatedRequirements[index] = value;
-        setRequirements(updatedRequirements);
-    };
+  const updateRequirement = (index: number, value: string) => {
+    const updatedRequirements = [...requirements];
+    updatedRequirements[index] = value;
+    setRequirements(updatedRequirements);
+  };
 
-    const removeRequirement = (index: number) => {
-        const updatedRequirements = requirements.filter((_, i) => i !== index);
-        setRequirements(updatedRequirements);
-    };
+  const removeRequirement = (index: number) => {
+    const updatedRequirements = requirements.filter((_, i) => i !== index);
+    setRequirements(updatedRequirements);
+  };
 
+  // category
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [customCategory, setCustomCategory] = useState("");
 
-    // category
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [customCategory, setCustomCategory] = useState("");
+  const addCategory = (category: string) => {
+    if (!selectedCategories.includes(category)) {
+      setSelectedCategories([...selectedCategories, category]);
+    }
+  };
 
-    const addCategory = (category: string) => {
-        if (!selectedCategories.includes(category)) {
-            setSelectedCategories([...selectedCategories, category]);
-        }
-    };
+  const removeCategory = (category: string) => {
+    setSelectedCategories(selectedCategories.filter((c) => c !== category));
+  };
 
-    const removeCategory = (category: string) => {
-        setSelectedCategories(selectedCategories.filter((c) => c !== category));
-    };
-
-    const handleCustomCategory = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (customCategory.trim() && !selectedCategories.includes(customCategory)) {
-            setSelectedCategories([...selectedCategories, customCategory]);
-            setCustomCategory("");
-        }
-    };
+  const handleCustomCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customCategory.trim() && !selectedCategories.includes(customCategory)) {
+      setSelectedCategories([...selectedCategories, customCategory]);
+      setCustomCategory("");
+    }
+  };
 
     const [jobName, setJobName] = useState("")
     const [jobSalary, setJobSalary] = useState<number>(0)

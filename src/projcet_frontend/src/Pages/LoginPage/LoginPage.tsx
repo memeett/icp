@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import ProcessFlow from "../../components/cards/TransactionStepCard.tsx";
 import WhyChoose from "../../components/cards/ChooseErgasia.tsx";
+import JobCategories from "../../components/cards/CategoriesCard.tsx";
 
 const BackgroundPattern = () => (
   <svg
@@ -268,6 +269,10 @@ export default function LoginPage() {
           <ProcessFlow />
           <WhyChoose />
         </div>
+
+
+        <JobCategories />
+
 
         <h2 className="text-center text-4xl mt-16 mb-6">
           Hire our top rated Freelancer.

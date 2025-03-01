@@ -20,10 +20,11 @@ const jobTag = ["Full-time", "Part-time", "Contract", "Remote"];
 export default function FindJobPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [startIndex, setStartIndex] = useState(0);
-    const [jobTags, setJobTags] = useState<JobCategory[]>();
-    const [listJobs, setListJobs] = useState<Job[]>();
+    const [jobTags, setJobTags] = useState<JobCategory[]>([]);
+    const [listJobs, setListJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
-    const [refreshKey, setRefreshKey] = useState(0); // Add a refresh key to trigger refetch
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [selectedSalaryRanges, setSelectedSalaryRanges] = useState<string[]>([]);
 
     const nextSlide = () => {
         if (startIndex + 5 < recommendationJobs.length) {
@@ -51,9 +52,43 @@ export default function FindJobPage() {
         }
     };
 
-    useEffect(() => {
-        fetchData(); // Fetch data when the component mounts or refreshKey changes
-    }, []); // Add refreshKey as a dependency
+        fetchData();
+
+    const handleTagChange = (tag: string) => {
+        setSelectedTags(prev =>
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        );
+    };
+
+    const handleSalaryRangeChange = (range: string) => {
+        setSelectedSalaryRanges(prev =>
+            prev.includes(range) ? prev.filter(r => r !== range) : [...prev, range]
+        );
+    };
+
+    const filteredJobs = listJobs.filter(job => {
+        // Filter by job name (case-insensitive search)
+        const matchesSearch = searchQuery === "" || job.jobName.toLowerCase().includes(searchQuery.toLowerCase());
+
+        // Filter by job tags
+        const matchesTags = selectedTags.length === 0 || job.jobTags.some(tag => selectedTags.includes(tag.jobCategoryName));
+
+        // Filter by salary ranges
+        const matchesSalary = selectedSalaryRanges.length === 0 || selectedSalaryRanges.some(range => {
+            switch (range) {
+                case "< 100":
+                    return job.jobSalary < 100;
+                case "100 - 200":
+                    return job.jobSalary >= 100 && job.jobSalary <= 200;
+                case "> 200":
+                    return job.jobSalary > 200;
+                default:
+                    return true;
+            }
+        });
+
+        return matchesSearch && matchesTags && matchesSalary;
+    });
 
     if (loading) {
         return (
@@ -96,20 +131,63 @@ export default function FindJobPage() {
                         {jobTags && jobTags.length > 0 ? (
                             jobTags.map((tag) => (
                                 <div key={tag.id} className="flex gap-5 mb-3">
-                                    <input type="checkbox" className="scale-150" value={tag.jobCategoryName} />
+                                    <input
+                                        type="checkbox"
+                                        className="scale-150"
+                                        value={tag.jobCategoryName}
+                                        checked={selectedTags.includes(tag.jobCategoryName)}
+                                        onChange={() => handleTagChange(tag.jobCategoryName)}
+                                    />
                                     <label className="font-extralight text-l">{tag.jobCategoryName}</label>
                                 </div>
                             ))
                         ) : (
                             jobTag.map((tag) => (
                                 <div key={tag} className="flex gap-5 mb-3">
-                                    <input type="checkbox" className="scale-150" value={tag} />
+                                    <input
+                                        type="checkbox"
+                                        className="scale-150"
+                                        value={tag}
+                                        checked={selectedTags.includes(tag)}
+                                        onChange={() => handleTagChange(tag)}
+                                    />
                                     <label className="font-extralight text-l">{tag}</label>
                                 </div>
                             ))
                         )}
 
-                        {/* Job Salary and Slots Filter Sections (unchanged) */}
+                        {/* Job Salary Filter Section */}
+                        <p className="text-2xl font-light mb-5">Job Salary</p>
+                        <div className="flex gap-5 mb-3">
+                            <input
+                                type="checkbox"
+                                className="scale-150"
+                                value={"< 100"}
+                                checked={selectedSalaryRanges.includes("< 100")}
+                                onChange={() => handleSalaryRangeChange("< 100")}
+                            />
+                            <label className="font-extralight text-l">{"< 100"} $</label>
+                        </div>
+                        <div className="flex gap-5 mb-3">
+                            <input
+                                type="checkbox"
+                                className="scale-150"
+                                value={"100 - 200"}
+                                checked={selectedSalaryRanges.includes("100 - 200")}
+                                onChange={() => handleSalaryRangeChange("100 - 200")}
+                            />
+                            <label className="font-extralight text-l">{"100 - 200"} $</label>
+                        </div>
+                        <div className="flex gap-5 mb-3">
+                            <input
+                                type="checkbox"
+                                className="scale-150"
+                                value={"> 200"}
+                                checked={selectedSalaryRanges.includes("> 200")}
+                                onChange={() => handleSalaryRangeChange("> 200")}
+                            />
+                            <label className="font-extralight text-l">{"> 200"} $</label>
+                        </div>
                     </div>
                 </div>
 
@@ -128,6 +206,7 @@ export default function FindJobPage() {
                                 <JobCard key={job.id} job={job} />
                             ))}
                         </div>
+
                         <button
                             className="absolute right-0 bg-blue-500 text-white p-2 rounded-full shadow-md hover:bg-blue-600 transition"
                             onClick={nextSlide}
@@ -139,8 +218,8 @@ export default function FindJobPage() {
 
                     <h2 className="text-3xl font-semibold mt-10 mb-4 text-gray-800">List Jobs</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-12">
-                        {listJobs && listJobs.length > 0 ? (
-                            listJobs.map((job) => <JobCard key={job.id} job={job} />)
+                        {filteredJobs.length > 0 ? (
+                            filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
                         ) : (
                             <p className="text-center col-span-full text-gray-500">No job listings available</p>
                         )}

@@ -30,7 +30,6 @@ const route = createBrowserRouter([
   {
     path: "/PostJobPage",
     element: <PostJobPage />,
-
   },
   {
     path: "/jobs/:jobId",
@@ -41,7 +40,6 @@ const route = createBrowserRouter([
     element: <FaceTes/>,
 
   }
-
 ]);
 
 const rootElement = document.getElementById("root");

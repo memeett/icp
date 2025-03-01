@@ -151,5 +151,4 @@ export const getJobById = async (jobId: string): Promise<Job|null> =>{
         console.error("Failed to get all jobs:", error);
         return null;
     }
-
 }

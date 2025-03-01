@@ -4,7 +4,7 @@ module{
         id: Text;
         profilePicture: Blob;
         username: Text;
-        email: Text;
+        dob: Text;
         description: Text;
         wallet: Float;
         rating: Float;
@@ -18,6 +18,7 @@ module{
         username: ?Text;
         profilePicture: ?Blob;
         description: ?Text;
+        dob : ?Text;
     };
 
 

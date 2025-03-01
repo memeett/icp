@@ -1,36 +1,42 @@
-import { X, Menu, PenLine } from "lucide-react";
-import { motion } from "framer-motion";
-import { AnimatedNavLink } from "./ui/animated-anchor";
-import { useModal } from "../contexts/modal-context";
-import { fetchUserBySession, getCookie } from "../controller/userController";
+import { useMemo, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { PenLine } from "lucide-react";
+import { useModal } from "../contexts/modal-context";
+import { AnimatedNavLink } from "./ui/animated-anchor";
 import { User } from "../interface/User";
+import { authUtils } from "../utils/authUtils";
 
 const Navbar = () => {
   const { setOpen } = useModal();
   const [user, setUser] = useState<User | null>(null);
-  const [isAlreadyLogin, setIsAlreadyLogin] = useState(false);
-  const nav = useNavigate()
+  const nav = useNavigate();
 
-  const profpicClick = () => {
+  const { cookie, session, current_user } = authUtils();
+  
+
+  const profpicClick = useCallback(() => {
     nav('/profile');
-  };
-  const logoClick = () => {
+  }, [nav]);
+
+  const logoClick = useCallback(() => {
     nav('/');
-  };
+  }, [nav]);
 
   useEffect(() => {
-    fetchUserBySession().then((user) => {
-      if (user) {
-        setUser(user as User);
-      }
-    });
-  }, []);
-
+    if (current_user && cookie && session) {
+      const user = JSON.parse(current_user).ok;
+      user.profilePicture = new Blob([new Uint8Array(user.profilePicture)]);
+      setUser(user);
+    }
+    else {
+      setUser(null);
+    }
+    console.log("User:", user);
+  }, [current_user]);
 
   return (
-    <nav className="sticky bg-[#F9F7F7] text-black w-full z-50">
+    <nav className="sticky top-0 shadow-md flex-none bg-[#F9F7F7] text-black w-full z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex-shrink-0 flex items-center">
@@ -51,11 +57,15 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <div className="flex gap-3 items-center">
-
+                
                 <a href="#">{user.username}</a>
-                <img onClick={profpicClick} src={URL.createObjectURL(user.profilePicture)} alt="tes" className="w-10 h-10 rounded-full" />
+                <img
+                  onClick={profpicClick}
+                  src={URL.createObjectURL(user.profilePicture)}
+                  alt="Profile Picture"
+                  className="w-10 h-10 rounded-full"
+                />
               </div>
-
             ) : (
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <button
@@ -69,7 +79,6 @@ const Navbar = () => {
               </motion.div>
             )}
           </div>
-
         </div>
       </div>
     </nav>

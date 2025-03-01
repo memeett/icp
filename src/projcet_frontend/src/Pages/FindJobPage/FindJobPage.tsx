@@ -8,6 +8,7 @@ import { BiSlider } from "react-icons/bi";
 import { FiSearch, FiX } from "react-icons/fi";
 import { viewAllJobCategories, viewAllJobs } from "../../controller/jobController";
 import { Job, JobCategory } from "../../../../declarations/job/job.did";
+import { Link } from "react-router-dom";
 
 const recommendationJobs: Job[] = [
     { id: "1", jobName: "Software Engineer", jobTags: [{ id: "1", jobCategoryName: "Full-time" }], jobRating: 4.6, jobSalary: 75000, jobDescription: ["Develop software solutions.", "Collaborate with cross-functional teams."], jobSlots: BigInt(2), createdAt: BigInt(Date.now()), updatedAt: BigInt(Date.now()), jobStatus: "Start", userId: "1" },
@@ -25,6 +26,7 @@ export default function FindJobPage() {
     const [loading, setLoading] = useState(true);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [selectedSalaryRanges, setSelectedSalaryRanges] = useState<string[]>([]);
+
 
     const nextSlide = () => {
         if (startIndex + 5 < recommendationJobs.length) {
@@ -52,7 +54,8 @@ export default function FindJobPage() {
         }
     };
 
-        fetchData();
+
+    fetchData();
 
     const handleTagChange = (tag: string) => {
         setSelectedTags(prev =>
@@ -123,10 +126,8 @@ export default function FindJobPage() {
             </div>
 
             <div className="flex overflow-x-hidden scrollbar-hide">
-                {/* Filter Section */}
                 <div className="flex flex-col bg-brown w-[20vw] h-screen container">
                     <div className="flex flex-col h-screen p-20">
-                        {/* Job Type Filter Section */}
                         <p className="text-2xl font-light mb-5">Job Tag</p>
                         {jobTags && jobTags.length > 0 ? (
                             jobTags.map((tag) => (
@@ -155,6 +156,7 @@ export default function FindJobPage() {
                                 </div>
                             ))
                         )}
+
 
                         {/* Job Salary Filter Section */}
                         <p className="text-2xl font-light mb-5">Job Salary</p>
@@ -188,6 +190,7 @@ export default function FindJobPage() {
                             />
                             <label className="font-extralight text-l">{"> 200"} $</label>
                         </div>
+
                     </div>
                 </div>
 
@@ -218,8 +221,10 @@ export default function FindJobPage() {
 
                     <h2 className="text-3xl font-semibold mt-10 mb-4 text-gray-800">List Jobs</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-12">
+
                         {filteredJobs.length > 0 ? (
                             filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
+
                         ) : (
                             <p className="text-center col-span-full text-gray-500">No job listings available</p>
                         )}

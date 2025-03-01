@@ -137,18 +137,19 @@ export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
     }
 }
 
-export const getJobDetail = async (jobId: string):Promise<Job | null> =>{
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
+export const getJobById = async (jobId: string): Promise<Job|null> =>{
+    try{
+        const result = await job.getJob(jobId);
+        if ("ok" in result) {
+            console.log("Job updated:", result.ok);
+            return result.ok;
+        } else {
+            console.error("Error updating job:", result.err);
+            return null;
+        }
+    } catch (error){
+        console.error("Failed to get all jobs:", error);
+        return null;
+    }
 
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
-    
-    const result = await job.getJob(jobId)
-    if("ok" in result){
-        return result.ok
-    }
-    return null
 }

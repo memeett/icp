@@ -61,6 +61,26 @@ actor UserModel{
         newUser
     };
 
+    public func createUserWithoutPP(newid : Text) : async User.User{
+        let timestamp = Time.now();
+
+        let newUser : User.User = {
+            id= newid;
+            profilePicture= "";
+            username = "";  
+            email = "";
+            description= "";
+            wallet = 0.0;
+            rating = 0.0;
+            createdAt = timestamp;
+            updatedAt = timestamp;
+            isFaceRecognitionOn = false;
+        };
+
+        users.put(newid, newUser);
+        newUser
+    };
+
     public func getAllUser(): async [User.User]{
         Iter.toArray(users.vals());
     };

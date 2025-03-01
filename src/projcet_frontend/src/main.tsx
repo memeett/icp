@@ -31,6 +31,15 @@ const route = createBrowserRouter([
     path: "/PostJobPage",
     element: <PostJobPage />,
   },
+  {
+    path: "/jobs/:jobId",
+    element: <JobDetailPage />,
+  },
+  {
+    path:"/lo/izin/testing",
+    element: <FaceTes/>,
+
+  }
 ]);
 
 const rootElement = document.getElementById("root");

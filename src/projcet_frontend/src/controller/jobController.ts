@@ -106,3 +106,19 @@ export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
         return null;
     }
 }
+
+export const getJobById = async (jobId: string): Promise<Job|null> =>{
+    try{
+        const result = await job.getJob(jobId);
+        if ("ok" in result) {
+            console.log("Job updated:", result.ok);
+            return result.ok;
+        } else {
+            console.error("Error updating job:", result.err);
+            return null;
+        }
+    } catch (error){
+        console.error("Failed to get all jobs:", error);
+        return null;
+    }
+}

@@ -1,9 +1,10 @@
+import Blob "mo:base/Blob";
 module{
     public type User = {
         id: Text;
         profilePicture: Blob;
         username: Text;
-        email: Text;
+        dob: Text;
         description: Text;
         wallet: Float;
         rating: Float;
@@ -15,7 +16,10 @@ module{
 
     public type UpdateUserPayload = {
         username: ?Text;
-        email: ?Text;
+        profilePicture: ?Blob;
         description: ?Text;
+        dob : ?Text;
     };
+
+
 }

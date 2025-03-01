@@ -11,8 +11,8 @@ import ProfilePage from "./Pages/LoginPage/ProfilePage.tsx";
 import PostJobPage from "./Pages/PostJobPage/PostJobPage.tsx";
 import { ModalProvider } from "./contexts/modal-context.tsx";
 import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
+import JobDetailPage from "./Pages/JobDetailPage/JobDetailPage.tsx";
 import FaceTes from "./Pages/LoginPage/FaceTes.tsx";
-
 
 const route = createBrowserRouter([
   {
@@ -30,11 +30,18 @@ const route = createBrowserRouter([
   {
     path: "/PostJobPage",
     element: <PostJobPage />,
+
+  },
+  {
+    path: "/jobs/:jobId",
+    element: <JobDetailPage />,
   },
   {
     path:"/lo/izin/testing",
-    element: <FaceTes/>
+    element: <FaceTes/>,
+
   }
+
 ]);
 
 const rootElement = document.getElementById("root");

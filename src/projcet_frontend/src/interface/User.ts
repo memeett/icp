@@ -2,7 +2,7 @@ export interface User{
     id: string;
     profilePicture: Blob;
     username: string;
-    email: string;
+    dob: string;
     description: string;
     wallet: number;
     rating: number;
@@ -13,6 +13,7 @@ export interface User{
 
 export interface UpdateUserPayload {
     username: [] | [string];
-    email: [] | [string];
+    profilePicture: [] | [Uint8Array | number[]];
     description: [] | [string];
-};
+    dob: [] | [string]; 
+}

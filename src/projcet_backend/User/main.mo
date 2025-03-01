@@ -48,7 +48,7 @@ actor UserModel{
             id= newid;
             profilePicture= profilePic;
             username = "";  
-            email = "";
+            dob= "";
             description= "";
             wallet = 0.0;
             rating = 0.0;
@@ -115,9 +115,9 @@ actor UserModel{
                         let timestamp = Time.now();
                         let updatedUser: User.User = {
                             id = currUser.id;
-                            profilePicture = currUser.profilePicture;
+                            profilePicture = Option.get(payload.profilePicture, currUser.profilePicture);
                             username = Option.get(payload.username, currUser.username);
-                            email = Option.get(payload.email, currUser.email);
+                            dob = Option.get(payload.dob, currUser.dob);
                             description = Option.get(payload.description, currUser.description);
                             wallet = currUser.wallet;
                             rating = currUser.rating;
@@ -161,7 +161,7 @@ actor UserModel{
                                 profilePicture = fromUser.profilePicture;
                                 username = fromUser.username;
                                 description = fromUser.description;
-                                email = fromUser.email;
+                                dob = fromUser.dob;
                                 wallet = fromNewBalance;
                                 rating = fromUser.rating;
                                 createdAt = fromUser.createdAt;
@@ -176,7 +176,7 @@ actor UserModel{
                                 profilePicture = toUser.profilePicture;
                                 username = toUser.username;
                                 description = toUser.description;
-                                email = toUser.email;
+                                dob = toUser.dob;
                                 wallet = toNewBalance;
                                 rating = toUser.rating;
                                 createdAt = toUser.createdAt;
@@ -198,6 +198,18 @@ actor UserModel{
             };
         };
     };
+
+    public func getAllFaceRecogUser(): async [User.User] {
+        Iter.toArray(
+            Iter.filter(
+                users.vals(),
+                func (user: User.User): Bool {
+                    user.isFaceRecognitionOn
+                }
+            )
+        );
+    };
+
 
 
     // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {

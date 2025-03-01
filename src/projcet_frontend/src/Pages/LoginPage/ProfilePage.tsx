@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa"; // Icons for rating
+import { FaStar, FaRegStar, FaEdit, FaGoogle } from "react-icons/fa";
 import Navbar from "../../components/Navbar.js";
 import { ModalProvider } from "../../contexts/modal-context.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import { UpdateUserPayload, User } from "../../interface/User.js";
 import { fetchUserBySession, updateUserProfile } from "../../controller/userController.js";
 import Footer from "../../components/Footer.js";
+import { authUtils } from "../../utils/authUtils.js";
 
 export default function ProfilePage() {
     const [activeSection, setActiveSection] = useState("biodata");
@@ -19,6 +20,10 @@ export default function ProfilePage() {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [faceRecognitionOn, setFaceRecognitionOn] = useState(false);
 
+    const { current_user } = authUtils();
+    const [dob, setDob] = useState("");
+    const [tempDob, setTempDob] = useState<string>("");
+
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
@@ -28,20 +33,17 @@ export default function ProfilePage() {
         }
     };
 
-    const googleRegister = () => {
-        window.location.href = 'http://localhost:8888/auth/google';
-    };
-
     useEffect(() => {
-        fetchUserBySession().then((user) => {
-            if (user) {
-                setUser(user as User);
-                setUsername(user.username);
-                setDescription(user.description);
-                setFaceRecognitionOn(user.isFaceRecognitionOn)
-            }
-        });
-    }, []);
+        if (current_user) {
+            const user = JSON.parse(current_user).ok;
+            user.profilePicture = new Blob([new Uint8Array(user.profilePicture)]);
+            setUser(user as User);
+            setUsername(user.username);
+            setDescription(user.description);
+            setDob(user.dob);
+            setFaceRecognitionOn(user.isFaceRecognitionOn)
+        }
+    }, [current_user]);
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -79,13 +81,17 @@ export default function ProfilePage() {
                 imageData = await blobToUint8Array(imageBlob);
             }
 
+            console.log("Image data:", imageData);
+
             const formattedPayload: UpdateUserPayload = {
                 username: tempUsername ? [tempUsername] : [],
                 profilePicture: imageData ? [imageData] : [],
                 description: tempDescription ? [tempDescription] : [],
+                dob: tempDob ? [tempDob] : [],
             };
 
             await updateUserProfile(formattedPayload);
+            localStorage.setItem("current_user", JSON.stringify({ ok: { ...user,profilePicture: imageData , username: tempUsername, description: tempDescription, dob: tempDob } }));
             window.location.reload();
         } catch (err) {
             console.error("Error saving profile:", err);
@@ -97,7 +103,7 @@ export default function ProfilePage() {
         setTempUsername(username);
         setTempDescription(description);
         setSelectedImage(null);
-        setPreviewImage(null); // Clear the preview image
+        setPreviewImage(null);
     };
 
     const handleToggle = () => {
@@ -200,14 +206,21 @@ export default function ProfilePage() {
                                                 </div>
 
                                                 <div>
-                                                    <label className="block text-gray-700 font-medium mb-1 text-sm">Email</label>
-                                                    <button
-                                                        className="flex items-center justify-center w-1/4 text-gray-600 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-100 transition-all duration-200"
-                                                        onClick={googleRegister}
-                                                    >
-                                                        <FaGoogle className="mr-2" />
-                                                        Bind with Google
-                                                    </button>
+                                                    <label className="block text-gray-700 font-medium mb-1 text-sm">Date of Birth</label>
+                                                    <input
+                                                        type="date"
+                                                        name="dob"
+                                                        value={isEditing
+                                                            ? tempDob
+                                                            : dob
+                                                        }
+                                                        onChange={(e) => setTempDob(e.target.value)}
+                                                        disabled={!isEditing}
+                                                        className={`w-full text-base font-medium text-gray-900 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${isEditing
+                                                            ? "border-blue-400 focus:ring-blue-400"
+                                                            : "border-gray-300 bg-gray-100"
+                                                            }`}
+                                                    />
                                                 </div>
 
                                                 <div>
@@ -222,6 +235,7 @@ export default function ProfilePage() {
                                                         rows={3}
                                                     />
                                                 </div>
+                                                
                                             </div>
 
                                             {isEditing && (

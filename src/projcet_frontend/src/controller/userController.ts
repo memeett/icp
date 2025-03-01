@@ -18,7 +18,6 @@ export const getCookie = (name: string): string | null => {
 };
 
 
-
 export const loginWithInternetIdentity = async (): Promise<boolean> => {
     try {
         const authClient = await AuthClient.create();
@@ -83,6 +82,13 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
 
 
 export const validateCookie = async (): Promise<boolean> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
     try {
         const cookie = getCookie("cookie");
         if (!cookie) {
@@ -104,6 +110,7 @@ export const validateCookie = async (): Promise<boolean> => {
         if (!isValid) {
             document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
             localStorage.removeItem("session"); 
+            session.logout(cleanSession)
         } else {
             localStorage.setItem("session", cleanSession);
         }
@@ -116,11 +123,17 @@ export const validateCookie = async (): Promise<boolean> => {
 };
 
 export const logout = async (): Promise<void> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
     try {
         localStorage.removeItem("session");
         document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-
-        console.log("Logged out successfully.");
+        localStorage.removeItem("current_user");
     } catch (error) {
         console.error("Logout failed:", error);
     }

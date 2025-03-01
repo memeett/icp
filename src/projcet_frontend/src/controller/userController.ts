@@ -189,7 +189,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
             
                 console.log("User fetched:", {
                     ...convertedUser,
-                    profilePicture: 'Blob data' // For cleaner logging
+                    profilePicture: convertedUser.profilePicture // For cleaner logging
                 });
                 
                 return convertedUser;

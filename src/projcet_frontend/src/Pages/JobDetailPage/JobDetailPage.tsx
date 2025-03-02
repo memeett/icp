@@ -1,17 +1,19 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { Job, JobCategory } from "../../../../declarations/job/job.did";
 import { getJobById } from "../../controller/jobController";
-import { applyJob,hasUserApplied } from "../../controller/applyController";
+import { applyJob, hasUserApplied } from "../../controller/applyController";
 
+// Reusable JobTag Component
 const JobTag = ({ tag }: { tag: JobCategory }) => (
     <span className="px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-700">
         {tag.jobCategoryName}
     </span>
 );
 
+// Reusable JobDetailSection Component
 const JobDetailSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div>
         <h2 className="text-xl font-semibold mb-4">{title}</h2>
@@ -26,7 +28,27 @@ export default function JobDetailPage() {
     const [error, setError] = useState("");
     const [applied, setApplied] = useState(false);
 
+    const checkApplied = useCallback(async () => {
+        const userData = localStorage.getItem("current_user");
+        if (!userData) {
+            console.error("User data not found");
+            return;
+        }
+
+        const parsedData = JSON.parse(userData);
+
+        try {
+            const result = await hasUserApplied(parsedData.ok.id, jobId!);
+            console.log("User applied:", result);
+            setApplied(result); 
+        } catch (err) {
+            console.error("Error checking application status:", err);
+        }
+    }, [jobId]);
+
     useEffect(() => {
+        checkApplied();
+        console.log("Checking applied status");
         const fetchJob = async () => {
             if (!jobId) {
                 setError("Job ID is missing");
@@ -50,25 +72,32 @@ export default function JobDetailPage() {
         };
 
         fetchJob();
+        
+    }, [jobId]);
+    
+    const handleApply = useCallback(async () => {
+        const userData = localStorage.getItem("current_user");
+        if (!userData) {
+            console.error("User data not found");
+            return;
+        }
+
+        try {
+            const parsedData = JSON.parse(userData);
+            const result = await applyJob(parsedData.ok.id, jobId!);
+            if (result) {
+                console.log("Applied for the job");
+                setApplied(true); // Update the applied state
+            } else {
+                console.error("Failed to apply for the job");
+            }
+        } catch (err) {
+            console.error("Error applying for job:", err);
+        }
     }, [jobId]);
 
-    useEffect(() => {
-        const checkApplied = async () => { 
-            localStorage.getItem("current_user");
-            const userData = localStorage.getItem("current_user");
-            if (!userData) {
-                console.error("User data not found");
-                return;
-            }
-
-            const parsedData = JSON.parse(userData);
-            const result = await hasUserApplied(parsedData.ok.id, jobId!);
-            console.log("User applied:", result);
-            setApplied(result);
-        }
-        checkApplied();
-    }
-    , [job]);
+    
+    
 
     const jobDetails = useMemo(() => {
         if (!job) return null;
@@ -80,30 +109,14 @@ export default function JobDetailPage() {
         };
     }, [job]);
 
+    // Handle job application
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
         );
-    }
-
-    const handleApply = async () => {
-        const userData = localStorage.getItem("current_user");
-
-        if (!userData) {
-            console.error("User data not found");
-            return;
-        }
-
-        const parsedData = JSON.parse(userData);
-        const result = await applyJob(parsedData.ok.id, jobId!);
-
-        if (result) {
-            console.log("Applied for the job");
-        } else {
-            console.error("Failed to apply for the job");
-        }
     }
 
     if (error) {
@@ -119,6 +132,7 @@ export default function JobDetailPage() {
     }
 
     if (!job) return null;
+
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -178,6 +192,7 @@ export default function JobDetailPage() {
                                     <p className="text-gray-600">{jobDetails?.postedDate}</p>
                                 </div>
                             </div>
+
                             <button
                                 className={`w-full text-white py-3 px-6 rounded-lg transition duration-200 ${
                                     applied

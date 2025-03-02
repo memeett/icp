@@ -25,9 +25,6 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
         
         const userData = localStorage.getItem("current_user");
 
-        
-
-
         const newJobTags: JobCategory[] = [];
 
         for (const tag of jobTags) {

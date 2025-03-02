@@ -43,7 +43,6 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         const response = await fetch(defaultImagePath);
         const imageBlob = await response.blob();
         
-        // Convert Blob to ArrayBuffer
         const arrayBuffer = await imageBlob.arrayBuffer();
         const profilePicBlob = new Uint8Array(arrayBuffer);
 
@@ -68,7 +67,6 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
             return false;
         }
         
-
         console.log("Login successful:", res);
         document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
         localStorage.setItem("session", JSON.stringify(res));
@@ -110,7 +108,7 @@ export const validateCookie = async (): Promise<boolean> => {
         if (!isValid) {
             document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
             localStorage.removeItem("session"); 
-            session.logout(cleanSession)
+            await session.logout(cleanSession)
         } else {
             localStorage.setItem("session", cleanSession);
         }
@@ -166,20 +164,16 @@ export const fetchUserBySession = async (): Promise<User | null> => {
             if ("ok" in userRes) {
                 const userData = userRes.ok;
                 
-                // Convert the profile picture data to Blob
                 let profilePictureBlob: Blob;
                 if (userData.profilePicture) {
-                    // Convert number[] to Uint8Array first
                     const uint8Array = new Uint8Array(userData.profilePicture);
                     profilePictureBlob = new Blob([uint8Array.buffer], { 
                         type: 'image/jpeg' // Adjust type as needed
                     });
                 } else {
-                    // Create an empty Blob if no profile picture
                     profilePictureBlob = new Blob([], { type: 'image/jpeg' });
                 }
 
-                // Convert `bigint` timestamps to `Date` and include the Blob
                 const convertedUser: User = {
                     ...userData,
                     profilePicture: profilePictureBlob,
@@ -189,7 +183,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
             
                 console.log("User fetched:", {
                     ...convertedUser,
-                    profilePicture: convertedUser.profilePicture // For cleaner logging
+                    profilePicture: convertedUser.profilePicture 
                 });
                 
                 return convertedUser;

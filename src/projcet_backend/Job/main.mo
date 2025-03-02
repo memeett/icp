@@ -6,6 +6,7 @@ import Result "mo:base/Result";
 import Int "mo:base/Int";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
+import Array "mo:base/Array";
 
 actor JobModel{
     private stable var nextId : Nat = 0;
@@ -164,4 +165,15 @@ actor JobModel{
             case null { #err("Job not found") };
         }
     };
+
+    public func getUserJob(owner_id : Text): async [Job.Job] {
+        // Get all jobs and filter by owner_id
+        let allJobs = Iter.toArray(jobs.vals());
+        let userJobs = Array.filter(allJobs, func(job : Job.Job) : Bool {
+            return job.userId == owner_id;
+        });
+        
+        userJobs
+    };
+
 }

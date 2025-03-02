@@ -67,7 +67,11 @@ const Navbar = () => {
                 <a href="#">{user.username}</a>
                 <img
                   onClick={profpicClick}
-                  src={URL.createObjectURL(user.profilePicture)}
+                  src={
+                    user.profilePicture
+                      ? URL.createObjectURL(user.profilePicture)
+                      : "/default-avatar.png"
+                  }
                   alt="Profile Picture"
                   className="w-10 h-10 rounded-full object-cover"
                 />

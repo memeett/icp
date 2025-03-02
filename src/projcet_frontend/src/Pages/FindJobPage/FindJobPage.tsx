@@ -70,13 +70,10 @@ export default function FindJobPage() {
     };
 
     const filteredJobs = listJobs.filter(job => {
-        // Filter by job name (case-insensitive search)
         const matchesSearch = searchQuery === "" || job.jobName.toLowerCase().includes(searchQuery.toLowerCase());
 
-        // Filter by job tags
         const matchesTags = selectedTags.length === 0 || job.jobTags.some(tag => selectedTags.includes(tag.jobCategoryName));
 
-        // Filter by salary ranges
         const matchesSalary = selectedSalaryRanges.length === 0 || selectedSalaryRanges.some(range => {
             switch (range) {
                 case "< 100":

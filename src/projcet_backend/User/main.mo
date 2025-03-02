@@ -68,6 +68,7 @@ actor UserModel{
             id= newid;
             profilePicture= "";
             username = "";  
+            dob= "";
             email = "";
             description= "";
             wallet = 0.0;

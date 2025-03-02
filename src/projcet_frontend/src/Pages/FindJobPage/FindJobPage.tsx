@@ -220,7 +220,12 @@ export default function FindJobPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-12">
 
                         {filteredJobs.length > 0 ? (
-                            filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
+                            filteredJobs.map((job) =>
+
+                                    <JobCard key={job.id} job={job} />
+                                // <Link to={`/jobs/${job.id}`}>
+                                // </Link>
+                            )
 
                         ) : (
                             <p className="text-center col-span-full text-gray-500">No job listings available</p>

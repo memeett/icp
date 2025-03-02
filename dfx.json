@@ -31,7 +31,11 @@
       "main": "src/projcet_backend/Applier/main.mo",
       "type": "motoko"
     },
-    "userClicked": {  
+    "invitation": {  
+      "main": "src/projcet_backend/Invitation/main.mo",
+      "type": "motoko"
+    },
+    "userclicked": {  
       "main": "src/projcet_backend/UserClicked/main.mo",
       "type": "motoko"
     },

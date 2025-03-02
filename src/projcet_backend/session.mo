@@ -82,19 +82,21 @@ actor Authentication{
         
     };
 
-    public query func validateSession(sessionId: Text) : async Bool {
-        switch(sessions.get(sessionId)) {
-            case (?session) {
-                if (Time.now() > session.expiresAt) {
-                    sessions.delete(sessionId);
-                    false
-                } else {
-                    true
-                };
+    public shared func validateSession(sessionId: Text) : async Bool {
+    switch (sessions.get(sessionId)) {
+        case (?session) {
+            if (Time.now() > session.expiresAt) {
+                sessions.delete(sessionId);
+                false;
+            } else {
+                true;
             };
-            case null false;
+        };
+        case null {
+            false;
         };
     };
+};
 
     public shared func logout(sessionId: Text) : async () {
         sessions.delete(sessionId);

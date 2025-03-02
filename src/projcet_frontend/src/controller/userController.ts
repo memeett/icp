@@ -51,6 +51,7 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
             console.log("Login Failed");
             return false;
         }
+        console.log("Login successful:", res);
 
 
         const userIdResult = await session.getUserIdBySession(res);

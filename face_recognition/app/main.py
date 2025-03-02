@@ -82,20 +82,12 @@ async def register_face(
 
 @app.post("/verify-face")
 async def verify_face(
-    principal_id: str = Form(...),
     file: UploadFile = File(...)
 ):
     try:
-        # debug embed
-        # print("All stored embeddings:", face_embeddings.keys())
-        # print("Requested principal_id:", principal_id)
-        
-        stored_data = face_embeddings.get(principal_id)
-        if stored_data is None:
-            raise HTTPException(status_code=404, detail="Face not registered for this principal_id")
-        
-        stored_embedding = stored_data['embedding']
-        # print("Stored embedding found:", stored_embedding is not None)
+        # Jika tidak ada embeddings yang tersimpan
+        if not face_embeddings:
+            raise HTTPException(status_code=404, detail="No faces registered in the system")
         
         contents = await file.read()
         nparr = np.frombuffer(contents, np.uint8)
@@ -104,29 +96,45 @@ async def verify_face(
         if img is None:
             raise HTTPException(status_code=422, detail="Invalid image data")
         
+        # Verifikasi liveness
         is_live = check_liveness(img)
         if not is_live:
             return {"status": "error", "message": "Liveness check failed - eyes not detected"}
-
-
-        # print("Image shape:", img.shape)
         
+        # Mendapatkan embedding dari wajah saat ini
         current_embedding = DeepFace.represent(img, model_name="Facenet")[0]
-        # print("Current embedding:", current_embedding)  # Log the current embedding
-        # print("Current embedding type:", type(current_embedding))  # Log the type
-        # print("Current embedding shape:", np.shape(current_embedding))  # Log the shape
-        
         if isinstance(current_embedding, dict):
-            current_embedding = np.array(current_embedding['embedding']) 
-
-        similarity = cosine_similarity(np.array(stored_embedding), np.array(current_embedding))
-        print("Calculated similarity:", similarity)
+            current_embedding = np.array(current_embedding['embedding'])
         
-        threshold = 0.7 
-        if similarity >= threshold:
-            return {"status": "success", "message": "Face verified successfully", "similarity": float(similarity)}
+        # Mencari kecocokan terbaik dari semua embeddings yang tersimpan
+        best_match = None
+        highest_similarity = 0
+        threshold = 0.7
+        
+        for principal_id, stored_data in face_embeddings.items():
+            stored_embedding = stored_data['embedding']
+            similarity = cosine_similarity(np.array(stored_embedding), np.array(current_embedding))
+            
+            print(f"Similarity with {principal_id}: {similarity}")
+            
+            if similarity > highest_similarity:
+                highest_similarity = similarity
+                best_match = principal_id
+        
+        # Jika ada kecocokan di atas threshold
+        if highest_similarity >= threshold:
+            return {
+                "status": "success", 
+                "message": "Face verified successfully", 
+                "principal_id": best_match,
+                "similarity": float(highest_similarity)
+            }
         else:
-            return {"status": "failed", "message": "Face verification failed", "similarity": float(similarity)}
+            return {
+                "status": "failed", 
+                "message": "No matching face found", 
+                "similarity": float(highest_similarity) if highest_similarity > 0 else 0
+            }
             
     except Exception as e:
         print("Error in verify_face:", str(e))
@@ -134,6 +142,8 @@ async def verify_face(
             status_code=500,
             detail=f"Error verifying face: {str(e)}"
         )
+
+        
 def check_liveness(image):
     try:
         eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')

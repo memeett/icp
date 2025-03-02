@@ -31,6 +31,10 @@
       "main": "src/projcet_backend/Applier/main.mo",
       "type": "motoko"
     },
+    "userClicked": {  
+      "main": "src/projcet_backend/UserClicked/main.mo",
+      "type": "motoko"
+    },
     "projcet_frontend": {
       "dependencies": [
         "projcet_backend"

@@ -2,8 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import Webcam from 'react-webcam';
 
 interface FaceRecognitionProps {
-  principalId: string;
-  onSuccess: () => void;
+  principalId: string; // Masih dibutuhkan untuk mode register
+  onSuccess: (data?: any) => void; // Diubah untuk menerima data hasil verifikasi
   onError: (error: string) => void;
   mode: 'register' | 'verify';
 }
@@ -29,7 +29,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
         throw new Error('Failed to capture image');
       }
   
-      // Perbaikan cara convert base64 ke blob
+      // Convert base64 ke blob
       const base64Data = imageSrc.split(',')[1];
       const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
@@ -43,17 +43,19 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
   
       // Create form data
       const formData = new FormData();
-      formData.append('file', blob, 'image.jpg'); // Tambahkan nama file
-      formData.append('principal_id', principalId);
+      formData.append('file', blob, 'image.jpg');
+      
+      // Hanya tambahkan principal_id jika dalam mode register
+      if (currentMode === 'register') {
+        formData.append('principal_id', principalId);
+      }
   
-      // Tambahkan headers yang sesuai
       const endpoint = currentMode === 'register' ? '/register-face' : '/verify-face';
       const response = await fetch(`http://localhost:8000${endpoint}`, {
         method: 'POST',
         body: formData,
         headers: {
           'Accept': 'application/json',
-          // Jangan set Content-Type karena FormData akan mengaturnya sendiri
         },
       });
   
@@ -66,7 +68,16 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
   
       if (result.status === 'success') {
         console.log(result.message);
-        onSuccess();
+        // Saat mode verify, kirim data hasil verifikasi termasuk principal_id
+        if (currentMode === 'verify' && result.principal_id) {
+          onSuccess({
+            principalId: result.principal_id,
+            similarity: result.similarity,
+            message: result.message
+          });
+        } else {
+          onSuccess();
+        }
       } else {
         onError(result.message || 'Failed to process request');
       }
@@ -78,7 +89,6 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
     }
   };
   
-
   return (
     <div className="face-recognition">
       <div className="mode-selector" style={{ marginBottom: '1rem' }}>
@@ -139,6 +149,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
 
       <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
         Current Mode: {currentMode === 'register' ? 'Registration' : 'Verification'}
+        {currentMode === 'register' && <div>Principal ID: {principalId}</div>}
       </div>
     </div>
   );

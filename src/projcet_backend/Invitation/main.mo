@@ -17,7 +17,6 @@ actor InvitationModel{
 
     private stable var invitationsEntries : [(Int, Invitation.Invitation)] = [];
     
-    // Custom hash function for Int
     private func intHash(n : Int) : Hash.Hash {
         let text = Int.toText(n);
         let hash = Text.hash(text);
@@ -30,12 +29,10 @@ actor InvitationModel{
         intHash
     );
 
-    // Save state before upgrade
     system func preupgrade() {
         invitationsEntries := Iter.toArray(invitations.entries());
     };
 
-    // Restore state after upgrade
     system func postupgrade() {
         invitations := HashMap.fromIter<Int, Invitation.Invitation>(
             invitationsEntries.vals(),
@@ -51,7 +48,6 @@ actor InvitationModel{
     };
 
     public func createInvitation(owner_id : Text, job_id: Text, freelancer_id : Text) : async Result.Result<Invitation.Invitation, Text> {
-        // First, get the job and validate ownership
         try {
             let jobResult = await jobActor.getJob(job_id);
             
@@ -60,12 +56,10 @@ actor InvitationModel{
                     return #err("Failed to fetch job: " # error);
                 };
                 case (#ok(job)) {
-                    // Validate job ownership
                     if (job.userId != owner_id) {
                         return #err("Unauthorized: Only job owner can create invitations");
                     };
 
-                    // Check if invitation already exists
                     for ((_, invitation) in invitations.entries()) {
                         if (invitation.job_id == job_id and invitation.user_id == freelancer_id) {
                             return #err("Invitation already exists for this job and freelancer");

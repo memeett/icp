@@ -70,13 +70,10 @@ export default function FindJobPage() {
     };
 
     const filteredJobs = listJobs.filter(job => {
-        // Filter by job name (case-insensitive search)
         const matchesSearch = searchQuery === "" || job.jobName.toLowerCase().includes(searchQuery.toLowerCase());
 
-        // Filter by job tags
         const matchesTags = selectedTags.length === 0 || job.jobTags.some(tag => selectedTags.includes(tag.jobCategoryName));
 
-        // Filter by salary ranges
         const matchesSalary = selectedSalaryRanges.length === 0 || selectedSalaryRanges.some(range => {
             switch (range) {
                 case "< 100":
@@ -223,7 +220,12 @@ export default function FindJobPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-12">
 
                         {filteredJobs.length > 0 ? (
-                            filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
+                            filteredJobs.map((job) =>
+
+                                    <JobCard key={job.id} job={job} />
+                                // <Link to={`/jobs/${job.id}`}>
+                                // </Link>
+                            )
 
                         ) : (
                             <p className="text-center col-span-full text-gray-500">No job listings available</p>

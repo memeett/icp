@@ -20,4 +20,5 @@ module{
         isAccepted: Bool;
         appliedAt: Int;
     }
+    
 }

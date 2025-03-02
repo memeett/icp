@@ -46,7 +46,6 @@ actor ApplierModel {
 
     let jobActor = actor ("bd3sg-teaaa-aaaaa-qaaba-cai") : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
-        
     };
 
     let userActor = actor ("b77ix-eeaaa-aaaaa-qaada-cai"): actor{

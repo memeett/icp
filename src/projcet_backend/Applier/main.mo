@@ -15,7 +15,6 @@ actor ApplierModel {
 
     private stable var appliersEntries : [(Int, Applier.Applier)] = [];
     
-    // Custom hash function for Int
     private func intHash(n : Int) : Hash.Hash {
         let text = Int.toText(n);
         let hash = Text.hash(text);
@@ -28,12 +27,10 @@ actor ApplierModel {
         intHash
     );
 
-    // Save state before upgrade
     system func preupgrade() {
         appliersEntries := Iter.toArray(appliers.entries());
     };
 
-    // Restore state after upgrade
     system func postupgrade() {
         appliers := HashMap.fromIter<Int, Applier.Applier>(
             appliersEntries.vals(),
@@ -60,6 +57,17 @@ actor ApplierModel {
                 return #err("No Job Found");
             };
             case (#ok(_job)) {
+                if (_job.userId == payload.userId) {
+                    return #err("You can't apply to your own job");
+                };
+                let allAppliers = Iter.toArray(appliers.vals());
+                let userAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
+                    return applier.userId == payload.userId and applier.jobId == payload.jobId;
+                });
+                if (userAppliers.size() > 0) {
+                    return #err("You have already applied to this job");
+                };  
+
                 let currentId = nextId;
                 nextId += 1;
                 
@@ -80,18 +88,15 @@ actor ApplierModel {
     public func getJobApplier(job_id : Text): async Result.Result<[User.User], Text> {
         var applicants : [User.User] = [];
         
-        // First, find all appliers for this job
         let jobAppliers = Iter.toArray(appliers.vals());
         let filteredAppliers = Array.filter(jobAppliers, func(applier : Applier.Applier) : Bool {
             return applier.jobId == job_id;
         });
         
-        // If no appliers found, return empty array
         if (filteredAppliers.size() == 0) {
             return #ok([]);
         };
         
-        // Get user details for each applier
         for (applier in filteredAppliers.vals()) {
             let userResult = await userActor.getUserById(applier.userId);
             
@@ -109,15 +114,12 @@ actor ApplierModel {
 
 
     public func AcceptApplier(userIds : [Text]): async () {
-        // Convert HashMap to Array to make it mutable
         let allAppliers = Iter.toArray(appliers.vals());
         
-        // Update each applier that matches any userId in the input array
         for (applier in allAppliers.vals()) {
             if (Array.find<Text>(userIds, func(userId: Text) : Bool { 
                 return userId == applier.userId 
             }) != null) {
-                // Create updated applier with isAccepted = true
                 let updatedApplier : Applier.Applier = {
                     id = applier.id;
                     userId = applier.userId;
@@ -126,7 +128,6 @@ actor ApplierModel {
                     isAccepted = true;
                 };
                 
-                // Update in HashMap
                 appliers.put(applier.id, updatedApplier);
             };
         };
@@ -135,13 +136,11 @@ actor ApplierModel {
     public func GetUserApply(userId: Text): async [Applier.UserApplyJobPayload] {
         var userApplications : [Applier.UserApplyJobPayload] = [];
         
-        // Get all appliers for this user
         let allAppliers = Iter.toArray(appliers.vals());
         let userAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
             return applier.userId == userId;
         });
         
-        // For each application, get the job details and create the payload
         for (applier in userAppliers.vals()) {
             let jobResult = await jobActor.getJob(applier.jobId);
             

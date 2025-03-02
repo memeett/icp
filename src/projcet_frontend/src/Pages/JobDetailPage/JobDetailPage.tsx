@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { Job, JobCategory } from "../../../../declarations/job/job.did";
-import { getJobById } from "../../controller/jobController";
+import { getJobDetail } from "../../controller/jobController";
 
 export default function JobDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -15,7 +15,7 @@ export default function JobDetailPage() {
         const fetchJob = async () => {
             try {
                 if (id) {
-                    const jobData = await getJobById(id);
+                    const jobData = await getJobDetail(id);
                     if (jobData) {
                         setJob(jobData);
                     } else {

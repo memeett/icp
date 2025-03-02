@@ -161,4 +161,13 @@ actor ApplierModel {
         userApplications
     };
 
+    public func hasUserApplied(userId: Text, jobId: Text): async Bool {
+        let allAppliers = Iter.toArray(appliers.vals());
+        let userAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
+            return applier.userId == userId and applier.jobId == jobId;
+        });
+        
+        userAppliers.size() > 0
+    };
+
 }

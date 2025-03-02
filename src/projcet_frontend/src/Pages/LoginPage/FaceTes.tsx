@@ -14,7 +14,7 @@ const FaceTes = () => {
       principalId="user1234"
       onSuccess={handleSuccess}
       onError={handleError}
-      mode="register" // initial mode
+      mode="register" 
     />
   );
 };

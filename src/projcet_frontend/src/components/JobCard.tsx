@@ -1,8 +1,14 @@
 import { Job } from "../../../declarations/job/job.did";
+import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 
 export default function JobCard({ job }: { job: Job }) {
 
+    const nav = useNavigate();
 
+    const viewDetails = useCallback(() => {
+        nav("/jobs/" + job.id);
+    }, [nav]);
 
     return (
         <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md mx-auto border border-gray-200 relative">
@@ -23,7 +29,7 @@ export default function JobCard({ job }: { job: Job }) {
             </ul>
 
             {/* Button Positioned at Bottom Right */}
-            <button className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition absolute bottom-4 right-4">
+            <button className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition absolute bottom-4 right-4" onClick={viewDetails} >
                 View Details
             </button>
         </div>

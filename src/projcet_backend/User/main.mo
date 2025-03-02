@@ -61,6 +61,7 @@ actor UserModel{
         newUser
     };
 
+
     public func getAllUser(): async [User.User]{
         Iter.toArray(users.vals());
     };

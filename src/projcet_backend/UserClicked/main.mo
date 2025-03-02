@@ -6,14 +6,20 @@ import Int "mo:base/Int";
 import Nat "mo:base/Nat";
 import Result "mo:base/Result";
 import Option "mo:base/Option";
+import Hash "mo:base/Hash";
 actor UserClickedModel{
     private stable var nextId : Nat = 0;
+    private func intHash(n : Int) : Hash.Hash {
+        let text = Int.toText(n);
+        let hash = Text.hash(text);
+        hash
+    };
     private stable var userClickedEntries : [(Nat, UserClicked.UserClicked)] = [];
     private var userClickeds = HashMap.fromIter<Nat, UserClicked.UserClicked>(
         userClickedEntries.vals(),
         0,
         Int.equal,
-        Int.hash
+        intHash
     );
 
     system func preupgrade() {
@@ -25,7 +31,7 @@ actor UserClickedModel{
             userClickedEntries.vals(),
             0,
             Int.equal,
-            Int.hash
+            intHash
         );
         userClickedEntries := [];
     };

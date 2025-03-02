@@ -35,7 +35,6 @@ const route = createBrowserRouter([
     path: "/jobs/:jobId",
     element: <JobDetailPage />,
   },
-
 ]);
 
 const rootElement = document.getElementById("root");

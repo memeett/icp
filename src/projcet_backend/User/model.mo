@@ -11,7 +11,6 @@ module{
         createdAt: Int;
         updatedAt: Int;
         isFaceRecognitionOn: Bool;
-
     };
 
     public type UpdateUserPayload = {

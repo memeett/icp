@@ -4,9 +4,12 @@ import { FiSearch, FiX, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 import { BiSlider } from "react-icons/bi";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { viewMyJobs, deleteJob } from "../../controller/jobController";
+import { getUserJobs, deleteJob } from "../../controller/jobController";
 import { Job, JobCategory } from "../../../../declarations/job/job.did";
 import { ModalProvider } from "../../contexts/modal-context";
+import { authUtils } from "../../utils/authUtils";
+import { fetchUserBySession } from "../../controller/userController";
+import { User } from "../../interface/User";
 
 export default function ManageJobPage() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -16,10 +19,13 @@ export default function ManageJobPage() {
     const [jobStatus, setJobStatus] = useState<string[]>(["All", "Start", "Pending", "Completed"]);
     const [selectedStatus, setSelectedStatus] = useState("All");
 
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+
     const fetchData = async () => {
         try {
             setLoading(true);
-            const jobs = await viewMyJobs();
+            const jobs = await getUserJobs(currentUser?.id || "");
+            console.log("Jobs:", jobs);
             if (jobs) setMyJobs(jobs);
         } catch (err) {
             console.error("Error fetching jobs:", err);
@@ -29,14 +35,26 @@ export default function ManageJobPage() {
     };
 
     useEffect(() => {
+        const fetchUser = async () => {
+            const user = await fetchUserBySession();
+            if (user) setCurrentUser(user);
+            console.log("User:", user); 
+        };
+
+        fetchUser();
+
+    }, []);
+
+    useEffect(() => {
         fetchData();
-    }, [refreshKey]);
+    }, [currentUser]);
+
 
     const handleDeleteJob = async (jobId: string) => {
         if (window.confirm("Are you sure you want to delete this job?")) {
             try {
                 await deleteJob(jobId);
-                setRefreshKey(prev => prev + 1); // Trigger a refresh
+                setRefreshKey(prev => prev + 1);
             } catch (err) {
                 console.error("Error deleting job:", err);
             }
@@ -64,7 +82,7 @@ export default function ManageJobPage() {
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold text-gray-800">Manage Your Jobs</h1>
                     <Link 
-                        to="/jobs/create" 
+                        to="/PostJobPage" 
                         className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center gap-2 transition duration-200"
                     >
                         <FiPlus /> Create New Job
@@ -171,7 +189,7 @@ export default function ManageJobPage() {
                         <div className="bg-white rounded-lg shadow-md p-8 text-center">
                             <p className="text-gray-500 mb-4">You haven't created any jobs yet</p>
                             <Link 
-                                to="/jobs/create" 
+                                to="/PostJobPage" 
                                 className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition duration-200"
                             >
                                 <FiPlus /> Create Your First Job

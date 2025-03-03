@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FiSearch, FiX } from 'react-icons/fi';
 import { BiSlider } from 'react-icons/bi';
 import { AiOutlineFolder, AiOutlineHeart, AiOutlineLike } from 'react-icons/ai';
@@ -7,6 +7,7 @@ import { BsCheckCircleFill, BsStar, BsStarFill } from 'react-icons/bs';
 import Navbar from '../../components/Navbar';
 import { ModalProvider } from '../../contexts/modal-context';
 import { AuthenticationModal } from '../../components/modals/AuthenticationModal';
+import { getAllUsers } from '../../controller/userController';
 
 interface JobCategory {
     id: string;
@@ -25,7 +26,18 @@ interface Job {
     updatedAt: number;
 }
 
-const SearchPage: React.FC = () => {
+export default function SearchPage() {
+  useEffect(() => {
+    const getFreelancers = async () => {
+        try {
+            const users = await getAllUsers();
+            console.log("Users:", users);
+        } catch (err) {
+            console.error("Error fetching users:", err);
+        }
+    };
+    getFreelancers();
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
 
   const jobs: Job[] = [
@@ -132,5 +144,3 @@ const SearchPage: React.FC = () => {
     </ModalProvider>
   );
 };
-
-export default SearchPage;

@@ -63,7 +63,7 @@ const Navbar = () => {
 
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
-              <div className="flex gap-3 items-center">
+              <div className="flex gap-3 items-center hover:cursor-pointer">
                 <a onClick={profpicClick}>{user.username}</a>
                 <img
                   onClick={profpicClick}

@@ -1,4 +1,5 @@
 import { Job } from "../../../declarations/job/job.did";
+import { addIncrementUserClicked } from "../controller/userClickedController";
 
 export default function JobCard({ job }: { job: Job }) {
 
@@ -23,7 +24,7 @@ export default function JobCard({ job }: { job: Job }) {
             </ul>
 
             {/* Button Positioned at Bottom Right */}
-            <button className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition absolute bottom-4 right-4">
+            <button className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition absolute bottom-4 right-4" onClick={()=>(addIncrementUserClicked(job.id))}>
                 View Details
             </button>
         </div>

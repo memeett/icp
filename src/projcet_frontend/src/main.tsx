@@ -13,6 +13,9 @@ import { ModalProvider } from "./contexts/modal-context.tsx";
 import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
 import JobDetailPage from "./Pages/JobDetailPage/JobDetailPage.tsx";
 import FaceTes from "./Pages/LoginPage/FaceTes.tsx";
+import ManageJobPage from "./Pages/ManageJobPage/ManageJobPage.tsx";
+import RegisterFace from "./Pages/LoginPage/RegisterFacePage.tsx";
+import LoginFace from "./Pages/LoginPage/LoginFace.tsx";
 
 const route = createBrowserRouter([
   {
@@ -35,6 +38,24 @@ const route = createBrowserRouter([
     path: "/jobs/:jobId",
     element: <JobDetailPage />,
   },
+  {
+    path: "/ka",
+    element: <ManageJobPage />,
+  },
+  {
+    path: "/browse",
+    element: <SearchPage />,
+  },
+  {
+    path: "/face-recognition/register",
+    element: <RegisterFace />,
+  },
+  {
+    path: "/face-recognition/login",
+    element: <LoginFace />,
+  },
+
+
 ]);
 
 const rootElement = document.getElementById("root");

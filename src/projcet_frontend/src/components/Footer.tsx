@@ -4,7 +4,9 @@ export default function Footer() {
 
 
     return (
-        <div className="flex flex-col pl-10 pr-10 pt-10 pb-10 mt-10 border-t-2 outline-0.2 border-gray-200">
+
+        <div className="flex flex-col pl-10 pr-10 pt-10 pb-10 border-t-2 outline-0.2 border-gray-200">
+
             <div className="flex justify-between">
 
                 <div className="ml-30">

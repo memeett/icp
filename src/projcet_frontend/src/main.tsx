@@ -35,6 +35,10 @@ const route = createBrowserRouter([
     path: "/jobs/:jobId",
     element: <JobDetailPage />,
   },
+  {
+    path: "/browse",
+    element: <SearchPage />,
+  }
 ]);
 
 const rootElement = document.getElementById("root");

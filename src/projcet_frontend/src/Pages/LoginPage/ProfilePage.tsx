@@ -55,7 +55,6 @@ export default function ProfilePage() {
               </li>
             </ul>
           </div>
-
           <div className="w-full scrollbar-hide">
             {activeSection === "biodata" ? <ProfileBiodata /> : <div></div>}
           </div>

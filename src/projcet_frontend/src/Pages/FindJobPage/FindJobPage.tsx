@@ -9,12 +9,8 @@ import { FiSearch, FiX } from "react-icons/fi";
 import { viewAllJobCategories, viewAllJobs } from "../../controller/jobController";
 import { Job, JobCategory } from "../../../../declarations/job/job.did";
 import { Link } from "react-router-dom";
-
-const recommendationJobs: Job[] = [
-    { id: "1", jobName: "Software Engineer", jobTags: [{ id: "1", jobCategoryName: "Full-time" }], jobRating: 4.6, jobSalary: 75000, jobDescription: ["Develop software solutions.", "Collaborate with cross-functional teams."], jobSlots: BigInt(2), createdAt: BigInt(Date.now()), updatedAt: BigInt(Date.now()), jobStatus: "Start", userId: "1" },
-    { id: "2", jobName: "Machine Learning Engineer", jobTags: [{ id: "2", jobCategoryName: "Part-time" }], jobRating: 4.3, jobSalary: 85000, jobDescription: ["Build and optimize ML models.", "Work with large datasets and AI frameworks."], jobSlots: BigInt(1), createdAt: BigInt(Date.now()), updatedAt: BigInt(Date.now()), jobStatus: "Start", userId: "1" },
-    { id: "7", jobName: "Cybersecurity Engineer", jobTags: [{ id: "7", jobCategoryName: "Full-time" }], jobRating: 4.9, jobSalary: 88000, jobDescription: ["Implement security protocols.", "Monitor and prevent cyber threats."], jobSlots: BigInt(1), createdAt: BigInt(Date.now()), updatedAt: BigInt(Date.now()), jobStatus: "Start", userId: "1" },
-];
+import { UserClicked } from "../../../../declarations/userclicked/userclicked.did";
+import { getUserClickedByUserId } from "../../controller/userClickedController";
 
 const jobTag = ["Full-time", "Part-time", "Contract", "Remote"];
 
@@ -23,13 +19,14 @@ export default function FindJobPage() {
     const [startIndex, setStartIndex] = useState(0);
     const [jobTags, setJobTags] = useState<JobCategory[]>([]);
     const [listJobs, setListJobs] = useState<Job[]>([]);
+    const [listUserClickeds, setListUserClickeds] = useState<UserClicked[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [selectedSalaryRanges, setSelectedSalaryRanges] = useState<string[]>([]);
-
+    const [recommendationJobs, setRecommendationJobs] = useState<Job[]>([]);
 
     const nextSlide = () => {
-        if (startIndex + 5 < recommendationJobs.length) {
+        if (startIndex + 3 < recommendationJobs.length) {
             setStartIndex(startIndex + 1);
         }
     };
@@ -54,7 +51,6 @@ export default function FindJobPage() {
         }
     };
 
-
     fetchData();
 
     const handleTagChange = (tag: string) => {
@@ -70,13 +66,10 @@ export default function FindJobPage() {
     };
 
     const filteredJobs = listJobs.filter(job => {
-        // Filter by job name (case-insensitive search)
         const matchesSearch = searchQuery === "" || job.jobName.toLowerCase().includes(searchQuery.toLowerCase());
 
-        // Filter by job tags
         const matchesTags = selectedTags.length === 0 || job.jobTags.some(tag => selectedTags.includes(tag.jobCategoryName));
 
-        // Filter by salary ranges
         const matchesSalary = selectedSalaryRanges.length === 0 || selectedSalaryRanges.some(range => {
             switch (range) {
                 case "< 100":
@@ -93,6 +86,71 @@ export default function FindJobPage() {
         return matchesSearch && matchesTags && matchesSalary;
     });
 
+    const convertBigIntToString = (data: any): any => {
+        if (typeof data === 'bigint') {
+            return data.toString();
+        }
+        if (Array.isArray(data)) {
+            return data.map(convertBigIntToString);
+        }
+        if (typeof data === 'object' && data !== null) {
+            return Object.fromEntries(
+                Object.entries(data).map(([key, value]) => [key, convertBigIntToString(value)])
+            );
+        }
+        return data;
+    };
+
+    const getRecommendationJoblList = async () => {
+        const userClickeds = await getUserClickedByUserId();
+        if (userClickeds) setListUserClickeds(userClickeds);
+
+        
+        if (userClickeds.length === 0) {
+            const randomJobs = listJobs.sort(() => 0.5 - Math.random()).slice(0, 5);
+            setRecommendationJobs(randomJobs);
+            return;
+        }
+
+        const data = {
+            jobTags: convertBigIntToString(jobTags),
+            listJobs: convertBigIntToString(listJobs),
+            listUserClickeds: convertBigIntToString(listUserClickeds),
+        };
+
+        console.log(data);
+
+        try {
+            const response = await fetch("http://localhost:5000/getRecommendation", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+
+            const result = await response.json();
+            console.log("Response from Flask:", result);
+            setRecommendationJobs(result.top_jobs);
+        } catch (error) {
+            console.error("Error sending data to Flask:", error);
+        }
+    };
+    // useEffect(() => {
+        getRecommendationJoblList();
+
+        // const intervalId = setInterval(() => {
+        //     getRecommendationJoblList();
+        // }, 50000); 
+
+        // return () => {
+        //     clearInterval(intervalId);
+        // };
+    // }, []);
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -124,7 +182,8 @@ export default function FindJobPage() {
                     </div>
                 </div>
             </div>
-
+            {/* <button onClick={getRecommendationJoblList}>Fetch Recommendation</button>
+            <button onClick={getUserClickedByUserId}>Get All</button> */}
             <div className="flex overflow-x-hidden scrollbar-hide">
                 <div className="flex flex-col bg-brown w-[20vw] h-screen container">
                     <div className="flex flex-col h-screen p-20">
@@ -157,8 +216,6 @@ export default function FindJobPage() {
                             ))
                         )}
 
-
-                        {/* Job Salary Filter Section */}
                         <p className="text-2xl font-light mb-5">Job Salary</p>
                         <div className="flex gap-5 mb-3">
                             <input
@@ -190,7 +247,6 @@ export default function FindJobPage() {
                             />
                             <label className="font-extralight text-l">{"> 200"} $</label>
                         </div>
-
                     </div>
                 </div>
 
@@ -209,11 +265,10 @@ export default function FindJobPage() {
                                 <JobCard key={job.id} job={job} />
                             ))}
                         </div>
-
                         <button
                             className="absolute right-0 bg-blue-500 text-white p-2 rounded-full shadow-md hover:bg-blue-600 transition"
                             onClick={nextSlide}
-                            disabled={startIndex + 5 >= recommendationJobs.length}
+                            disabled={startIndex + 3 >= recommendationJobs.length}
                         >
                             <ChevronRight />
                         </button>
@@ -221,15 +276,10 @@ export default function FindJobPage() {
 
                     <h2 className="text-3xl font-semibold mt-10 mb-4 text-gray-800">List Jobs</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-12">
-
                         {filteredJobs.length > 0 ? (
-                            filteredJobs.map((job) =>
-
-                                    <JobCard key={job.id} job={job} />
-                                // <Link to={`/jobs/${job.id}`}>
-                                // </Link>
-                            )
-
+                            filteredJobs.map((job) => (
+                                <JobCard key={job.id} job={job} />
+                            ))
                         ) : (
                             <p className="text-center col-span-full text-gray-500">No job listings available</p>
                         )}

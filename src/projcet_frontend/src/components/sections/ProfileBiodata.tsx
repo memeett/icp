@@ -182,7 +182,7 @@ export default function ProfileBiodata() {
           },
         })
       );
-      // window.location.reload();
+      window.location.reload();
     } catch (err) {
       console.error("Error saving profile:", err);
     }

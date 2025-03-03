@@ -1,5 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Webcam from 'react-webcam';
+import { User } from '../interface/User';
+import { fetchUserBySession } from '../controller/userController';
+import { user } from '../../../declarations/user';
 
 interface FaceRecognitionProps {
   principalId: string; // Masih dibutuhkan untuk mode register
@@ -7,6 +10,9 @@ interface FaceRecognitionProps {
   onError: (error: string) => void;
   mode: 'register' | 'verify';
 }
+
+
+
 
 const FaceRecognition: React.FC<FaceRecognitionProps> = ({
   principalId,
@@ -17,6 +23,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
   const webcamRef = useRef<Webcam>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [currentMode, setCurrentMode] = useState(initialMode);
+
 
   const capture = async () => {
     if (!webcamRef.current) return;
@@ -75,6 +82,9 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
             similarity: result.similarity,
             message: result.message
           });
+          
+          // user.login(result.principal_id);
+
         } else {
           onSuccess();
         }

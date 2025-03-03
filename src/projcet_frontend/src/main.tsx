@@ -40,6 +40,11 @@ const route = createBrowserRouter([
     path: "/ka",
     element: <ManageJobPage />,
   },
+
+    path: "/browse",
+    element: <SearchPage />,
+  }
+
 ]);
 
 const rootElement = document.getElementById("root");

@@ -60,8 +60,6 @@ export default function ProfileBiodata() {
         const blob = new Blob([u8], { type: "image/png" });
         newUser.profilePicture = blob;
       }
-      // const newProfile = new Blob([newUser.profilePicture]);
-      // newUser.profilePicture = newProfile;
       setUser(newUser);
       setTempUser(newUser);
       // setCreatedAt(date);
@@ -200,7 +198,7 @@ export default function ProfileBiodata() {
     setFaceRecognitionOn((prev) => !prev);
   };
   return (
-    <div className="bg-gradient-to-b p-8 pb-16">
+    <div className=" w-full">
       {user && (
         <>
           <AnimatePresence>
@@ -232,9 +230,9 @@ export default function ProfileBiodata() {
 
           <ProfileImageModal />
 
-          <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-purple-50">
+          <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-purple-50">
             {/* Profile Header */}
-            <div className=" bg-gradient-to-r from-[#DBE2EF] to-[#a5bad3] p-8">
+            <div className=" bg-gradient-to-r from-[#DBE2EF] to-blue-200 p-8">
               <div className="flex items-center gap-6">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
@@ -272,7 +270,8 @@ export default function ProfileBiodata() {
                     <input
                       value={tempUsername}
                       onChange={(e) => setTempUsername(e.target.value)}
-                      className="text-4xl font-bold bg-transparent focus:outline-0 border-b border-purple-400 focus:border-white text-black placeholder:text-purple-200 w-1/2"
+                      autoComplete="off"
+                      className="text-4xl font-bold bg-transparent focus:outline-0 border-b border-purple-400 focus:border-black text-black placeholder:text-gray-400 w-1/2"
                       placeholder="Enter username"
                       name="username"
                     />

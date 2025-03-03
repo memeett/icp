@@ -149,3 +149,46 @@ export const getJobById = async (jobId: string): Promise<Job|null> =>{
         return null;
     }
 }
+
+// cek job punya owner
+export const getUserJobs = async (userId: string): Promise<Job[] | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    try {
+        const result = await job.getUserJob(userId);
+        console.log("Jobs:", result);
+        return result;
+    } catch (error) {
+        console.error("Failed to get all jobs:", error);
+        return null;
+    }
+}
+
+
+export const deleteJob = async (jobId: string): Promise<string[]> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    try {
+        const result = await job.deleteJob(jobId);
+        if ("ok" in result) {
+            console.log("Job deleted:", result.ok);
+            return ["Success", "Success delete job"];
+        } else {
+            console.error("Error deleting job:", result.err);
+            return ["Failed", "Error deleting job"];
+        }
+    } catch (error) {
+        console.error("Failed to delete job:", error);
+        return ["Failed", "Failed to delete job"];
+    }
+}

@@ -13,6 +13,7 @@ import { ModalProvider } from "./contexts/modal-context.tsx";
 import SearchPage from "./Pages/SearchPage/SearchPage.tsx";
 import JobDetailPage from "./Pages/JobDetailPage/JobDetailPage.tsx";
 import FaceTes from "./Pages/LoginPage/FaceTes.tsx";
+import ManageJobPage from "./Pages/ManageJobPage/ManageJobPage.tsx";
 
 const route = createBrowserRouter([
   {
@@ -34,6 +35,10 @@ const route = createBrowserRouter([
   {
     path: "/jobs/:jobId",
     element: <JobDetailPage />,
+  },
+  {
+    path: "/ka",
+    element: <ManageJobPage />,
   },
 ]);
 

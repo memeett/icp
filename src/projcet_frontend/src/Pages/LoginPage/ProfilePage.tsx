@@ -362,9 +362,19 @@ export default function ProfilePage() {
                   No user data available. Please log in.
                 </div>
               )
+            ) : activeSection == "freelancer" ? (
+              <div className="text-gray-500 text-lg text-center">
+                Freelancer History
+              </div>
+            ) : activeSection == "client" ? (
+              <div className="text-gray-500 text-lg text-center">
+                Client History
+              </div>
             ) : (
               <p className="text-gray-500">Loading user data...</p>
             )}
+
+            {activeSection === "freelancer"}
           </div>
         </div>
 

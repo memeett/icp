@@ -1,26 +1,67 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { Job, JobCategory } from "../../../../declarations/job/job.did";
-import { getJobDetail } from "../../controller/jobController";
+import { getJobById } from "../../controller/jobController";
+import { applyJob, hasUserApplied } from "../../controller/applyController";
+
+// Reusable JobTag Component
+const JobTag = ({ tag }: { tag: JobCategory }) => (
+    <span className="px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-700">
+        {tag.jobCategoryName}
+    </span>
+);
+
+// Reusable JobDetailSection Component
+const JobDetailSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div>
+        <h2 className="text-xl font-semibold mb-4">{title}</h2>
+        {children}
+    </div>
+);
 
 export default function JobDetailPage() {
-    const { id } = useParams<{ id: string }>();
+    const { jobId } = useParams<{ jobId: string }>();
     const [job, setJob] = useState<Job | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [applied, setApplied] = useState(false);
+
+    const checkApplied = useCallback(async () => {
+        const userData = localStorage.getItem("current_user");
+        if (!userData) {
+            console.error("User data not found");
+            return;
+        }
+
+        const parsedData = JSON.parse(userData);
+
+        try {
+            const result = await hasUserApplied(parsedData.ok.id, jobId!);
+            console.log("User applied:", result);
+            setApplied(result); 
+        } catch (err) {
+            console.error("Error checking application status:", err);
+        }
+    }, [jobId]);
 
     useEffect(() => {
+        checkApplied();
+        console.log("Checking applied status");
         const fetchJob = async () => {
+            if (!jobId) {
+                setError("Job ID is missing");
+                setLoading(false);
+                return;
+            }
+
             try {
-                if (id) {
-                    const jobData = await getJobDetail(id);
-                    if (jobData) {
-                        setJob(jobData);
-                    } else {
-                        setError("Job not found");
-                    }
+                const jobData = await getJobById(jobId);
+                if (jobData) {
+                    setJob(jobData);
+                } else {
+                    setError("Job not found");
                 }
             } catch (err) {
                 console.error("Error fetching job:", err);
@@ -31,7 +72,44 @@ export default function JobDetailPage() {
         };
 
         fetchJob();
-    }, [id]);
+        
+    }, [jobId]);
+    
+    const handleApply = useCallback(async () => {
+        const userData = localStorage.getItem("current_user");
+        if (!userData) {
+            console.error("User data not found");
+            return;
+        }
+
+        try {
+            const parsedData = JSON.parse(userData);
+            const result = await applyJob(parsedData.ok.id, jobId!);
+            if (result) {
+                console.log("Applied for the job");
+                setApplied(true); // Update the applied state
+            } else {
+                console.error("Failed to apply for the job");
+            }
+        } catch (err) {
+            console.error("Error applying for job:", err);
+        }
+    }, [jobId]);
+
+    
+    
+
+    const jobDetails = useMemo(() => {
+        if (!job) return null;
+
+        return {
+            salary: job.jobSalary.toLocaleString(),
+            rating: job.jobRating.toFixed(1),
+            postedDate: new Date(Number(job.createdAt)).toLocaleDateString(),
+        };
+    }, [job]);
+
+    // Handle job application
 
     if (loading) {
         return (
@@ -55,6 +133,7 @@ export default function JobDetailPage() {
 
     if (!job) return null;
 
+
     return (
         <div className="flex flex-col min-h-screen">
             <Navbar />
@@ -69,12 +148,12 @@ export default function JobDetailPage() {
                                 </h1>
                                 <div className="flex items-center gap-4 mb-4">
                                     <span className="text-lg font-semibold text-green-600">
-                                        ${job.jobSalary.toLocaleString()}/year
+                                        ${jobDetails?.salary}
                                     </span>
                                     <div className="flex items-center">
                                         <span className="text-yellow-500">★</span>
                                         <span className="ml-1 text-gray-600">
-                                            {job.jobRating.toFixed(1)}
+                                            {jobDetails?.rating}
                                         </span>
                                     </div>
                                 </div>
@@ -86,20 +165,14 @@ export default function JobDetailPage() {
 
                         {/* Job Tags */}
                         <div className="flex flex-wrap gap-2 mb-8">
-                            {job.jobTags.map((tag: JobCategory) => (
-                                <span
-                                    key={tag.id}
-                                    className="px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-700"
-                                >
-                                    {tag.jobCategoryName}
-                                </span>
+                            {job.jobTags.map((tag) => (
+                                <JobTag key={tag.id} tag={tag} />
                             ))}
                         </div>
 
                         {/* Job Details */}
                         <div className="space-y-6">
-                            <div>
-                                <h2 className="text-xl font-semibold mb-4">Job Description</h2>
+                            <JobDetailSection title="Job Description">
                                 <ul className="list-disc pl-6 space-y-2">
                                     {job.jobDescription.map((desc, index) => (
                                         <li key={index} className="text-gray-600">
@@ -107,7 +180,7 @@ export default function JobDetailPage() {
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
+                            </JobDetailSection>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -116,14 +189,20 @@ export default function JobDetailPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-semibold mb-2">Posted</h3>
-                                    <p className="text-gray-600">
-                                        {new Date(Number(job.createdAt)).toLocaleDateString()}
-                                    </p>
+                                    <p className="text-gray-600">{jobDetails?.postedDate}</p>
                                 </div>
                             </div>
 
-                            <button className="w-full bg-green-500 text-white py-3 px-6 rounded-lg hover:bg-green-600 transition duration-200">
-                                Apply Now
+                            <button
+                                className={`w-full text-white py-3 px-6 rounded-lg transition duration-200 ${
+                                    applied
+                                        ? "bg-red-500 cursor-not-allowed"
+                                        : "bg-green-500 hover:bg-green-600"
+                                }`}
+                                onClick={handleApply}
+                                disabled={applied}
+                            >
+                                {applied ? "Applied" : "Apply Now"}
                             </button>
                         </div>
                     </div>

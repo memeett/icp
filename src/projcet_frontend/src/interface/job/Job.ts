@@ -13,4 +13,5 @@ export interface Job {
     jobSlots: number;
     createdAt: number;
     updatedAt: number;
+    userId: string;
 }

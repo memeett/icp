@@ -1,6 +1,6 @@
 import FaceRecognition from "../../components/FaceRecognition.js";
 
-const FaceTes = () => {
+const LoginFace = () => {
   const handleSuccess = () => {
     console.log('Operation successful!');
   };
@@ -11,12 +11,12 @@ const FaceTes = () => {
 
   return (
     <FaceRecognition
-      principalId="user1234"
+      principalId=""
       onSuccess={handleSuccess}
       onError={handleError}
-      mode="register" 
+      mode="verify" 
     />
   );
 };
 
-export default FaceTes;
+export default LoginFace;

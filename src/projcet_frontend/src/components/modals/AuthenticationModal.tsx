@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { CameraIcon, GlobeIcon } from "lucide-react";
 import { useModal } from "../../contexts/modal-context";
 import { loginWithInternetIdentity } from "../../controller/userController";
+import { Link } from "react-router-dom";
 
 export function AuthenticationModal() {
   const { open, setOpen } = useModal();
@@ -68,10 +69,13 @@ export function AuthenticationModal() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
+                <Link to="/face-recognition/login">
                 <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2">
                   <CameraIcon className="w-6 h-6" />
                   <span>Camera Authentication</span>
                 </button>
+                </Link>
+
               </motion.div>
             </div>
 

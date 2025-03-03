@@ -259,3 +259,49 @@ export const updateUserProfile = async (payload: UpdateUserPayload): Promise<voi
         }
     }
 };
+
+export const getAllUsers = async (): Promise<User[] | null> => {
+    try {
+        const result = await user.getAllUser();
+
+        if (!result || !Array.isArray(result)) {
+            console.error("Invalid response format:", result);
+            return null;
+        }
+
+        const currentUserString = localStorage.getItem("current_user");
+        if (!currentUserString) {
+            console.error("Current user not found in localStorage");
+            return null;
+        }
+
+        const currentUser = JSON.parse(currentUserString).ok;
+
+        const otherUsers = result.filter((userData) => userData.id !== currentUser.id);
+
+        const usersWithProfilePictures = await Promise.all(otherUsers.map(async (userData) => {
+            let profilePictureBlob: Blob;
+            if (userData.profilePicture) {
+                const uint8Array = new Uint8Array(userData.profilePicture);
+                profilePictureBlob = new Blob([uint8Array.buffer], {
+                    type: 'image/jpeg' 
+                });
+            } else {
+                profilePictureBlob = new Blob([], { type: 'image/jpeg' });
+            }
+
+            return {
+                ...userData,
+                profilePicture: profilePictureBlob,
+                createdAt: new Date(Number(userData.createdAt)),
+                updatedAt: new Date(Number(userData.updatedAt)),
+            };
+        }));
+
+        console.log("Users with profile pictures (excluding current user):", usersWithProfilePictures);
+        return usersWithProfilePictures;
+    } catch (error) {
+        console.error("Failed to get all users:", error);
+        return null;
+    }
+};

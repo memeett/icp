@@ -1,56 +1,78 @@
 import numpy as np
 import tensorflow as tf
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-print(tf.__version__)
+print("TensorFlow version:", tf.__version__)
 
-users = ['Ryan', 'Danielle', 'Vijay', 'Chris']
-jobs = ['Star Wars', 'The Dark Night', 'Shrek', 'The Incredibles', 'Blew', 'Memento']
-features = ['Action', 'Sci-Fi', 'Comedy', 'Cartoon', 'Drama']
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "https://localhost:3000"}})
 
-num_users = len(users)
-num_jobs = len(jobs)
-num_feats = len(features)
+@app.route('/getRecommendation', methods=['POST'])
+def getRecomendationListJob():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 415
 
-users_jobs = tf.constant([
-    [4, 6, 8, 0, 0, 0],
-    [0, 0, 10, 0, 8, 3],
-    [0, 6, 0, 0, 3, 7],
-    [10, 9, 0, 5, 0, 2]
-], dtype=tf.float32)
+    data = request.get_json()
+    print("Received data:", data)  
 
-jobs_feats = tf.constant([
-    [1, 1, 0, 0, 1],
-    [1, 1, 0, 0, 0],
-    [0, 0, 1, 1, 0],
-    [1, 0, 1, 1, 0],
-    [0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 1]
-], dtype=tf.float32)
+    features = data.get('jobTags')
+    list_jobs = data.get('listJobs')
+    list_user_clickeds = data.get('listUserClickeds')
 
-wgtd_feature_matrices = [tf.expand_dims(tf.transpose(users_jobs)[:, i], axis=1) * jobs_feats for i in range(num_users)]
-users_jobs_feats = tf.stack(wgtd_feature_matrices)
-users_jobs_feats_sums = tf.reduce_sum(users_jobs_feats, axis=1)
-users_jobs_feats_totals = tf.reduce_sum(users_jobs_feats_sums, axis=1)
+    user_clicks = pd.DataFrame(list_user_clickeds)
+    jobs = pd.DataFrame(list_jobs)
 
-users_feats = tf.stack([users_jobs_feats_sums[i, :] / users_jobs_feats_totals[i] for i in range(num_users)], axis=0)
+    print("User Clicks Columns:", user_clicks.columns)
+    print("Jobs Columns:", jobs.columns)
 
-def find_user_top_feats(user_index):
-    feats_ind = tf.math.top_k(users_feats[user_index], num_feats).indices
-    return tf.gather(features, feats_ind)
+    if 'userId' not in user_clicks.columns or 'jobId' not in user_clicks.columns or 'counter' not in user_clicks.columns:
+        return jsonify({"error": "Missing required columns in user clicks data"}), 400
 
-users_topfeats = {users[i]: find_user_top_feats(i).numpy().tolist() for i in range(num_users)}
-print(users_topfeats)
+    user_clicks['counter'] = pd.to_numeric(user_clicks['counter'], errors='coerce')
 
-users_totalclicks = [tf.map_fn(lambda x: tf.tensordot(users_feats[i], x, axes=1), jobs_feats) for i in range(num_users)]
-all_users_totalclicks = tf.stack(users_totalclicks)
-all_users_totalclicks_new = tf.where(tf.equal(users_jobs, tf.zeros_like(users_jobs)), all_users_totalclicks, -np.inf * tf.ones_like(users_jobs))
+    current_user_id = user_clicks['userId'].iloc[0]  
+    user_clicked_jobs = user_clicks[user_clicks['userId'] == current_user_id]['jobId'].tolist()
+    print("User Clicked Jobs:", user_clicked_jobs)  
 
-def find_user_top_jobs(user_index, num_to_recommend):
-    jobs_ind = tf.math.top_k(all_users_totalclicks_new[user_index], k=num_to_recommend).indices
-    return tf.gather(jobs, jobs_ind)
+    jobs['features'] = jobs['jobTags'].apply(lambda x: ' '.join([tag['jobCategoryName'] for tag in x]))
+    print("Job Features:\n", jobs[['id', 'features']])  
 
-num_to_recommend = tf.reduce_sum(tf.cast(tf.equal(users_jobs, tf.zeros_like(users_jobs)), dtype=tf.int32), axis=1)
+    vectorizer = TfidfVectorizer()
+    job_feature_matrix = vectorizer.fit_transform(jobs['features'])
+    print("Job Feature Matrix Shape:", job_feature_matrix.shape) 
 
-user_topjobs = {users[i]: [x.decode('utf-8') for x in find_user_top_jobs(i, num_to_recommend[i].numpy()).numpy()] for i in range(num_users)}
+    job_similarity = cosine_similarity(job_feature_matrix)
+    print("Job Similarity Matrix Shape:", job_similarity.shape)  
 
-print(user_topjobs)
+    def recommend_jobs(user_clicked_jobs, job_similarity, jobs, top_n=5):
+        clicked_job_indices = jobs[jobs['id'].isin(user_clicked_jobs)].index.tolist()
+        print("Clicked Job Indices:", clicked_job_indices)  
+
+        job_scores = job_similarity[clicked_job_indices].mean(axis=0)
+        print("Job Scores:", job_scores)  
+
+        recommended_job_indices = np.argsort(job_scores)[::-1]
+        print("Recommended Job Indices:", recommended_job_indices)  
+
+        recommended_job_indices = [idx for idx in recommended_job_indices if idx not in clicked_job_indices]
+        print("Filtered Recommended Job Indices:", recommended_job_indices)  
+
+        top_job_indices = recommended_job_indices[:top_n]
+        recommended_jobs = jobs.iloc[top_job_indices].to_dict(orient='records')
+        return recommended_jobs
+
+    recommendations = recommend_jobs(user_clicked_jobs, job_similarity, jobs)
+    recommended_job_names = jobs[jobs['id'].isin(recommendations)]['jobName']
+    print("Recommended Jobs:", recommended_job_names.tolist())  
+    print(jobs[jobs['id'].isin(recommendations)])
+    return jsonify({
+        "message": "Success",
+        "top_jobs": recommendations
+    })
+
+if __name__ == '__main__':
+    app.run(port=5000, debug=True, use_reloader=True)

@@ -4,6 +4,7 @@ import { user } from "../../../declarations/user";
 import { session } from "../../../declarations/session";
 import { HttpAgent } from "@dfinity/agent";
 import { useState } from "react";
+import { get } from "http";
 
 export const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");
@@ -14,7 +15,42 @@ export const getCookie = (name: string): string | null => {
         }
     }
     return null;
-    
+
+};
+
+export const login = async (principalId: string): Promise<boolean> => {
+    const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
+    const response = await fetch(defaultImagePath);
+    const imageBlob = await response.blob();
+
+    const arrayBuffer = await imageBlob.arrayBuffer();
+    const profilePicBlob = new Uint8Array(arrayBuffer);
+
+    const res = await user.login(principalId, profilePicBlob);
+    if (!res) {
+        console.log("Login Failed");
+        return false;
+    }
+    console.log("Login successful:", res);
+    document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
+    localStorage.setItem("session", JSON.stringify(res));
+    const userIdResult = await session.getUserIdBySession(res);
+    console.log(userIdResult);
+    if ("ok" in userIdResult) {
+      const userId = userIdResult.ok;
+      const userDetail = await user.getUserById(userId);
+      localStorage.setItem(
+        "current_user",
+        JSON.stringify(userDetail, (_, value) =>
+          typeof value === "bigint" ? value.toString() : value
+        )
+      );
+      console.log(userDetail);
+    } else {
+      console.error("Error fetching user ID:", userIdResult.err);
+      return false;
+    }
+    return true;
 };
 
 
@@ -42,7 +78,7 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
         const response = await fetch(defaultImagePath);
         const imageBlob = await response.blob();
-        
+
         const arrayBuffer = await imageBlob.arrayBuffer();
         const profilePicBlob = new Uint8Array(arrayBuffer);
 
@@ -57,7 +93,7 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
         const userIdResult = await session.getUserIdBySession(res);
         console.log(userIdResult)
         if ("ok" in userIdResult) {
-            const userId = userIdResult.ok;  
+            const userId = userIdResult.ok;
             const userDetail = await user.getUserById(userId);
             localStorage.setItem("current_user", JSON.stringify(userDetail, (_, value) =>
                 typeof value === "bigint" ? value.toString() : value
@@ -67,7 +103,7 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
             console.error("Error fetching user ID:", userIdResult.err);
             return false;
         }
-        
+
         console.log("Login successful:", res);
         document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
         localStorage.setItem("session", JSON.stringify(res));
@@ -108,7 +144,7 @@ export const validateCookie = async (): Promise<boolean> => {
 
         if (!isValid) {
             document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-            localStorage.removeItem("session"); 
+            localStorage.removeItem("session");
             await session.logout(cleanSession)
         } else {
             localStorage.setItem("session", cleanSession);
@@ -147,7 +183,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
     if (process.env.DFX_NETWORK === "local") {
         await agent.fetchRootKey();
     }
-    
+
     try {
         const currSession = localStorage.getItem("session");
         if (!currSession) {
@@ -164,11 +200,11 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
             if ("ok" in userRes) {
                 const userData = userRes.ok;
-                
+
                 let profilePictureBlob: Blob;
                 if (userData.profilePicture) {
                     const uint8Array = new Uint8Array(userData.profilePicture);
-                    profilePictureBlob = new Blob([uint8Array.buffer], { 
+                    profilePictureBlob = new Blob([uint8Array.buffer], {
                         type: 'image/jpeg' // Adjust type as needed
                     });
                 } else {
@@ -181,12 +217,12 @@ export const fetchUserBySession = async (): Promise<User | null> => {
                     createdAt: new Date(Number(userData.createdAt)),
                     updatedAt: new Date(Number(userData.updatedAt)),
                 };
-            
+
                 console.log("User fetched:", {
                     ...convertedUser,
-                    profilePicture: convertedUser.profilePicture 
+                    profilePicture: convertedUser.profilePicture
                 });
-                
+
                 return convertedUser;
             } else {
                 console.error("Error fetching user:", userRes.err);

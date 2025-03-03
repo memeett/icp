@@ -40,7 +40,7 @@ const route = createBrowserRouter([
     path: "/ka",
     element: <ManageJobPage />,
   },
-
+  {
     path: "/browse",
     element: <SearchPage />,
   }

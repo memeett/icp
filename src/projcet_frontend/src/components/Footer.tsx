@@ -4,7 +4,7 @@ export default function Footer() {
 
 
     return (
-        <div className="flex flex-col pl-20 pr-20 pt-10 pb-20 mt-10 border-t-2 outline-0.2 border-gray-200">
+        <div className="flex flex-col pl-20 pr-20 pt-10 pb-20 border-t-2 outline-0.2 border-gray-200">
             <div className="flex justify-between">
 
                 <div className="ml-30">

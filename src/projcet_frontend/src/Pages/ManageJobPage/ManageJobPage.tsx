@@ -11,6 +11,7 @@ import { authUtils } from "../../utils/authUtils";
 import { fetchUserBySession } from "../../controller/userController";
 import { User } from "../../interface/User";
 
+
 export default function ManageJobPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [myJobs, setMyJobs] = useState<Job[]>();
@@ -68,13 +69,6 @@ export default function ManageJobPage() {
     });
 
     if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            </div>
-        );
-    }
-
     return (
         <div className="flex flex-col min-h-screen">
             <Navbar />

@@ -64,7 +64,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <div className="flex gap-3 items-center">
-                <a href="#">{user.username}</a>
+                <a onClick={profpicClick}>{user.username}</a>
                 <img
                   onClick={profpicClick}
                   src={

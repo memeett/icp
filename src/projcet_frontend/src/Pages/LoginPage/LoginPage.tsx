@@ -3,6 +3,7 @@ import { WavyBackground } from "../../components/ui/wavy-background.js";
 import { AuroraText } from "../../components/ui/aurora-text.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import { ModalProvider, useModal } from "../../contexts/modal-context.js";
+import { NestedModalProvider } from "../../contexts/nested-modal-context.js"; // Import new provider
 import Footer from "../../components/Footer.tsx";
 import { ProfileCard } from "../../components/cards/ProfileCard.tsx";
 import CardCarousel from "../../components/cards/CardCarousel.tsx";
@@ -11,7 +12,7 @@ import { authUtils } from "../../utils/authUtils.js";
 import { PenLine } from "lucide-react";
 import { TypingAnimation } from "../../components/ui/typing-text.tsx";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProcessFlow from "../../components/cards/TransactionStepCard.tsx";
 import WhyChoose from "../../components/cards/ChooseErgasia.tsx";
 import JobCategories from "../../components/cards/CategoriesCard.tsx";
@@ -72,9 +73,13 @@ const FloatingBubbles = () => {
   );
 };
 
-export default function LoginPage() {
+// Wrap the main component with providers if not already at app level
+function LoginPageContent() {
   authUtils();
   const [isHovered, setIsHovered] = useState(false);
+  const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const { setOpen, openModal } = useModal();
+  
   const freelancers = [
     {
       id: "1",
@@ -91,80 +96,88 @@ export default function LoginPage() {
       profileImage: image,
     },
     {
-      id: "2",
+      id: "3",
       name: "Mathew Smith",
       category: "Development LO",
       jobsCompleted: 28,
       profileImage: image,
     },
     {
-      id: "2",
+      id: "4",
       name: "Kenneth Smith",
       category: "Graphic Design",
       jobsCompleted: 28,
       profileImage: image,
     },
     {
-      id: "2",
-      name: "Vicnetn Smith",
+      id: "5",
+      name: "Vincent Smith",
       category: "Graphic Design",
       jobsCompleted: 28,
       profileImage: image,
     },
     {
-      id: "2",
+      id: "6",
       name: "Pepe Smith",
       category: "Graphic Design",
       jobsCompleted: 28,
       profileImage: image,
     },
     {
-      id: "2",
+      id: "7",
       name: "Semua Smith",
       category: "Graphic Design",
       jobsCompleted: 28,
       profileImage: image,
     },
     {
-      id: "2",
+      id: "8",
       name: "Im Smith",
       category: "Graphic Design",
       jobsCompleted: 28,
       profileImage: image,
     },
     {
-      id: "2",
+      id: "9",
       name: "Wuhu Smith",
       category: "Graphic Design",
       jobsCompleted: 28,
       profileImage: image,
     },
     {
-      id: "2",
+      id: "10",
       name: "Xav Smith",
       category: "Graphic Design",
       jobsCompleted: 28,
       profileImage: image,
     },
     {
-      id: "2",
+      id: "11",
       name: "Bibimpap Smith",
       category: "Graphic Design",
       jobsCompleted: 28,
       profileImage: image,
     },
-
-    // Add more freelancers as needed
   ];
-  const { setOpen } = useModal();
+
+  // Option 1: Use the simple modal toggle
+  const handleSimpleModalOpen = () => {
+    setOpen(true);
+  };
+
+  // Option 2: Use the more advanced modal system with index tracking
+  const handleModalOpen = () => {
+    const index = openModal();
+    setModalIndex(index);
+  };
+
   return (
-
     <div className="flex flex-col h-screen bg-[#F9F7F7]">
-
-        <Navbar />
+      <Navbar />
+      
       {/* main */}
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
-        <div className="relative  min-h-screen">
+        <div className="relative min-h-screen">
           <WavyBackground className="w-screen mx-auto pb-40 px-16 align-middle mt-24">
             <p className="inline text-2xl md:text-4xl lg:text-7xl text-white font-bold inter-var text-left">
               With Love, Passion and{" "}
@@ -176,7 +189,6 @@ export default function LoginPage() {
               Empowering Freelancers & Businesses with Web3 Technology.
             </p>
           </WavyBackground>
-
         </div>
 
         <div className="relative flex flex-col items-center justify-center mt-24">
@@ -240,7 +252,7 @@ export default function LoginPage() {
               </motion.div>
 
               <motion.button
-                onClick={() => setOpen(true)}
+                onClick={handleSimpleModalOpen} // Using the simple method here
                 className="bg-white px-8 py-4 rounded-2xl font-medium border-solid border-2 border-white hover:text-black text-[#41b8aa] mt-4 relative overflow-hidden group"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
@@ -273,14 +285,13 @@ export default function LoginPage() {
 
         <JobCategories />
 
-
         <div className="flex flex-col w-full justify-center text-center mt-12 mb-24">
-        <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
-          Hire our Top Rated Freelancers
-        </h2>
+          <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+            Hire our Top Rated Freelancers
+          </h2>
           <CardCarousel
             cards={freelancers.map((freelancer) => (
-              <motion.div whileHover={{ scale: 1.02 }}>
+              <motion.div key={freelancer.id} whileHover={{ scale: 1.02 }}>
                 <ProfileCard key={freelancer.id} {...freelancer} />
               </motion.div>
             ))}
@@ -291,7 +302,24 @@ export default function LoginPage() {
         <Footer />
       </div>
       {/* end main */}
-      <AuthenticationModal />
+      
+      {/* Modal rendered conditionally based on tracking method */}
+      {modalIndex !== null ? (
+        <AuthenticationModal modalIndex={modalIndex} />
+      ) : (
+        <AuthenticationModal />
+      )}
     </div>
+  );
+}
+
+
+export default function LoginPage() {
+  return (
+    <ModalProvider>
+      <NestedModalProvider>
+        <LoginPageContent />
+      </NestedModalProvider>
+    </ModalProvider>
   );
 }

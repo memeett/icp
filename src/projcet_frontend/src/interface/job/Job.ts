@@ -10,8 +10,7 @@ export interface Job {
     jobSalary: number;
     jobRating: number;
     jobTags: JobCategory[];
-    jobSlots: BigInt;
-    jobStatus: string;
+    jobSlots: number;
     createdAt: number;
     updatedAt: number;
     userId: string;

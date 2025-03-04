@@ -1,9 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { User } from '../interface/User';
-import { fetchUserBySession, login } from '../controller/userController';
+import { fetchUserBySession } from '../controller/userController';
 import { user } from '../../../declarations/user';
-import { useNavigate } from 'react-router-dom';
 
 interface FaceRecognitionProps {
   principalId: string; // Masih dibutuhkan untuk mode register
@@ -24,7 +23,6 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
   const webcamRef = useRef<Webcam>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [currentMode, setCurrentMode] = useState(initialMode);
-  const navigate = useNavigate(); // Get the navigate function
 
 
   const capture = async () => {
@@ -86,14 +84,6 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
           });
           
           // user.login(result.principal_id);
-          login(result.principal_id);
-          navigate('/');
-                    // redirect to another page using react router dom not window location
-          
-
-
-          
-
 
         } else {
           onSuccess();

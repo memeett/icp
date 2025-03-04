@@ -5,12 +5,17 @@ import { motion } from "framer-motion";
 import { CameraIcon, GlobeIcon } from "lucide-react";
 import { useModal } from "../../contexts/modal-context";
 import { useNestedModal } from "../../contexts/nested-modal-context";
-import { loginWithInternetIdentity } from "../../controller/userController";
 import { FaceVerificationModal } from "./FaceVerificationModal";
+import {
+  login,
+  loginWithInternetIdentity,
+} from "../../controller/userController";
 import { Link } from "react-router-dom";
+import LoadingOverlay from "../ui/loading-animation";
+
 
 export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
-  const { open, setOpen}= useModal();
+  const { open, setOpen, closeModal } = useModal();
   const { openNestedModal } = useNestedModal();
 
   
@@ -20,7 +25,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
 
   const handleClose = () => {
     if (modalIndex !== undefined) {
-      // closeModal(modalIndex);
+      closeModal(modalIndex);
     } else {
       setOpen(false);
     }
@@ -44,7 +49,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
             </div>
 
             <div className="space-y-5">
-              {/* Internet Identity */}
+              {/* Face Recognition */}
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -57,7 +62,12 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                   });
                 }}
               >
-                <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-4 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2">
+
+                <button
+                  className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-4 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
+                  onClick={loginWithInternetIdentity}
+                >
+
                   <GlobeIcon className="w-6 h-6" />
                   <span>Internet Identity</span>
                 </button>
@@ -85,6 +95,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
+
                 {/* Option 1: Open nested modal */}
                 <button 
                   className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
@@ -99,6 +110,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                   <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2">
                     <CameraIcon className="w-6 h-6" />
                     <span>Camera Authentication (Route)</span>
+
                   </button>
                 </Link>
               </motion.div>
@@ -116,7 +128,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
 
           <ModalFooter className="flex items-center justify-center mt-2 p-0 ">
             <div
-              onClick={handleClose}
+              onClick={() => setOpen(false)}
               className="w-full h-full text-lg text-center font-semibold rounded-b-2xl border-b border-b-[#112D4E] text-black transition-colors hover:text-white hover:bg-[#D9534F] hover:border-[#D9534F] py-4 "
             >
               Cancel

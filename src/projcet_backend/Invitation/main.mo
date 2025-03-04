@@ -9,6 +9,7 @@ import Result "mo:base/Result";
 import Error "mo:base/Error";
 import Bool "mo:base/Bool";
 import Buffer "mo:base/Buffer";
+import Array "mo:base/Array";
 import Job "../Job/model";
 import User "../User/model";
 
@@ -43,7 +44,7 @@ actor InvitationModel{
         invitationsEntries := [];
     };
 
-    let jobActor = actor ("bd3sg-teaaa-aaaaa-qaaba-cai") : actor {
+    let jobActor = actor ("br5f7-7uaaa-aaaaa-qaaca-cai") : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
     };
 
@@ -142,7 +143,7 @@ actor InvitationModel{
         return Buffer.toArray(userInvitations);
     };
 
-    let userActor = actor ("b77ix-eeaaa-aaaaa-qaada-cai"): actor{
+    let userActor = actor ("avqkn-guaaa-aaaaa-qaaea-cai"): actor{
         getUserById : (Text) -> async Result.Result<User.User, Text>;
     };
     
@@ -203,24 +204,12 @@ actor InvitationModel{
         };
     };
 
-    public func getAcceptedJobInvitations(job_id: Text) : async [User.User] {
-        var acceptedInvitations : Buffer.Buffer<User.User> = Buffer.Buffer(0);
-        
-        for ((_, invitation) in invitations.entries()) {
-            if (invitation.job_id == job_id and invitation.isAccepted) {
-                let userResult = await userActor.getUserById(invitation.user_id);
-                
-                switch (userResult) {
-                    case (#ok(user)) {
-                        acceptedInvitations.add(user);
-                    };
-                    case (#err(_)) {
-                    };
-                };
-            };
-        };
-        
-        return Buffer.toArray(acceptedInvitations);
+    public func getAcceptedJobInvitations(job_id: Text) : async [Invitation.Invitation] {
+        let allInvitations = Iter.toArray(invitations.vals());
+        let acceptedInvitations = Array.filter(allInvitations, func(invitation : Invitation.Invitation) : Bool {
+            return invitation.job_id == job_id and invitation.isAccepted;
+        });
+        acceptedInvitations;
     };
 
 }

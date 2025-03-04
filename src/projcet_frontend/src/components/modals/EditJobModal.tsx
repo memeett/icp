@@ -155,6 +155,7 @@ const EditJobForm = ({ job, onSave, onCancel, refreshData, modalIndex }: EditJob
       <ModalContent className="w-full max-w-2xl mx-auto bg-[#F9F7F7] rounded-2xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Job Name Input */}
+
           <div className="space-y-2 px-8 pt-6">
             <label className="block text-lg font-medium text-[#112D4E]">
               Job Name

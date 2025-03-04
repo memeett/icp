@@ -1,23 +1,22 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FiSearch, FiX, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import { BiSlider } from "react-icons/bi";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { getUserJobs, deleteJob } from "../../controller/jobController";
-import { useModal } from "../../contexts/modal-context";
+import { Job, JobCategory } from "../../../../declarations/job/job.did";
+import { ModalProvider } from "../../contexts/modal-context";
+import { authUtils } from "../../utils/authUtils";
 import { fetchUserBySession } from "../../controller/userController";
 import { User } from "../../interface/User";
 
-import { Job, JobCategory } from "../../interface/job/Job";
-import { Edit } from "lucide-react";
-import EditJobForm from "../../components/modals/EditJobModal";
-
 export default function ManageJobPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [myJobs, setMyJobs] = useState<Job[]>([]);
+  const [myJobs, setMyJobs] = useState<Job[]>();
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [jobStatus] = useState<string[]>([
+  const [jobStatus, setJobStatus] = useState<string[]>([
     "All",
     "Start",
     "Pending",
@@ -25,36 +24,14 @@ export default function ManageJobPage() {
   ]);
   const [selectedStatus, setSelectedStatus] = useState("All");
 
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [availableCategories, setAvailableCategories] = useState<JobCategory[]>([]);
 
-  const { openModal, closeModal, setOpen } = useModal();
-
-  
-  const handleEditJob = (job: Job) => {
-    setSelectedJob(job);
-    setOpen(true);     
-    const modalIndex = openModal();   };
-
-  const handleCloseModal = () => {
-    setOpen(false);
-    closeModal(0); // Tutup modal dengan index 0
-    setSelectedJob(null);
-  };
-  
   const fetchData = async () => {
     try {
       setLoading(true);
       const jobs = await getUserJobs(currentUser?.id || "");
-      if (jobs) {
-        const convertedJobs = jobs.map(job => ({
-          ...job,
-          createdAt: Number(job.createdAt),
-          updatedAt: Number(job.updatedAt),
-        }));
-        setMyJobs(convertedJobs);
-      }
+      console.log("Jobs:", jobs);
+      if (jobs) setMyJobs(jobs);
     } catch (err) {
       console.error("Error fetching jobs:", err);
     } finally {
@@ -66,26 +43,15 @@ export default function ManageJobPage() {
     const fetchUser = async () => {
       const user = await fetchUserBySession();
       if (user) setCurrentUser(user);
+      console.log("User:", user);
     };
 
     fetchUser();
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
-      fetchData();
-    }
-  }, [currentUser, refreshKey]);
-
-
-
-  const handleSaveJob = (updatedJob: Job) => {
-
-    const updatedJobs = myJobs.map(job => 
-      job.id === updatedJob.id ? updatedJob : job
-    );
-    setMyJobs(updatedJobs);
-  };
+    fetchData();
+  }, [currentUser]);
 
   const handleDeleteJob = async (jobId: string) => {
     if (window.confirm("Are you sure you want to delete this job?")) {
@@ -232,10 +198,12 @@ export default function ManageJobPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <button onClick={() => handleEditJob(job)} className="text-blue-600 hover:text-blue-900">
+                          <Link
+                            to={`/jobs/edit/${job.id}`}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
                             <FiEdit className="h-5 w-5" />
-                            </button>                            
-
+                          </Link>
                           <button
                             onClick={() => handleDeleteJob(job.id)}
                             className="text-red-600 hover:text-red-900"
@@ -266,15 +234,6 @@ export default function ManageJobPage() {
       </div>
 
       <Footer />
-      <EditJobForm
-        job={selectedJob||null}
-        onSave={handleSaveJob}
-        onCancel={handleCloseModal}
-        
-
-      />
     </div>
   );
 }
-
-

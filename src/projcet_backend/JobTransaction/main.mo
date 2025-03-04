@@ -48,31 +48,18 @@ actor JobTransactionModel {
     };
 
     let applierActor = actor ("bkyz2-fmaaa-aaaaa-qaaaq-cai") : actor {
-        getAcceptedAppliers : (Text) -> async  [Applier.Applier];
+        getAcceptedAppliers : (Text) -> async [Applier.Applier];
     };
 
     let invitationActor = actor ("be2us-64aaa-aaaaa-qaabq-cai") : actor {
         getAcceptedJobInvitations : (Text) -> async [Invitation.Invitation];
     };
 
-    // type Applier__2 = {
-    //     id : Int;
-    //     userId : Text;
-    //     jobId : Text;
-    //     appliedAt : Int;
-    //     isAccepted : Bool;
-    // };
-
-     public func getFreelancers(job_id : Text) : async [Text] {
-        // Fetch accepted appliers for the job
+    public func getFreelancers(job_id : Text) : async [Text] {
         let acceptedAppliersResult = await applierActor.getAcceptedAppliers(job_id);
 
-
-        // Fetch accepted invitations for the job
         let acceptedInvitationsResult = await invitationActor.getAcceptedJobInvitations(job_id);
 
-
-        // Extract userIds from accepted appliers
         let freelancers = Array.map(
             acceptedAppliersResult,
             func(applier : Applier.Applier) : Text {
@@ -80,7 +67,6 @@ actor JobTransactionModel {
             },
         );
 
-        // Extract userIds from accepted invitations
         let invitationFreelancers = Array.map(
             acceptedInvitationsResult,
             func(invitation : Invitation.Invitation) : Text {
@@ -88,10 +74,8 @@ actor JobTransactionModel {
             },
         );
 
-        // Combine userIds from both sources
         let allFreelancers = Array.append(freelancers, invitationFreelancers);
 
-        // Return the combined array
         allFreelancers;
     };
 

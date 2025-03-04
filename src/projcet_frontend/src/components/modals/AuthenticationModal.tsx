@@ -1,17 +1,13 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { ModalBody, ModalContent, ModalFooter } from "../ui/animated-modal";
 import { motion } from "framer-motion";
 import { CameraIcon, GlobeIcon } from "lucide-react";
 import { useModal } from "../../contexts/modal-context";
-
 import { useNestedModal } from "../../contexts/nested-modal-context";
 import { loginWithInternetIdentity } from "../../controller/userController";
 import { FaceVerificationModal } from "./FaceVerificationModal";
-
 import { Link } from "react-router-dom";
-import LoadingOverlay from "../ui/loading-animation";
-
 
 export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   const { open, setOpen, closeModal } = useModal();
@@ -29,12 +25,10 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
     }
   };
 
-
   if (!open && modalIndex === undefined) return null;
 
   return (
     <div className="hidden md:flex flex-column items-center space-x-4">
-      {loading && <LoadingOverlay message="Logging You In" />}
       <ModalBody className="flex flex-column items-center space-x-4">
         <ModalContent className="max-w-2xl mx-auto bg-[#F9F7F7]">
           <div className="space-y-8  px-8 pt-8 pb-6">
@@ -52,21 +46,16 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={async () => {
-                  setLoading(true);
-                  const success = await loginWithInternetIdentity();
-                  if (success) {
-                    setOpen(false);
-                    setLoading(false);
-                  }
+                onClick={(e) => {
+                  e.preventDefault();
+                  loginWithInternetIdentity().then((suc) => {
+                    if (suc) {
+                      window.location.reload();
+                    }
+                  });
                 }}
               >
-
-                <button
-                  className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-4 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
-                  onClick={loginWithInternetIdentity}
-                >
-
+                <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-4 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2">
                   <GlobeIcon className="w-6 h-6" />
                   <span>Internet Identity</span>
                 </button>
@@ -94,7 +83,6 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-
                 {/* Option 1: Open nested modal */}
                 <button 
                   className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
@@ -109,7 +97,6 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                   <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2">
                     <CameraIcon className="w-6 h-6" />
                     <span>Camera Authentication (Route)</span>
-
                   </button>
                 </Link>
               </motion.div>
@@ -118,16 +105,8 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
             <div className="text-center text-md text-black">
               <p>
                 Don't have an account?
-                <button
-                  className="ml-1 text-blue-600 hover:text-blue-600 dark:text-blue-400 cursor-pointer"
-                  onClick={async () => {
-                    const res = await login("43djee4");
-                    if (res) {
-                      setOpen(false);
-                    }
-                  }}
-                >
-                  Secret Sign In
+                <button className="ml-1 text-blue-600 hover:text-blue-600 dark:text-blue-400 cursor-pointer">
+                  Sign up instead
                 </button>
               </p>
             </div>

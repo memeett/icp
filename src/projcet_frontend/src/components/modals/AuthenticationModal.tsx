@@ -12,7 +12,7 @@ import { Link } from "react-router-dom";
 export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   const { open, setOpen, closeModal } = useModal();
   const { openNestedModal } = useNestedModal();
-  const test = 0;
+
   const handleOpenFaceVerification = () => {
     openNestedModal(<FaceVerificationModal parentIndex={modalIndex || 0} index={0} />);
   };

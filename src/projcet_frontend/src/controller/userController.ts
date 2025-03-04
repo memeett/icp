@@ -314,7 +314,6 @@ export const topUp = async (amount: number): Promise<void> =>{
         const principalId = parsedData.id
         console.log(principalId)
         user.topUpCkBTC(principalId, amount)
-        
     }
     
 }

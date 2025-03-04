@@ -88,6 +88,18 @@ export default function ProfileBiodata() {
       console.log("Transaction successful:", result);
       alert("Payment successful!");
       topUp(parseFloat(amount))
+      const user = JSON.parse(localStorage.getItem("current_user") || "");
+      localStorage.setItem(
+        "current_user",
+        JSON.stringify({
+          ok: {
+            ...user,
+            wallet: user.wallet + parseFloat(amount),
+          },
+        })
+      );
+      window.location.reload();
+
     } catch (error) {
       console.error("Payment error:", error);
       alert("Payment failed!");

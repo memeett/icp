@@ -57,7 +57,6 @@ const Navbar = () => {
               <AnimatedNavLink href="/FindJobPage">Find Work</AnimatedNavLink>
               <AnimatedNavLink href="/PostJobPage">Post a Job</AnimatedNavLink>
               <AnimatedNavLink href="#">Browse Freelancers</AnimatedNavLink>
-              <AnimatedNavLink href="#">How it Works</AnimatedNavLink>
             </div>
           </div>
 

@@ -2,9 +2,8 @@ import { userclicked } from "../../../declarations/userclicked";
 import { UserClicked, UserClickedPayload } from "../../../declarations/userclicked/userclicked.did";
 
 export const addIncrementUserClicked = async (jobId: string) :Promise<string[]> => {
-
     const userData = localStorage.getItem("current_user");
-
+    
     if(userData){
         const parsedData = JSON.parse(userData);
         console.log("User ID:", parsedData.ok.id);
@@ -39,12 +38,10 @@ export const addIncrementUserClicked = async (jobId: string) :Promise<string[]> 
 export const getUserClickedByUserId = async () : Promise<UserClicked[] | []> => {
     try {
         const userData = localStorage.getItem("current_user");
-
         if(userData){
+            
             const parsedData = JSON.parse(userData);
-            console.log("User ID:", parsedData.ok.id);
             const result = await userclicked.getAllUserClickedByUserId(parsedData.ok.id)
-            console.log("User Clickeds:", result);
             return result;
         }else{
             console.error("Failed to get all jobs!!");

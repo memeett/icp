@@ -1,9 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { ModalBody, ModalContent, ModalFooter } from "../ui/animated-modal";
 import { motion } from "framer-motion";
 import { CameraIcon, GlobeIcon } from "lucide-react";
 import { useModal } from "../../contexts/modal-context";
+import { useNestedModal } from "../../contexts/nested-modal-context";
+import { FaceVerificationModal } from "./FaceVerificationModal";
 import {
   login,
   loginWithInternetIdentity,
@@ -11,15 +13,28 @@ import {
 import { Link } from "react-router-dom";
 import LoadingOverlay from "../ui/loading-animation";
 
-export function AuthenticationModal() {
-  const { open, setOpen } = useModal();
-  const [loading, setLoading] = useState<boolean>(false);
 
-  if (!open) return null;
+export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
+  const { open, setOpen, closeModal } = useModal();
+  const { openNestedModal } = useNestedModal();
+  
+  const handleOpenFaceVerification = () => {
+    openNestedModal(<FaceVerificationModal parentIndex={modalIndex || 0} index={0} />);
+  };
+
+  const handleClose = () => {
+    if (modalIndex !== undefined) {
+      closeModal(modalIndex);
+    } else {
+      setOpen(false);
+    }
+  };
+
+  if (!open && modalIndex === undefined) return null;
+
 
   return (
     <div className="hidden md:flex flex-column items-center space-x-4">
-      {loading && <LoadingOverlay message="Logging You In" />}
       <ModalBody className="flex flex-column items-center space-x-4">
         <ModalContent className="max-w-2xl mx-auto bg-[#F9F7F7]">
           <div className="space-y-8  px-8 pt-8 pb-6">
@@ -37,19 +52,21 @@ export function AuthenticationModal() {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={async () => {
-                  setLoading(true);
-                  const success = await loginWithInternetIdentity();
-                  if (success) {
-                    setOpen(false);
-                    setLoading(false);
-                  }
+                onClick={(e) => {
+                  e.preventDefault();
+                  loginWithInternetIdentity().then((suc) => {
+                    if (suc) {
+                      window.location.reload();
+                    }
+                  });
                 }}
               >
+
                 <button
                   className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-4 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
                   onClick={loginWithInternetIdentity}
                 >
+
                   <GlobeIcon className="w-6 h-6" />
                   <span>Internet Identity</span>
                 </button>
@@ -77,10 +94,22 @@ export function AuthenticationModal() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Link to="/face-recognition/login">
+
+                {/* Option 1: Open nested modal */}
+                <button 
+                  className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
+                  onClick={handleOpenFaceVerification}
+                >
+                  <CameraIcon className="w-6 h-6" />
+                  <span>Camera Authentication (Modal)</span>
+                </button>
+                
+                {/* Option 2: Navigate to route */}
+                <Link to="/face-recognition/login" className="mt-2 block">
                   <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2">
                     <CameraIcon className="w-6 h-6" />
-                    <span>Camera Authentication</span>
+                    <span>Camera Authentication (Route)</span>
+
                   </button>
                 </Link>
               </motion.div>
@@ -89,16 +118,8 @@ export function AuthenticationModal() {
             <div className="text-center text-md text-black">
               <p>
                 Don't have an account?
-                <button
-                  className="ml-1 text-blue-600 hover:text-blue-600 dark:text-blue-400 cursor-pointer"
-                  onClick={async () => {
-                    const res = await login("43djee4");
-                    if (res) {
-                      setOpen(false);
-                    }
-                  }}
-                >
-                  Secret Sign In
+                <button className="ml-1 text-blue-600 hover:text-blue-600 dark:text-blue-400 cursor-pointer">
+                  Sign up instead
                 </button>
               </p>
             </div>

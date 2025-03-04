@@ -41,11 +41,11 @@ actor ApplierModel {
         appliersEntries := [];
     };
 
-    let jobActor = actor ("bd3sg-teaaa-aaaaa-qaaba-cai") : actor {
+    let jobActor = actor ("br5f7-7uaaa-aaaaa-qaaca-cai") : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
     };
 
-    let userActor = actor ("b77ix-eeaaa-aaaaa-qaada-cai"): actor{
+    let userActor = actor ("avqkn-guaaa-aaaaa-qaaea-cai"): actor{
         getUserById : (Text) -> async Result.Result<User.User, Text>;
     };
 

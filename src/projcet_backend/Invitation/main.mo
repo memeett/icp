@@ -173,4 +173,54 @@ actor InvitationModel{
         return Buffer.toArray(jobInvitations);
     };
 
+    public func acceptInvitation(user_id: Text, invitation_id: Int) : async Bool {
+        switch (invitations.get(invitation_id)) {
+            case (null) {
+                return false;
+            };
+            case (?invitation) {
+                if (invitation.user_id != user_id) {
+                    return false;
+                };
+                invitations.put(invitation_id, {invitation with isAccepted = true});
+                return true;
+            };
+        };
+    };
+
+    public func rejectInvitation(user_id: Text, invitation_id: Int) : async Bool {
+        switch (invitations.get(invitation_id)) {
+            case (null) {
+                return false;
+            };
+            case (?invitation) {
+                if (invitation.user_id != user_id) {
+                    return false;
+                };
+                invitations.delete(invitation_id);
+                return true;
+            };
+        };
+    };
+
+    public func getAcceptedJobInvitations(job_id: Text) : async [User.User] {
+        var acceptedInvitations : Buffer.Buffer<User.User> = Buffer.Buffer(0);
+        
+        for ((_, invitation) in invitations.entries()) {
+            if (invitation.job_id == job_id and invitation.isAccepted) {
+                let userResult = await userActor.getUserById(invitation.user_id);
+                
+                switch (userResult) {
+                    case (#ok(user)) {
+                        acceptedInvitations.add(user);
+                    };
+                    case (#err(_)) {
+                    };
+                };
+            };
+        };
+        
+        return Buffer.toArray(acceptedInvitations);
+    };
+
 }

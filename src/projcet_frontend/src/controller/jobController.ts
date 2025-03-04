@@ -73,15 +73,7 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
     }
 };
 
-export const updateJob = async (
-    jobId: string,
-    jobName: string, 
-    jobDescription: string[], 
-    jobTags: string[], 
-    jobSalary: number, 
-    jobSlots: number,
-    jobStatus: string
-): Promise<string[]> => {
+export const updateJob = async (jobId: string, payload: UpdateJobPayload, jobStatus: string): Promise<Job | null> => {
     const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();
     const agent = new HttpAgent({ identity });
@@ -89,62 +81,18 @@ export const updateJob = async (
     if (process.env.DFX_NETWORK === "local") {
         await agent.fetchRootKey();
     }
-
     try {
-        // Validation checks
-        if (!jobName.trim()) return ["Failed", "Job name is required"];
-        if (jobDescription.length === 0) return ["Failed", "Job description is required"];
-        if (jobTags.length === 0) return ["Failed", "At least one job tag is required"];
-        if (jobSalary < 1) return ["Failed", "Job salary must be at least 1"];
-        if (jobSlots < 1) return ["Failed", "Job slots must be at least 1"];
-        if (!jobStatus) return ["Failed", "Job status is required"];
-
-        const userData = localStorage.getItem("current_user");
-
-        const newJobTags: JobCategory[] = [];
-
-        // Process job tags
-        for (const tag of jobTags) {
-            let existingCategory = await job.findJobCategoryByName(tag); 
-
-            if (!("ok" in existingCategory)) {
-                existingCategory = await job.createJobCategory(tag); 
-            }
-
-            if ("ok" in existingCategory) {
-                newJobTags.push(existingCategory.ok); 
-            }
-        }
-
-        if (userData) {
-            const parsedData = JSON.parse(userData);
-            
-            const payload: UpdateJobPayload = {
-                jobName: [jobName],
-                jobDescription: [jobDescription],
-                jobTags: [newJobTags],
-                jobSalary: [jobSalary],
-                jobSlots: [BigInt(jobSlots)],
-                userId: [parsedData.ok.id]
-            };
-
-            
-            // Call update job function
-            const result = await job.updateJob(jobId, payload,jobStatus);
-            
-            if ("ok" in result) {
-                console.log("Job updated:", result.ok);
-                return ["Success", "Successfully updated the job"];
-            } else {
-                console.error("Error updating job:", result.err);
-                return ["Failed", "Error updating job"];
-            }
+        const result = await job.updateJob(jobId, payload, jobStatus);
+        if ("ok" in result) {
+            console.log("Job updated:", result.ok);
+            return result.ok;
         } else {
-            return ["Failed", "Please log in before updating a job"];
+            console.error("Error updating job:", result.err);
+            return null;
         }
     } catch (error) {
         console.error("Failed to update job:", error);
-        return ["Failed", "Failed to update job"];
+        return null;
     }
 };
 
@@ -202,7 +150,7 @@ export const getJobById = async (jobId: string): Promise<Job|null> =>{
     }
 }
 
-
+// cek job punya owner
 export const getUserJobs = async (userId: string): Promise<Job[] | null> => {
     const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();

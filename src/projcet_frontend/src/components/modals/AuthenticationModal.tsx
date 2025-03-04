@@ -17,6 +17,7 @@ import LoadingOverlay from "../ui/loading-animation";
 export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   const { open, setOpen, closeModal } = useModal();
   const { openNestedModal } = useNestedModal();
+
   
   const handleOpenFaceVerification = () => {
     openNestedModal(<FaceVerificationModal parentIndex={modalIndex || 0} index={0} />);

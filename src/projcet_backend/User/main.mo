@@ -210,6 +210,31 @@ actor UserModel {
         true;
     };
 
+    public shared func topUpCkBTC(userId: Text, amount: Float) : async Result.Result<Text, Text> {
+        switch (users.get(userId)) {
+            case (?user) {
+                let newBalance = user.wallet + amount;
+                let updatedUser: User.User = {
+                    id = user.id;
+                    profilePicture = user.profilePicture;
+                    username = user.username;
+                    description = user.description;
+                    dob = user.dob;
+                    wallet = newBalance;
+                    rating = user.rating;
+                    createdAt = user.createdAt;
+                    updatedAt = Time.now();
+                    isFaceRecognitionOn = user.isFaceRecognitionOn;
+                };
+                users.put(userId, updatedUser);
+                return #ok("Topped up ckBTC successfully. New balance: " # Float.toText(newBalance));
+            };
+            case null {
+                return #err("User not found");
+            };
+        };
+    };
+
     // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
     //     minter_fee : Nat64;
     //     bitcoin_fee : Nat64;

@@ -13,6 +13,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   const { open, setOpen, closeModal } = useModal();
   const { openNestedModal } = useNestedModal();
 
+  
   const handleOpenFaceVerification = () => {
     openNestedModal(<FaceVerificationModal parentIndex={modalIndex || 0} index={0} />);
   };
@@ -26,6 +27,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   };
 
   if (!open && modalIndex === undefined) return null;
+
 
   return (
     <div className="hidden md:flex flex-column items-center space-x-4">

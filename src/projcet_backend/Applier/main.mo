@@ -170,4 +170,13 @@ actor ApplierModel {
         userAppliers.size() > 0
     };
 
+    public func getAcceptedAppliers(jobId: Text): async [Applier.Applier] {
+        let allAppliers = Iter.toArray(appliers.vals());
+        let acceptedAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
+            return applier.jobId == jobId and applier.isAccepted;
+        });
+        
+        acceptedAppliers
+    };
+
 }

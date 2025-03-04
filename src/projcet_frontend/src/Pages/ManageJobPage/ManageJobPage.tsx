@@ -255,7 +255,7 @@ export default function ManageJobPage() {
                 You haven't created any jobs yet
               </p>
               <Link
-                to="/PostJobPage"
+                to="/post"
                 className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition duration-200"
               >
                 <FiPlus /> Create Your First Job

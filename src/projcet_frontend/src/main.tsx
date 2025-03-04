@@ -27,11 +27,11 @@ const route = createBrowserRouter([
     element: <ProfilePage />,
   },
   {
-    path: "/FindJobPage",
+    path: "/find",
     element: <FindJobPage />,
   },
   {
-    path: "/PostJobPage",
+    path: "/post",
     element: <PostJobPage />,
   },
   {
@@ -39,7 +39,7 @@ const route = createBrowserRouter([
     element: <JobDetailPage />,
   },
   {
-    path: "/ka",
+    path: "/manage",
     element: <ManageJobPage />,
   },
   {
@@ -54,8 +54,6 @@ const route = createBrowserRouter([
     path: "/face-recognition/login",
     element: <LoginFace />,
   },
-
-
 ]);
 
 const rootElement = document.getElementById("root");

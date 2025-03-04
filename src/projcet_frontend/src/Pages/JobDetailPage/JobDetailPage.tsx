@@ -148,7 +148,7 @@ export default function JobDetailPage() {
                                 </h1>
                                 <div className="flex items-center gap-4 mb-4">
                                     <span className="text-lg font-semibold text-green-600">
-                                        ${jobDetails?.salary}/year
+                                        ${jobDetails?.salary}
                                     </span>
                                     <div className="flex items-center">
                                         <span className="text-yellow-500">★</span>

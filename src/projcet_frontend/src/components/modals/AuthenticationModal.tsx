@@ -11,14 +11,15 @@ import {
 import { Link } from "react-router-dom";
 import LoadingOverlay from "../ui/loading-animation";
 
-export function AuthenticationModal() {
-  const { open, setOpen } = useModal();
-  const [loading, setLoading] = useState<boolean>(false);
+import { useNestedModal } from "../../contexts/nested-modal-context";
+
+import { FaceVerificationModal } from "./FaceVerificationModal";
+
 
 export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   const { open, setOpen, closeModal } = useModal();
   const { openNestedModal } = useNestedModal();
-  
+  const [loading, setLoading] = useState<boolean>(false);
   const handleOpenFaceVerification = () => {
     openNestedModal(<FaceVerificationModal parentIndex={modalIndex || 0} index={0} />);
   };
@@ -32,7 +33,6 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   };
 
   if (!open && modalIndex === undefined) return null;
-
 
   return (
     <div className="hidden md:flex flex-column items-center space-x-4">
@@ -50,7 +50,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
             </div>
 
             <div className="space-y-5">
-              {/* Face Recognition */}
+              {/* Internet Identity */}
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -63,10 +63,12 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                   }
                 }}
               >
+
                 <button
                   className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-4 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
                   onClick={loginWithInternetIdentity}
                 >
+
                   <GlobeIcon className="w-6 h-6" />
                   <span>Internet Identity</span>
                 </button>
@@ -94,10 +96,22 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Link to="/face-recognition/login">
+
+                {/* Option 1: Open nested modal */}
+                <button 
+                  className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
+                  onClick={handleOpenFaceVerification}
+                >
+                  <CameraIcon className="w-6 h-6" />
+                  <span>Camera Authentication (Modal)</span>
+                </button>
+                
+                {/* Option 2: Navigate to route */}
+                <Link to="/face-recognition/login" className="mt-2 block">
                   <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2">
                     <CameraIcon className="w-6 h-6" />
-                    <span>Camera Authentication</span>
+                    <span>Camera Authentication (Route)</span>
+
                   </button>
                 </Link>
               </motion.div>
@@ -123,7 +137,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
 
           <ModalFooter className="flex items-center justify-center mt-2 p-0 ">
             <div
-              onClick={() => setOpen(false)}
+              onClick={handleClose}
               className="w-full h-full text-lg text-center font-semibold rounded-b-2xl border-b border-b-[#112D4E] text-black transition-colors hover:text-white hover:bg-[#D9534F] hover:border-[#D9534F] py-4 "
             >
               Cancel

@@ -6,7 +6,6 @@ import { useModal } from "../contexts/modal-context";
 import { AnimatedNavLink } from "./ui/animated-anchor";
 import { User } from "../interface/User";
 import { authUtils } from "../utils/authUtils";
-import { fetchUserBySession } from "../controller/userController";
 
 const Navbar = () => {
   const { setOpen } = useModal();
@@ -39,6 +38,21 @@ const Navbar = () => {
     console.log("User:", user);
   }, [current_user]);
 
+  const navLinks = useMemo(() => {
+    if (user) {
+      return (
+        <div className="hidden md:block">
+          <div className="ml-10 flex justify-around items-center">
+            <AnimatedNavLink href="/find">Find Work</AnimatedNavLink>
+            <AnimatedNavLink href="/manage">Manage Jobs</AnimatedNavLink>
+            <AnimatedNavLink href="/post">Post a Job</AnimatedNavLink>
+            <AnimatedNavLink href="#">Browse Freelancers</AnimatedNavLink>
+          </div>
+        </div>
+      );
+    }
+  }, [user]);
+
   return (
     <nav className="sticky top-0 shadow-md flex-none bg-[#F9F7F7] text-black w-full z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,15 +68,16 @@ const Navbar = () => {
 
           <div className="hidden md:block">
             <div className="ml-10 flex justify-around items-center">
-              <AnimatedNavLink href="/FindJobPage">Find Work</AnimatedNavLink>
-              <AnimatedNavLink href="/PostJobPage">Post a Job</AnimatedNavLink>
+              <AnimatedNavLink href="/find">Find Work</AnimatedNavLink>
+              <AnimatedNavLink href="/manage">Manage Jobs</AnimatedNavLink>
+              <AnimatedNavLink href="/post">Post a Job</AnimatedNavLink>
               <AnimatedNavLink href="#">Browse Freelancers</AnimatedNavLink>
             </div>
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
-              <div className="flex gap-3 items-center">
+              <div className="flex gap-3 items-center hover:cursor-pointer">
                 <a onClick={profpicClick}>{user.username}</a>
                 <img
                   onClick={profpicClick}

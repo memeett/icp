@@ -9,6 +9,7 @@ import Result "mo:base/Result";
 import Error "mo:base/Error";
 import Bool "mo:base/Bool";
 import Buffer "mo:base/Buffer";
+import Array "mo:base/Array";
 import Job "../Job/model";
 import User "../User/model";
 
@@ -43,7 +44,7 @@ actor InvitationModel{
         invitationsEntries := [];
     };
 
-    let jobActor = actor ("bd3sg-teaaa-aaaaa-qaaba-cai") : actor {
+    let jobActor = actor ("br5f7-7uaaa-aaaaa-qaaca-cai") : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
     };
 
@@ -142,7 +143,7 @@ actor InvitationModel{
         return Buffer.toArray(userInvitations);
     };
 
-    let userActor = actor ("b77ix-eeaaa-aaaaa-qaada-cai"): actor{
+    let userActor = actor ("avqkn-guaaa-aaaaa-qaaea-cai"): actor{
         getUserById : (Text) -> async Result.Result<User.User, Text>;
     };
     
@@ -171,6 +172,44 @@ actor InvitationModel{
         };
         
         return Buffer.toArray(jobInvitations);
+    };
+
+    public func acceptInvitation(user_id: Text, invitation_id: Int) : async Bool {
+        switch (invitations.get(invitation_id)) {
+            case (null) {
+                return false;
+            };
+            case (?invitation) {
+                if (invitation.user_id != user_id) {
+                    return false;
+                };
+                invitations.put(invitation_id, {invitation with isAccepted = true});
+                return true;
+            };
+        };
+    };
+
+    public func rejectInvitation(user_id: Text, invitation_id: Int) : async Bool {
+        switch (invitations.get(invitation_id)) {
+            case (null) {
+                return false;
+            };
+            case (?invitation) {
+                if (invitation.user_id != user_id) {
+                    return false;
+                };
+                invitations.delete(invitation_id);
+                return true;
+            };
+        };
+    };
+
+    public func getAcceptedJobInvitations(job_id: Text) : async [Invitation.Invitation] {
+        let allInvitations = Iter.toArray(invitations.vals());
+        let acceptedInvitations = Array.filter(allInvitations, func(invitation : Invitation.Invitation) : Bool {
+            return invitation.job_id == job_id and invitation.isAccepted;
+        });
+        acceptedInvitations;
     };
 
 }

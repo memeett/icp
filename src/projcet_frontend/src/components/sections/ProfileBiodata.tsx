@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { authUtils } from "../../utils/authUtils";
 import { UpdateUserPayload, User } from "../../interface/User";
-import { updateUserProfile } from "../../controller/userController";
+import { topUp, updateUserProfile } from "../../controller/userController";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Check, PencilLine, Star, X } from "lucide-react";
 import Modal from "../modals/ModalTemplate";
@@ -21,6 +21,91 @@ export default function ProfileBiodata() {
   const [showImagePreview, setShowImagePreview] = useState<boolean>(false);
   const [createdAt, setCreatedAt] = useState<Date>();
   const [errors, setErrors] = useState<string>("");
+  
+
+  const [, setPrincipalId] = useState<string | null>(null);
+  const [, setIsConnected] = useState(false);
+  const [amount, setAmount] = useState("");
+  useEffect(() => {
+    const connectPlugWallet = async () => {
+      try {
+        const plug = (window as any).ic?.plug; // Typecasting window.ic
+    
+        if (!plug) {
+          console.error("Plug Wallet not detected");
+          alert("Plug Wallet is not installed. Please install it and try again.");
+          return;
+        }
+    
+        const connected = await plug.isConnected();
+        if (!connected) {
+          await plug.requestConnect({
+            whitelist: ["mxzaz-hqaaa-aaaar-qaada-cai"],
+            host: "https://localhost:3000",
+          });
+        }
+    
+        const principal = await plug.getPrincipal();
+        setPrincipalId(principal.toString());
+        setIsConnected(true);
+      } catch (error) {
+        console.error("Plug Wallet connection error:", error);
+      }
+    };
+    
+    connectPlugWallet();
+  }, []);
+
+  const sendICP = async () => {
+    try {
+      const plug = (window as any).ic?.plug; 
+  
+      if (!plug) {
+        alert("Plug Wallet not detected");
+        return;
+      }
+  
+      const connected = await plug.isConnected();
+      if (!connected) {
+        await plug.requestConnect();
+      }
+  
+      const transferArgs = {
+        to: "Ergasia",
+        amount: parseFloat(amount) * 100000000, 
+        token: {
+          canisterId: "mxzaz-hqaaa-aaaar-qaada-cai",
+          standard: "ICRC-1",
+          symbol: "ckBTC",
+          name: "Chain-Key Bitcoin",
+          decimals: 8,
+        },
+      };
+  
+      console.log("Sending ICP:", transferArgs);
+      const result = await plug.requestTransfer(transferArgs);
+      
+      console.log("Transaction successful:", result);
+      alert("Payment successful!");
+      topUp(parseFloat(amount))
+      const user = JSON.parse(localStorage.getItem("current_user") || "");
+      localStorage.setItem(
+        "current_user",
+        JSON.stringify({
+          ok: {
+            ...user,
+            wallet: user.wallet + parseFloat(amount),
+          },
+        })
+      );
+      window.location.reload();
+
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Payment failed!");
+    }
+  };
+  
 
   const { current_user } = authUtils();
   const [dob, setDob] = useState("");
@@ -49,13 +134,7 @@ export default function ProfileBiodata() {
     if (current_user) {
       const newUser = JSON.parse(current_user).ok;
       const profile = newUser.profilePicture;
-      // const createdAt: bigint = BigInt(newUser.createdAt);
-      // const dob: number = Number(createdAt / BigInt(1_000_000));
-      // const date: Date = new Date(dob);
 
-      // if (user) {
-      //   newUser.createdAt = date;
-      // }
       if (profile) {
         const u8 = new Uint8Array(Object.values(profile));
         const blob = new Blob([u8], { type: "image/png" });
@@ -182,7 +261,7 @@ export default function ProfileBiodata() {
           },
         })
       );
-      // window.location.reload();
+      window.location.reload();
     } catch (err) {
       console.error("Error saving profile:", err);
     }
@@ -296,7 +375,21 @@ export default function ProfileBiodata() {
                   <p className="text-3xl font-bold text-purple-900">
                     ${user?.wallet.toFixed(2) || "0.00"}
                   </p>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Enter amount"
+                    className="mt-3 w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                  />
+                  <button
+                    className="mt-4 w-full bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-purple-700 transition"
+                    onClick={sendICP}
+                  >
+                    Top Up
+                  </button>
                 </div>
+
 
                 <div className="bg-white p-6 rounded-xl border border-purple-100 shadow-lg">
                   <h3 className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
@@ -307,11 +400,10 @@ export default function ProfileBiodata() {
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-6 h-6 ${
-                            i < (user?.rating || 0)
-                              ? "fill-current"
-                              : "fill-purple-100"
-                          }`}
+                          className={`w-6 h-6 ${i < (user?.rating || 0)
+                            ? "fill-current"
+                            : "fill-purple-100"
+                            }`}
                         />
                       ))}
                     </div>
@@ -355,9 +447,8 @@ export default function ProfileBiodata() {
                     </span>
                     <button
                       onClick={handleToggle}
-                      className={`w-14 h-8 rounded-full p-1 transition-colors ${
-                        faceRecognitionOn ? "bg-purple-600" : "bg-purple-100"
-                      }`}
+                      className={`w-14 h-8 rounded-full p-1 transition-colors ${faceRecognitionOn ? "bg-purple-600" : "bg-purple-100"
+                        }`}
                     >
                       <motion.div
                         className="w-6 h-6 rounded-full bg-white shadow-lg"
@@ -366,9 +457,9 @@ export default function ProfileBiodata() {
                       />
                     </button>
                     {/* register button for face recognition */}
-                      <Link to={"/face-recognition/register"} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:scale-[1.02] transition-transform flex items-center gap-2 shadow-lg">
-                        Register
-                      </Link>
+                    <Link to={"/face-recognition/register"} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:scale-[1.02] transition-transform flex items-center gap-2 shadow-lg">
+                      Register
+                    </Link>
 
                   </div>
                 </div>

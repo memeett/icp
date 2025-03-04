@@ -90,6 +90,15 @@ actor UserClickedModel{
     };
 
 
-
+    public query func getAllUserClickedByUserId(userId : Text) : async [UserClicked.UserClicked] {
+        let userClickedList = Iter.toArray(userClickeds.vals()); 
+        let filteredList = Iter.filter<UserClicked.UserClicked>(
+            userClickedList.vals(),
+            func(userClicked : UserClicked.UserClicked) : Bool {
+                userClicked.userId == userId; 
+            }
+        );
+        Iter.toArray(filteredList); 
+    };
 
 }

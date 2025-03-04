@@ -15,28 +15,32 @@
       "main": "src/projcet_backend/main.mo",
       "type": "motoko"
     },
-    "session": {  
+    "session": {
       "main": "src/projcet_backend/session.mo",
       "type": "motoko"
     },
-    "user": {  
+    "user": {
       "main": "src/projcet_backend/User/main.mo",
       "type": "motoko"
     },
-    "job": {  
+    "job": {
       "main": "src/projcet_backend/Job/main.mo",
       "type": "motoko"
     },
-    "applier": {  
+    "applier": {
       "main": "src/projcet_backend/Applier/main.mo",
       "type": "motoko"
     },
-    "invitation": {  
+    "invitation": {
       "main": "src/projcet_backend/Invitation/main.mo",
       "type": "motoko"
     },
-    "userclicked": {  
+    "userclicked": {
       "main": "src/projcet_backend/UserClicked/main.mo",
+      "type": "motoko"
+    },
+    "job_transaction": {
+      "main": "src/projcet_backend/JobTransaction/main.mo",
       "type": "motoko"
     },
     "projcet_frontend": {

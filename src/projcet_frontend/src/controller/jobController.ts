@@ -151,7 +151,7 @@ export const updateJob = async (
 export const viewAllJobs = async (): Promise<Job[] | null> => {
     try {
         const result = await job.getAllJobs();
-        console.log("Jobs:", result);
+        // console.log("Jobs:", result);
         return result;
     } catch (error) {
         console.error("Failed to get all jobs:", error);
@@ -178,7 +178,7 @@ export const getJobDetail = async (jobId: string):Promise<Job | null> =>{
 export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
     try {
         const result = await job.getAllJobCategories();
-        console.log("Jobs:", result);
+        // console.log("Jobs:", result);
         return result;
     } catch (error) {
         console.error("Failed to get all jobs:", error);

@@ -1,14 +1,19 @@
-import { useDebugValue, useEffect, useState } from "react";
+import { useState } from "react";
 import Navbar from "../../components/Navbar.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import Footer from "../../components/Footer.js";
 import ProfileBiodata from "../../components/sections/ProfileBiodata.js";
-import GridBackground from "../../components/ui/grid-background.js";
-import { NestedModalProvider } from "../../contexts/nested-modal-context.js";
+
+import { LogOut } from "lucide-react";
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<string>("biodata");
-  const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const logout = () => {
+    localStorage.removeItem("current_user");
+    localStorage.removeItem("session");
+    window.location.href = "/";
+  };
+
   return (
     <NestedModalProvider>
     <div>
@@ -16,12 +21,12 @@ export default function ProfilePage() {
         <Navbar />
         <div className="relative flex flex-grow overflow-hidden scrollbar-hide px-6 pl-20 pt-12">
           <div className="w-1/3 hidden lg:block sticky top-0 left-0 h-screen z-10">
-            <div className="text-3xl font-bold">Settings</div>
-            <ul className="text-lg">
+            <div className="text-3xl font-bold mb-4">Settings</div>
+            <ul className="text-lg mb-4">
               <li
                 className={`cursor-pointer p-2 ${
                   activeSection === "biodata"
-                    ? "font-semibold border-l-3 border-[#3F72AF] pl-4 bg-[#DBE2EF] rounded-l-xl"
+                    ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
                     : "hover:font-semibold"
                 }`}
                 onClick={() => setActiveSection("biodata")}
@@ -31,7 +36,7 @@ export default function ProfilePage() {
               <li
                 className={`cursor-pointer p-2 ${
                   activeSection === "freelancer"
-                    ? "font-semibold border-l-3 border-[#3F72AF] pl-4 bg-[#DBE2EF] rounded-l-xl"
+                    ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
                     : "hover:font-semibold"
                 }`}
                 onClick={() => setActiveSection("freelancer")}
@@ -41,7 +46,7 @@ export default function ProfilePage() {
               <li
                 className={`cursor-pointer p-2 ${
                   activeSection === "client"
-                    ? "font-semibold border-l-3 border-[#3F72AF] pl-4 bg-[#DBE2EF] rounded-l-xl"
+                    ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
                     : "hover:font-semibold"
                 }`}
                 onClick={() => setActiveSection("client")}
@@ -49,11 +54,18 @@ export default function ProfilePage() {
                 Client History
               </li>
             </ul>
+            <div
+              className="flex items-center gap-2 p-2 hover:font-bold transition-transform rounded-xl cursor-pointer text-red-500 hover:stroke-3"
+              onClick={logout}
+            >
+              <LogOut /> Log out
+            </div>
           </div>
 
           <div className="w-full scrollbar-hide bg-[#F9F7F7] z-10 mb-16">
             {activeSection === "biodata" ? <ProfileBiodata /> : <div></div>}
           </div>
+
 
       {/* Modal rendered conditionally based on tracking method */}
       {modalIndex !== null ? (
@@ -62,9 +74,10 @@ export default function ProfilePage() {
         <AuthenticationModal />
       )}
           <GridBackground />
+
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </div>
     </NestedModalProvider>
   );

@@ -20,7 +20,7 @@ export default function BrowseFreelancerPage() {
         console.log(listUser)
 
     },[])
-    
+
     return (
         <div className="flex flex-col min-h-screen">
             <Navbar />

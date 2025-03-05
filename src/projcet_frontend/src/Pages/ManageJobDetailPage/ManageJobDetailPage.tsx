@@ -7,91 +7,66 @@ import { FiCheck, FiX } from "react-icons/fi";
 import { getJobDetail } from "../../controller/jobController";
 import { Job } from "../../interface/job/Job";
 import { User } from "../../interface/User";
+import { Submission } from "../../../../declarations/submission/submission.did";
+import { getSubmissionByJobId, updateSubmissionStatus } from "../../controller/submissionController";
 
-interface Submission {
-  id: string;
-  user: User;
-  jobId: string;
-  status: "pending" | "accepted" | "rejected";
-  message?: string;
-  submissionFile?: string;
-}
 
 export default function ManageJobDetailPage() {
   const { jobId } = useParams();
   const [job, setJob] = useState<Job | null>(null);
-  const [applications, setApplications] = useState<Submission[]>([]);
-  const [applicants, setApplicants] = useState<User[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [rejectMessage, setRejectMessage] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
 
-  // useEffect(() => {
-  //   const fetchData = async (jobId: string) => {
-  //     setLoading(true);
-  //     try {
+   useEffect(() => {
+     const fetchData = async (jobId: string) => {
+       setLoading(true);
+       try {
 
-  //       const job = await getJobDetail(jobId);
-  //       const applications = await getJobApplications(jobId);
-  //       const applicantsData = await getApplicantsData(applications.map(app => app.userId));
+        const job = await getJobDetail(jobId);
+        const submissions = await getSubmissionByJobId(jobId);
+        console.log("Submissions:", submissions);
+        setSubmissions(submissions);
 
-  //       if (job) {
-  //         setJob({
-  //           ...job,
-  //           createdAt: Number(job.createdAt),
-  //           updatedAt: Number(job.updatedAt),
-  //           jobSlots: BigInt(job.jobSlots),
-  //         });
-          
-  //         // Combine applications with user data
-  //         const enhancedApplications = applications.map(app => ({
-  //           ...app,
-  //           user: applicantsData.find(user => user.id === app.userId)!
-  //         }));
-          
-  //         setApplications(enhancedApplications);
-  //         setApplicants(applicantsData);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching data:", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   //   if (jobId) {
   //     fetchData(jobId);
   //   }
   // }, [jobId]);
 
-  const handleAccept = async (applicationId: string) => {
+  const handleAccept = async (submissionId: string) => {
     try {
-      // Implement your accept logic here
-      // await acceptApplication(applicationId);
-      setApplications(applications.map(app => 
-        app.id === applicationId ? { ...app, status: "accepted" } : app
-      ));
+        await updateSubmissionStatus(submissionId, "accepted","");
+        setSubmissions(submissions.map(sub => 
+          sub.id === submissionId ? { ...sub, status: "accepted" } : sub
+        ));
     } catch (error) {
       console.error("Error accepting application:", error);
     }
   };
 
-  const handleReject = async (applicationId: string) => {
-    setSelectedApplication(applicationId);
+  const handleReject = async (submissionId: string) => {
+    setSelectedApplication(submissionId);
     setShowRejectModal(true);
   };
 
   const confirmReject = async () => {
     if (!selectedApplication) return;
-    
+
     try {
-      setApplications(applications.map(app => 
-        app.id === selectedApplication ? { ...app, status: "rejected", message: rejectMessage } : app
+      await updateSubmissionStatus(selectedApplication, "rejected", rejectMessage);
+      setSubmissions(submissions.map(sub => 
+        sub.id === selectedApplication ? { ...sub, status: "rejected" } : sub
       ));
       setShowRejectModal(false);
-      setRejectMessage("");
-      setSelectedApplication(null);
     } catch (error) {
       console.error("Error rejecting application:", error);
     }
@@ -128,37 +103,37 @@ export default function ManageJobDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {applications.map((application) => (
+                  {submissions.map((application) => (
                     <tr key={application.id} className="border-b border-gray-100 hover:bg-white/50">
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div className="flex items-center space-x-3">
                           <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden">
                             {/* Handle profile picture display safely */}
-                            {application.user.profilePicture && (
+                            {/* {application.user.profilePicture && (
                               <img 
-                                src={URL.createObjectURL(application.user.profilePicture)}
+                                src={URL.createObjectURL(new Blob([new Uint8Array(application.user.profilePicture)], { type: 'image/jpeg' }))}
                                 alt="Profile"
                                 className="h-full w-full object-cover"
                               />
-                            )}
+                            )} */}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">{application.user.username}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          application.status === "accepted" ? "bg-green-100 text-green-800" :
-                          application.status === "rejected" ? "bg-red-100 text-red-800" :
+                          application.submissionStatus === "accepted" ? "bg-green-100 text-green-800" :
+                          application.submissionStatus === "rejected" ? "bg-red-100 text-red-800" :
                           "bg-yellow-100 text-yellow-800"
                         }`}>
-                          {application.status}
+                          {application.submissionStatus}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {application.user.rating.toFixed(1)}
                       </td>
                       <td className="px-6 py-4">
-                        {application.status === "pending" && (
+                        {application.submissionStatus === "pending" && (
                           <div className="flex space-x-3">
                             <button
                               onClick={() => handleAccept(application.id)}

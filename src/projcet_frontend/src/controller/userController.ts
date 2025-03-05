@@ -331,7 +331,7 @@ export const topUp = async (amount: number): Promise<void> =>{
         const parsedData = JSON.parse(userData).ok;
         const principalId = parsedData.id
         console.log(principalId)
-        user.topUpCkBTC(principalId, amount)
+        user.topUpICP(principalId, amount)
     }
     
 }

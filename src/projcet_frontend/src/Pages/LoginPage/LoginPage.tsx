@@ -40,7 +40,6 @@ const BackgroundPattern = () => (
 );
 
 const FloatingBubbles = () => {
-  // Generate random bubbles
   const bubbles = Array.from({ length: 15 }, (_, i) => ({
     id: i,
     size: Math.random() * 30 + 10,

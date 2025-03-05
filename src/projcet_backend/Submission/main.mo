@@ -139,6 +139,19 @@ actor submissionModel {
         });
     };
 
+    //Get Submission by job id
+    public func getSubmissionsbyJobId(jobId: Text): async [Submission.Submission] {
+        let allSubmissions = Iter.toArray(submissions.vals());
+        return Array.filter<Submission.Submission>(allSubmissions, func (submission) {
+            submission.jobId == jobId;
+        });
+    };
 
-
+    //Get all Submission by job id and user id
+    public func getUserSubmissionsByJobId(jobId: Text, userId: Text): async [Submission.Submission] {
+        let allSubmissions = Iter.toArray(submissions.vals());
+        return Array.filter<Submission.Submission>(allSubmissions, func (submission) {
+            submission.jobId == jobId and submission.user.id == userId;
+        });
+    };
 };

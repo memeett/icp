@@ -51,8 +51,8 @@ export default function ManageJobPage() {
       if (jobs) {
         const convertedJobs = jobs.map(job => ({
           ...job,
-          createdAt: Number(job.createdAt),
-          updatedAt: Number(job.updatedAt),
+          createdAt: BigInt(job.createdAt),
+          updatedAt: BigInt(job.updatedAt),
         }));
         setMyJobs(convertedJobs);
       }
@@ -119,7 +119,7 @@ export default function ManageJobPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       <Navbar />
-      
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -132,6 +132,7 @@ export default function ManageJobPage() {
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+
           >
             <Link
               to="/post"

@@ -5,6 +5,7 @@ import { session } from "../../../declarations/session";
 import { HttpAgent } from "@dfinity/agent";
 import { useState } from "react";
 import { get } from "http";
+import { JobCategory } from "../interface/job/Job";
 
 export const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");
@@ -166,6 +167,7 @@ export const logout = async (): Promise<void> => {
         await agent.fetchRootKey();
     }
     try {
+        await authClient.logout();
         localStorage.removeItem("session");
         document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
         localStorage.removeItem("current_user");
@@ -214,8 +216,8 @@ export const fetchUserBySession = async (): Promise<User | null> => {
                 const convertedUser: User = {
                     ...userData,
                     profilePicture: profilePictureBlob,
-                    createdAt: new Date(Number(userData.createdAt)),
-                    updatedAt: new Date(Number(userData.updatedAt)),
+                    createdAt: BigInt(userData.createdAt),
+                    updatedAt: BigInt(userData.updatedAt),
                 };
 
                 console.log("User fetched:", {
@@ -253,12 +255,23 @@ export const updateUserProfile = async (payload: UpdateUserPayload): Promise<voi
     if (cookie) {
         try {
             const cleanSession = cookie.replace(/^"|"$/g, '');
-            await user.updateUser(cleanSession, payload);
+
+            const fixedPayload: UpdateUserPayload = {
+                username: payload.username || [],
+                profilePicture: payload.profilePicture || [],
+                description: payload.description || [],
+                dob: payload.dob || [],
+                preference: payload.preference,
+              };
+              
+
+            await user.updateUser(cleanSession, fixedPayload);
         } catch (err) {
             console.error("Error updating user profile:", err);
         }
     }
 };
+
 
 export const getAllUsers = async (): Promise<User[] | null> => {
     try {
@@ -293,8 +306,12 @@ export const getAllUsers = async (): Promise<User[] | null> => {
             return {
                 ...userData,
                 profilePicture: profilePictureBlob,
-                createdAt: new Date(Number(userData.createdAt)),
-                updatedAt: new Date(Number(userData.updatedAt)),
+                createdAt: BigInt(userData.createdAt),
+                updatedAt: BigInt(userData.updatedAt),
+                preference: userData.preference.map((pref:  JobCategory) => ({
+                    ...pref,
+                    id: pref.id.toString()
+                }))
             };
         }));
 
@@ -316,4 +333,44 @@ export const topUp = async (amount: number): Promise<void> =>{
         user.topUpCkBTC(principalId, amount)
     }
     
+}
+
+export const getUserById = async (userId: string): Promise<User | null> => {
+    try {
+        const result = await user.getUserById(userId);
+
+        if ("ok" in result) {
+            const userData = result.ok;
+
+            let profilePictureBlob: Blob;
+            if (userData.profilePicture) {
+                const uint8Array = new Uint8Array(userData.profilePicture);
+                profilePictureBlob = new Blob([uint8Array.buffer], {
+                    type: 'image/jpeg' 
+                });
+            } else {
+                profilePictureBlob = new Blob([], { type: 'image/jpeg' });
+            }
+
+            const convertedUser: User = {
+                ...userData,
+                profilePicture: profilePictureBlob,
+                createdAt: BigInt(userData.createdAt),
+                updatedAt: BigInt(userData.updatedAt),
+            };
+
+            console.log("User fetched:", {
+                ...convertedUser,
+                profilePicture: convertedUser.profilePicture
+            });
+
+            return convertedUser;
+        } else {
+            console.error("Error fetching user:", result.err);
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching user by ID:", error);
+        return null;
+    }
 }

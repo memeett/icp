@@ -8,7 +8,8 @@ import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Float "mo:base/Float";
 import Nat64 "mo:base/Nat64";
-
+import Array "mo:base/Array";
+// import Job "./../Job/model";
 
 
 actor UserModel {
@@ -43,6 +44,13 @@ actor UserModel {
         usersEntries := [];
     };
 
+    stable var cashFlowHistories: [User.CashFlowHistory] = [];
+
+    // Function to add a transaction record
+    private func addTransaction(transaction: User.CashFlowHistory) {
+        cashFlowHistories := Array.append(cashFlowHistories, [transaction]);
+    };
+
     public func createUser(newid : Text, profilePic : Blob) : async User.User {
         let timestamp = Time.now();
 
@@ -51,6 +59,7 @@ actor UserModel {
             profilePicture = profilePic;
             username = "";
             dob = "";
+            preference = [];
             description = "";
             wallet = 0.0;
             rating = 0.0;
@@ -101,6 +110,7 @@ actor UserModel {
                             username = Option.get(payload.username, currUser.username);
                             dob = Option.get(payload.dob, currUser.dob);
                             description = Option.get(payload.description, currUser.description);
+                            preference = Option.get(payload.preference, currUser.preference);
                             wallet = currUser.wallet;
                             rating = currUser.rating;
                             createdAt = currUser.createdAt;
@@ -129,20 +139,21 @@ actor UserModel {
         };
     };
 
-    public shared func transfer_ckbtc(from : Text, to : Text, amount : Nat64) : async Result.Result<Text, Text> {
+    public shared func transfer_ckbtc(from: Text, to: Text, amount: Nat64) : async Result.Result<Text, Text> {
         switch (users.get(from)) {
             case (?fromUser) {
                 if (fromUser.wallet < Float.fromInt(Nat64.toNat(amount))) {
-                    #err("Insufficient balance");
+                    return #err("Insufficient balance");
                 } else {
                     switch (users.get(to)) {
                         case (?toUser) {
                             let fromNewBalance = fromUser.wallet - Float.fromInt(Nat64.toNat(amount));
-                            let updatedFromUser : User.User = {
+                            let updatedFromUser: User.User = {
                                 id = fromUser.id;
                                 profilePicture = fromUser.profilePicture;
                                 username = fromUser.username;
                                 description = fromUser.description;
+                                preference = fromUser.preference;
                                 dob = fromUser.dob;
                                 wallet = fromNewBalance;
                                 rating = fromUser.rating;
@@ -153,11 +164,12 @@ actor UserModel {
                             users.put(from, updatedFromUser);
 
                             let toNewBalance = toUser.wallet + Float.fromInt(Nat64.toNat(amount));
-                            let updatedToUser : User.User = {
+                            let updatedToUser: User.User = {
                                 id = toUser.id;
                                 profilePicture = toUser.profilePicture;
                                 username = toUser.username;
                                 description = toUser.description;
+                                preference = toUser.preference;
                                 dob = toUser.dob;
                                 wallet = toNewBalance;
                                 rating = toUser.rating;
@@ -167,16 +179,25 @@ actor UserModel {
                             };
                             users.put(to, updatedToUser);
 
-                            #ok("Transferred ckBTC successfully");
+                            // Save transaction
+                            addTransaction({
+                                userId = from;
+                                transactionAt = Time.now();
+                                amount = Float.fromInt(Nat64.toNat(amount));
+                                transactionType = #transfer;
+                                toUserId = ?to;
+                            });
+
+                            return #ok("Transferred ckBTC successfully");
                         };
                         case null {
-                            #err("Recipient not found");
+                            return #err("Recipient not found");
                         };
                     };
                 };
             };
             case null {
-                #err("Sender not found");
+                return #err("Sender not found");
             };
         };
     };
@@ -219,6 +240,7 @@ actor UserModel {
                     profilePicture = user.profilePicture;
                     username = user.username;
                     description = user.description;
+                    preference = user.preference;
                     dob = user.dob;
                     wallet = newBalance;
                     rating = user.rating;
@@ -227,6 +249,16 @@ actor UserModel {
                     isFaceRecognitionOn = user.isFaceRecognitionOn;
                 };
                 users.put(userId, updatedUser);
+
+                // Save transaction
+                addTransaction({
+                    userId = userId;
+                    transactionAt = Time.now();
+                    amount = amount;
+                    transactionType = #topUp;
+                    toUserId = null;
+                });
+
                 return #ok("Topped up ckBTC successfully. New balance: " # Float.toText(newBalance));
             };
             case null {
@@ -241,4 +273,16 @@ actor UserModel {
     // } {
     //     { minter_fee = 1000; bitcoin_fee = 2000 };
     // };
+
+    public query func getUserTransactions(userId: Text): async [User.CashFlowHistory] {
+        return Array.filter<User.CashFlowHistory>(cashFlowHistories, func(t: User.CashFlowHistory): Bool {
+            t.userId == userId or (switch (t.toUserId) { 
+                case (?to) to == userId;
+                case (_) false;
+            })
+        });
+    };
+
+
+
 };

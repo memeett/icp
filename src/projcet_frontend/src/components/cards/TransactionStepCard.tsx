@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import confetti from "canvas-confetti";
 import { CheckCircle, DollarSign, Briefcase, Users, Award } from "lucide-react";
 
 const ProcessFlow = () => {
@@ -23,26 +22,15 @@ const ProcessFlow = () => {
           setCurrentStep((prev) => prev + 1);
         } else {
           setIsAutoPlaying(false);
-          triggerConfetti();
         }
       }, 2000);
     }
     return () => clearTimeout(timer);
   }, [isAutoPlaying, currentStep]);
 
-  const triggerConfetti = () => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
-  };
   const goToStep = (stepIndex: number) => {
     setCurrentStep(stepIndex);
     setIsAutoPlaying(false);
-    if (stepIndex === steps.length - 1) {
-      triggerConfetti();
-    }
   };
 
   const steps = [

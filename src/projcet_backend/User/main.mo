@@ -9,11 +9,11 @@ import Debug "mo:base/Debug";
 import Float "mo:base/Float";
 import Nat64 "mo:base/Nat64";
 import Array "mo:base/Array";
-
+// import Job "./../Job/model";
 
 
 actor UserModel {
-    let session = actor ("a4tbr-q4aaa-aaaaa-qaafq-cai") : actor {
+    let session = actor ("by6od-j4aaa-aaaaa-qaadq-cai") : actor {
 
         createSession : (userid : Text) -> async Text;
         getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
@@ -59,6 +59,7 @@ actor UserModel {
             profilePicture = profilePic;
             username = "";
             dob = "";
+            preference = [];
             description = "";
             wallet = 0.0;
             rating = 0.0;
@@ -109,6 +110,7 @@ actor UserModel {
                             username = Option.get(payload.username, currUser.username);
                             dob = Option.get(payload.dob, currUser.dob);
                             description = Option.get(payload.description, currUser.description);
+                            preference = Option.get(payload.preference, currUser.preference);
                             wallet = currUser.wallet;
                             rating = currUser.rating;
                             createdAt = currUser.createdAt;
@@ -151,6 +153,7 @@ actor UserModel {
                                 profilePicture = fromUser.profilePicture;
                                 username = fromUser.username;
                                 description = fromUser.description;
+                                preference = fromUser.preference;
                                 dob = fromUser.dob;
                                 wallet = fromNewBalance;
                                 rating = fromUser.rating;
@@ -166,6 +169,7 @@ actor UserModel {
                                 profilePicture = toUser.profilePicture;
                                 username = toUser.username;
                                 description = toUser.description;
+                                preference = toUser.preference;
                                 dob = toUser.dob;
                                 wallet = toNewBalance;
                                 rating = toUser.rating;
@@ -236,6 +240,7 @@ actor UserModel {
                     profilePicture = user.profilePicture;
                     username = user.username;
                     description = user.description;
+                    preference = user.preference;
                     dob = user.dob;
                     wallet = newBalance;
                     rating = user.rating;

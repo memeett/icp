@@ -120,8 +120,6 @@ actor JobModel{
         }
     };
 
-
-
     //Delete Job
      public func deleteJob (jobId : Text) : async Result.Result<(), Text> {
         switch (jobs.get(jobId)) {

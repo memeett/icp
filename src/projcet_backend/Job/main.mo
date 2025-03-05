@@ -56,7 +56,43 @@ actor JobModel{
 
         jobsEntries := [];
         jobCategoriesEntries := [];
+        seedJobCategories();
     };
+
+    private func seedJobCategories() {
+    let defaultCategories = [
+        "Software Development",
+        "Graphic Design",
+        "Marketing",
+        "Customer Support",
+        "Data Analysis",
+        "Web Development",
+        "Mobile App Development",
+        "UI/UX Design",
+        "Project Management",
+        "Content Writing",
+        "Social Media Management",
+        "SEO Optimization",
+        "Cybersecurity",
+        "Cloud Computing",
+        "DevOps",
+        "Artificial Intelligence",
+        "Blockchain Development",
+        "Game Development",
+        "Technical Writing",
+        "IT Support",
+    ];
+
+    for (categoryName in defaultCategories.vals()) {
+        let categoryId = Int.toText(nextCategoryId);
+        let newCategory : Job.JobCategory = {
+            id = categoryId;
+            jobCategoryName = categoryName;
+        };
+        jobCategories.put(categoryId, newCategory);
+        nextCategoryId += 1;
+    };
+};
 
     let jobTransactionActor = actor ("cuj6u-c4aaa-aaaaa-qaajq-cai") : actor {
         getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>

@@ -50,8 +50,8 @@ export default function ManageJobPage() {
       if (jobs) {
         const convertedJobs = jobs.map(job => ({
           ...job,
-          createdAt: Number(job.createdAt),
-          updatedAt: Number(job.updatedAt),
+          createdAt: BigInt(job.createdAt),
+          updatedAt: BigInt(job.updatedAt),
         }));
         setMyJobs(convertedJobs);
       }

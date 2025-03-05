@@ -166,6 +166,7 @@ export const logout = async (): Promise<void> => {
         await agent.fetchRootKey();
     }
     try {
+        await authClient.logout();
         localStorage.removeItem("session");
         document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
         localStorage.removeItem("current_user");

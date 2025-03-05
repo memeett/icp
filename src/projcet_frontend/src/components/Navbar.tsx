@@ -56,7 +56,7 @@ const Navbar = () => {
               <AnimatedNavLink href="/find">Find Work</AnimatedNavLink>
               <AnimatedNavLink href="/manage">Manage Jobs</AnimatedNavLink>
               <AnimatedNavLink href="/post">Post a Job</AnimatedNavLink>
-              <AnimatedNavLink href="#">Browse Freelancers</AnimatedNavLink>
+              <AnimatedNavLink href="/browse">Browse Freelancers</AnimatedNavLink>
             </div>
           </div>
 

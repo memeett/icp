@@ -11,10 +11,10 @@ import User "../User/model";
 actor submissionModel {
     private stable var nextId : Nat = 0;
 
-    private stable var usersEntries : [(Text, Submission.Submission)] = [];
+    private stable var submissionsEntries : [(Text, Submission.Submission)] = [];
 
-    private var users = HashMap.fromIter<Text, Submission.Submission>(
-        usersEntries.vals(),
+    private var submissions = HashMap.fromIter<Text, Submission.Submission>(
+        submissionsEntries.vals(),
         0,
         Text.equal,
         Text.hash,
@@ -22,18 +22,18 @@ actor submissionModel {
 
     // Save state before upgrade
     system func preupgrade() {
-        usersEntries := Iter.toArray(users.entries());
+        submissionsEntries := Iter.toArray(submissions.entries());
     };
 
     // Restore state after upgrade
     system func postupgrade() {
-        users := HashMap.fromIter<Text, Submission.Submission>(
-            usersEntries.vals(),
+        submissions := HashMap.fromIter<Text, Submission.Submission>(
+            submissionsEntries.vals(),
             0,
             Text.equal,
             Text.hash,
         );
-        usersEntries := [];
+        submissionsEntries := [];
     };
 
     // Create a new submission
@@ -51,7 +51,7 @@ actor submissionModel {
                 submissionFile = fileSubmission;
             };
 
-            users.put(submissionId, newSubmission);
+            submissions.put(submissionId, newSubmission);
             return #ok(newSubmission);
         } catch (e) {
             // Handle any unexpected errors
@@ -60,7 +60,7 @@ actor submissionModel {
     };
 
     public func updateSubmissionStatus(submissionId: Text, newStatus: Text): async Result.Result<Submission.Submission, Text> {
-        switch (users.get(submissionId)) {
+        switch (submissions.get(submissionId)) {
             case (null) {
                 return #err("Submission not found");
             };
@@ -74,7 +74,7 @@ actor submissionModel {
                     submissionFile = submission.submissionFile;
                 };
 
-                users.put(submissionId, updatedSubmission);
+                submissions.put(submissionId, updatedSubmission);
                 return #ok(updatedSubmission);
             };
         };
@@ -82,42 +82,42 @@ actor submissionModel {
 
     // Get submissions by userId where status is "Accept"
     public func getSubmissionAcceptbyUserId(userId: Text): async [Submission.Submission] {
-        let allSubmissions = Iter.toArray(users.vals());
+        let allSubmissions = Iter.toArray(submissions.vals());
         return Array.filter<Submission.Submission>(allSubmissions, func (submission) {
             submission.user.id == userId and submission.submissionStatus == "Accept";
         });
     };
     // Get submissions by userId where status is "Waiting"
     public func getSubmissionWaitingbyUserId(userId: Text): async [Submission.Submission] {
-        let allSubmissions = Iter.toArray(users.vals());
+        let allSubmissions = Iter.toArray(submissions.vals());
         return Array.filter<Submission.Submission>(allSubmissions, func (submission) {
             submission.user.id == userId and submission.submissionStatus == "Waiting";
         });
     };
     // Get submissions by userId where status is "Reject"
     public func getSubmissionRejectbyUserId(userId: Text): async [Submission.Submission] {
-        let allSubmissions = Iter.toArray(users.vals());
+        let allSubmissions = Iter.toArray(submissions.vals());
         return Array.filter<Submission.Submission>(allSubmissions, func (submission) {
             submission.user.id == userId and submission.submissionStatus == "Reject";
         });
     };
     // Get submissions by jobId where status is "Accept"
     public func getSubmissionAcceptbyJobId(jobId: Text): async [Submission.Submission] {
-        let allSubmissions = Iter.toArray(users.vals());
+        let allSubmissions = Iter.toArray(submissions.vals());
         return Array.filter<Submission.Submission>(allSubmissions, func (submission) {
             submission.jobId == jobId and submission.submissionStatus == "Accept";
         });
     };
     // Get submissions by jobId where status is "Waiting"
     public func getSubmissionWaitingbyJobId(jobId: Text): async [Submission.Submission] {
-        let allSubmissions = Iter.toArray(users.vals());
+        let allSubmissions = Iter.toArray(submissions.vals());
         return Array.filter<Submission.Submission>(allSubmissions, func (submission) {
             submission.jobId == jobId and submission.submissionStatus == "Waiting";
         });
     };
     // Get submissions by jobId where status is "Reject"
     public func getSubmissionRejectbyJobId(jobId: Text): async [Submission.Submission] {
-        let allSubmissions = Iter.toArray(users.vals());
+        let allSubmissions = Iter.toArray(submissions.vals());
         return Array.filter<Submission.Submission>(allSubmissions, func (submission) {
             submission.jobId == jobId and submission.submissionStatus == "Reject";
         });

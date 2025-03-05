@@ -8,7 +8,7 @@ import {
   login,
   loginWithInternetIdentity,
 } from "../../controller/userController";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import LoadingOverlay from "../ui/loading-animation";
 
 import { useNestedModal } from "../../contexts/nested-modal-context";
@@ -20,6 +20,13 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   const { open, setOpen, closeModal } = useModal();
   const { openNestedModal } = useNestedModal();
   const [loading, setLoading] = useState<boolean>(false);
+
+
+  const navigate = useNavigate();
+
+
+  const [key, setKey] = useState(0);
+
   const handleOpenFaceVerification = () => {
     openNestedModal(<FaceVerificationModal parentIndex={modalIndex || 0} index={0} />);
   };
@@ -61,6 +68,8 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                     setOpen(false);
                     setLoading(false);
                   }
+                  await navigate("/profile");
+
                 }}
               >
 
@@ -103,17 +112,10 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                   onClick={handleOpenFaceVerification}
                 >
                   <CameraIcon className="w-6 h-6" />
-                  <span>Camera Authentication (Modal)</span>
+                  <span>Camera Authentication</span>
                 </button>
                 
-                {/* Option 2: Navigate to route */}
-                <Link to="/face-recognition/login" className="mt-2 block">
-                  <button className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2">
-                    <CameraIcon className="w-6 h-6" />
-                    <span>Camera Authentication (Route)</span>
 
-                  </button>
-                </Link>
               </motion.div>
             </div>
 
@@ -127,6 +129,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                     if (res) {
                       setOpen(false);
                     }
+                    await navigate("/profile");
                   }}
                 >
                   Secret Sign In

@@ -23,7 +23,7 @@ export const applyJob = async (userId: string, jobId : string): Promise<boolean>
 
 export const acceptApplier = async (applierIds: string[]): Promise<boolean> => {
     try {
-        const result = await applier.AcceptApplier(applierIds);
+        const result = await applier.acceptApplier(applierIds);
         console.log("Accepted appliers:", result);
         return true;
     } catch (error) {

@@ -14,11 +14,13 @@ export default function BrowseFreelancerPage() {
 
         getAllUsers().then((res)=>{
             if(res)setListUser(res)
+        }).catch((err) => {
+            console.log(err)
         })
-
+        console.log(listUser)
 
     },[])
-    
+
     return (
         <div className="flex flex-col min-h-screen">
             <Navbar />

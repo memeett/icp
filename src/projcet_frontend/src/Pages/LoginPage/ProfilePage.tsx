@@ -11,6 +11,7 @@ import { logout } from "../../controller/userController.js";
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<string>("biodata");
   const [modalIndex, setModalIndex] = useState<number | null>(null);
+
   const logoutBtn = async () => {
     await logout()
     window.location.href = "/";

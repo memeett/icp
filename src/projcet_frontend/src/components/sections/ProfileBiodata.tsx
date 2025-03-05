@@ -162,6 +162,7 @@ export default function ProfileBiodata() {
       setTempDescription(newUser.description);
       setTempDob(newUser.dob);
       setPreviewImage(URL.createObjectURL(newUser.profilePicture));
+
     }
   }, [current_user]);
 
@@ -251,11 +252,13 @@ export default function ProfileBiodata() {
         profilePicture: imageData ? [imageData] : [],
         description: tempDescription ? [tempDescription] : [],
         dob: tempDob ? [tempDob] : [],
+        isFaceRecognitionOn: faceRecognitionOn ? [true] : [false],
         preference: [],
       };
 
       await updateUserProfile(formattedPayload);
       console.log(imageData);
+      
       localStorage.setItem(
         "current_user",
         JSON.stringify({

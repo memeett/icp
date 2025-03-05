@@ -3,8 +3,9 @@ import { useParams } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { Job, JobCategory } from "../../../../declarations/job/job.did";
-import { getJobById } from "../../controller/jobController";
+import { getJobApplier, getJobById } from "../../controller/jobController";
 import { applyJob, hasUserApplied } from "../../controller/applyController";
+import { User } from "../../interface/User";
 
 // Reusable JobTag Component
 const JobTag = ({ tag }: { tag: JobCategory }) => (
@@ -27,25 +28,31 @@ export default function JobDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [applied, setApplied] = useState(false);
+    const [appliers, setAppliers] = useState<User[]>([])
+
+    // Get current user's principal from localStorage
+    const currentUserPrincipal = useMemo(() => {
+        const userData = localStorage.getItem("current_user");
+        if (userData) {
+            const parsedData = JSON.parse(userData);
+            return parsedData.ok.id;
+        }
+        return "";
+    }, []);
 
     const checkApplied = useCallback(async () => {
-        const userData = localStorage.getItem("current_user");
-        if (!userData) {
+        if (!currentUserPrincipal) {
             console.error("User data not found");
             return false;
         }
-
-        const parsedData = JSON.parse(userData);
-
         try {
-            const result = await hasUserApplied(parsedData.ok.id, jobId!);
-            console.log("User applied:", result);
+            const result = await hasUserApplied(currentUserPrincipal, jobId!);
             return result;
         } catch (err) {
             console.error("Error checking application status:", err);
             return false;
         }
-    }, [jobId]);
+    }, [jobId, currentUserPrincipal]);
 
     const fetchJobAndCheckApplied = useCallback(async () => {
         if (!jobId) {
@@ -53,7 +60,6 @@ export default function JobDetailPage() {
             setLoading(false);
             return;
         }
-
         try {
             // Fetch job details
             const jobData = await getJobById(jobId);
@@ -64,9 +70,27 @@ export default function JobDetailPage() {
             }
             setJob(jobData);
 
-            // Check if the user has applied
-            const hasApplied = await checkApplied();
-            setApplied(hasApplied);
+            // Get current user's principal from localStorage
+            const currentUserString = localStorage.getItem("current_user");
+            let currentUserPrincipal = "";
+            if (currentUserString) {
+                const parsedData = JSON.parse(currentUserString);
+                currentUserPrincipal = parsedData.ok.id;
+            } else {
+                console.error("Current user not found in localStorage");
+            }
+
+            // If the current user is the job poster, fetch job appliers.
+            if (currentUserPrincipal === jobData.userId) {
+                const appliers = await getJobApplier(jobId)
+                console.log("Job Appliers:", appliers);
+                // Optionally, set state for appliers to render them
+                // setAppliers(appliers);
+            } else {
+                // Otherwise, check if the current user has applied.
+                const hasApplied = await checkApplied();
+                setApplied(hasApplied);
+            }
         } catch (err) {
             console.error("Error fetching job or checking application status:", err);
             setError("Failed to load job details");
@@ -87,7 +111,6 @@ export default function JobDetailPage() {
             setLoading(false);
             return;
         }
-
         try {
             const parsedData = JSON.parse(userData);
             const result = await applyJob(parsedData.ok.id, jobId!);
@@ -106,11 +129,14 @@ export default function JobDetailPage() {
 
     const jobDetails = useMemo(() => {
         if (!job) return null;
-
         return {
             salary: job.jobSalary.toLocaleString(),
             rating: job.jobRating.toFixed(1),
-            postedDate: new Date(Number(job.createdAt)).toLocaleDateString(),
+            postedDate: new Date(Number(job.createdAt) / 1_000_000).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            }),
         };
     }, [job]);
 
@@ -145,18 +171,12 @@ export default function JobDetailPage() {
                         {/* Job Header */}
                         <div className="flex justify-between items-start mb-6">
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                                    {job.jobName}
-                                </h1>
+                                <h1 className="text-3xl font-bold text-gray-800 mb-2">{job.jobName}</h1>
                                 <div className="flex items-center gap-4 mb-4">
-                                    <span className="text-lg font-semibold text-green-600">
-                                        ${jobDetails?.salary}
-                                    </span>
+                                    <span className="text-lg font-semibold text-green-600">${jobDetails?.salary}</span>
                                     <div className="flex items-center">
                                         <span className="text-yellow-500">★</span>
-                                        <span className="ml-1 text-gray-600">
-                                            {jobDetails?.rating}
-                                        </span>
+                                        <span className="ml-1 text-gray-600">{jobDetails?.rating}</span>
                                     </div>
                                 </div>
                             </div>
@@ -177,9 +197,7 @@ export default function JobDetailPage() {
                             <JobDetailSection title="Job Description">
                                 <ul className="list-disc pl-6 space-y-2">
                                     {job.jobDescription.map((desc, index) => (
-                                        <li key={index} className="text-gray-600">
-                                            {desc}
-                                        </li>
+                                        <li key={index} className="text-gray-600">{desc}</li>
                                     ))}
                                 </ul>
                             </JobDetailSection>
@@ -195,17 +213,23 @@ export default function JobDetailPage() {
                                 </div>
                             </div>
 
-                            <button
-                                className={`w-full text-white py-3 px-6 rounded-lg transition duration-200 ${
-                                    applied
-                                        ? "bg-red-500 cursor-not-allowed"
-                                        : "bg-green-500 hover:bg-green-600"
-                                }`}
-                                onClick={handleApply}
-                                disabled={applied || loading}
-                            >
-                                {applied ? "Applied" : "Apply Now"}
-                            </button>
+                            {/* Conditional content: if current user is the job poster, show different content */}
+                            {currentUserPrincipal === job.userId ? (
+                                <div className="flex justify-center items-center py-4">
+                                    <p className="text-gray-800 font-semibold">
+                                        This is your job posting. You can manage it in your dashboard.
+                                    </p>
+                                </div>
+                            ) : (
+                                <button
+                                    className={`w-full text-white py-3 px-6 rounded-lg transition duration-200 ${applied ? "bg-red-500 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"
+                                        }`}
+                                    onClick={handleApply}
+                                    disabled={applied || loading}
+                                >
+                                    {applied ? "Applied" : "Apply Now"}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

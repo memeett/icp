@@ -15,4 +15,5 @@ export interface Job {
     createdAt: number;
     updatedAt: number;
     userId: string;
+    wallet: number;
 }

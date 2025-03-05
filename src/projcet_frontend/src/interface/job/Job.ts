@@ -4,15 +4,17 @@ export interface JobCategory {
 }
 
 export interface Job {
-  id: string;
-  jobName: string;
-  jobDescription: string[];
-  jobSalary: number;
-  jobRating: number;
-  jobTags: JobCategory[];
-  jobSlots: BigInt;
-  jobStatus: string;
-  createdAt: bigint;
-  updatedAt: bigint;
-  userId: string;
+    id: string;
+    jobName: string;
+    jobDescription: string[];
+    jobSalary: number;
+    jobRating: number;
+    jobTags: JobCategory[];
+    jobSlots: BigInt;
+    jobStatus: string;
+    createdAt: number;
+    updatedAt: number;
+    userId: string;
+    wallet: number;
+
 }

@@ -1,134 +1,124 @@
 import JobTransaction "../JobTransaction/model";
-import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
-import Int "mo:base/Int";
 import Text "mo:base/Text";
 import List "mo:base/List";
 import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Array "mo:base/Array";
 import Job "../Job/model";
-// import User "../User/model";
-import Invitation "../Invitation/model";
-import Applier "../Applier/model";
+import User "../User/model";
+import Global "../global";
 
 actor JobTransactionModel {
-    private stable var nextId : Int = 0;
 
-    private stable var jobTransactionEntries : [(Int, JobTransaction.JobTransaction)] = [];
+    private stable var jobTransactionsEntries : [(Text, JobTransaction.JobTransaction)] = [];
 
-    private func intHash(n : Int) : Hash.Hash {
-        let text = Int.toText(n);
-        let hash = Text.hash(text);
-        hash;
-    };
-
-    private var jobTransactions = HashMap.HashMap<Int, JobTransaction.JobTransaction>(
+    private var jobTransactions = HashMap.fromIter<Text, JobTransaction.JobTransaction>(
+        jobTransactionsEntries.vals(),
         0,
-        Int.equal,
-        intHash,
+        Text.equal,
+        Text.hash,
     );
 
+    // Save state before upgrade
     system func preupgrade() {
-        jobTransactionEntries := Iter.toArray(jobTransactions.entries());
+        jobTransactionsEntries := Iter.toArray(jobTransactions.entries());
     };
 
+    // Restore state after upgrade
     system func postupgrade() {
-        jobTransactions := HashMap.fromIter<Int, JobTransaction.JobTransaction>(
-            jobTransactionEntries.vals(),
+        jobTransactions := HashMap.fromIter<Text, JobTransaction.JobTransaction>(
+            jobTransactionsEntries.vals(),
             0,
-            Int.equal,
-            intHash,
+            Text.equal,
+            Text.hash,
         );
-        jobTransactionEntries := [];
+        jobTransactionsEntries := [];
     };
 
-    let jobActor = actor ("br5f7-7uaaa-aaaaa-qaaca-cai") : actor {
+    let jobActor = actor (Global.canister_id.job) : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
     };
 
-    let applierActor = actor ("bkyz2-fmaaa-aaaaa-qaaaq-cai") : actor {
-        getAcceptedAppliers : (Text) -> async [Applier.Applier];
+    let userActor = actor (Global.canister_id.user): actor {
+        getUserById : (userId : Text) -> async Result.Result<User.User, Text>;
     };
 
-    let invitationActor = actor ("be2us-64aaa-aaaaa-qaabq-cai") : actor {
-        getAcceptedJobInvitations : (Text) -> async [Invitation.Invitation];
-    };
 
-    public func getFreelancers(job_id : Text) : async [Text] {
-        let acceptedAppliersResult = await applierActor.getAcceptedAppliers(job_id);
-
-        let acceptedInvitationsResult = await invitationActor.getAcceptedJobInvitations(job_id);
-
-        let freelancers = Array.map(
-            acceptedAppliersResult,
-            func(applier : Applier.Applier) : Text {
-                applier.userId;
-            },
-        );
-
-        let invitationFreelancers = Array.map(
-            acceptedInvitationsResult,
-            func(invitation : Invitation.Invitation) : Text {
-                invitation.user_id;
-            },
-        );
-
-        let allFreelancers = Array.append(freelancers, invitationFreelancers);
-
-        allFreelancers;
-    };
-
-    public func createTransaction(owner_id : Text, job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text> {
+    public func createTransaction(owner_id : Text, job_id : Text) : async () {
         try {
             // Fetch the job details
             let jobResult = await jobActor.getJob(job_id);
 
             switch (jobResult) {
-                case (#err(error)) {
-                    return #err("Failed to fetch job: " # error);
+                case (#err(_error)) {
                 };
                 case (#ok(job)) {
                     // Check if the caller is the job owner
                     if (job.userId != owner_id) {
-                        return #err("Unauthorized: Only job owner can create transactions");
                     };
-
-                    // Fetch freelancer IDs using the getFreelancers function
-                    let freelancerIds = await getFreelancers(job_id);
 
                     // Create the transaction
                     let transaction : JobTransaction.JobTransaction = {
-                        transactionId = nextId;
                         jobId = job_id;
-                        freelancers = List.fromArray(freelancerIds); // Use the freelancer IDs from getFreelancers
+                        freelancers = List.nil<Text>(); // Use the freelancer IDs from getFreelancers
                         client = owner_id;
                     };
 
-                    nextId := nextId + 1;
-                    jobTransactions.put(transaction.transactionId, transaction);
-                    #ok(transaction);
+                    jobTransactions.put(transaction.jobId, transaction);
                 };
             };
         } catch (_) {
-            return #err("Internal Server Error");
         };
     };
 
-    public func updateTransaction(transaction_id : Int, freelancers : List.List<Text>) : async Result.Result<JobTransaction.JobTransaction, Text> {
-        switch (jobTransactions.get(transaction_id)) {
+    public func appendFreelancers(job_id : Text, newFreelancer : Text) : async Result.Result<JobTransaction.JobTransaction, Text> {
+        switch (jobTransactions.get(job_id)) {
             case (null) {
                 return #err("No transaction found for this id");
             };
             case (?transaction) {
+                // Assuming transaction.freelancers is of type List.List<Text>
+                let updatedFreelancers = List.push(newFreelancer, transaction.freelancers);
+
                 let updatedTransaction : JobTransaction.JobTransaction = {
-                    transactionId = transaction_id;
                     jobId = transaction.jobId;
-                    freelancers = List.append(transaction.freelancers, freelancers);
+                    freelancers = updatedFreelancers;
                     client = transaction.client;
                 };
-                jobTransactions.put(transaction_id, updatedTransaction);
-                #ok(updatedTransaction);
+
+                jobTransactions.put(job_id, updatedTransaction);
+                return #ok(updatedTransaction);
+            };
+        };
+    };
+
+    public func getAcceptedFreelancers(job_id: Text) : async Result.Result<[User.User], Text> {
+    // Step 1: Retrieve the job transaction for the given job_id
+        switch (jobTransactions.get(job_id)) {
+            case (null) {
+                return #err("No job transaction found for the given job ID");
+            };
+            case (?transaction) {
+                // Step 2: Extract the list of freelancer IDs from the job transaction
+                let freelancerIds = transaction.freelancers;
+
+                // Step 3: Fetch the User.User details for each freelancer
+                var acceptedFreelancers : [User.User] = [];
+                for (freelancerId in Iter.fromList(freelancerIds)) {
+                    let userResult = await userActor.getUserById(freelancerId);
+                    switch (userResult) {
+                        case (#err(errorMessage)) {
+                            return #err("Failed to fetch user details for freelancer: " # freelancerId # ". Error: " # errorMessage);
+                        };
+                        case (#ok(user)) {
+                            acceptedFreelancers := Array.append(acceptedFreelancers, [user]);
+                        };
+                    };
+                };
+
+                // Step 4: Return the list of accepted freelancers
+                return #ok(acceptedFreelancers);
             };
         };
     };
@@ -145,17 +135,6 @@ actor JobTransactionModel {
             };
         };
         return #err("No transaction found for this job");
-    };
-
-    public func getTransactionById(transaction_id : Int) : async Result.Result<JobTransaction.JobTransaction, Text> {
-        switch (jobTransactions.get(transaction_id)) {
-            case (null) {
-                return #err("No transaction found for this id");
-            };
-            case (?transaction) {
-                return #ok(transaction);
-            };
-        };
     };
 
     public func getTransactionByClientId(client_id : Text) : async List.List<JobTransaction.JobTransaction> {

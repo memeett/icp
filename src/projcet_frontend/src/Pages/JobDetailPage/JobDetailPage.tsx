@@ -32,7 +32,7 @@ export default function JobDetailPage() {
         const userData = localStorage.getItem("current_user");
         if (!userData) {
             console.error("User data not found");
-            return;
+            return false;
         }
 
         const parsedData = JSON.parse(userData);
@@ -40,45 +40,51 @@ export default function JobDetailPage() {
         try {
             const result = await hasUserApplied(parsedData.ok.id, jobId!);
             console.log("User applied:", result);
-            setApplied(result); 
+            return result;
         } catch (err) {
             console.error("Error checking application status:", err);
+            return false;
         }
     }, [jobId]);
 
-    useEffect(() => {
-        checkApplied();
-        console.log("Checking applied status");
-        const fetchJob = async () => {
-            if (!jobId) {
-                setError("Job ID is missing");
+    const fetchJobAndCheckApplied = useCallback(async () => {
+        if (!jobId) {
+            setError("Job ID is missing");
+            setLoading(false);
+            return;
+        }
+
+        try {
+            // Fetch job details
+            const jobData = await getJobById(jobId);
+            if (!jobData) {
+                setError("Job not found");
                 setLoading(false);
                 return;
             }
+            setJob(jobData);
 
-            try {
-                const jobData = await getJobById(jobId);
-                if (jobData) {
-                    setJob(jobData);
-                } else {
-                    setError("Job not found");
-                }
-            } catch (err) {
-                console.error("Error fetching job:", err);
-                setError("Failed to load job details");
-            } finally {
-                setLoading(false);
-            }
-        };
+            // Check if the user has applied
+            const hasApplied = await checkApplied();
+            setApplied(hasApplied);
+        } catch (err) {
+            console.error("Error fetching job or checking application status:", err);
+            setError("Failed to load job details");
+        } finally {
+            setLoading(false);
+        }
+    }, [jobId, checkApplied]);
 
-        fetchJob();
-        
-    }, [jobId]);
-    
+    useEffect(() => {
+        fetchJobAndCheckApplied();
+    }, [fetchJobAndCheckApplied]);
+
     const handleApply = useCallback(async () => {
+        setLoading(true);
         const userData = localStorage.getItem("current_user");
         if (!userData) {
             console.error("User data not found");
+            setLoading(false);
             return;
         }
 
@@ -87,17 +93,16 @@ export default function JobDetailPage() {
             const result = await applyJob(parsedData.ok.id, jobId!);
             if (result) {
                 console.log("Applied for the job");
-                setApplied(true); // Update the applied state
+                setApplied(true);
             } else {
                 console.error("Failed to apply for the job");
             }
         } catch (err) {
             console.error("Error applying for job:", err);
+        } finally {
+            setLoading(false);
         }
     }, [jobId]);
-
-    
-    
 
     const jobDetails = useMemo(() => {
         if (!job) return null;
@@ -108,8 +113,6 @@ export default function JobDetailPage() {
             postedDate: new Date(Number(job.createdAt)).toLocaleDateString(),
         };
     }, [job]);
-
-    // Handle job application
 
     if (loading) {
         return (
@@ -132,7 +135,6 @@ export default function JobDetailPage() {
     }
 
     if (!job) return null;
-
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -200,7 +202,7 @@ export default function JobDetailPage() {
                                         : "bg-green-500 hover:bg-green-600"
                                 }`}
                                 onClick={handleApply}
-                                disabled={applied}
+                                disabled={applied || loading}
                             >
                                 {applied ? "Applied" : "Apply Now"}
                             </button>

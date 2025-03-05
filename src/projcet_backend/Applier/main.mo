@@ -113,7 +113,7 @@ actor ApplierModel {
     };
 
 
-    public func AcceptApplier(userIds : [Text]): async () {
+    public func acceptApplier(userIds : [Text]): async () {
         let allAppliers = Iter.toArray(appliers.vals());
         
         for (applier in allAppliers.vals()) {

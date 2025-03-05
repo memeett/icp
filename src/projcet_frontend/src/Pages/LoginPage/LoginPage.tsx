@@ -120,6 +120,7 @@ function LoginPageContent() {
     <div className="flex flex-col h-screen bg-[#F9F7F7]">
       <Navbar />
       {/* main */}
+        {isLoading && <LoadingOverlay message="Loading freelancers..." />}
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
         <div className="relative min-h-screen">
           <WavyBackground className="w-screen mx-auto pb-40 px-16 align-middle mt-24">

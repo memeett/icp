@@ -7,6 +7,9 @@ import Int "mo:base/Int";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
+import Float "mo:base/Float";
+import List "mo:base/List";
+import JobTransaction "../JobTransaction/model";
 
 actor JobModel{
     private stable var nextId : Nat = 0;
@@ -55,6 +58,14 @@ actor JobModel{
         jobCategoriesEntries := [];
     };
 
+    let jobTransactionActor = actor ("cuj6u-c4aaa-aaaaa-qaajq-cai") : actor {
+        getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>
+    }; 
+
+    let userActor = actor("ajuq4-ruaaa-aaaaa-qaaga-cai") : actor{
+        transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float) -> async Result.Result<Text, Text>;
+    };
+
     public func createJob (payload : Job.CreateJobPayload) : async Result.Result<Job.Job, Text> {
         let jobId = Int.toText(nextId);
         let timestamp = Time.now();
@@ -71,6 +82,7 @@ actor JobModel{
             userId = payload.userId; 
             createdAt = timestamp;
             updatedAt = timestamp;
+            wallet = 0;
         };
 
         jobs.put(jobId, newJob);
@@ -99,6 +111,11 @@ actor JobModel{
             case null { #err("Job not found") };
         }
     };
+
+    public shared func putJob(job_id: Text, job: Job.Job) : async () {
+        jobs.put(job_id, job);
+    };
+
 
     public query func getJobCategory(categoryId : Text) : async Result.Result<Job.JobCategory, Text> {
         switch (jobCategories.get(categoryId)) {
@@ -155,6 +172,7 @@ actor JobModel{
                 userId = Option.get(payload.userId, existingJob.userId);
                 createdAt = existingJob.createdAt;
                 updatedAt = Time.now();
+                wallet = existingJob.wallet;
                 };
                 
                 jobs.put(jobId, updatedJob);
@@ -173,5 +191,55 @@ actor JobModel{
         
         userJobs
     };
+
+    public shared func startJob(user_id: Text, job_id: Text, amount: Float): async Bool {
+        switch (jobs.get(job_id)) {
+            case (?existingJob) {
+                // Validate if the current user is the owner of the job
+                if (user_id != existingJob.userId) {
+                    return false;
+                };
+
+                // Get job transaction to determine how many freelancers have been accepted.
+                let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
+                switch (transactionResult) {
+                    case (#ok(transaction)) {
+                        // Count the number of accepted freelancers using a fold function.
+                        let numAccepted : Nat = List.foldRight<Text, Nat>(
+                            transaction.freelancers,
+                            0,
+                            func (_: Text, acc: Nat) { acc + 1 }
+                        );
+                        // Calculate the required amount as jobSalary * number of accepted freelancers.
+                        let requiredAmount = existingJob.jobSalary * Float.fromInt(numAccepted);
+                        if (amount < requiredAmount) {
+                            return false;
+                        };
+                        
+                        // Call transfer_icp_to_job and check its result.
+                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, amount);
+                        switch (transferResult) {
+                            case (#ok(_msg)) { return true; };
+                            case (#err(_err)) { return false; };
+                        }
+                    };
+                    case (#err(_err)) {
+                        // If there's no transaction record, assume no accepted freelancers.
+                        // Then requiredAmount is zero.
+                        if (amount < 0.0) {
+                            return false;
+                        };
+                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, amount);
+                        switch (transferResult) {
+                            case (#ok(_msg)) { return true; };
+                            case (#err(_err)) { return false; };
+                        }
+                    };
+                }
+            };
+            case null { return false; };
+        }
+    };
+
 
 }

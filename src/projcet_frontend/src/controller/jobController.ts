@@ -3,6 +3,7 @@ import { job } from "../../../declarations/job";
 import { Job, CreateJobPayload, UpdateJobPayload, JobCategory } from "../../../declarations/job/job.did";
 import { User } from "../interface/User";
 import { HttpAgent } from "@dfinity/agent";
+import { applier } from "../../../declarations/applier";
 
 
 
@@ -149,6 +150,13 @@ export const updateJob = async (
 };
 
 export const viewAllJobs = async (): Promise<Job[] | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
     try {
         const result = await job.getAllJobs();
         // console.log("Jobs:", result);
@@ -176,6 +184,13 @@ export const getJobDetail = async (jobId: string):Promise<Job | null> =>{
 }
 
 export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
     try {
         const result = await job.getAllJobCategories();
         // console.log("Jobs:", result);
@@ -187,6 +202,13 @@ export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
 }
 
 export const getJobById = async (jobId: string): Promise<Job|null> =>{
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
     try{
         const result = await job.getJob(jobId);
         if ("ok" in result) {
@@ -244,3 +266,50 @@ export const deleteJob = async (jobId: string): Promise<string[]> => {
         return ["Failed", "Failed to delete job"];
     }
 }
+
+export const getJobApplier = async (jobId: string): Promise<User[]> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    try {
+        const result = await applier.getJobApplier(jobId);
+        if (!result || !("ok" in result)) {
+            console.error("Invalid response format:", result);
+            return [];
+        }
+        const users = result.ok; // This is the array of users from the canister
+
+        const processedUsers = await Promise.all(users.map(async (userData) => {
+            let profilePictureBlob: Blob;
+            if (userData.profilePicture) {
+                // Convert the returned profilePicture (a Uint8Array or number[]) into a Blob.
+                const uint8Array = new Uint8Array(userData.profilePicture);
+                profilePictureBlob = new Blob([uint8Array.buffer], { type: 'image/jpeg' });
+            } else {
+                profilePictureBlob = new Blob([], { type: 'image/jpeg' });
+            }
+            
+            return {
+                ...userData,
+                profilePicture: profilePictureBlob,
+                createdAt: BigInt(userData.createdAt),
+                updatedAt: BigInt(userData.updatedAt),
+                preference: userData.preference.map((pref: JobCategory) => ({
+                    ...pref,
+                    id: pref.id.toString()
+                }))
+            };
+        }));
+
+        console.log("Job appliers processed:", processedUsers);
+        return processedUsers;
+    } catch (error) {
+        console.error("Failed to get job appliers:", error);
+        return [];
+    }
+};
+

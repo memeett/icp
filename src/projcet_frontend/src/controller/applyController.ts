@@ -23,7 +23,7 @@ export const applyJob = async (userId: string, jobId : string): Promise<boolean>
 
 export const acceptApplier = async (applierIds: string[]): Promise<boolean> => {
     try {
-        const result = await applier.AcceptApplier(applierIds);
+        const result = await applier.acceptApplier(applierIds);
         console.log("Accepted appliers:", result);
         return true;
     } catch (error) {
@@ -34,7 +34,7 @@ export const acceptApplier = async (applierIds: string[]): Promise<boolean> => {
 
 export const getUserApply = async (userId: string): Promise<Job[] | null> => {
     try {
-        const result = await applier.GetUserApply(userId);
+        const result = await applier.getUserApply(userId);
         console.log("User applied jobs:", result);
         return result.map((job) => job.job);
     } catch (error) {

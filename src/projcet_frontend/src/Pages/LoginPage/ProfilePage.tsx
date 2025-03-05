@@ -11,7 +11,7 @@ import { logout } from "../../controller/userController.js";
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<string>("biodata");
   const [modalIndex, setModalIndex] = useState<number | null>(null);
-  const logout = async () => {
+  const logoutBtn = async () => {
     await logout()
     window.location.href = "/";
   };
@@ -58,7 +58,7 @@ export default function ProfilePage() {
             </ul>
             <div
               className="flex items-center gap-2 p-2 hover:font-bold transition-transform rounded-xl cursor-pointer text-red-500 hover:stroke-3"
-              onClick={logout}
+              onClick={logoutBtn}
             >
               <LogOut /> Log out
             </div>

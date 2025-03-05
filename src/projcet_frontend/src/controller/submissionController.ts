@@ -1,5 +1,9 @@
+import { AuthClient } from "@dfinity/auth-client";
 import { submission } from "../../../declarations/submission";
+// import { Submission } from "../../../declarations/submission/submission.did";
 import { User } from "../../../declarations/user/user.did";
+import { HttpAgent } from "@dfinity/agent";
+import { Submission } from "../../../declarations/submission/submission.did";
 
 export const createSubmission = async (
     jobId: string,
@@ -8,7 +12,7 @@ export const createSubmission = async (
     submissionMessage: string
 ): Promise<string[]> => {
     try {
-        // Convert Blob to Uint8Array
+
         const arrayBuffer = await submissionFile.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
 
@@ -24,15 +28,43 @@ export const createSubmission = async (
     }
 };
 
-// Update submission status by ID
+export const getSubmissionByJobId =  async (jobId: string): Promise<Submission[]> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+
+    try {
+        console.log("Submissions:");
+        const result = await submission.getSubmissionByJobId(jobId);
+        if ("ok" in result) {
+            return result.ok;
+        } else {
+            throw new Error(result.err);
+        }
+    } catch (error) {
+        throw new Error("Failed to fetch submissions: " + error);
+    }
+}
+
 export const updateSubmissionStatus = async (
     submissionId: string,
-    newStatus: string
+    newStatus: string,
+    message: string
 ): Promise<string[]> => {
+        const authClient = await AuthClient.create();
+        const identity = authClient.getIdentity();
+        const agent = new HttpAgent({ identity });
+    
+        if (process.env.DFX_NETWORK === "local") {
+            await agent.fetchRootKey();
+        }
     try {
-        const result = await submission.updateSubmissionStatus(submissionId, newStatus);
+        const result = await submission.updateSubmissionStatus(submissionId, newStatus, message);
 
-        // Handle the result
         if ("ok" in result) {
             return ["Ok"];
         } else {
@@ -43,7 +75,6 @@ export const updateSubmissionStatus = async (
     }
 };
 
-// Get submissions by userId where status is "Accept"
 export const getSubmissionAcceptbyUserId = async (userId: string): Promise<any[]> => {
     try {
         const result = await submission.getSubmissionAcceptbyUserId(userId);

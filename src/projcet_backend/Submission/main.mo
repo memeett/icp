@@ -20,12 +20,10 @@ actor submissionModel {
         Text.hash,
     );
 
-    // Save state before upgrade
     system func preupgrade() {
         submissionsEntries := Iter.toArray(submissions.entries());
     };
 
-    // Restore state after upgrade
     system func postupgrade() {
         submissions := HashMap.fromIter<Text, Submission.Submission>(
             submissionsEntries.vals(),
@@ -59,7 +57,7 @@ actor submissionModel {
         };
     };
 
-    public func updateSubmissionStatus(submissionId: Text, newStatus: Text): async Result.Result<Submission.Submission, Text> {
+    public func updateSubmissionStatus(submissionId: Text, newStatus: Text, message: Text): async Result.Result<Submission.Submission, Text> {
         switch (submissions.get(submissionId)) {
             case (null) {
                 return #err("Submission not found");
@@ -69,7 +67,7 @@ actor submissionModel {
                     id = submission.id;
                     jobId = submission.jobId;
                     user = submission.user;
-                    submissionMessage = submission.submissionMessage;
+                    submissionMessage = message;
                     submissionStatus = newStatus; 
                     submissionFile = submission.submissionFile;
                 };
@@ -87,6 +85,24 @@ actor submissionModel {
             submission.user.id == userId and submission.submissionStatus == "Accept";
         });
     };
+
+    // public query func getJob (jobId : Text) : async Result.Result<Job.Job, Text> {
+    //     switch (jobs.get(jobId)) {
+    //         case (?job) { #ok(job) };
+    //         case null { #err("Job not found") };
+    //     }
+    // };
+
+// get all submission by job id using query function and return reuslt
+    public query func getSubmissionByJobId(jobId: Text): async Result.Result<[Submission.Submission], Text> {
+        let allSubmissions = Iter.toArray(submissions.vals());
+        let filteredSubmissions = Array.filter<Submission.Submission>(allSubmissions, func (submission) {
+            submission.jobId == jobId;
+        });
+        #ok(filteredSubmissions);
+    };
+
+
     // Get submissions by userId where status is "Waiting"
     public func getSubmissionWaitingbyUserId(userId: Text): async [Submission.Submission] {
         let allSubmissions = Iter.toArray(submissions.vals());

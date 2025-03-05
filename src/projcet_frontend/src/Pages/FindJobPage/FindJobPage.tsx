@@ -11,6 +11,7 @@ import { Job, JobCategory } from "../../../../declarations/job/job.did";
 import { Link } from "react-router-dom";
 import { UserClicked } from "../../../../declarations/userclicked/userclicked.did";
 import { getUserClickedByUserId } from "../../controller/userClickedController";
+import { set } from "date-fns";
 
 const jobTag = ["Full-time", "Part-time", "Contract", "Remote"];
 
@@ -44,14 +45,19 @@ export default function FindJobPage() {
 
             if (jobs) setListJobs(jobs);
             if (categories) setJobTags(categories);
+
+            await getRecommendationJoblList(jobs || []);
         } catch (err) {
             console.error("Error fetching data:", err);
+            return;
         } finally {
             setLoading(false);
         }
     };
 
-    fetchData();
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const handleTagChange = (tag: string) => {
         setSelectedTags(prev =>
@@ -101,22 +107,28 @@ export default function FindJobPage() {
         return data;
     };
 
-    const getRecommendationJoblList = async () => {
+    const getRecommendationJoblList = async (jobs: Job[]) => {
         const userClickeds = await getUserClickedByUserId();
         if (userClickeds) setListUserClickeds(userClickeds);
 
-        
         if (userClickeds.length === 0) {
-            const randomJobs = listJobs.sort(() => 0.5 - Math.random()).slice(0, 5);
+            const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);
             setRecommendationJobs(randomJobs);
             return;
         }
 
         const data = {
             jobTags: convertBigIntToString(jobTags),
-            listJobs: convertBigIntToString(listJobs),
-            listUserClickeds: convertBigIntToString(listUserClickeds),
+            listJobs: convertBigIntToString(jobs),
+            listUserClickeds: convertBigIntToString(userClickeds),
         };
+
+        if (data.jobTags.length === 0 || data.listJobs.length === 0 || data.listUserClickeds.length === 0) {
+            const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);
+            setRecommendationJobs(randomJobs);
+            setLoading(false);
+            return;
+        }
 
         console.log(data);
 
@@ -130,6 +142,9 @@ export default function FindJobPage() {
             });
 
             if (!response.ok) {
+                const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);
+                setRecommendationJobs(randomJobs);
+                setLoading(false);
                 throw new Error("Network response was not ok");
             }
 
@@ -137,20 +152,14 @@ export default function FindJobPage() {
             console.log("Response from Flask:", result);
             setRecommendationJobs(result.top_jobs);
         } catch (error) {
+            const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);
+            setRecommendationJobs(randomJobs);
+            setLoading(false);
             console.error("Error sending data to Flask:", error);
         }
+        
     };
-    // useEffect(() => {
-        getRecommendationJoblList();
 
-        // const intervalId = setInterval(() => {
-        //     getRecommendationJoblList();
-        // }, 50000); 
-
-        // return () => {
-        //     clearInterval(intervalId);
-        // };
-    // }, []);
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -182,8 +191,6 @@ export default function FindJobPage() {
                     </div>
                 </div>
             </div>
-            {/* <button onClick={getRecommendationJoblList}>Fetch Recommendation</button>
-            <button onClick={getUserClickedByUserId}>Get All</button> */}
             <div className="flex overflow-x-hidden scrollbar-hide">
                 <div className="flex flex-col bg-brown w-[20vw] h-screen container">
                     <div className="flex flex-col h-screen p-20">

@@ -43,6 +43,10 @@
       "main": "src/projcet_backend/JobTransaction/main.mo",
       "type": "motoko"
     },
+    "submission": {
+      "main": "src/projcet_backend/Submission/main.mo",
+      "type": "motoko"
+    },
     "projcet_frontend": {
       "dependencies": [
         "projcet_backend"

@@ -27,43 +27,43 @@ export default function ManageJobDetailPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async (jobId: string) => {
-      setLoading(true);
-      try {
+  // useEffect(() => {
+  //   const fetchData = async (jobId: string) => {
+  //     setLoading(true);
+  //     try {
 
-        const job = await getJobDetail(jobId);
-        const applications = await getJobApplications(jobId);
-        const applicantsData = await getApplicantsData(applications.map(app => app.userId));
+  //       const job = await getJobDetail(jobId);
+  //       const applications = await getJobApplications(jobId);
+  //       const applicantsData = await getApplicantsData(applications.map(app => app.userId));
 
-        if (job) {
-          setJob({
-            ...job,
-            createdAt: Number(job.createdAt),
-            updatedAt: Number(job.updatedAt),
-            jobSlots: BigInt(job.jobSlots),
-          });
+  //       if (job) {
+  //         setJob({
+  //           ...job,
+  //           createdAt: Number(job.createdAt),
+  //           updatedAt: Number(job.updatedAt),
+  //           jobSlots: BigInt(job.jobSlots),
+  //         });
           
-          // Combine applications with user data
-          const enhancedApplications = applications.map(app => ({
-            ...app,
-            user: applicantsData.find(user => user.id === app.userId)!
-          }));
+  //         // Combine applications with user data
+  //         const enhancedApplications = applications.map(app => ({
+  //           ...app,
+  //           user: applicantsData.find(user => user.id === app.userId)!
+  //         }));
           
-          setApplications(enhancedApplications);
-          setApplicants(applicantsData);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  //         setApplications(enhancedApplications);
+  //         setApplicants(applicantsData);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching data:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    if (jobId) {
-      fetchData(jobId);
-    }
-  }, [jobId]);
+  //   if (jobId) {
+  //     fetchData(jobId);
+  //   }
+  // }, [jobId]);
 
   const handleAccept = async (applicationId: string) => {
     try {

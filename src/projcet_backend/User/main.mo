@@ -8,11 +8,12 @@ import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Float "mo:base/Float";
 import Nat64 "mo:base/Nat64";
+import Array "mo:base/Array";
 
 
 
 actor UserModel {
-    let session = actor ("by6od-j4aaa-aaaaa-qaadq-cai") : actor {
+    let session = actor ("a4tbr-q4aaa-aaaaa-qaafq-cai") : actor {
 
         createSession : (userid : Text) -> async Text;
         getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
@@ -41,6 +42,13 @@ actor UserModel {
             Text.hash,
         );
         usersEntries := [];
+    };
+
+    stable var cashFlowHistories: [User.CashFlowHistory] = [];
+
+    // Function to add a transaction record
+    private func addTransaction(transaction: User.CashFlowHistory) {
+        cashFlowHistories := Array.append(cashFlowHistories, [transaction]);
     };
 
     public func createUser(newid : Text, profilePic : Blob) : async User.User {
@@ -129,16 +137,16 @@ actor UserModel {
         };
     };
 
-    public shared func transfer_ckbtc(from : Text, to : Text, amount : Nat64) : async Result.Result<Text, Text> {
+    public shared func transfer_ckbtc(from: Text, to: Text, amount: Nat64) : async Result.Result<Text, Text> {
         switch (users.get(from)) {
             case (?fromUser) {
                 if (fromUser.wallet < Float.fromInt(Nat64.toNat(amount))) {
-                    #err("Insufficient balance");
+                    return #err("Insufficient balance");
                 } else {
                     switch (users.get(to)) {
                         case (?toUser) {
                             let fromNewBalance = fromUser.wallet - Float.fromInt(Nat64.toNat(amount));
-                            let updatedFromUser : User.User = {
+                            let updatedFromUser: User.User = {
                                 id = fromUser.id;
                                 profilePicture = fromUser.profilePicture;
                                 username = fromUser.username;
@@ -153,7 +161,7 @@ actor UserModel {
                             users.put(from, updatedFromUser);
 
                             let toNewBalance = toUser.wallet + Float.fromInt(Nat64.toNat(amount));
-                            let updatedToUser : User.User = {
+                            let updatedToUser: User.User = {
                                 id = toUser.id;
                                 profilePicture = toUser.profilePicture;
                                 username = toUser.username;
@@ -167,16 +175,25 @@ actor UserModel {
                             };
                             users.put(to, updatedToUser);
 
-                            #ok("Transferred ckBTC successfully");
+                            // Save transaction
+                            addTransaction({
+                                userId = from;
+                                transactionAt = Time.now();
+                                amount = Float.fromInt(Nat64.toNat(amount));
+                                transactionType = #transfer;
+                                toUserId = ?to;
+                            });
+
+                            return #ok("Transferred ckBTC successfully");
                         };
                         case null {
-                            #err("Recipient not found");
+                            return #err("Recipient not found");
                         };
                     };
                 };
             };
             case null {
-                #err("Sender not found");
+                return #err("Sender not found");
             };
         };
     };
@@ -227,6 +244,16 @@ actor UserModel {
                     isFaceRecognitionOn = user.isFaceRecognitionOn;
                 };
                 users.put(userId, updatedUser);
+
+                // Save transaction
+                addTransaction({
+                    userId = userId;
+                    transactionAt = Time.now();
+                    amount = amount;
+                    transactionType = #topUp;
+                    toUserId = null;
+                });
+
                 return #ok("Topped up ckBTC successfully. New balance: " # Float.toText(newBalance));
             };
             case null {
@@ -241,4 +268,16 @@ actor UserModel {
     // } {
     //     { minter_fee = 1000; bitcoin_fee = 2000 };
     // };
+
+    public query func getUserTransactions(userId: Text): async [User.CashFlowHistory] {
+        return Array.filter<User.CashFlowHistory>(cashFlowHistories, func(t: User.CashFlowHistory): Bool {
+            t.userId == userId or (switch (t.toUserId) { 
+                case (?to) to == userId;
+                case (_) false;
+            })
+        });
+    };
+
+
+
 };

@@ -13,7 +13,7 @@ import Array "mo:base/Array";
 
 
 actor UserModel {
-    let session = actor ("by6od-j4aaa-aaaaa-qaadq-cai") : actor {
+    let session = actor ("avqkn-guaaa-aaaaa-qaaea-cai") : actor {
 
         createSession : (userid : Text) -> async Text;
         getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;

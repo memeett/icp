@@ -1,6 +1,6 @@
 export interface JobCategory {
-    id: string;
-    jobCategoryName: string;
+  id: string;
+  jobCategoryName: string;
 }
 
 export interface Job {
@@ -16,4 +16,5 @@ export interface Job {
     updatedAt: number;
     userId: string;
     wallet: number;
+
 }

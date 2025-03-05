@@ -15,7 +15,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
 
       {/* Content container */}
       <motion.div
-        className="relative z-10 bg-white shadow-xl rounded-2xl px-10 py-8 flex flex-col items-center"
+        className="relative z-10 bg-white/50 shadow-xl rounded-2xl px-10 py-8 flex flex-col items-center"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}

@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Star, Users, UserCircle } from 'lucide-react';
 import { User } from '../../interface/User';
+import { useNavigate } from 'react-router-dom';
 
 export default function FreelancerCard({ user }: { user: User }) {
 
+    const nav = useNavigate();
+
+    const viewDetails = useCallback(() => {
+        nav("/profile/" + user.id);
+    }, [nav]);
+
     return (
 
-            <div className="p-1 bg-gradient-to-br from-blue-600 to-purple-500 rounded-3xl">
+            <div className="p-1 bg-gradient-to-br from-blue-600 to-purple-500 rounded-3xl" onClick={viewDetails}>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}

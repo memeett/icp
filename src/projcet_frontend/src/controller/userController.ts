@@ -262,6 +262,7 @@ export const updateUserProfile = async (payload: UpdateUserPayload): Promise<voi
                 description: payload.description || [],
                 dob: payload.dob || [],
                 preference: payload.preference,
+                isFaceRecognitionOn: payload.isFaceRecognitionOn || [],
               };
               
 

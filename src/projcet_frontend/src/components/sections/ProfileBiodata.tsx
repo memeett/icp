@@ -246,6 +246,7 @@ export default function ProfileBiodata() {
         profilePicture: imageData ? [imageData] : [],
         description: tempDescription ? [tempDescription] : [],
         dob: tempDob ? [tempDob] : [],
+        preference: [],
       };
 
       await updateUserProfile(formattedPayload);

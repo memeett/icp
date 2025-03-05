@@ -29,7 +29,7 @@ export default function ProfileBiodata() {
   useEffect(() => {
     const connectPlugWallet = async () => {
       try {
-        const plug = (window as any).ic?.plug; // Typecasting window.ic
+        const plug = (window as any).ic?.plug; 
     
         if (!plug) {
           console.error("Plug Wallet not detected");

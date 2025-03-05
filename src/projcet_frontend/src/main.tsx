@@ -16,6 +16,7 @@ import FaceTes from "./Pages/LoginPage/FaceTes.tsx";
 import ManageJobPage from "./Pages/ManageJobPage/ManageJobPage.tsx";
 import RegisterFace from "./Pages/LoginPage/RegisterFacePage.tsx";
 import LoginFace from "./Pages/LoginPage/LoginFace.tsx";
+import BrowseFreelancerPage from "./Pages/BrowseFreelancerPage/BrowseFreelancerPage.tsx";
 
 const route = createBrowserRouter([
   {
@@ -44,7 +45,7 @@ const route = createBrowserRouter([
   },
   {
     path: "/browse",
-    element: <SearchPage />,
+    element: <BrowseFreelancerPage />,
   },
   {
     path: "/face-recognition/register",

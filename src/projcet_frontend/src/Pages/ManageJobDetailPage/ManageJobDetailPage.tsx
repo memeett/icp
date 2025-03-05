@@ -37,10 +37,10 @@ export default function ManageJobDetailPage() {
       }
     };
 
-  //   if (jobId) {
-  //     fetchData(jobId);
-  //   }
-  // }, [jobId]);
+    if (jobId) {
+      fetchData(jobId);
+    }
+  }, [jobId]);
 
   const handleAccept = async (submissionId: string) => {
     try {

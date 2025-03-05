@@ -1,10 +1,8 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { submission } from "../../../declarations/submission";
 import { ResponseSubmission, Submission } from "../../../declarations/submission/submission.did";
-
 import { User } from "../../../declarations/user/user.did";
 import { HttpAgent } from "@dfinity/agent";
-import { Submission } from "../../../declarations/submission/submission.did";
 
 export const createSubmission = async (
     jobId: string,

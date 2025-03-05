@@ -114,7 +114,7 @@ actor JobModel{
             jobRating = 0.0;
             jobTags = payload.jobTags;
             jobSlots = payload.jobSlots;
-            jobStatus = "Ongoing";
+            jobStatus = "Start";
             userId = payload.userId; 
             createdAt = timestamp;
             updatedAt = timestamp;

@@ -27,6 +27,7 @@ module{
     public type TransactionType = {
         #topUp;
         #transfer;
+        #transferToJob;
     };
 
     public type CashFlowHistory = {
@@ -34,7 +35,7 @@ module{
         transactionAt: Int;
         amount: Float;
         transactionType: TransactionType;
-        toUserId: ?Text; // `null` for top-ups, recipient's ID for transfers
+        toId: ?Text; // `null` for top-ups, recipient's ID for transfers
     };
 
 

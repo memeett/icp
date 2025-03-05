@@ -4,6 +4,8 @@ import { Job, CreateJobPayload, UpdateJobPayload, JobCategory } from "../../../d
 import { User } from "../interface/User";
 import { HttpAgent } from "@dfinity/agent";
 import { applier } from "../../../declarations/applier";
+import { job_transaction } from "../../../declarations/job_transaction";
+import { ApplierPayload } from "../interface/Applier";
 
 
 
@@ -267,7 +269,7 @@ export const deleteJob = async (jobId: string): Promise<string[]> => {
     }
 }
 
-export const getJobApplier = async (jobId: string): Promise<User[]> => {
+export const getJobApplier = async (jobId: string): Promise<ApplierPayload[]> => {
     const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();
     const agent = new HttpAgent({ identity });
@@ -277,6 +279,57 @@ export const getJobApplier = async (jobId: string): Promise<User[]> => {
     }
     try {
         const result = await applier.getJobApplier(jobId);
+        if (!result || !("ok" in result)) {
+            console.error("Invalid response format:", result);
+            return [];
+        }
+        const appliers = result.ok; // This is the array of users from the canister
+
+        const processedUsers = await Promise.all(appliers.map(async (applierData) => {
+            let userData = applierData.user;
+            let profilePictureBlob: Blob;
+            
+            if (userData.profilePicture) {
+                const uint8Array = new Uint8Array(userData.profilePicture);
+                profilePictureBlob = new Blob([uint8Array.buffer], { type: 'image/jpeg' });
+            } else {
+                profilePictureBlob = new Blob([], { type: 'image/jpeg' });
+            }
+            
+            // Make sure to return an object that matches the `ApplierPayload` structure
+            return {
+                user: {
+                    ...userData,
+                    profilePicture: profilePictureBlob,
+                    createdAt: BigInt(userData.createdAt),
+                    updatedAt: BigInt(userData.updatedAt),
+                    preference: userData.preference.map((pref: JobCategory) => ({
+                        ...pref,
+                        id: pref.id.toString()
+                    }))
+                },
+                appliedAt: BigInt(applierData.appliedAt), // Ensure this field is included
+            } as ApplierPayload; // Assert that this matches the ApplierPayload type
+        }));
+
+        console.log("Job appliers processed:", processedUsers);
+        return processedUsers;
+    } catch (error) {
+        console.error("Failed to get job appliers:", error);
+        return [];
+    }
+};
+
+export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    try {
+        const result = await job_transaction.getAcceptedFreelancers(jobId)
         if (!result || !("ok" in result)) {
             console.error("Invalid response format:", result);
             return [];
@@ -312,4 +365,16 @@ export const getJobApplier = async (jobId: string): Promise<User[]> => {
         return [];
     }
 };
+
+export const startButtonClick = async(user_id: string, job_id: string, amount: number): Promise<void> =>{
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    let result = await job.startJob(user_id, job_id, amount)
+    console.log(result)
+}
 

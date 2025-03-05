@@ -14,8 +14,10 @@ export default function BrowseFreelancerPage() {
 
         getAllUsers().then((res)=>{
             if(res)setListUser(res)
+        }).catch((err) => {
+            console.log(err)
         })
-
+        console.log(listUser)
 
     },[])
     

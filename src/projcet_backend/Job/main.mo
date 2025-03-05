@@ -57,12 +57,49 @@ actor JobModel{
 
         jobsEntries := [];
         jobCategoriesEntries := [];
+        seedJobCategories();
     };
 
     let jobTransactionActor = actor (Global.canister_id.job_transaction) : actor {
         getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
         createTransaction: (owner_id : Text, job_id : Text) -> async ()
-    }; 
+    };
+    
+    private func seedJobCategories() {
+        let defaultCategories = [
+            "Software Development",
+            "Graphic Design",
+            "Marketing",
+            "Customer Support",
+            "Data Analysis",
+            "Web Development",
+            "Mobile App Development",
+            "UI/UX Design",
+            "Project Management",
+            "Content Writing",
+            "Social Media Management",
+            "SEO Optimization",
+            "Cybersecurity",
+            "Cloud Computing",
+            "DevOps",
+            "Artificial Intelligence",
+            "Blockchain Development",
+            "Game Development",
+            "Technical Writing",
+            "IT Support",
+        ];
+
+        for (categoryName in defaultCategories.vals()) {
+            let categoryId = Int.toText(nextCategoryId);
+            let newCategory : Job.JobCategory = {
+                id = categoryId;
+                jobCategoryName = categoryName;
+            };
+            jobCategories.put(categoryId, newCategory);
+            nextCategoryId += 1;
+        };
+    };
+
 
     let userActor = actor(Global.canister_id.user) : actor{
         transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float) -> async Result.Result<Text, Text>;

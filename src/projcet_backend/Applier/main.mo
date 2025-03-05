@@ -41,11 +41,11 @@ actor ApplierModel {
         appliersEntries := [];
     };
 
-    let jobActor = actor ("bd3sg-teaaa-aaaaa-qaaba-cai") : actor {
+    let jobActor = actor ("br5f7-7uaaa-aaaaa-qaaca-cai") : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
     };
 
-    let userActor = actor ("b77ix-eeaaa-aaaaa-qaada-cai"): actor{
+    let userActor = actor ("avqkn-guaaa-aaaaa-qaaea-cai"): actor{
         getUserById : (Text) -> async Result.Result<User.User, Text>;
     };
 
@@ -168,6 +168,15 @@ actor ApplierModel {
         });
         
         userAppliers.size() > 0
+    };
+
+    public func getAcceptedAppliers(jobId: Text): async [Applier.Applier] {
+        let allAppliers = Iter.toArray(appliers.vals());
+        let acceptedAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
+            return applier.jobId == jobId and applier.isAccepted;
+        });
+        
+        acceptedAppliers
     };
 
 }

@@ -3,6 +3,7 @@ import { WavyBackground } from "../../components/ui/wavy-background.js";
 import { AuroraText } from "../../components/ui/aurora-text.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import { ModalProvider, useModal } from "../../contexts/modal-context.js";
+import { NestedModalProvider } from "../../contexts/nested-modal-context.js"; // Import new provider
 import Footer from "../../components/Footer.tsx";
 import { ProfileCard } from "../../components/cards/ProfileCard.tsx";
 import CardCarousel from "../../components/cards/CardCarousel.tsx";
@@ -75,14 +76,95 @@ const FloatingBubbles = () => {
   );
 };
 
-export default function LoginPage() {
-  const { current_user } = authUtils();
+function LoginPageContent() {
+  authUtils();
   const [isHovered, setIsHovered] = useState(false);
+  const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [freelancers, setFreelancers] = useState<User[]>([]);
+  const { setOpen, openModal } = useModal();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { setOpen } = useModal();
-
-  useEffect(() => {
+  
+  const freelancers = [
+    {
+      id: "1",
+      name: "John Doe",
+      category: "Web Development",
+      jobsCompleted: 42,
+      profileImage: image,
+    },
+    {
+      id: "2",
+      name: "Jane Smith",
+      category: "Graphic Design",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+    {
+      id: "3",
+      name: "Mathew Smith",
+      category: "Development LO",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+    {
+      id: "4",
+      name: "Kenneth Smith",
+      category: "Graphic Design",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+    {
+      id: "5",
+      name: "Vincent Smith",
+      category: "Graphic Design",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+    {
+      id: "6",
+      name: "Pepe Smith",
+      category: "Graphic Design",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+    {
+      id: "7",
+      name: "Semua Smith",
+      category: "Graphic Design",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+    {
+      id: "8",
+      name: "Im Smith",
+      category: "Graphic Design",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+    {
+      id: "9",
+      name: "Wuhu Smith",
+      category: "Graphic Design",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+    {
+      id: "10",
+      name: "Xav Smith",
+      category: "Graphic Design",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+    {
+      id: "11",
+      name: "Bibimpap Smith",
+      category: "Graphic Design",
+      jobsCompleted: 28,
+      profileImage: image,
+    },
+  ];
+        
+   useEffect(() => {
     const fetchFreelancers = async () => {
       try {
         const users = await getAllUsers();
@@ -103,13 +185,23 @@ export default function LoginPage() {
     fetchFreelancers();
   }, [current_user]);
 
+  // Option 1: Use the simple modal toggle
+  const handleSimpleModalOpen = () => {
+    setOpen(true);
+  };
+
+  // Option 2: Use the more advanced modal system with index tracking
+  const handleModalOpen = () => {
+    const index = openModal();
+    setModalIndex(index);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-[#F9F7F7]">
-      {isLoading && <LoadingOverlay />}
       <Navbar />
       {/* main */}
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
-        <div className="relative  min-h-screen">
+        <div className="relative min-h-screen">
           <WavyBackground className="w-screen mx-auto pb-40 px-16 align-middle mt-24">
             <p className="inline text-2xl md:text-4xl lg:text-7xl text-white font-bold inter-var text-left">
               With Love, Passion and{" "}
@@ -184,7 +276,7 @@ export default function LoginPage() {
               </motion.div>
 
               <motion.button
-                onClick={() => setOpen(true)}
+                onClick={handleSimpleModalOpen} // Using the simple method here
                 className="bg-white px-8 py-4 rounded-2xl font-medium border-solid border-2 border-white hover:text-black text-[#41b8aa] mt-4 relative overflow-hidden group"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
@@ -223,7 +315,7 @@ export default function LoginPage() {
           </h2>
           <CardCarousel
             cards={freelancers.map((freelancer) => (
-              <motion.div whileHover={{ scale: 1.02 }}>
+              <motion.div key={freelancer.id} whileHover={{ scale: 1.02 }}>
                 <ProfileCard key={freelancer.id} {...freelancer} />
               </motion.div>
             ))}
@@ -234,7 +326,24 @@ export default function LoginPage() {
         <Footer />
       </div>
       {/* end main */}
-      <AuthenticationModal />
+      
+      {/* Modal rendered conditionally based on tracking method */}
+      {modalIndex !== null ? (
+        <AuthenticationModal modalIndex={modalIndex} />
+      ) : (
+        <AuthenticationModal />
+      )}
     </div>
+  );
+}
+
+
+export default function LoginPage() {
+  return (
+    <ModalProvider>
+      <NestedModalProvider>
+        <LoginPageContent />
+      </NestedModalProvider>
+    </ModalProvider>
   );
 }

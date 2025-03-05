@@ -10,11 +10,11 @@ import Float "mo:base/Float";
 import Nat64 "mo:base/Nat64";
 import Array "mo:base/Array";
 import Job "../Job/model";
-
+import Global "../global"
 
 actor UserModel {
 
-    let session = actor ("avqkn-guaaa-aaaaa-qaaea-cai") : actor {
+    let session = actor (Global.canister_id.session) : actor {
         createSession : (userid : Text) -> async Text;
         getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
     };
@@ -44,7 +44,7 @@ actor UserModel {
         usersEntries := [];
     };
 
-    let jobActor = actor("avqkn-guaaa-aaaaa-qaaea-cai") : actor {
+    let jobActor = actor(Global.canister_id.job) : actor {
         getJob: (job_id: Text) -> async ?Job.Job;
         putJob: (job_id: Text, job: Job.Job) -> async ();
     };

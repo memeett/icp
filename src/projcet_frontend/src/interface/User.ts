@@ -16,4 +16,5 @@ export interface UpdateUserPayload {
   profilePicture: [] | [Uint8Array | number[]];
   description: [] | [string];
   dob: [] | [string];
+  isFaceRecognitionOn: [] | [boolean];
 }

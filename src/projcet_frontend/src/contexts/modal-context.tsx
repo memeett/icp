@@ -19,7 +19,6 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
   const [modalStates, setModalStates] = useState<ModalState[]>([]);
   const [open, setOpen] = useState(false);
 
-  // Opens a modal and returns its index
   const openModal = (parentIndex?: number): number => {
     if (parentIndex === undefined) {
       const newIndex = modalStates.length;
@@ -40,7 +39,6 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Closes a modal at the specified index
   const closeModal = (index: number, parentIndex?: number) => {
     setModalStates(prevStates => {
       const newStates = [...prevStates];

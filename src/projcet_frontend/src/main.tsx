@@ -16,6 +16,7 @@ import FaceTes from "./Pages/LoginPage/FaceTes.tsx";
 import ManageJobPage from "./Pages/ManageJobPage/ManageJobPage.tsx";
 import RegisterFace from "./Pages/LoginPage/RegisterFacePage.tsx";
 import LoginFace from "./Pages/LoginPage/LoginFace.tsx";
+import ManageJobDetailPage from "./Pages/ManageJobDetailPage/ManageJobDetailPage.tsx";
 
 const route = createBrowserRouter([
   {
@@ -54,6 +55,10 @@ const route = createBrowserRouter([
     path: "/face-recognition/login",
     element: <LoginFace />,
   },
+  {
+    path: "/manage-jobs/:jobId",
+    element: <ManageJobDetailPage />,
+  }
 ]);
 
 const rootElement = document.getElementById("root");

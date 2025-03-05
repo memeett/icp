@@ -319,7 +319,6 @@ export const getAllUsers = async (): Promise<User[] | null> => {
         } else {
           profilePictureBlob = new Blob([], { type: "image/jpeg" });
         }
-
         return {
           ...userData,
           profilePicture: profilePictureBlob,
@@ -339,3 +338,15 @@ export const getAllUsers = async (): Promise<User[] | null> => {
     return null;
   }
 };
+
+export const topUp = async (amount: number): Promise<void> =>{
+    const userData = localStorage.getItem("current_user");
+    if (userData){
+        console.log(userData)
+        const parsedData = JSON.parse(userData).ok;
+        const principalId = parsedData.id
+        console.log(principalId)
+        user.topUpCkBTC(principalId, amount)
+    }
+    
+}

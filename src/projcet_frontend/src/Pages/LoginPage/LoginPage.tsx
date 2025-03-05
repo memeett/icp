@@ -77,94 +77,14 @@ const FloatingBubbles = () => {
 };
 
 function LoginPageContent() {
-  authUtils();
+  const { current_user } = authUtils();
   const [isHovered, setIsHovered] = useState(false);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [freelancers, setFreelancers] = useState<User[]>([]);
   const { setOpen, openModal } = useModal();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  const freelancers = [
-    {
-      id: "1",
-      name: "John Doe",
-      category: "Web Development",
-      jobsCompleted: 42,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "3",
-      name: "Mathew Smith",
-      category: "Development LO",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "4",
-      name: "Kenneth Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "5",
-      name: "Vincent Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "6",
-      name: "Pepe Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "7",
-      name: "Semua Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "8",
-      name: "Im Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "9",
-      name: "Wuhu Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "10",
-      name: "Xav Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "11",
-      name: "Bibimpap Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-  ];
-        
-   useEffect(() => {
+
+  useEffect(() => {
     const fetchFreelancers = async () => {
       try {
         const users = await getAllUsers();
@@ -326,7 +246,7 @@ function LoginPageContent() {
         <Footer />
       </div>
       {/* end main */}
-      
+
       {/* Modal rendered conditionally based on tracking method */}
       {modalIndex !== null ? (
         <AuthenticationModal modalIndex={modalIndex} />
@@ -336,7 +256,6 @@ function LoginPageContent() {
     </div>
   );
 }
-
 
 export default function LoginPage() {
   return (

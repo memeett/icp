@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FiSearch, FiX, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
@@ -19,10 +19,9 @@ export default function ManageJobPage() {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [jobStatus] = useState<string[]>([
-    "All",
-    "Start",
-    "Pending",
-    "Completed",
+    "Open",
+    "Ongoing",
+    "Finished",
   ]);
   const [selectedStatus, setSelectedStatus] = useState("All");
 
@@ -40,7 +39,7 @@ export default function ManageJobPage() {
 
   const handleCloseModal = () => {
     setOpen(false);
-    closeModal(0); // Tutup modal dengan index 0
+    closeModal(0);
     setSelectedJob(null);
   };
   
@@ -61,6 +60,12 @@ export default function ManageJobPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const navigate = useNavigate();
+
+  const handleRowClick = (jobId: string) => {
+    navigate(`/manage-jobs/${jobId}`);
   };
 
   useEffect(() => {
@@ -225,6 +230,7 @@ export default function ManageJobPage() {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           className="border-b border-gray-100 hover:bg-white/50 transition-colors duration-200"
+                          onClick={() => handleRowClick(job.id)}
                         >
                            <td className="px-6 py-4">
       <div className="text-sm font-medium text-gray-900">

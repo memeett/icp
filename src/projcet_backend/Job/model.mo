@@ -1,4 +1,5 @@
 import Text "mo:base/Text";
+import Float "mo:base/Float";
 module{
     public type Job = {
         id: Text;
@@ -12,6 +13,7 @@ module{
         userId: Text;
         createdAt: Int;
         updatedAt: Int;
+        wallet: Float;
     };
 
     public type JobCategory = {

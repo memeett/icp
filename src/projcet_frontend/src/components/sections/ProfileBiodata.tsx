@@ -258,6 +258,7 @@ export default function ProfileBiodata() {
 
       await updateUserProfile(formattedPayload);
       console.log(imageData);
+      
       localStorage.setItem(
         "current_user",
         JSON.stringify({

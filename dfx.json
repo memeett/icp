@@ -47,6 +47,10 @@
       "main": "src/projcet_backend/Submission/main.mo",
       "type": "motoko"
     },
+    "inbox": {
+      "main": "src/projcet_backend/Inbox/main.mo",
+      "type": "motoko"
+    },
     "projcet_frontend": {
       "dependencies": [
         "projcet_backend"

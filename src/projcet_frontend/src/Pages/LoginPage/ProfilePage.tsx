@@ -4,15 +4,20 @@ import { AuthenticationModal } from "../../components/modals/AuthenticationModal
 import Footer from "../../components/Footer.js";
 import ProfileBiodata from "../../components/sections/ProfileBiodata.js";
 import { LogOut } from "lucide-react";
+
+import { NestedModalProvider } from "../../contexts/nested-modal-context.js";
 import { logout } from "../../controller/userController.js";
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<string>("biodata");
+  const [modalIndex, setModalIndex] = useState<number | null>(null);
   const logout = async () => {
     await logout()
     window.location.href = "/";
   };
+
   return (
+    <NestedModalProvider>
     <div>
       <div className="flex flex-col min-h-screen bg-[#F9F7F7]">
         <Navbar />
@@ -63,10 +68,18 @@ export default function ProfilePage() {
             {activeSection === "biodata" ? <ProfileBiodata /> : <div></div>}
           </div>
 
-          <AuthenticationModal />
+
+      {/* Modal rendered conditionally based on tracking method */}
+      {modalIndex !== null ? (
+        <AuthenticationModal modalIndex={modalIndex} />
+      ) : (
+        <AuthenticationModal />
+      )}
+
         </div>
       </div>
       <Footer />
     </div>
+    </NestedModalProvider>
   );
 }

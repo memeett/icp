@@ -35,6 +35,5 @@ module{
         jobTags: ?[JobCategory];
         jobSlots: ?Int;
         userId: ?Text;
-
     };
 }

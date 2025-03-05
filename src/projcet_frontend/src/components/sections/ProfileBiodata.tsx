@@ -21,7 +21,7 @@ export default function ProfileBiodata() {
   const [showImagePreview, setShowImagePreview] = useState<boolean>(false);
   const [createdAt, setCreatedAt] = useState<Date>();
   const [errors, setErrors] = useState<string>("");
-  
+
 
   const [, setPrincipalId] = useState<string | null>(null);
   const [, setIsConnected] = useState(false);
@@ -29,22 +29,23 @@ export default function ProfileBiodata() {
   useEffect(() => {
     const connectPlugWallet = async () => {
       try {
-        const plug = (window as any).ic?.plug; 
-    
+
+        const plug = (window as any).ic?.plug; // Typecasting window.ic
+
         if (!plug) {
           console.error("Plug Wallet not detected");
           alert("Plug Wallet is not installed. Please install it and try again.");
           return;
         }
-    
+
         const connected = await plug.isConnected();
         if (!connected) {
           await plug.requestConnect({
-            whitelist: ["mxzaz-hqaaa-aaaar-qaada-cai"],
+            whitelist: ["ryjl3-tyaaa-aaaaa-aaaba-cai"],
             host: "https://localhost:3000",
           });
         }
-    
+
         const principal = await plug.getPrincipal();
         setPrincipalId(principal.toString());
         setIsConnected(true);
@@ -52,39 +53,39 @@ export default function ProfileBiodata() {
         console.error("Plug Wallet connection error:", error);
       }
     };
-    
+
     connectPlugWallet();
   }, []);
 
   const sendICP = async () => {
     try {
-      const plug = (window as any).ic?.plug; 
-  
+      const plug = (window as any).ic?.plug;
+
       if (!plug) {
         alert("Plug Wallet not detected");
         return;
       }
-  
+
       const connected = await plug.isConnected();
       if (!connected) {
         await plug.requestConnect();
       }
-  
+
       const transferArgs = {
         to: "Ergasia",
-        amount: parseFloat(amount) * 100000000, 
+        amount: parseFloat(amount) * 100000000, // 8 decimals for ICP
         token: {
-          canisterId: "mxzaz-hqaaa-aaaar-qaada-cai",
-          standard: "ICRC-1",
-          symbol: "ckBTC",
-          name: "Chain-Key Bitcoin",
+          symbol: "ICP",
+          standard: "ICP",
           decimals: 8,
+          price: true
         },
       };
-  
+
+
       console.log("Sending ICP:", transferArgs);
       const result = await plug.requestTransfer(transferArgs);
-      
+
       console.log("Transaction successful:", result);
       alert("Payment successful!");
       topUp(parseFloat(amount))
@@ -98,6 +99,7 @@ export default function ProfileBiodata() {
           },
         })
       );
+
       window.location.reload();
 
     } catch (error) {
@@ -105,7 +107,7 @@ export default function ProfileBiodata() {
       alert("Payment failed!");
     }
   };
-  
+
 
   const { current_user } = authUtils();
   const [dob, setDob] = useState("");
@@ -245,6 +247,7 @@ export default function ProfileBiodata() {
         profilePicture: imageData ? [imageData] : [],
         description: tempDescription ? [tempDescription] : [],
         dob: tempDob ? [tempDob] : [],
+        preference: [],
       };
 
       await updateUserProfile(formattedPayload);
@@ -277,6 +280,8 @@ export default function ProfileBiodata() {
   const handleToggle = () => {
     setFaceRecognitionOn((prev) => !prev);
   };
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
   return (
     <div className=" w-full">
       {user && (
@@ -375,19 +380,44 @@ export default function ProfileBiodata() {
                   <p className="text-3xl font-bold text-purple-900">
                     ${user?.wallet.toFixed(2) || "0.00"}
                   </p>
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter amount"
-                    className="mt-3 w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
-                  />
+
                   <button
                     className="mt-4 w-full bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-purple-700 transition"
-                    onClick={sendICP}
+                    onClick={() => setIsModalOpen(true)}
                   >
                     Top Up
                   </button>
+
+                  {isModalOpen && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-white/30 backdrop-blur-md">
+                      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                        <h2 className="text-lg font-semibold text-purple-700 mb-4">
+                          Enter Token Amount
+                        </h2>
+                        <input
+                          type="number"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          placeholder="Enter amount"
+                          className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                        />
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg mr-2"
+                            onClick={() => setIsModalOpen(false)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                            onClick={sendICP}
+                          >
+                            Confirm
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
 
@@ -460,7 +490,6 @@ export default function ProfileBiodata() {
                     <Link to={"/face-recognition/register"} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:scale-[1.02] transition-transform flex items-center gap-2 shadow-lg">
                       Register
                     </Link>
-
                   </div>
                 </div>
               </div>

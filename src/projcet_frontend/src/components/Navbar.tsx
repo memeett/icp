@@ -37,22 +37,7 @@ const Navbar = () => {
     }
     console.log("User:", user);
   }, [current_user]);
-
-  const navLinks = useMemo(() => {
-    if (user) {
-      return (
-        <div className="hidden md:block">
-          <div className="ml-10 flex justify-around items-center">
-            <AnimatedNavLink href="/find">Find Work</AnimatedNavLink>
-            <AnimatedNavLink href="/manage">Manage Jobs</AnimatedNavLink>
-            <AnimatedNavLink href="/post">Post a Job</AnimatedNavLink>
-            <AnimatedNavLink href="#">Browse Freelancers</AnimatedNavLink>
-          </div>
-        </div>
-      );
-    }
-  }, [user]);
-
+  
   return (
     <nav className="sticky top-0 shadow-md flex-none bg-[#F9F7F7] text-black w-full z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,7 +56,7 @@ const Navbar = () => {
               <AnimatedNavLink href="/find">Find Work</AnimatedNavLink>
               <AnimatedNavLink href="/manage">Manage Jobs</AnimatedNavLink>
               <AnimatedNavLink href="/post">Post a Job</AnimatedNavLink>
-              <AnimatedNavLink href="#">Browse Freelancers</AnimatedNavLink>
+              <AnimatedNavLink href="/browse">Browse Freelancers</AnimatedNavLink>
             </div>
           </div>
 

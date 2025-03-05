@@ -12,8 +12,8 @@ export interface Job {
     jobTags: JobCategory[];
     jobSlots: BigInt;
     jobStatus: string;
-    createdAt: number;
-    updatedAt: number;
+    createdAt: BigInt;
+    updatedAt: BigInt;
     userId: string;
     wallet: number;
 

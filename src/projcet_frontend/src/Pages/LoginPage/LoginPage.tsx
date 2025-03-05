@@ -11,10 +11,13 @@ import { authUtils } from "../../utils/authUtils.js";
 import { PenLine } from "lucide-react";
 import { TypingAnimation } from "../../components/ui/typing-text.tsx";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ProcessFlow from "../../components/cards/TransactionStepCard.tsx";
 import WhyChoose from "../../components/cards/ChooseErgasia.tsx";
 import JobCategories from "../../components/cards/CategoriesCard.tsx";
+import { User } from "../../interface/User.ts";
+import { getAllUsers } from "../../controller/userController.ts";
+import LoadingOverlay from "../../components/ui/loading-animation.tsx";
 
 const BackgroundPattern = () => (
   <svg
@@ -73,95 +76,37 @@ const FloatingBubbles = () => {
 };
 
 export default function LoginPage() {
-  authUtils();
+  const { current_user } = authUtils();
   const [isHovered, setIsHovered] = useState(false);
-  const freelancers = [
-    {
-      id: "1",
-      name: "John Doe",
-      category: "Web Development",
-      jobsCompleted: 42,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Mathew Smith",
-      category: "Development LO",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Kenneth Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Vicnetn Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Pepe Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Semua Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Im Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Wuhu Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Xav Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-    {
-      id: "2",
-      name: "Bibimpap Smith",
-      category: "Graphic Design",
-      jobsCompleted: 28,
-      profileImage: image,
-    },
-
-    // Add more freelancers as needed
-  ];
+  const [freelancers, setFreelancers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { setOpen } = useModal();
+
+  useEffect(() => {
+    const fetchFreelancers = async () => {
+      try {
+        const users = await getAllUsers();
+        if (users) {
+          setFreelancers(users);
+        } else {
+          setFreelancers([]);
+          console.error("No users found or error fetching users");
+        }
+      } catch (error) {
+        console.error("Error fetching freelancers:", error);
+        setFreelancers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFreelancers();
+  }, [current_user]);
+
   return (
-
     <div className="flex flex-col h-screen bg-[#F9F7F7]">
-
-        <Navbar />
+      {isLoading && <LoadingOverlay />}
+      <Navbar />
       {/* main */}
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
         <div className="relative  min-h-screen">
@@ -176,7 +121,6 @@ export default function LoginPage() {
               Empowering Freelancers & Businesses with Web3 Technology.
             </p>
           </WavyBackground>
-
         </div>
 
         <div className="relative flex flex-col items-center justify-center mt-24">
@@ -273,11 +217,10 @@ export default function LoginPage() {
 
         <JobCategories />
 
-
         <div className="flex flex-col w-full justify-center text-center mt-12 mb-24">
-        <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
-          Hire our Top Rated Freelancers
-        </h2>
+          <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+            Hire our Top Rated Freelancers
+          </h2>
           <CardCarousel
             cards={freelancers.map((freelancer) => (
               <motion.div whileHover={{ scale: 1.02 }}>

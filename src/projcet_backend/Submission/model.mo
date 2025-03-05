@@ -8,6 +8,14 @@ module {
         submissionMessage: Text;
         submissionStatus: Text;
         submissionFile: Blob;
+    };
+
+    public type ResponseSubmission = {
+        id: Text;
+        jobId: Text;
+        user: User.User;
+        submissionMessage: Text;
+        submissionStatus: Text;
     }
 
 };

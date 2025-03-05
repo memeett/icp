@@ -12,10 +12,13 @@ import { authUtils } from "../../utils/authUtils.js";
 import { PenLine } from "lucide-react";
 import { TypingAnimation } from "../../components/ui/typing-text.tsx";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import ProcessFlow from "../../components/cards/TransactionStepCard.tsx";
 import WhyChoose from "../../components/cards/ChooseErgasia.tsx";
 import JobCategories from "../../components/cards/CategoriesCard.tsx";
+import { User } from "../../interface/User.ts";
+import { getAllUsers } from "../../controller/userController.ts";
+import LoadingOverlay from "../../components/ui/loading-animation.tsx";
 
 const BackgroundPattern = () => (
   <svg
@@ -73,12 +76,13 @@ const FloatingBubbles = () => {
   );
 };
 
-// Wrap the main component with providers if not already at app level
 function LoginPageContent() {
   authUtils();
   const [isHovered, setIsHovered] = useState(false);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [freelancers, setFreelancers] = useState<User[]>([]);
   const { setOpen, openModal } = useModal();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   const freelancers = [
     {
@@ -159,6 +163,27 @@ function LoginPageContent() {
       profileImage: image,
     },
   ];
+        
+   useEffect(() => {
+    const fetchFreelancers = async () => {
+      try {
+        const users = await getAllUsers();
+        if (users) {
+          setFreelancers(users);
+        } else {
+          setFreelancers([]);
+          console.error("No users found or error fetching users");
+        }
+      } catch (error) {
+        console.error("Error fetching freelancers:", error);
+        setFreelancers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFreelancers();
+  }, [current_user]);
 
   // Option 1: Use the simple modal toggle
   const handleSimpleModalOpen = () => {
@@ -174,7 +199,6 @@ function LoginPageContent() {
   return (
     <div className="flex flex-col h-screen bg-[#F9F7F7]">
       <Navbar />
-      
       {/* main */}
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
         <div className="relative min-h-screen">

@@ -16,6 +16,7 @@ import FaceTes from "./Pages/LoginPage/FaceTes.tsx";
 import ManageJobPage from "./Pages/ManageJobPage/ManageJobPage.tsx";
 import RegisterFace from "./Pages/LoginPage/RegisterFacePage.tsx";
 import LoginFace from "./Pages/LoginPage/LoginFace.tsx";
+import PublicProfile from "./Pages/profile/PublicProfile.tsx";
 
 const route = createBrowserRouter([
   {
@@ -25,6 +26,10 @@ const route = createBrowserRouter([
   {
     path: "/profile",
     element: <ProfilePage />,
+  },
+  {
+    path: "/profile/:id",
+    element: <PublicProfile />,
   },
   {
     path: "/find",

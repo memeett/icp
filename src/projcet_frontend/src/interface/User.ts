@@ -6,8 +6,8 @@ export interface User {
   description: string;
   wallet: number;
   rating: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: bigint;
+  updatedAt: bigint;
   isFaceRecognitionOn: boolean;
 }
 

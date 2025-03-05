@@ -366,10 +366,12 @@ export default function ProfileBiodata() {
                       />
                     </button>
                     {/* register button for face recognition */}
-                      <Link to={"/face-recognition/register"} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:scale-[1.02] transition-transform flex items-center gap-2 shadow-lg">
-                        Register
-                      </Link>
-
+                    <Link
+                      to={"/face-recognition/register"}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:scale-[1.02] transition-transform flex items-center gap-2 shadow-lg"
+                    >
+                      Register
+                    </Link>
                   </div>
                 </div>
               </div>

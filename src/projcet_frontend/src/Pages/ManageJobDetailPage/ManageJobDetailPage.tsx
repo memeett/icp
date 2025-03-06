@@ -20,10 +20,10 @@ export default function ManageJobDetailPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
 
-   useEffect(() => {
-     const fetchData = async (jobId: string) => {
-       setLoading(true);
-       try {
+  useEffect(() => {
+    const fetchData = async (jobId: string) => {
+      setLoading(true);
+      try {
 
         const job = await getJobDetail(jobId);
         const submissions = await getSubmissionByJobId(jobId);
@@ -44,10 +44,10 @@ export default function ManageJobDetailPage() {
 
   const handleAccept = async (submissionId: string) => {
     try {
-        await updateSubmissionStatus(submissionId, "accepted","");
-        setSubmissions(submissions.map(sub => 
-          sub.id === submissionId ? { ...sub, status: "accepted" } : sub
-        ));
+      await updateSubmissionStatus(submissionId, "accepted", "");
+      setSubmissions(submissions.map(sub =>
+        sub.id === submissionId ? { ...sub, status: "accepted" } : sub
+      ));
     } catch (error) {
       console.error("Error accepting application:", error);
     }
@@ -63,7 +63,7 @@ export default function ManageJobDetailPage() {
 
     try {
       await updateSubmissionStatus(selectedApplication, "rejected", rejectMessage);
-      setSubmissions(submissions.map(sub => 
+      setSubmissions(submissions.map(sub =>
         sub.id === selectedApplication ? { ...sub, status: "rejected" } : sub
       ));
       setShowRejectModal(false);
@@ -75,8 +75,8 @@ export default function ManageJobDetailPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       <Navbar />
-      
-      <motion.div 
+
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="container mx-auto px-6 py-8"
@@ -110,7 +110,7 @@ export default function ManageJobDetailPage() {
                           <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden">
                             {/* Handle profile picture display safely */}
                             {application.user.profilePicture && (
-                              <img 
+                              <img
                                 src={URL.createObjectURL(new Blob([new Uint8Array(application.user.profilePicture)], { type: 'image/jpeg' }))}
                                 alt="Profile"
                                 className="h-full w-full object-cover"
@@ -121,11 +121,10 @@ export default function ManageJobDetailPage() {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">{application.user.username}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          application.submissionStatus === "accepted" ? "bg-green-100 text-green-800" :
-                          application.submissionStatus === "rejected" ? "bg-red-100 text-red-800" :
-                          "bg-yellow-100 text-yellow-800"
-                        }`}>
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${application.submissionStatus === "accepted" ? "bg-green-100 text-green-800" :
+                            application.submissionStatus === "rejected" ? "bg-red-100 text-red-800" :
+                              "bg-yellow-100 text-yellow-800"
+                          }`}>
                           {application.submissionStatus}
                         </span>
                       </td>
@@ -133,23 +132,23 @@ export default function ManageJobDetailPage() {
                         {application.user.rating.toFixed(1)}
                       </td>
                       <td className="px-6 py-4">
-  {(application.submissionStatus || application.submissionStatus || "").toLowerCase().trim() === "waiting" && (
-    <div className="flex space-x-3 ">
-      <button
-        onClick={() => handleAccept(application.id)}
-        className="text-green-500 hover:text-green-700"
-      >
-        <FiCheck className="h-5 w-5" />
-      </button>
-      <button
-        onClick={() => handleReject(application.id)}
-        className="text-red-500 hover:text-red-700"
-      >
-        <FiX className="h-5 w-5" />
-      </button>
-    </div>
-  )}
-</td>
+                        {(application.submissionStatus || application.submissionStatus || "").toLowerCase().trim() === "waiting" && (
+                          <div className="flex space-x-3 ">
+                            <button
+                              onClick={() => handleAccept(application.id)}
+                              className="text-green-500 hover:text-green-700"
+                            >
+                              <FiCheck className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleReject(application.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <FiX className="h-5 w-5" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

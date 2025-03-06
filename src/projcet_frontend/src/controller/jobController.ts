@@ -6,6 +6,7 @@ import { HttpAgent } from "@dfinity/agent";
 import { applier } from "../../../declarations/applier";
 import { job_transaction } from "../../../declarations/job_transaction";
 import { ApplierPayload } from "../interface/Applier";
+import { Wallet } from "lucide-react";
 
 
 
@@ -366,15 +367,52 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
     }
 };
 
-export const startButtonClick = async(user_id: string, job_id: string, amount: number): Promise<void> =>{
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
+export const startJob = async (user_id: string, job_id: string, amount: number): Promise<void> => {
+    try {
+        // Authenticate the user
+        const authClient = await AuthClient.create();
+        const identity = authClient.getIdentity();
+        const agent = new HttpAgent({ identity });
 
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
+        // Fetch the root key for local development
+        if (process.env.DFX_NETWORK === "local") {
+            await agent.fetchRootKey();
+        }
+
+        // Call the startJob method on the job actor
+        const result = await job.startJob(user_id, job_id);
+
+        // Check if the result is successful
+        if ("ok" in result) {
+            // Update the user's wallet balance in local storage
+            const user = localStorage.getItem("current_user");
+            if (user) {
+                const parsedData = JSON.parse(user);
+
+                // Ensure the parsed data has the expected structure
+                if (parsedData && typeof parsedData === "object" && "ok" in parsedData) {
+                    const updatedUser = {
+                        ...parsedData.ok,
+                        wallet: parsedData.ok.wallet - amount,
+                    };
+
+                    // Save the updated user data back to local storage
+                    localStorage.setItem(
+                        "current_user",
+                        JSON.stringify({ ok: updatedUser })
+                    );
+                } else {
+                    throw new Error("Invalid user data in local storage");
+                }
+            } else {
+                throw new Error("User not found in local storage");
+            }
+        } else {
+            throw new Error("Failed to start job: " + JSON.stringify(result.err));
+        }
+    } catch (error) {
+        console.error("Error in startJob:", error);
+        throw error; // Re-throw the error for the caller to handle
     }
-    let result = await job.startJob(user_id, job_id, amount)
-    console.log(result)
-}
+};
 

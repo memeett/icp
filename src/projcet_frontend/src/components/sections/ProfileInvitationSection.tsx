@@ -3,8 +3,9 @@ import { UserInvitationPayload } from "../../../../declarations/invitation/invit
 import { getInvitationByUserId } from "../../controller/invitationController";
 import FreelancerInvitationCard from "../cards/FreelancerInvitationCard";
 import { motion } from "framer-motion";
+import { Job } from "../../../../declarations/job/job.did";
 
-export default function ProfileInvitationSection() {
+export default function ProfileInvitationSection({ onClickDetailJob }: { onClickDetailJob: (job : Job) => Promise<void>; }) {
     const [invitations, setInvitations] = useState<UserInvitationPayload[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -32,124 +33,6 @@ export default function ProfileInvitationSection() {
     useEffect(() => {
         fetchInvitationByUserId();
     }, [fetchInvitationByUserId]);
-
-    const mockInvitations: UserInvitationPayload[] = [
-        {
-            job: {
-                id: "job-001",
-                jobRating: 4.5,
-                jobName: "Frontend Developer",
-                jobTags: [
-                    { id: "tag-001", jobCategoryName: "Web Development" },
-                    { id: "tag-002", jobCategoryName: "React" },
-                ],
-                userId: "user-001",
-                jobDescription: [
-                    "Develop and maintain user-facing features for our web application.",
-                    "Collaborate with designers and backend developers to implement UI/UX designs.",
-                ],
-                createdAt: BigInt(1698765432000), // October 31, 2023
-                jobStatus: "Open",
-                jobSalary: 5000,
-                updatedAt: BigInt(1698765432000),
-                wallet: 1000,
-                jobSlots: BigInt(5),
-            },
-            invitedAt: BigInt(1698765432000), // October 31, 2023
-        },
-        {
-            job: {
-                id: "job-002",
-                jobRating: 4.0,
-                jobName: "Backend Developer",
-                jobTags: [
-                    { id: "tag-003", jobCategoryName: "API Development" },
-                    { id: "tag-004", jobCategoryName: "Node.js" },
-                ],
-                userId: "user-002",
-                jobDescription: [
-                    "Design and implement scalable backend services.",
-                    "Optimize database queries and ensure high performance.",
-                ],
-                createdAt: BigInt(1698841832000), // November 1, 2023
-                jobStatus: "Open",
-                jobSalary: 6000,
-                updatedAt: BigInt(1698841832000),
-                wallet: 1500,
-                jobSlots: BigInt(3),
-            },
-            invitedAt: BigInt(1698841832000), // November 1, 2023
-        },
-        {
-            job: {
-                id: "job-003",
-                jobRating: 4.7,
-                jobName: "UI/UX Designer",
-                jobTags: [
-                    { id: "tag-005", jobCategoryName: "Design" },
-                    { id: "tag-006", jobCategoryName: "Figma" },
-                ],
-                userId: "user-003",
-                jobDescription: [
-                    "Create wireframes, prototypes, and high-fidelity designs.",
-                    "Collaborate with developers to ensure design feasibility.",
-                ],
-                createdAt: BigInt(1698928232000), // November 2, 2023
-                jobStatus: "Closed",
-                jobSalary: 4500,
-                updatedAt: BigInt(1698928232000),
-                wallet: 800,
-                jobSlots: BigInt(2),
-            },
-            invitedAt: BigInt(1698928232000), // November 2, 2023
-        },
-        {
-            job: {
-                id: "job-004",
-                jobRating: 3.8,
-                jobName: "DevOps Engineer",
-                jobTags: [
-                    { id: "tag-007", jobCategoryName: "Cloud" },
-                    { id: "tag-008", jobCategoryName: "AWS" },
-                ],
-                userId: "user-004",
-                jobDescription: [
-                    "Manage CI/CD pipelines and automate deployment processes.",
-                    "Monitor and optimize cloud infrastructure.",
-                ],
-                createdAt: BigInt(1699014632000), // November 3, 2023
-                jobStatus: "Open",
-                jobSalary: 7000,
-                updatedAt: BigInt(1699014632000),
-                wallet: 2000,
-                jobSlots: BigInt(4),
-            },
-            invitedAt: BigInt(1699014632000), // November 3, 2023
-        },
-        {
-            job: {
-                id: "job-005",
-                jobRating: 4.2,
-                jobName: "Data Scientist",
-                jobTags: [
-                    { id: "tag-009", jobCategoryName: "Machine Learning" },
-                    { id: "tag-010", jobCategoryName: "Python" },
-                ],
-                userId: "user-005",
-                jobDescription: [
-                    "Analyze large datasets and build predictive models.",
-                    "Collaborate with stakeholders to derive actionable insights.",
-                ],
-                createdAt: BigInt(1699101032000), // November 4, 2023
-                jobStatus: "Open",
-                jobSalary: 8000,
-                updatedAt: BigInt(1699101032000),
-                wallet: 1200,
-                jobSlots: BigInt(6),
-            },
-            invitedAt: BigInt(1699101032000), // November 4, 2023
-        },
-    ];
 
     return (
         <div className="w-full \ bg-gradient-to-r ">
@@ -183,10 +66,10 @@ export default function ProfileInvitationSection() {
                                     Try Again
                                 </button>
                             </div>
-                        ) : mockInvitations.length > 0 ? (
+                        ) : invitations.length > 0 ? (
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center mb-6">
-                                    <p className="text-gray-600">You have {mockInvitations.length} invitation{mockInvitations.length !== 1 ? 's' : ''}</p>
+                                    <p className="text-gray-600">You have {invitations.length} invitation{invitations.length !== 1 ? 's' : ''}</p>
                                     <div className="flex space-x-2">
                                         
                                         <button
@@ -199,8 +82,8 @@ export default function ProfileInvitationSection() {
                                         </button>
                                     </div>
                                 </div>
-                                {mockInvitations.map((invitation) => (
-                                    <FreelancerInvitationCard  invitation={invitation} />
+                                {invitations.map((invitation) => (
+                                    <FreelancerInvitationCard invitation={invitation} onReject={fetchInvitationByUserId } onClickDetailJob={onClickDetailJob}/>
                                 ))}
                             </div>
                         ) : (

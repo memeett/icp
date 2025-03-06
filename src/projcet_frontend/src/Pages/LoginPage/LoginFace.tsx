@@ -15,6 +15,9 @@ const LoginFace = () => {
       onSuccess={handleSuccess}
       onError={handleError}
       mode="verify" 
+      isOpen={true}
+      onClose={() => {}}
+      
     />
   );
 };

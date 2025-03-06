@@ -6,6 +6,7 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
+import Time "mo:base/Time";
 
 actor InboxModule {
     private stable var nextId : Nat = 0;
@@ -42,6 +43,7 @@ actor InboxModule {
             submission_type = submission_type;
             status = status;
             read = false;
+            createdAt = Time.now();
         };
         nextId += 1;
         inboxes.put(inboxId, newInbox);
@@ -94,6 +96,7 @@ actor InboxModule {
                     submission_type = inbox.submission_type;
                     status = status;
                     read = inbox.read;
+                    createdAt = inbox.createdAt;
                 };
                 inboxes.put(inboxId, updatedInbox);
                 #ok(updatedInbox);
@@ -125,6 +128,7 @@ actor InboxModule {
                     submission_type = inbox.submission_type;
                     status = "Accepted";
                     read = inbox.read;
+                    createdAt = inbox.createdAt;
                 };
                 inboxes.put(inboxId, updatedInbox);
                 #ok(updatedInbox);
@@ -145,6 +149,7 @@ actor InboxModule {
                     submission_type = inbox.submission_type;
                     status = "Rejected";
                     read = inbox.read;
+                    createdAt = inbox.createdAt;
                 };
                 inboxes.put(inboxId, updatedInbox);
                 #ok(updatedInbox);
@@ -187,6 +192,7 @@ actor InboxModule {
                     submission_type = inbox.submission_type;
                     status = inbox.status;
                     read = true;
+                    createdAt = inbox.createdAt;
                 };
                 inboxes.put(inboxId, updatedInbox);
                 #ok(updatedInbox);

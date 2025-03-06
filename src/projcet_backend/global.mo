@@ -12,7 +12,8 @@ module {
     applier: Text;
   };
 
-   public let canister_id : CanisterId = {
+
+  public let canister_id : CanisterId = {
     userclicked="ajuq4-ruaaa-aaaaa-qaaga-cai";
     user="a4tbr-q4aaa-aaaaa-qaafq-cai";
     submission="a3shf-5eaaa-aaaaa-qaafa-cai";

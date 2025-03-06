@@ -2,14 +2,33 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { authUtils } from "../../utils/authUtils";
 import { UpdateUserPayload, User } from "../../interface/User";
-import { topUp, updateUserProfile } from "../../controller/userController";
+import {
+  getUserByName,
+  topUp,
+  updateUserProfile,
+} from "../../controller/userController";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Check, PencilLine, Star, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Camera,
+  Check,
+  PencilLine,
+  Plus,
+  Search,
+  Star,
+  UserPlus,
+  X,
+} from "lucide-react";
 import Modal from "../modals/ModalTemplate";
+import { JobCategory } from "../../interface/job/Job";
+import { useJobCategories } from "../../utils/useJobCategories";
+import { set } from "date-fns";
+import LoadingOverlay from "../ui/loading-animation";
+import ErrorModal from "../modals/ErrorModal";
+import FaceRecognition from "../FaceRecognition";
 
 export default function ProfileBiodata() {
   const [user, setUser] = useState<User | null>(null);
-  const [tempUser, setTempUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [tempUsername, setTempUsername] = useState<string>("");
@@ -19,7 +38,6 @@ export default function ProfileBiodata() {
   const [faceRecognitionOn, setFaceRecognitionOn] = useState(false);
   const [hasChanges, setHasChanges] = useState<boolean>(false);
   const [showImagePreview, setShowImagePreview] = useState<boolean>(false);
-  const [createdAt, setCreatedAt] = useState<Date>();
   const [errors, setErrors] = useState<string>("");
   const { current_user } = authUtils();
   const [dob, setDob] = useState("");
@@ -29,10 +47,20 @@ export default function ProfileBiodata() {
   const [, setIsConnected] = useState(false);
   const [amount, setAmount] = useState("");
 
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState(
+    user?.preference || []
+  );
+  const [tempSelectedCategories, setTempSelectedCategories] = useState(
+    user?.preference || []
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data, loading, error, refresh } = useJobCategories();
+  const [dataLoading, setLoading] = useState(false);
+
   useEffect(() => {
     const connectPlugWallet = async () => {
       try {
-
         const plug = (window as any).ic?.plug; // Typecasting window.ic
 
         if (!plug) {
@@ -88,7 +116,7 @@ export default function ProfileBiodata() {
           symbol: "ICP",
           standard: "ICP",
           decimals: 8,
-          price: true
+          price: true,
         },
       };
       console.log("Sending ICP:", transferArgs);
@@ -97,12 +125,12 @@ export default function ProfileBiodata() {
       console.log("Transaction successful:", result);
       topUp(parseFloat(amount));
       //later add success modal
-      
+
       if (current_user) {
         const parsedUser = JSON.parse(current_user).ok;
         // let imageData: Uint8Array | null = null;
         const profilePicture = await blobToUint8Array(
-          user? user.profilePicture : new Blob()
+          user ? user.profilePicture : new Blob()
         );
         console.log("memememe" + profilePicture);
         localStorage.setItem(
@@ -137,10 +165,35 @@ export default function ProfileBiodata() {
       tempUsername !== username ||
       tempDescription !== description ||
       tempDob !== dob ||
-      selectedImage !== null;
+      selectedImage !== null ||
+      JSON.stringify(tempSelectedCategories) !==
+        JSON.stringify(selectedCategories);
 
     setHasChanges(changesExist);
-  }, [tempUsername, tempDescription, tempDob, selectedImage]);
+  }, [
+    tempUsername,
+    tempDescription,
+    tempDob,
+    selectedImage,
+    tempSelectedCategories,
+  ]);
+
+  const removeCategory = (category: JobCategory) => {
+    setTempSelectedCategories(
+      tempSelectedCategories.filter((cat) => cat !== category)
+    );
+  };
+
+  // Filter categories based on search term
+  const filteredCategories = (data || [])
+    .filter((category) =>
+      category.jobCategoryName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .slice(0, 10);
+  const saveCategories = () => {
+    setSelectedCategories(tempSelectedCategories);
+    setIsCategoryModalOpen(false);
+  };
 
   useEffect(() => {
     if (current_user) {
@@ -153,8 +206,6 @@ export default function ProfileBiodata() {
         newUser.profilePicture = blob;
       }
       setUser(newUser);
-      setTempUser(newUser);
-      // setCreatedAt(date);
       setUsername(newUser.username);
       setDescription(newUser.description);
       setDob(newUser.dob);
@@ -162,7 +213,8 @@ export default function ProfileBiodata() {
       setTempDescription(newUser.description);
       setTempDob(newUser.dob);
       setPreviewImage(URL.createObjectURL(newUser.profilePicture));
-
+      setTempSelectedCategories(newUser.preference);
+      setSelectedCategories(newUser.preference);
     }
   }, [current_user]);
 
@@ -232,6 +284,14 @@ export default function ProfileBiodata() {
     }
     // also add validation if username already taken
 
+    setLoading(true);
+    const usernameTaken = await getUserByName(tempUsername);
+    if (usernameTaken) {
+      setErrors("Username already taken");
+      setLoading(false);
+      return;
+    }
+
     try {
       let imageData: Uint8Array | null = null;
 
@@ -239,13 +299,10 @@ export default function ProfileBiodata() {
         const imageBlob = await convertImageToBlob(selectedImage);
         imageData = await blobToUint8Array(imageBlob);
       } else {
-        // console.log("Selected image:", selectedImage);
         imageData = await blobToUint8Array(
           user ? user.profilePicture : new Blob()
         );
       }
-
-      console.log("Image data:", imageData);
 
       const formattedPayload: UpdateUserPayload = {
         username: tempUsername ? [tempUsername] : [],
@@ -253,12 +310,11 @@ export default function ProfileBiodata() {
         description: tempDescription ? [tempDescription] : [],
         dob: tempDob ? [tempDob] : [],
         isFaceRecognitionOn: faceRecognitionOn ? [true] : [false],
-        preference: [],
+        preference: [tempSelectedCategories],
       };
 
       await updateUserProfile(formattedPayload);
-      console.log(imageData);
-      
+
       localStorage.setItem(
         "current_user",
         JSON.stringify({
@@ -268,10 +324,27 @@ export default function ProfileBiodata() {
             username: tempUsername,
             description: tempDescription,
             dob: tempDob,
+            preference: tempSelectedCategories,
           },
         })
       );
-      window.location.reload();
+      setPreviewImage(
+        URL.createObjectURL(
+          new Blob(imageData ? [imageData] : [], { type: "image/png" })
+        )
+      );
+      setErrors("");
+      setHasChanges(false);
+
+      setTempSelectedCategories(selectedCategories);
+      setUsername(tempUsername);
+      setDescription(tempDescription);
+      setDob(tempDob);
+      setTempUsername(tempUsername);
+      setTempDescription(tempDescription);
+      setTempDob(tempDob);
+      refresh();
+      setLoading(false);
     } catch (err) {
       console.error("Error saving profile:", err);
     }
@@ -289,8 +362,29 @@ export default function ProfileBiodata() {
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCategorySelection = (category: JobCategory) => {
+    if (tempSelectedCategories.includes(category)) {
+      setTempSelectedCategories(
+        tempSelectedCategories.filter((cat) => cat !== category)
+      );
+    } else {
+      if (tempSelectedCategories.length < 3) {
+        setTempSelectedCategories([...tempSelectedCategories, category]);
+      }
+    }
+  };
   return (
-    <div className=" w-full">
+    <div className="w-full">
+      {dataLoading && <LoadingOverlay message="Loading..." />}{" "}
+      {errors !== "" && !dataLoading && (
+        <ErrorModal
+          isOpen={errors !== ""}
+          onClose={() => setErrors("")}
+          message={errors}
+          duration={2000}
+        />
+      )}
       {user && (
         <>
           <AnimatePresence>
@@ -299,7 +393,7 @@ export default function ProfileBiodata() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 20, opacity: 0 }}
-                className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-4 flex gap-4 items-center z-50 border border-purple-100"
+                className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-4 flex gap-4 items-center z-40 border border-purple-100"
               >
                 <span className="text-purple-700 font-semibold">
                   Unsaved changes detected
@@ -324,7 +418,7 @@ export default function ProfileBiodata() {
 
           <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-purple-50">
             {/* Profile Header */}
-            <div className=" bg-gradient-to-r from-[#DBE2EF] to-blue-200 p-8">
+            <div className="bg-gradient-to-r from-[#DBE2EF] to-blue-200 p-8">
               <div className="flex items-center gap-6">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
@@ -341,8 +435,9 @@ export default function ProfileBiodata() {
                       <img
                         src={
                           previewImage ||
-                          URL.createObjectURL(user.profilePicture) ||
-                          "/default-avatar.png"
+                          (user.profilePicture
+                            ? URL.createObjectURL(user.profilePicture)
+                            : "/default-avatar.png")
                         }
                         className="w-full h-full object-cover"
                         alt="Profile"
@@ -358,20 +453,70 @@ export default function ProfileBiodata() {
                 </motion.div>
 
                 <div className="space-y-2 flex-1">
-                  <label htmlFor="username" className="relative">
-                    <input
-                      value={tempUsername}
-                      onChange={(e) => setTempUsername(e.target.value)}
-                      autoComplete="off"
-                      className="text-4xl font-bold bg-transparent focus:outline-0 border-b border-purple-400 focus:border-black text-black placeholder:text-gray-400 w-1/2"
-                      placeholder="Enter username"
-                      name="username"
-                    />
-                    <PencilLine className="absolute -top-2 right-4" />
-                  </label>
-                  {/* <p className="text-black text-xl">
-                    Joined {new Date(user.createdAt).toLocaleDateString()}
-                  </p> */}
+                  <div className="flex justify-between items-center">
+                    <label htmlFor="username" className="relative">
+                      <input
+                        value={tempUsername}
+                        onChange={(e) => setTempUsername(e.target.value)}
+                        autoComplete="off"
+                        className="text-4xl font-bold bg-transparent focus:outline-0 border-b border-purple-400 focus:border-black text-black placeholder:text-gray-400 w-full"
+                        placeholder="Enter username"
+                        name="username"
+                      />
+                      <PencilLine className="absolute top-2 right-4" />
+                    </label>
+
+                    {/* Rating moved to header area */}
+                    <div className="flex items-center gap-2 bg-white/80 p-3 rounded-xl shadow-md">
+                      <div className="flex text-yellow-400">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-5 h-5 ${
+                              i < (user?.rating || 0)
+                                ? "fill-current"
+                                : "fill-purple-100"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-lg font-bold text-purple-900">
+                        {user?.rating?.toFixed(1) || "4.8"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Category Preferences as tags */}
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {tempSelectedCategories.length > 0
+                      ? tempSelectedCategories.map((category) => (
+                          <motion.div
+                            key={category.id}
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: 1 }}
+                            className="bg-gradient-to-r from-purple-50 to-blue-50 text-purple-700 px-3 py-1 rounded-full text-sm font-medium border border-purple-100 flex items-center gap-1 shadow-sm"
+                          >
+                            {category.jobCategoryName}
+                            <X
+                              className="w-4 h-4 cursor-pointer hover:text-purple-900"
+                              onClick={() => removeCategory(category)}
+                            />
+                          </motion.div>
+                        ))
+                      : null}
+
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsCategoryModalOpen(true)}
+                      className="bg-white/80 text-purple-600 hover:text-purple-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 border border-purple-200 shadow-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {tempSelectedCategories.length === 0
+                        ? "Add categories"
+                        : "Edit"}
+                    </motion.button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -379,79 +524,6 @@ export default function ProfileBiodata() {
             {/* Biodata Content */}
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Left Column */}
-              <div className="space-y-6">
-                <div className="bg-white p-6 rounded-xl border border-purple-100 shadow-lg">
-                  <h3 className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
-                    Wallet Balance
-                  </h3>
-                  <p className="text-3xl font-bold text-purple-900">
-                    ${user?.wallet.toFixed(2) || "0.00"}
-                  </p>
-
-                  <button
-                    className="mt-4 w-full bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-purple-700 transition"
-                    onClick={() => setIsModalOpen(true)}
-                  >
-                    Top Up
-                  </button>
-
-                  {isModalOpen && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-white/30 backdrop-blur-md">
-                      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                        <h2 className="text-lg font-semibold text-purple-700 mb-4">
-                          Enter Token Amount
-                        </h2>
-                        <input
-                          type="number"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          placeholder="Enter amount"
-                          className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
-                        />
-                        <div className="mt-4 flex justify-end">
-                          <button
-                            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg mr-2"
-                            onClick={() => setIsModalOpen(false)}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
-                            onClick={sendICP}
-                          >
-                            Confirm
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-white p-6 rounded-xl border border-purple-100 shadow-lg">
-                  <h3 className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
-                    Rating
-                  </h3>
-                  <div className="flex items-center gap-3">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-6 h-6 ${
-                            i < (user?.rating || 0)
-                              ? "fill-current"
-                              : "fill-purple-100"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-xl font-bold text-purple-900">
-                      {user?.rating?.toFixed(1) || "4.8"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column */}
               <div className="space-y-6">
                 <div className="bg-white p-6 rounded-xl border border-purple-100 shadow-lg">
                   <label className="block text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
@@ -495,16 +567,194 @@ export default function ProfileBiodata() {
                       />
                     </button>
                     {/* register button for face recognition */}
-                    <Link
-                      to={"/face-recognition/register"}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:scale-[1.02] transition-transform flex items-center gap-2 shadow-lg"
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="flex items-center space-x-2 bg-gradient-to-r from-blue-400 to-purple-400 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
                     >
-                      Register
-                    </Link>
+                      <UserPlus className="w-5 h-5" />
+                      <span>Register</span>
+                    </button>
                   </div>
                 </div>
               </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-xl border border-purple-100 shadow-lg">
+                  <h3 className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
+                    Wallet Balance
+                  </h3>
+                  <p className="text-3xl font-bold text-purple-900">
+                    ${user?.wallet.toFixed(2) || "0.00"}
+                  </p>
+
+                  <button
+                    className="mt-4 w-full bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-purple-700 transition"
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    Top Up
+                  </button>
+
+                  {isModalOpen && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-white/30 backdrop-blur-md z-50">
+                      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                        <h2 className="text-lg font-semibold text-purple-700 mb-4">
+                          Enter Token Amount
+                        </h2>
+                        <input
+                          type="number"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          placeholder="Enter amount"
+                          className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                        />
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg mr-2"
+                            onClick={() => setIsModalOpen(false)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                            onClick={sendICP}
+                          >
+                            Confirm
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+            <FaceRecognition
+              principalId={user.id}
+              onSuccess={() => console.log("Operation successful!")}
+              onError={(error: string) =>
+                console.error("Operation failed:", error)
+              }
+              mode="register" // Change to "verify" for verification mode
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            />
+
+            {/* Category Selection Modal */}
+            {isCategoryModalOpen && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md"
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-purple-800">
+                      Select Categories
+                      <span className="ml-2 text-sm font-normal text-purple-500">
+                        (Max 3)
+                      </span>
+                    </h3>
+                    <button
+                      onClick={() => setIsCategoryModalOpen(false)}
+                      className="text-gray-500 hover:text-gray-800"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Search input */}
+                  <div className="relative mb-4">
+                    <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search categories..."
+                      className="w-full pl-10 pr-4 py-2 border-2 border-purple-100 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+                    />
+                  </div>
+
+                  {/* Selected categories */}
+                  {tempSelectedCategories.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm text-purple-600 mb-2">Selected:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {tempSelectedCategories.map((category) => (
+                          <div
+                            key={category.id}
+                            className="bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
+                          >
+                            {category.jobCategoryName}
+                            <X
+                              className="w-4 h-4 cursor-pointer hover:text-purple-900"
+                              onClick={() => removeCategory(category)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category list */}
+                  <div className="max-h-64 overflow-y-auto pr-2 space-y-2">
+                    {filteredCategories.length > 0 ? (
+                      filteredCategories.map((category) => (
+                        <motion.div
+                          key={category.id}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          onClick={() => handleCategorySelection(category)}
+                          className={`cursor-pointer p-3 rounded-lg flex items-center justify-between ${
+                            tempSelectedCategories.some(
+                              (cat) => cat.id === category.id
+                            )
+                              ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+                              : "bg-purple-50 text-purple-700 hover:bg-purple-100"
+                          }`}
+                        >
+                          <span className="font-medium">
+                            {category.jobCategoryName}
+                          </span>
+                          {tempSelectedCategories.some(
+                            (cat) => cat.id === category.id
+                          ) && <Check className="w-5 h-5" />}
+                        </motion.div>
+                      ))
+                    ) : (
+                      <p className="text-center py-4 text-gray-500">
+                        {searchTerm
+                          ? "No matching categories found"
+                          : "Loading categories..."}
+                      </p>
+                    )}
+                  </div>
+
+                  {tempSelectedCategories.length === 3 && (
+                    <p className="mt-3 text-sm text-yellow-600 flex items-center justify-center">
+                      <span className="mr-1">
+                        <AlertTriangle />
+                      </span>{" "}
+                      Maximum selection reached (3)
+                    </p>
+                  )}
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      onClick={() => setIsCategoryModalOpen(false)}
+                      className="px-4 py-2 text-purple-700 border border-purple-300 rounded-lg hover:bg-purple-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveCategories}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
           </div>
         </>
       )}

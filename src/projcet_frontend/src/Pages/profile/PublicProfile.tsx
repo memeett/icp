@@ -26,12 +26,12 @@ const PublicProfile: React.FC = () => {
         }
 
         const fetchedUser = await getUserById(params.id as string);
+        console.log(fetchedUser);
         if (fetchedUser) {
           const createdAt: bigint = fetchedUser.createdAt;
           const dob: number = Number(createdAt / BigInt(1_000_000));
           const date: Date = new Date(dob);
           setUserJoin(date.toDateString());
-          // console.log(userJoin);
           setUser(fetchedUser);
         }
       }
@@ -47,11 +47,6 @@ const PublicProfile: React.FC = () => {
 
   const stats = {
     jobsCompleted: 24,
-    categories: [
-      "Backend Development",
-      "Cloud Architecture",
-      "Distributed Systems",
-    ],
     avgRating: user?.rating?.toFixed(1) || "0.0",
   };
 
@@ -123,7 +118,7 @@ const PublicProfile: React.FC = () => {
           variants={itemVariants}
         >
           {/* Aurora background accent */}
-          {/* <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-cyan-400 via-purple-400 to-pink-400 blur-xl -z-10"></div> */}
+          <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-cyan-400 via-purple-400 to-pink-400 blur-xl -z-10"></div>
 
           <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
             <motion.div
@@ -131,7 +126,6 @@ const PublicProfile: React.FC = () => {
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Profile picture ring */}
               {/* <div
                 className={`absolute inset-0 rounded-full bg-gradient-to-r ${auroraColors.primary} animate-pulse-slow blur opacity-70 scale-110`}
               ></div> */}
@@ -207,26 +201,11 @@ const PublicProfile: React.FC = () => {
                   </svg>
                   <span className="font-medium">{stats.avgRating}</span>
                 </div>
-
-                {user?.isFaceRecognitionOn && (
-                  <div className="flex items-center gap-1 text-emerald-600">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span>Verified</span>
-                  </div>
-                )}
               </div>
             </div>
+            <button className="relative px-6 py-2 rounded-lg bg-gradient-to-br from-blue-400/80 to-purple-400/80 backdrop-blur-sm border border-indigo-100 shadow-sm shadow-indigo-100 transition-all hover:shadow-md hover:shadow-indigo-200 hover:scale-[1.02] active:scale-95 text-white font-medium overflow-hidden group">
+              <span className="relative z-10">Invite Freelancer</span>
+            </button>
           </div>
         </motion.div>
 
@@ -415,16 +394,16 @@ const PublicProfile: React.FC = () => {
                 Specializations
               </h3>
               <div className="flex flex-wrap gap-2">
-                {stats.categories.map((cat, index) => (
+                {user?.preference.map((cat, index) => (
                   <motion.span
-                    key={cat}
+                    key={cat.id}
                     className="text-white px-3 py-1.5 rounded-full text-sm bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400"
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                     whileHover={{ scale: 1.05 }}
                   >
-                    {cat}
+                    {cat.jobCategoryName}
                   </motion.span>
                 ))}
               </div>

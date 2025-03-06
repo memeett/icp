@@ -6,6 +6,7 @@ import { HttpAgent } from "@dfinity/agent";
 import { useState } from "react";
 import { get } from "http";
 import { JobCategory } from "../interface/job/Job";
+import { preprocessCSS } from "vite";
 
 export const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");
@@ -27,7 +28,7 @@ export const login = async (principalId: string): Promise<boolean> => {
     const arrayBuffer = await imageBlob.arrayBuffer();
     const profilePicBlob = new Uint8Array(arrayBuffer);
 
-    const res = await user.login(principalId, profilePicBlob);
+    const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
     if (!res) {
         console.log("Login Failed");
         return false;
@@ -82,8 +83,8 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
 
         const arrayBuffer = await imageBlob.arrayBuffer();
         const profilePicBlob = new Uint8Array(arrayBuffer);
-
-        const res = await user.login(principalId, profilePicBlob);
+        
+        const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
         if (!res) {
             console.log("Login Failed");
             return false;
@@ -265,8 +266,9 @@ export const updateUserProfile = async (payload: UpdateUserPayload): Promise<voi
                 isFaceRecognitionOn: payload.isFaceRecognitionOn || [],
               };
               
-
-            await user.updateUser(cleanSession, fixedPayload);
+            if(process.env.CANISTER_ID_SESSION){
+                await user.updateUser(cleanSession, fixedPayload, process.env.CANISTER_ID_SESSION);
+            }
         } catch (err) {
             console.error("Error updating user profile:", err);
         }

@@ -31,7 +31,7 @@ module{
     };
 
     public type CashFlowHistory = {
-        userId: Text;
+        fromId: Text;
         transactionAt: Int;
         amount: Float;
         transactionType: TransactionType;

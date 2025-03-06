@@ -109,13 +109,13 @@ export default function ManageJobDetailPage() {
                         <div className="flex items-center space-x-3">
                           <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden">
                             {/* Handle profile picture display safely */}
-                            {/* {application.user.profilePicture && (
+                            {application.user.profilePicture && (
                               <img 
                                 src={URL.createObjectURL(new Blob([new Uint8Array(application.user.profilePicture)], { type: 'image/jpeg' }))}
                                 alt="Profile"
                                 className="h-full w-full object-cover"
                               />
-                            )} */}
+                            )}
                           </div>
                         </div>
                       </td>
@@ -133,23 +133,23 @@ export default function ManageJobDetailPage() {
                         {application.user.rating.toFixed(1)}
                       </td>
                       <td className="px-6 py-4">
-                        {application.submissionStatus === "pending" && (
-                          <div className="flex space-x-3">
-                            <button
-                              onClick={() => handleAccept(application.id)}
-                              className="text-green-500 hover:text-green-700"
-                            >
-                              <FiCheck className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => handleReject(application.id)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <FiX className="h-5 w-5" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
+  {(application.submissionStatus || application.submissionStatus || "").toLowerCase().trim() === "waiting" && (
+    <div className="flex space-x-3 ">
+      <button
+        onClick={() => handleAccept(application.id)}
+        className="text-green-500 hover:text-green-700"
+      >
+        <FiCheck className="h-5 w-5" />
+      </button>
+      <button
+        onClick={() => handleReject(application.id)}
+        className="text-red-500 hover:text-red-700"
+      >
+        <FiX className="h-5 w-5" />
+      </button>
+    </div>
+  )}
+</td>
                     </tr>
                   ))}
                 </tbody>

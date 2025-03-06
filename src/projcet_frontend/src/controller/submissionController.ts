@@ -48,10 +48,8 @@ export const createSubmission = async (
 
 
 export const getAllSubmissionbyUserJobId = async (user: User, jobId: string): Promise<ResponseSubmission[]> => {
-    // Fetch all submissions
     const result = await submission.getAllSubmissions();
 
-    // Filter submissions by user and jobId
     const filteredSubmissions = result.filter(sub => 
         sub.user.id === user.id && sub.jobId === jobId
     );

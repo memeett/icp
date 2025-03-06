@@ -1,5 +1,6 @@
 import Int "mo:base/Int";
 import Job "../Job/model";
+import User "../User/model";
 
 module{
     public type Applier = {
@@ -7,7 +8,7 @@ module{
         userId: Text;
         jobId: Text;
         appliedAt: Int;
-        isAccepted: Bool;
+        status: Text;
     };
 
     public type ApplyPayload = {
@@ -17,8 +18,12 @@ module{
 
     public type UserApplyJobPayload = {
         job : Job.Job;
-        isAccepted: Bool;
+        status: Text;
         appliedAt: Int;
-    }
+    };
     
+    public type ApplierPayload = {
+        user: User.User;
+        appliedAt: Int;
+    };
 }

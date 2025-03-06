@@ -8,7 +8,9 @@ import Job "../Job/model";
 import Int "mo:base/Int";
 import Hash "mo:base/Hash";
 import Array "mo:base/Array";
-import User "../User/model"
+import User "../User/model";
+import JobTransaction "../JobTransaction/model";
+import Global "../global";
 
 actor ApplierModel {
     private stable var nextId : Int = 0;
@@ -49,6 +51,10 @@ actor ApplierModel {
         getUserById : (Text) -> async Result.Result<User.User, Text>;
     };
 
+    let jobTransactionActor = actor(Global.canister_id.job_transaction) : actor{
+        appendFreelancers: (job_id : Text, newFreelancer : Text) -> async Result.Result<JobTransaction.JobTransaction, Text>
+    };
+
     public func applyJob(payload : Applier.ApplyPayload) : async Result.Result<Applier.Applier, Text> {
         let result = await jobActor.getJob(payload.jobId);
         
@@ -76,7 +82,7 @@ actor ApplierModel {
                     userId = payload.userId;
                     jobId = payload.jobId;
                     appliedAt = Time.now();
-                    isAccepted = false;
+                    status = "Pending"
                 };
 
                 appliers.put(currentId, newApplier);
@@ -85,12 +91,12 @@ actor ApplierModel {
         };
     };
 
-    public func getJobApplier(job_id : Text): async Result.Result<[User.User], Text> {
-        var applicants : [User.User] = [];
+    public func getJobApplier(job_id : Text): async Result.Result<[Applier.ApplierPayload], Text> {
+        var payloads : [Applier.ApplierPayload] = [];
         
         let jobAppliers = Iter.toArray(appliers.vals());
         let filteredAppliers = Array.filter(jobAppliers, func(applier : Applier.Applier) : Bool {
-            return applier.jobId == job_id;
+            return applier.jobId == job_id and applier.status == "Pending";
         });
         
         if (filteredAppliers.size() == 0) {
@@ -99,39 +105,86 @@ actor ApplierModel {
         
         for (applier in filteredAppliers.vals()) {
             let userResult = await userActor.getUserById(applier.userId);
-            
-            switch(userResult) {
+            switch (userResult) {
                 case (#ok(user)) {
-                    applicants := Array.append(applicants, [user]);
+                    let payload : Applier.ApplierPayload = {
+                        user = user;
+                        appliedAt = applier.appliedAt;
+                    };
+                    payloads := Array.append(payloads, [payload]);
                 };
                 case (#err(_)) {
+                    // Optionally, handle errors here (skip this applier)
                 };
             };
         };
         
-        #ok(applicants)
+        return #ok(payloads);
     };
 
-
-    public func acceptApplier(userIds : [Text]): async () {
+    public func acceptApplier(payload: Applier.ApplyPayload) : async Result.Result<(), Text> {
         let allAppliers = Iter.toArray(appliers.vals());
         
         for (applier in allAppliers.vals()) {
-            if (Array.find<Text>(userIds, func(userId: Text) : Bool { 
-                return userId == applier.userId 
-            }) != null) {
+            if (applier.userId == payload.userId and applier.jobId == payload.jobId) {
+                // Update the applier's status to "Accepted"
                 let updatedApplier : Applier.Applier = {
                     id = applier.id;
                     userId = applier.userId;
                     jobId = applier.jobId;
                     appliedAt = applier.appliedAt;
-                    isAccepted = true;
+                    status = "Accepted";
                 };
-                
                 appliers.put(applier.id, updatedApplier);
+
+                // Append the freelancer to the job transaction
+                let appendResult = await jobTransactionActor.appendFreelancers(payload.jobId, payload.userId);
+
+                // Handle the result of appending the freelancer
+                switch (appendResult) {
+                    case (#err(errorMessage)) {
+                        return #err("Failed to append freelancer: " # errorMessage);
+                    };
+                    case (#ok(_)) {
+                        return #ok();
+                    };
+                };
             };
         };
+
+        // If no matching applier is found, return an error
+        return #err("No matching applier found for the given userId and jobId");
     };
+
+    public func rejectApplier(payload: Applier.ApplyPayload) : async Result.Result<(), Text> {
+        let allAppliers = Iter.toArray(appliers.vals());
+        
+        var applierFound = false; // Flag to track if a matching applier is found
+
+        for (applier in allAppliers.vals()) {
+            if (applier.userId == payload.userId and applier.jobId == payload.jobId) {
+                // Update the applier's status to "Rejected"
+                let updatedApplier : Applier.Applier = {
+                    id = applier.id;
+                    userId = applier.userId;
+                    jobId = applier.jobId;
+                    appliedAt = applier.appliedAt;
+                    status = "Rejected";
+                };
+                appliers.put(applier.id, updatedApplier);
+
+                applierFound := true; // Mark that a matching applier was found
+            };
+        };
+
+        // Return success or error based on whether a matching applier was found
+        if (applierFound) {
+            return #ok(); // Success: Applier was found and updated
+        } else {
+            return #err("No matching applier found for the given userId and jobId"); // Error: No matching applier
+        };
+    };
+
 
     public func getUserApply(userId: Text): async [Applier.UserApplyJobPayload] {
         var userApplications : [Applier.UserApplyJobPayload] = [];
@@ -148,7 +201,7 @@ actor ApplierModel {
                 case (#ok(job)) {
                     let payload : Applier.UserApplyJobPayload = {
                         job = job;
-                        isAccepted = applier.isAccepted;
+                        status = applier.status;
                         appliedAt = applier.appliedAt;
                     };
                     userApplications := Array.append(userApplications, [payload]);
@@ -173,7 +226,7 @@ actor ApplierModel {
     public func getAcceptedAppliers(jobId: Text): async [Applier.Applier] {
         let allAppliers = Iter.toArray(appliers.vals());
         let acceptedAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
-            return applier.jobId == jobId and applier.isAccepted;
+            return applier.jobId == jobId and applier.status == "Accepted";
         });
         
         acceptedAppliers

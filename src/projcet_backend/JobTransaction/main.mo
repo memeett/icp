@@ -123,9 +123,9 @@ actor JobTransactionModel {
         };
     };
 
-    public func getAllTransactions() : async List.List<JobTransaction.JobTransaction> {
-        let transactions = jobTransactions.vals();
-        List.fromArray(Iter.toArray(transactions));
+    public func getAllTransactions() : async [JobTransaction.JobTransaction] {
+        let transactions = Iter.toArray(jobTransactions.vals());
+        return transactions;
     };
 
     public func getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text> {
@@ -137,7 +137,7 @@ actor JobTransactionModel {
         return #err("No transaction found for this job");
     };
 
-    public func getTransactionByClientId(client_id : Text) : async List.List<JobTransaction.JobTransaction> {
+    public func getTransactionByClientId(client_id : Text) : async [JobTransaction.JobTransaction] {
         let transactions = Iter.toArray(jobTransactions.vals());
         let clientTransactions = Array.filter(
             transactions,
@@ -145,40 +145,10 @@ actor JobTransactionModel {
                 return transaction.client == client_id;
             },
         );
-        List.fromArray(clientTransactions);
+        return clientTransactions;
     };
 
-    public func getTransactionByFreelancerId(freelancer_id : Text) : async List.List<JobTransaction.JobTransaction> {
-        let transactions = Iter.toArray(jobTransactions.vals());
-
-        let freelancerTransactions = Array.filter(
-            transactions,
-            func(transaction : JobTransaction.JobTransaction) : Bool {
-                // Check if the freelancer_id exists in the transaction's freelancers list
-                List.some(
-                    transaction.freelancers,
-                    func(freelancer : Text) : Bool {
-                        freelancer == freelancer_id;
-                    },
-                );
-            },
-        );
-
-        List.fromArray(freelancerTransactions);
-    };
-
-    public func getClientHistory(client_id : Text) : async List.List<JobTransaction.JobTransaction> {
-        let transactions = Iter.toArray(jobTransactions.vals());
-        let clientTransactions = Array.filter(
-            transactions,
-            func(transaction : JobTransaction.JobTransaction) : Bool {
-                return transaction.client == client_id;
-            },
-        );
-        List.fromArray(clientTransactions);
-    };
-
-    public func getFreelancerHistory(freelancer_id : Text) : async List.List<JobTransaction.JobTransaction> {
+    public func getTransactionByFreelancerId(freelancer_id : Text) : async [JobTransaction.JobTransaction]{
         let transactions = Iter.toArray(jobTransactions.vals());
 
         let freelancerTransactions = Array.filter(
@@ -193,7 +163,36 @@ actor JobTransactionModel {
             },
         );
 
-        List.fromArray(freelancerTransactions);
+        return freelancerTransactions;
+    };
+
+    public func getClientHistory(client_id : Text) : async [JobTransaction.JobTransaction] {
+        let transactions = Iter.toArray(jobTransactions.vals());
+        let clientTransactions = Array.filter(
+            transactions,
+            func(transaction : JobTransaction.JobTransaction) : Bool {
+                return transaction.client == client_id;
+            },
+        );
+        return clientTransactions;
+    };
+
+    public func getFreelancerHistory(freelancer_id : Text) : async [JobTransaction.JobTransaction] {
+        let transactions = Iter.toArray(jobTransactions.vals());
+
+        let freelancerTransactions = Array.filter(
+            transactions,
+            func(transaction : JobTransaction.JobTransaction) : Bool {
+                List.some(
+                    transaction.freelancers,
+                    func(freelancer : Text) : Bool {
+                        freelancer == freelancer_id;
+                    },
+                );
+            },
+        );
+
+        return freelancerTransactions;
     };
 
 };

@@ -10,7 +10,6 @@ import Array "mo:base/Array";
 import Float "mo:base/Float";
 import List "mo:base/List";
 import JobTransaction "../JobTransaction/model";
-import Global "../global";
 
 actor JobModel{
     private stable var nextId : Nat = 0;
@@ -60,10 +59,7 @@ actor JobModel{
         seedJobCategories();
     };
 
-    let jobTransactionActor = actor (Global.canister_id.job_transaction) : actor {
-        getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
-        createTransaction: (owner_id : Text, job_id : Text) -> async ()
-    };
+    
     
     private func seedJobCategories() {
         let defaultCategories = [
@@ -101,11 +97,13 @@ actor JobModel{
     };
 
 
-    let userActor = actor(Global.canister_id.user) : actor{
-        transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float) -> async Result.Result<Text, Text>;
-    };
+    
 
-    public func createJob (payload : Job.CreateJobPayload) : async Result.Result<Job.Job, Text> {
+    public func createJob (payload : Job.CreateJobPayload, job_transaction_canister: Text) : async Result.Result<Job.Job, Text> {
+        let jobTransactionActor = actor (job_transaction_canister) : actor {
+            createTransaction: (owner_id : Text, job_id : Text) -> async ()
+        };
+
         let jobId = Int.toText(nextId);
         let timestamp = Time.now();
         
@@ -232,7 +230,13 @@ actor JobModel{
         userJobs
     };
 
-public shared func startJob(user_id: Text, job_id: Text): async Result.Result<Bool, Text> {
+    public shared func startJob(user_id: Text, job_id: Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
+        let jobTransactionActor = actor (job_transaction_canister) : actor {
+            getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
+        };
+        let userActor = actor(user_canister) : actor{
+            transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>
+        };
         switch (jobs.get(job_id)) {
             case (?existingJob) {
                 // Validate if the current user is the owner of the job
@@ -260,7 +264,7 @@ public shared func startJob(user_id: Text, job_id: Text): async Result.Result<Bo
                         let requiredAmount = existingJob.jobSalary * Float.fromInt(numAccepted);
                 
                         // Call transfer_icp_to_job and check its result.
-                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, requiredAmount);
+                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, requiredAmount, job_canister);
                         switch (transferResult) {
                             case (#ok(_msg)) { 
                                 return #ok(true); 
@@ -282,5 +286,71 @@ public shared func startJob(user_id: Text, job_id: Text): async Result.Result<Bo
         }
     };
 
+    public shared func finishJob(job_id: Text, job_canister: Text,  job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
+        let jobTransactionActor = actor (job_transaction_canister) : actor {
+            getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
+        };
+        let userActor = actor(user_canister) : actor{
+            transfer_icp_to_user:(from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>
+        };
+        switch (jobs.get(job_id)) {
+            case (?existingJob) {
+                // Step 1: Update the job status to "Finished"
+                let updatedJob : Job.Job = {
+                    id = existingJob.id;
+                    jobName = existingJob.jobName;
+                    jobDescription = existingJob.jobDescription;
+                    jobSalary = existingJob.jobSalary;
+                    jobRating = existingJob.jobRating;
+                    jobTags = existingJob.jobTags;
+                    jobSlots = existingJob.jobSlots;
+                    jobStatus = "Finished"; // Update status
+                    userId = existingJob.userId;
+                    createdAt = existingJob.createdAt;
+                    updatedAt = Time.now();
+                    wallet = existingJob.wallet;
+                };
+                jobs.put(job_id, updatedJob);
+
+                // Step 2: Retrieve the job transaction
+                let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
+                switch (transactionResult) {
+                    case (#ok(transaction)) {
+                        // Step 3: Calculate payment per freelancer
+                        let numFreelancers = Float.fromInt(List.size(transaction.freelancers));
+                        if (numFreelancers == 0) {
+                            return #err("No freelancers have been accepted for this job");
+                        };
+
+                        let paymentPerFreelancer = existingJob.wallet / numFreelancers;
+                        // Step 4: Transfer payments to freelancers
+                        for (freelancerId in Iter.fromList(transaction.freelancers)) {
+                            let transferResult = await userActor.transfer_icp_to_user(
+                                existingJob.userId, // From: job owner
+                                freelancerId,      // To: freelancer
+                                paymentPerFreelancer, // Amount
+                                job_canister
+                            );
+                            switch (transferResult) {
+                                case (#err(errMsg)) {
+                                    return #err("Failed to transfer payment to freelancer " # freelancerId # ": " # errMsg);
+                                };
+                                case (#ok(_)) {};
+                            };
+                        };
+
+                        // Step 5: Return success
+                        return #ok(true);
+                    };
+                    case (#err(errMsg)) {
+                        return #err("Failed to fetch job transaction: " # errMsg);
+                    };
+                }
+            };
+            case null {
+                return #err("Job not found");
+            };
+        }
+    };
 
 }

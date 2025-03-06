@@ -80,7 +80,7 @@ export const rejectApplier = async (userId: string, jobId: string): Promise<bool
 
 export const getUserApply = async (userId: string): Promise<Job[] | null> => {
     try {
-        const result = await applier.getUserApply(userId);
+        const result = await applier.GetUserApply(userId);
         console.log("User applied jobs:", result);
         return result.map((job) => job.job);
     } catch (error) {

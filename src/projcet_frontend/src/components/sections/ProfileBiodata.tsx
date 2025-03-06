@@ -8,13 +8,24 @@ import {
   updateUserProfile,
 } from "../../controller/userController";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Check, PencilLine, Plus, Search, Star, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Camera,
+  Check,
+  PencilLine,
+  Plus,
+  Search,
+  Star,
+  UserPlus,
+  X,
+} from "lucide-react";
 import Modal from "../modals/ModalTemplate";
 import { JobCategory } from "../../interface/job/Job";
 import { useJobCategories } from "../../utils/useJobCategories";
 import { set } from "date-fns";
 import LoadingOverlay from "../ui/loading-animation";
 import ErrorModal from "../modals/ErrorModal";
+import FaceRecognition from "../FaceRecognition";
 
 export default function ProfileBiodata() {
   const [user, setUser] = useState<User | null>(null);
@@ -371,6 +382,7 @@ export default function ProfileBiodata() {
           isOpen={errors !== ""}
           onClose={() => setErrors("")}
           message={errors}
+          duration={2000}
         />
       )}
       {user && (
@@ -555,12 +567,13 @@ export default function ProfileBiodata() {
                       />
                     </button>
                     {/* register button for face recognition */}
-                    <Link
-                      to={"/face-recognition/register"}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:scale-[1.02] transition-transform flex items-center gap-2 shadow-lg"
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="flex items-center space-x-2 bg-gradient-to-r from-blue-400 to-purple-400 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
                     >
-                      Register
-                    </Link>
+                      <UserPlus className="w-5 h-5" />
+                      <span>Register</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -615,6 +628,16 @@ export default function ProfileBiodata() {
                 </div>
               </div>
             </div>
+            <FaceRecognition
+              principalId={user.id}
+              onSuccess={() => console.log("Operation successful!")}
+              onError={(error: string) =>
+                console.error("Operation failed:", error)
+              }
+              mode="register" // Change to "verify" for verification mode
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            />
 
             {/* Category Selection Modal */}
             {isCategoryModalOpen && (
@@ -708,8 +731,10 @@ export default function ProfileBiodata() {
 
                   {tempSelectedCategories.length === 3 && (
                     <p className="mt-3 text-sm text-yellow-600 flex items-center justify-center">
-                      <span className="mr-1">⚠️</span> Maximum selection reached
-                      (3)
+                      <span className="mr-1">
+                        <AlertTriangle />
+                      </span>{" "}
+                      Maximum selection reached (3)
                     </p>
                   )}
 

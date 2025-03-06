@@ -1,11 +1,14 @@
 // OwnerActions.tsx
 import { motion } from "framer-motion";
+import { Job } from "../../interface/job/Job";
 
 export const OwnerActions = ({
+  job,
   appliersCount,
   onViewApplicants,
   onStartJob,
 }: {
+  job: Job;
   appliersCount: number;
   onViewApplicants: () => void;
   onStartJob: () => void;

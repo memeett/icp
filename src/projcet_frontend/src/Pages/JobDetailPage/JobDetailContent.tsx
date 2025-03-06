@@ -103,4 +103,3 @@ export const JobDetailContent = ({ job, currentApplicants, maxApplicants, accept
     )
 
   };
-  

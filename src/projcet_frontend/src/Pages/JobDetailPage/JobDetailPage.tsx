@@ -337,8 +337,8 @@ const handlePay = async() => {
             await startJob(parsedData.ok.id, jobId, amount)
         }
 
-        }
-    };
+        }
+    };
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">

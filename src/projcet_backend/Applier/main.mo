@@ -10,7 +10,6 @@ import Hash "mo:base/Hash";
 import Array "mo:base/Array";
 import User "../User/model";
 import JobTransaction "../JobTransaction/model";
-import Global "../global";
 
 actor ApplierModel {
     private stable var nextId : Int = 0;
@@ -43,19 +42,10 @@ actor ApplierModel {
         appliersEntries := [];
     };
 
-    let jobActor = actor (Global.canister_id.job) : actor {
-        getJob : (Text) -> async Result.Result<Job.Job, Text>;
-    };
-
-    let userActor = actor (Global.canister_id.user): actor{
-        getUserById : (Text) -> async Result.Result<User.User, Text>;
-    };
-
-    let jobTransactionActor = actor(Global.canister_id.job_transaction) : actor{
-        appendFreelancers: (job_id : Text, newFreelancer : Text) -> async Result.Result<JobTransaction.JobTransaction, Text>
-    };
-
-    public func applyJob(payload : Applier.ApplyPayload) : async Result.Result<Applier.Applier, Text> {
+    public func applyJob(payload : Applier.ApplyPayload, job_canister: Text) : async Result.Result<Applier.Applier, Text> {
+        let jobActor = actor (job_canister) : actor {
+            getJob : (Text) -> async Result.Result<Job.Job, Text>;
+        };
         let result = await jobActor.getJob(payload.jobId);
         
         switch(result) {
@@ -91,7 +81,10 @@ actor ApplierModel {
         };
     };
 
-    public func getJobApplier(job_id : Text): async Result.Result<[Applier.ApplierPayload], Text> {
+    public func getJobApplier(job_id : Text, user_canister: Text): async Result.Result<[Applier.ApplierPayload], Text> {
+        let userActor = actor (user_canister): actor{
+            getUserById : (Text) -> async Result.Result<User.User, Text>;
+        };
         var payloads : [Applier.ApplierPayload] = [];
         
         let jobAppliers = Iter.toArray(appliers.vals());
@@ -122,7 +115,10 @@ actor ApplierModel {
         return #ok(payloads);
     };
 
-    public func acceptApplier(payload: Applier.ApplyPayload) : async Result.Result<(), Text> {
+    public func acceptApplier(payload: Applier.ApplyPayload, job_transaction_canister: Text) : async Result.Result<(), Text> {
+        let jobTransactionActor = actor(job_transaction_canister) : actor{
+            appendFreelancers: (job_id : Text, newFreelancer : Text) -> async Result.Result<JobTransaction.JobTransaction, Text>
+        };
         let allAppliers = Iter.toArray(appliers.vals());
         
         for (applier in allAppliers.vals()) {
@@ -186,7 +182,10 @@ actor ApplierModel {
     };
 
 
-    public func getUserApply(userId: Text): async [Applier.UserApplyJobPayload] {
+    public func getUserApply(userId: Text, job_canister: Text): async [Applier.UserApplyJobPayload] {
+        let jobActor = actor (job_canister) : actor {
+            getJob : (Text) -> async Result.Result<Job.Job, Text>;
+        };
         var userApplications : [Applier.UserApplyJobPayload] = [];
         
         let allAppliers = Iter.toArray(appliers.vals());

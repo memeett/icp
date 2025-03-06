@@ -41,6 +41,7 @@ actor InboxModule {
             senderId = senderId;
             submission_type = submission_type;
             status = status;
+            read = false;
         };
         nextId += 1;
         inboxes.put(inboxId, newInbox);
@@ -92,6 +93,7 @@ actor InboxModule {
                     senderId = inbox.senderId;
                     submission_type = inbox.submission_type;
                     status = status;
+                    read = inbox.read;
                 };
                 inboxes.put(inboxId, updatedInbox);
                 #ok(updatedInbox);
@@ -122,6 +124,7 @@ actor InboxModule {
                     senderId = inbox.senderId;
                     submission_type = inbox.submission_type;
                     status = "Accepted";
+                    read = inbox.read;
                 };
                 inboxes.put(inboxId, updatedInbox);
                 #ok(updatedInbox);
@@ -141,6 +144,7 @@ actor InboxModule {
                     senderId = inbox.senderId;
                     submission_type = inbox.submission_type;
                     status = "Rejected";
+                    read = inbox.read;
                 };
                 inboxes.put(inboxId, updatedInbox);
                 #ok(updatedInbox);
@@ -169,4 +173,27 @@ actor InboxModule {
         );
         userInbox;
     };
+
+    public func markAsRead(inboxId : Text) : async Result.Result<Inbox.Inbox, Text> {
+        switch (inboxes.get(inboxId)) {
+            case (null) {
+                #err("Inbox not found")
+            };
+            case (?inbox) {
+                let updatedInbox : Inbox.Inbox = {
+                    id = inbox.id;
+                    receiverId = inbox.receiverId;
+                    senderId = inbox.senderId;
+                    submission_type = inbox.submission_type;
+                    status = inbox.status;
+                    read = true;
+                };
+                inboxes.put(inboxId, updatedInbox);
+                #ok(updatedInbox);
+            };
+        };
+    };
+
+    
+    
 };

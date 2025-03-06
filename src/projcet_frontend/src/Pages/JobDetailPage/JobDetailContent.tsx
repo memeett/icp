@@ -31,10 +31,10 @@ import LoadingOverlay from "../../components/ui/loading-animation";
 import { ApplierPayload } from "../../interface/Applier";
 import OngoingSection from "../../components/sections/OngoingSection";
 
-export const JobDetailContent = ({ job, currentApplicants, maxApplicants} : {job : Job, currentApplicants : bigint, maxApplicants: bigint}) => {
+export const JobDetailContent = ({ job, currentApplicants, maxApplicants, acceptedAppliers} : {job : Job, currentApplicants : bigint, maxApplicants: bigint, acceptedAppliers: User[]}) => {
     const [showAcceptedUsersModal, setShowAcceptedUsersModal] = useState(false);
     
-    const mockAcceptedUsers: User[] = [];
+    const mockAcceptedUsers: User[] = acceptedAppliers;
 
     return (
         <div className="lg:col-span-2 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8">

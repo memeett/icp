@@ -16,7 +16,7 @@ actor UserModel {
 
 
 
-    let session = actor ("avqkn-guaaa-aaaaa-qaaea-cai") : actor {
+    let session = actor ("asrmz-lmaaa-aaaaa-qaaeq-cai") : actor {
 
         createSession : (userid : Text) -> async Text;
         getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;

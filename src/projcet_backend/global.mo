@@ -12,16 +12,15 @@ module {
     applier: Text;
   };
 
-  public let canister_id : CanisterId = {
-
-    userclicked="aovwi-4maaa-aaaaa-qaagq-cai";
-    user="avqkn-guaaa-aaaaa-qaaea-cai";
-    submission="cbopz-duaaa-aaaaa-qaaka-cai";
-    session="ajuq4-ruaaa-aaaaa-qaaga-cai&id=avqkn-guaaa-aaaaa-qaaea-cai";
-    job_transaction="bw4dl-smaaa-aaaaa-qaacq-cai";
-    job="avqkn-guaaa-aaaaa-qaaea-cai";
-    invitation="by6od-j4aaa-aaaaa-qaadq-cai";
-    inbox="cgpjn-omaaa-aaaaa-qaakq-cai";
-    applier="bw4dl-smaaa-aaaaa-qaacq-cai";
+   public let canister_id : CanisterId = {
+    userclicked="ajuq4-ruaaa-aaaaa-qaaga-cai";
+    user="a4tbr-q4aaa-aaaaa-qaafq-cai";
+    submission="a3shf-5eaaa-aaaaa-qaafa-cai";
+    session="asrmz-lmaaa-aaaaa-qaaeq-cai";
+    job_transaction="b77ix-eeaaa-aaaaa-qaada-cai";
+    job="bw4dl-smaaa-aaaaa-qaacq-cai";
+    invitation="br5f7-7uaaa-aaaaa-qaaca-cai";
+    inbox="bd3sg-teaaa-aaaaa-qaaba-cai";
+    applier="bkyz2-fmaaa-aaaaa-qaaaq-cai";
   };
 }

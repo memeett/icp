@@ -284,6 +284,9 @@ export default function JobDetailPage() {
         getAcceptedFreelancer(jobId).then((users) => {
             setAccAppliers(users);
         });
+        getJobApplier(jobId).then((users) => {
+          setAppliers(users);
+        });
     }
   }, [jobId])
 
@@ -313,6 +316,10 @@ export default function JobDetailPage() {
 
   const handleStart = () => {
     // Start the job
+    setIsModalOpen(true)
+    const length = acceptedAppliers.length
+    const amount = Number.parseFloat(jobDetails!.salary) * length;
+    setRequiredAmount(amount)
   };
 
   if (!job) return null;
@@ -368,6 +375,7 @@ const handlePay = async() => {
             </h1>
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <JobDetailContent 
+            onOpen={() => setShowAcceptedUsersModal(true)}
             job={job}
             currentApplicants={currentApplicants}
             maxApplicants={maxApplicants} 

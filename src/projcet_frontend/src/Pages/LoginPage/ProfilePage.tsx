@@ -7,15 +7,33 @@ import { LogOut } from "lucide-react";
 
 import { NestedModalProvider } from "../../contexts/nested-modal-context.js";
 import { logout } from "../../controller/userController.js";
+import ProfileInvitationSection from "../../components/sections/ProfileInvitationSection.js";
+import { Job } from "../../../../declarations/job/job.did.js";
+import { job } from "../../../../declarations/job/index.js";
+import JobDetailModal from "../../components/modals/JobDetailModal.js";
+import ProfileFreelancerSection from "../../components/sections/ProfileFreelancerSection.js";
+import ClientHistoryModal from "../../components/sections/ClientHistory.tsx";
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<string>("biodata");
   const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [isJobDetailModal, setIsJobDetailModal] = useState<boolean>(false)
+  const [jobDetail, setJobDetail] = useState<Job>()
+  const [isClientHistoryModalOpen, setIsClientHistoryModalOpen] = useState(false); 
 
   const logoutBtn = async () => {
     await logout()
     window.location.href = "/";
   };
+
+  const clickJobDetail = async (job : Job) => {
+    setIsJobDetailModal(true)
+    setJobDetail(job)
+  }
+
+  const closeJobDetail = async () => {
+    setIsJobDetailModal(false)
+  }
 
   return (
     <NestedModalProvider>
@@ -37,6 +55,15 @@ export default function ProfilePage() {
                 Biodata
               </li>
               <li
+                className={`cursor-pointer p-2 ${activeSection === "invitation"
+                    ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
+                    : "hover:font-semibold"
+                  }`}
+                onClick={() => setActiveSection("invitation")}
+              >
+                Invitation
+              </li>
+              <li
                 className={`cursor-pointer p-2 ${
                   activeSection === "freelancer"
                     ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
@@ -44,7 +71,7 @@ export default function ProfilePage() {
                 }`}
                 onClick={() => setActiveSection("freelancer")}
               >
-                Freelancer History
+                Freelancer
               </li>
               <li
                 className={`cursor-pointer p-2 ${
@@ -66,9 +93,16 @@ export default function ProfilePage() {
           </div>
 
           <div className="w-full scrollbar-hide bg-[#F9F7F7] z-10 mb-16">
-            {activeSection === "biodata" ? <ProfileBiodata /> : <div></div>}
+              {activeSection === "biodata" ? <ProfileBiodata /> : 
+              activeSection === "invitation" ? <ProfileInvitationSection onClickDetailJob={clickJobDetail}/> : 
+              activeSection == "freelancer" ? <ProfileFreelancerSection/> :
+              activeSection === "client" ? <ClientHistoryModal /> : <div></div> }
           </div>
 
+      
+      {isJobDetailModal && jobDetail && (
+              <JobDetailModal job={jobDetail} onClose={closeJobDetail}/>
+      )}
 
       {/* Modal rendered conditionally based on tracking method */}
       {modalIndex !== null ? (

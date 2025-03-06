@@ -128,8 +128,10 @@ actor InvitationModel{
                     switch (jobResult) {
                         case (#ok(job)) {
                             let userInvitation : Invitation.UserInvitationPayload = {
+                                id = invitation.id;
                                 job = job;
                                 invitedAt = invitation.invitedAt;
+                                isAccepted = invitation.isAccepted;
                             };
                             userInvitations.add(userInvitation);
                         };
@@ -159,6 +161,7 @@ actor InvitationModel{
                     switch (userResult) {
                         case (#ok(user)) {
                             let invitationPayload : Invitation.JobInvitationPayload = {
+                                id = invitation.id;
                                 user = user;
                                 isAccepted = invitation.isAccepted;
                             };

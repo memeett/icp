@@ -18,6 +18,7 @@ import RegisterFace from "./Pages/LoginPage/RegisterFacePage.tsx";
 import LoginFace from "./Pages/LoginPage/LoginFace.tsx";
 import BrowseFreelancerPage from "./Pages/BrowseFreelancerPage/BrowseFreelancerPage.tsx";
 import PublicProfile from "./Pages/profile/PublicProfile.tsx";
+import ManageJobDetailPage from "./Pages/JobDetailPage/SubmissionSection.tsx";
 
 
 const route = createBrowserRouter([
@@ -49,6 +50,7 @@ const route = createBrowserRouter([
     path: "/manage",
     element: <ManageJobPage />,
   },
+
   {
     path: "/browse",
     element: <BrowseFreelancerPage />,
@@ -60,7 +62,8 @@ const route = createBrowserRouter([
   {
     path: "/face-recognition/login",
     element: <LoginFace />,
-  }
+  },
+
 ]);
 
 const rootElement = document.getElementById("root");

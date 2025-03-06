@@ -85,7 +85,7 @@ export default function ManageJobPage() {
 
     const actionsCell = (e.target as HTMLElement).closest('td:last-child');
     if (!actionsCell) {
-      navigate(`/manage-jobs/${jobId}`);
+      navigate(`/jobs/${jobId}`);
     }
   };
 

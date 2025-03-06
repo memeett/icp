@@ -7,3 +7,19 @@ export const getInvitationByUserId = async (userId: string): Promise<UserInvitat
 
     return result;
 }
+
+
+export const acceptInvitation = async (userId : string, invitationId : bigint) : Promise<boolean> => {
+
+    const result = await invitation.acceptInvitation(userId, invitationId)
+
+    return result
+}
+
+
+export const rejectInvitation = async (userId : string, invitationId : bigint) : Promise<boolean> => {
+
+    const result = await invitation.rejectInvitation(userId, invitationId)
+
+    return result
+}

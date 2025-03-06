@@ -31,6 +31,7 @@ import {
 import LoadingOverlay from "../../components/ui/loading-animation";
 import { ApplierPayload } from "../../interface/Applier";
 import OngoingSection from "../../components/sections/OngoingSection";
+
 import { JobDetailContent } from "./JobDetailContent";
 import { ApplicantActions } from "./ApplicationActions";
 import { OwnerActions } from "./OwnerActions";

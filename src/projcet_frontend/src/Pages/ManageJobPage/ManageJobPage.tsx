@@ -64,9 +64,7 @@ export default function ManageJobPage() {
 
   const navigate = useNavigate();
 
-  const handleRowClick = (jobId: string) => {
-    navigate(`/manage-jobs/${jobId}`);
-  };
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -83,7 +81,20 @@ export default function ManageJobPage() {
     }
   }, [currentUser, refreshKey]);
 
+  const handleRowClick = (jobId: string, e: React.MouseEvent) => {
 
+    const actionsCell = (e.target as HTMLElement).closest('td:last-child');
+    if (!actionsCell) {
+      navigate(`/manage-jobs/${jobId}`);
+    }
+  };
+
+  const handleEditClick = (e: React.MouseEvent, job: Job) => {
+    e.stopPropagation(); // Prevent row click event from firing
+    setSelectedJob(job);
+    setOpen(true);     
+    const modalIndex = openModal();
+  };
 
   const handleSaveJob = (updatedJob: Job) => {
 
@@ -230,7 +241,7 @@ export default function ManageJobPage() {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           className="border-b border-gray-100 hover:bg-white/50 transition-colors duration-200"
-                          onClick={() => handleRowClick(job.id)}
+                          onClick={(e) => handleRowClick(job.id, e)}
                         >
                            <td className="px-6 py-4">
       <div className="text-sm font-medium text-gray-900">
@@ -264,7 +275,7 @@ export default function ManageJobPage() {
                               <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
-                                onClick={() => handleEditJob(job)}
+                                onClick={(e) => handleEditClick(e, job)}
                                 className="text-blue-500 hover:text-blue-700 transition-colors"
                               >
                                 <FiEdit className="h-5 w-5" />

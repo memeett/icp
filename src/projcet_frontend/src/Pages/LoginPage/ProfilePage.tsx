@@ -7,6 +7,7 @@ import { LogOut } from "lucide-react";
 
 import { NestedModalProvider } from "../../contexts/nested-modal-context.js";
 import { logout } from "../../controller/userController.js";
+import ProfileInvitationSection from "../../components/sections/ProfileInvitationSection.js";
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<string>("biodata");
@@ -35,6 +36,15 @@ export default function ProfilePage() {
                 onClick={() => setActiveSection("biodata")}
               >
                 Biodata
+              </li>
+              <li
+                className={`cursor-pointer p-2 ${activeSection === "invitation"
+                    ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
+                    : "hover:font-semibold"
+                  }`}
+                onClick={() => setActiveSection("invitation")}
+              >
+                Invitation
               </li>
               <li
                 className={`cursor-pointer p-2 ${
@@ -66,7 +76,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="w-full scrollbar-hide bg-[#F9F7F7] z-10 mb-16">
-            {activeSection === "biodata" ? <ProfileBiodata /> : <div></div>}
+              {activeSection === "biodata" ? <ProfileBiodata /> : activeSection === "invitation" ? <ProfileInvitationSection /> : <div></div>}
           </div>
 
 

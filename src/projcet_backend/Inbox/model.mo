@@ -6,5 +6,6 @@ module{
         senderId: Text;
         submission_type: Text;
         status: Text;
+        read: Bool;
     };
 }

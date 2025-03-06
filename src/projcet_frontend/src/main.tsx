@@ -50,10 +50,7 @@ const route = createBrowserRouter([
     path: "/manage",
     element: <ManageJobPage />,
   },
-  {
-    path: "/manage-jobs/:jobId",
-    element: <ManageJobDetailPage />,
-  },
+
   {
     path: "/browse",
     element: <BrowseFreelancerPage />,
@@ -66,10 +63,7 @@ const route = createBrowserRouter([
     path: "/face-recognition/login",
     element: <LoginFace />,
   },
-  {
-    path: "/manage-jobs/:jobId",
-    element: <ManageJobDetailPage />,
-  },
+
 ]);
 
 const rootElement = document.getElementById("root");

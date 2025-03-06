@@ -17,6 +17,7 @@ import {
   getAcceptedFreelancer,
   getJobApplier,
   getJobById,
+  startJob,
 } from "../../controller/jobController";
 import { authUtils } from "../../utils/authUtils";
 import { User } from "../../interface/User";
@@ -35,6 +36,7 @@ import { ApplicantActions } from "./ApplicationActions";
 import { OwnerActions } from "./OwnerActions";
 import { ApplicantsModal } from "./ApplicationModal";
 import ManageJobDetailPage from "./SubmissionSection";
+import Modal from "./startModal";
 
 // Mock data for accepted users - replace with actual data fetching
 const mockAcceptedUsers: User[] = [
@@ -152,6 +154,13 @@ export default function JobDetailPage() {
   const [showApplicantsModal, setShowApplicantsModal] = useState(false);
 
   const [acceptedAppliers, setAccAppliers] = useState<User[]>([]);
+  // ka
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [requiredAmount, setRequiredAmount] = useState(0);
+
+  const handleClose = () => {
+    setIsModalOpen(false); // Close the modal
+};
 
   useEffect(() => {
     setLoading(true);
@@ -269,6 +278,14 @@ export default function JobDetailPage() {
     }
   };
 
+  useEffect(() => {
+    if (jobId) {
+        getAcceptedFreelancer(jobId).then((users) => {
+            setAccAppliers(users);
+        });
+    }
+  }, [jobId])
+
   const handleReject = async (userid: string): Promise<void> => {
     if (jobId) {
       await rejectApplier(userid, jobId);
@@ -299,6 +316,22 @@ export default function JobDetailPage() {
 
   if (!job) return null;
 
+
+
+const handlePay = async() => {
+    setIsModalOpen(false);
+    if (jobId) {
+        const userData = localStorage.getItem("current_user");
+        const parsedData = JSON.parse(userData ? userData : "");
+        if (userData && jobDetails) {
+            const length = acceptedAppliers.length
+            const amount = Number.parseFloat(jobDetails.salary) * length;
+            await startJob(parsedData.ok.id, jobId, amount)
+        }
+
+        }
+    };
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {loading && <LoadingOverlay message="Loading Job..." />}
@@ -306,7 +339,7 @@ export default function JobDetailPage() {
 
       {showAcceptedUsersModal && (
         <AcceptedUsersModal
-          users={mockAcceptedUsers}
+          users={acceptedAppliers}
           onClose={() => setShowAcceptedUsersModal(false)}
         />
       )}
@@ -320,6 +353,13 @@ export default function JobDetailPage() {
         />
       )}
 
+      <Modal
+                isOpen={isModalOpen}
+                onClose={handleClose}
+                onPay={handlePay}
+                amount={requiredAmount}
+                />
+
 
       <motion.div className="container mx-auto px-4 mt-6 flex-grow">
       <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">
@@ -330,11 +370,13 @@ export default function JobDetailPage() {
             job={job}
             currentApplicants={currentApplicants}
             maxApplicants={maxApplicants} 
+            acceptedAppliers={acceptedAppliers}
           />
 
           <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 h-fit sticky top-6">
             {isOwner ? (
               <OwnerActions
+                job={job}
                 appliersCount={appliers.length}
                 onViewApplicants={() => setShowApplicantsModal(true)}
                 onStartJob={handleStart}

@@ -11,18 +11,18 @@ import { Submission } from "../../../../declarations/submission/submission.did";
 import { getSubmissionByJobId, updateSubmissionStatus } from "../../controller/submissionController";
 
 
-export default function ManageJobDetailPage() {
-  const { jobId } = useParams();
+export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
+  // const { jobId } = useParams();
   const [job, setJob] = useState<Job | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [rejectMessage, setRejectMessage] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
 
    useEffect(() => {
      const fetchData = async (jobId: string) => {
-       setLoading(true);
+      //  setLoading(true);
        try {
 
         const job = await getJobDetail(jobId);
@@ -73,9 +73,7 @@ export default function ManageJobDetailPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      <Navbar />
-      
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">      
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -88,7 +86,7 @@ export default function ManageJobDetailPage() {
         ) : (
           <>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">
-              Job Applications
+              Job Submissions
             </h1>
 
             <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-lg overflow-hidden">

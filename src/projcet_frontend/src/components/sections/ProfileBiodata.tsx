@@ -286,7 +286,7 @@ export default function ProfileBiodata() {
 
     setLoading(true);
     const usernameTaken = await getUserByName(tempUsername);
-    if (usernameTaken) {
+    if (usernameTaken && tempUsername !== user?.username) {
       setErrors("Username already taken");
       setLoading(false);
       return;

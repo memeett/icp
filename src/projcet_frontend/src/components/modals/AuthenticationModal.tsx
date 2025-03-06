@@ -15,20 +15,19 @@ import { useNestedModal } from "../../contexts/nested-modal-context";
 
 import { FaceVerificationModal } from "./FaceVerificationModal";
 
-
 export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   const { open, setOpen, closeModal } = useModal();
   const { openNestedModal } = useNestedModal();
   const [loading, setLoading] = useState<boolean>(false);
 
-
   const navigate = useNavigate();
-
 
   const [key, setKey] = useState(0);
 
   const handleOpenFaceVerification = () => {
-    openNestedModal(<FaceVerificationModal parentIndex={modalIndex || 0} index={0} />);
+    openNestedModal(
+      <FaceVerificationModal parentIndex={modalIndex || 0} index={0} />
+    );
   };
 
   const handleClose = () => {
@@ -69,15 +68,12 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                     setLoading(false);
                   }
                   await navigate("/profile");
-
                 }}
               >
-
                 <button
                   className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-4 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
                   onClick={loginWithInternetIdentity}
                 >
-
                   <GlobeIcon className="w-6 h-6" />
                   <span>Internet Identity</span>
                 </button>
@@ -105,17 +101,14 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-
                 {/* Option 1: Open nested modal */}
-                <button 
+                <button
                   className="relative w-full flex items-center justify-center space-x-2 bg-transparent border-2 border-[#112D4E] px-24 py-2 text-lg rounded-4xl transition-all hover:bg-[#112D4E] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2"
                   onClick={handleOpenFaceVerification}
                 >
                   <CameraIcon className="w-6 h-6" />
                   <span>Camera Authentication</span>
                 </button>
-                
-
               </motion.div>
             </div>
 
@@ -129,7 +122,6 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                     if (res) {
                       setOpen(false);
                     }
-                    await navigate("/profile");
                   }}
                 >
                   Secret Sign In

@@ -232,12 +232,12 @@ actor JobModel{
         userJobs
     };
 
-    public shared func startJob(user_id: Text, job_id: Text, amount: Float): async Bool {
+    public shared func startJob(user_id: Text, job_id: Text): async Result.Result<Bool, Text> {
         switch (jobs.get(job_id)) {
             case (?existingJob) {
                 // Validate if the current user is the owner of the job
                 if (user_id != existingJob.userId) {
-                    return false;
+                    return #err("User is not the owner of the job");
                 };
 
                 // Get job transaction to determine how many freelancers have been accepted.
@@ -250,36 +250,36 @@ actor JobModel{
                             0,
                             func (_: Text, acc: Nat) { acc + 1 }
                         );
+
+                        // Check if no freelancers have been accepted
+                        if (numAccepted == 0) {
+                            return #err("No freelancers have been accepted for this job");
+                        };
+
                         // Calculate the required amount as jobSalary * number of accepted freelancers.
                         let requiredAmount = existingJob.jobSalary * Float.fromInt(numAccepted);
-                        if (amount < requiredAmount) {
-                            return false;
-                        };
-                        
+                
                         // Call transfer_icp_to_job and check its result.
-                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, amount);
+                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, requiredAmount);
                         switch (transferResult) {
-                            case (#ok(_msg)) { return true; };
-                            case (#err(_err)) { return false; };
+                            case (#ok(_msg)) { 
+                                return #ok(true); 
+                            };
+                            case (#err(errMsg)) { 
+                                return #err("Transfer failed: " # errMsg); 
+                            };
                         }
                     };
                     case (#err(_err)) {
                         // If there's no transaction record, assume no accepted freelancers.
-                        // Then requiredAmount is zero.
-                        if (amount < 0.0) {
-                            return false;
-                        };
-                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, amount);
-                        switch (transferResult) {
-                            case (#ok(_msg)) { return true; };
-                            case (#err(_err)) { return false; };
-                        }
+                        return #err("No transaction found for the job");
                     };
                 }
             };
-            case null { return false; };
+            case null { 
+                return #err("Job not found"); 
+            };
         }
     };
-
 
 }

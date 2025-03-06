@@ -16,7 +16,7 @@ actor UserModel {
 
 
 
-    let session = actor ("avqkn-guaaa-aaaaa-qaaea-cai") : actor {
+    let session = actor (Global.canister_id.session) : actor {
 
         createSession : (userid : Text) -> async Text;
         getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
@@ -211,10 +211,10 @@ actor UserModel {
         };
     };
 
-    public shared func transfer_icp_to_job(user_id: Text, job_id: Text, amount: Float) : async Result.Result<Text, Text> {
+    public shared func transfer_icp_to_job(user_id: Text, job_id: Text, requiredAmount: Float) : async Result.Result<Text, Text> {
         switch (users.get(user_id)) {
             case (?fromUser) {
-                let amtFloat = amount;
+                let amtFloat = requiredAmount;
                 if (fromUser.wallet < amtFloat) {
                     return #err("Insufficient balance");
                 } else {

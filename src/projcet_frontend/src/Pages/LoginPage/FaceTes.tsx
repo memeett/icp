@@ -2,11 +2,11 @@ import FaceRecognition from "../../components/FaceRecognition.js";
 
 const FaceTes = () => {
   const handleSuccess = () => {
-    console.log('Operation successful!');
+    console.log("Operation successful!");
   };
 
   const handleError = (error: string) => {
-    console.error('Operation failed:', error);
+    console.error("Operation failed:", error);
   };
 
   return (
@@ -14,7 +14,9 @@ const FaceTes = () => {
       principalId="user1234"
       onSuccess={handleSuccess}
       onError={handleError}
-      mode="register" 
+      mode="register"
+      isOpen={true}
+      onClose={() => {}}
     />
   );
 };

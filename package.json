@@ -16,6 +16,7 @@
     "src/projcet_frontend"
   ],
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
     "@react-oauth/google": "^0.12.1",
     "@tailwindcss/vite": "^4.0.8",
     "@types/react-router-dom": "^5.3.3",

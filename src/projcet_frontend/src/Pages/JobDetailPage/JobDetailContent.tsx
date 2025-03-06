@@ -31,8 +31,8 @@ import LoadingOverlay from "../../components/ui/loading-animation";
 import { ApplierPayload } from "../../interface/Applier";
 import OngoingSection from "../../components/sections/OngoingSection";
 
-export const JobDetailContent = ({ job, currentApplicants, maxApplicants, acceptedAppliers} : {job : Job, currentApplicants : bigint, maxApplicants: bigint, acceptedAppliers: User[]}) => {
-    const [showAcceptedUsersModal, setShowAcceptedUsersModal] = useState(false);
+export const JobDetailContent = ({ job, currentApplicants, maxApplicants, acceptedAppliers, onOpen }: { job: Job; currentApplicants: bigint; maxApplicants: bigint; acceptedAppliers: User[]; onOpen : ()=> void}) => {
+    // const [showAcceptedUsersModal, setShowAcceptedUsersModal] = useState(false);
     
     const mockAcceptedUsers: User[] = acceptedAppliers;
 
@@ -54,13 +54,13 @@ export const JobDetailContent = ({ job, currentApplicants, maxApplicants, accept
                               Current Applicants
                             </h3>
                             <p className="text-gray-600">
-                              {currentApplicants.toString()} /{" "}
+                              {acceptedAppliers.length} /{" "}
                               {maxApplicants.toString()} positions filled
                             </p>
                           </div>
                           <motion.div
                             className="flex -space-x-3 cursor-pointer"
-                            onClick={() => setShowAcceptedUsersModal(true)}
+                            onClick={onOpen}
                             whileHover={{ scale: 1.05 }}
                           >
                             {mockAcceptedUsers.slice(0, 3).map((user, index) => (
@@ -103,4 +103,3 @@ export const JobDetailContent = ({ job, currentApplicants, maxApplicants, accept
     )
 
   };
-  

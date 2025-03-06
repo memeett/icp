@@ -6,6 +6,7 @@ import { HttpAgent } from "@dfinity/agent";
 import { applier } from "../../../declarations/applier";
 import { job_transaction } from "../../../declarations/job_transaction";
 import { ApplierPayload } from "../interface/Applier";
+import { Wallet } from "lucide-react";
 
 
 

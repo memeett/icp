@@ -79,6 +79,13 @@ export const rejectApplier = async (userId: string, jobId: string): Promise<bool
 };
 
 export const getUserApply = async (userId: string): Promise<Job[] | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
     try {
         const result = await applier.getUserApply(userId, process.env.CANISTER_ID_JOB!);
         console.log("User applied jobs:", result);
@@ -90,9 +97,15 @@ export const getUserApply = async (userId: string): Promise<Job[] | null> => {
 }
 
 
-
-
 export const hasUserApplied = async (userId: string, jobId: string): Promise<boolean> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    
     const result = await applier.hasUserApplied(userId, jobId);
     return result;
 }

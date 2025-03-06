@@ -12,6 +12,7 @@ import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
 import Job "../Job/model";
 import User "../User/model";
+import Global "../global";
 
 actor InvitationModel{
     private stable var nextId : Int = 0;
@@ -44,7 +45,7 @@ actor InvitationModel{
         invitationsEntries := [];
     };
 
-    let jobActor = actor ("br5f7-7uaaa-aaaaa-qaaca-cai") : actor {
+    let jobActor = actor (Global.canister_id.job) : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
     };
 
@@ -143,7 +144,7 @@ actor InvitationModel{
         return Buffer.toArray(userInvitations);
     };
 
-    let userActor = actor ("avqkn-guaaa-aaaaa-qaaea-cai"): actor{
+    let userActor = actor (Global.canister_id.user): actor{
         getUserById : (Text) -> async Result.Result<User.User, Text>;
     };
     

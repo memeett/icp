@@ -43,11 +43,11 @@ actor ApplierModel {
         appliersEntries := [];
     };
 
-    let jobActor = actor ("avqkn-guaaa-aaaaa-qaaea-cai") : actor {
+    let jobActor = actor (Global.canister_id.job) : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
     };
 
-    let userActor = actor ("ajuq4-ruaaa-aaaaa-qaaga-cai"): actor{
+    let userActor = actor (Global.canister_id.user): actor{
         getUserById : (Text) -> async Result.Result<User.User, Text>;
     };
 

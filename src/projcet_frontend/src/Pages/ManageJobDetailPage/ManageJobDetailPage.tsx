@@ -20,10 +20,10 @@ export default function ManageJobDetailPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async (jobId: string) => {
-      setLoading(true);
-      try {
+   useEffect(() => {
+     const fetchData = async (jobId: string) => {
+       setLoading(true);
+       try {
 
         const job = await getJobDetail(jobId);
         const submissions = await getSubmissionByJobId(jobId);

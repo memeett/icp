@@ -1,9 +1,8 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { submission } from "../../../declarations/submission";
-// import { Submission } from "../../../declarations/submission/submission.did";
+import { ResponseSubmission, Submission } from "../../../declarations/submission/submission.did";
 import { User } from "../../../declarations/user/user.did";
 import { HttpAgent } from "@dfinity/agent";
-import { Submission } from "../../../declarations/submission/submission.did";
 
 export const createSubmission = async (
     jobId: string,
@@ -15,6 +14,25 @@ export const createSubmission = async (
 
         const arrayBuffer = await submissionFile.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
+
+        
+        // Ensure createdAt and updatedAt are bigint
+        if (typeof user.createdAt === 'string' && typeof user.updatedAt === 'string') {
+            user.createdAt = BigInt(user.createdAt);
+            user.updatedAt = BigInt(user.updatedAt);
+        }
+
+        if (user.profilePicture && !(user.profilePicture instanceof Uint8Array)) {
+            if (Array.isArray(user.profilePicture)) {
+                user.profilePicture = new Uint8Array(user.profilePicture as number[]);
+            } else if (typeof user.profilePicture === 'object') {
+                const values = Object.values(user.profilePicture) as number[]; 
+                user.profilePicture = new Uint8Array(values);
+            } else {
+                throw new Error("Invalid profilePicture format");
+            }
+        }
+
 
         const result = await submission.createSubmission(jobId, user, uint8Array, submissionMessage);
 
@@ -28,6 +46,38 @@ export const createSubmission = async (
     }
 };
 
+
+export const getAllSubmissionbyUserJobId = async (user: User, jobId: string): Promise<ResponseSubmission[]> => {
+    const result = await submission.getAllSubmissions();
+
+    const filteredSubmissions = result.filter(sub => 
+        sub.user.id === user.id && sub.jobId === jobId
+    );
+
+    return filteredSubmissions;
+};
+
+
+
+export const getFileSubmissionbyId = async (id: string): Promise<Blob | null> => {
+    try {
+        const res = await submission.getFileSubmissionbyId(id);
+        
+        if (res && res.length > 0 && res[0] instanceof Uint8Array) {
+            return new Blob([res[0]], { type: 'application/octet-stream' });
+        } else if (res && res.length > 0 && Array.isArray(res[0])) {
+            const uint8Array = new Uint8Array(res[0]);
+            return new Blob([uint8Array], { type: 'application/octet-stream' });
+        } else {
+            return null;
+        }
+    } catch (err) {
+        console.error('Error fetching file:', err);
+        return null;
+    }
+};
+
+// Update submission status by ID
 export const getSubmissionByJobId =  async (jobId: string): Promise<Submission[]> => {
     const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();

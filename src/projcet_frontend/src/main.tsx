@@ -51,6 +51,10 @@ const route = createBrowserRouter([
     element: <ManageJobPage />,
   },
   {
+    path: "/manage-jobs/:jobId",
+    element: <ManageJobDetailPage />,
+  },
+  {
     path: "/browse",
     element: <BrowseFreelancerPage />,
   },

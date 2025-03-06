@@ -15,7 +15,9 @@ import Global "../global"
 actor UserModel {
 
 
+
     let session = actor ("avqkn-guaaa-aaaaa-qaaea-cai") : actor {
+
         createSession : (userid : Text) -> async Text;
         getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
     };

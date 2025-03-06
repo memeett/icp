@@ -10,6 +10,7 @@ import Array "mo:base/Array";
 import Float "mo:base/Float";
 import List "mo:base/List";
 import JobTransaction "../JobTransaction/model";
+import Global "../global";
 
 actor JobModel{
     private stable var nextId : Nat = 0;
@@ -59,46 +60,48 @@ actor JobModel{
         seedJobCategories();
     };
 
-    private func seedJobCategories() {
-    let defaultCategories = [
-        "Software Development",
-        "Graphic Design",
-        "Marketing",
-        "Customer Support",
-        "Data Analysis",
-        "Web Development",
-        "Mobile App Development",
-        "UI/UX Design",
-        "Project Management",
-        "Content Writing",
-        "Social Media Management",
-        "SEO Optimization",
-        "Cybersecurity",
-        "Cloud Computing",
-        "DevOps",
-        "Artificial Intelligence",
-        "Blockchain Development",
-        "Game Development",
-        "Technical Writing",
-        "IT Support",
-    ];
-
-    for (categoryName in defaultCategories.vals()) {
-        let categoryId = Int.toText(nextCategoryId);
-        let newCategory : Job.JobCategory = {
-            id = categoryId;
-            jobCategoryName = categoryName;
-        };
-        jobCategories.put(categoryId, newCategory);
-        nextCategoryId += 1;
+    let jobTransactionActor = actor (Global.canister_id.job_transaction) : actor {
+        getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
+        createTransaction: (owner_id : Text, job_id : Text) -> async ()
     };
-};
+    
+    private func seedJobCategories() {
+        let defaultCategories = [
+            "Software Development",
+            "Graphic Design",
+            "Marketing",
+            "Customer Support",
+            "Data Analysis",
+            "Web Development",
+            "Mobile App Development",
+            "UI/UX Design",
+            "Project Management",
+            "Content Writing",
+            "Social Media Management",
+            "SEO Optimization",
+            "Cybersecurity",
+            "Cloud Computing",
+            "DevOps",
+            "Artificial Intelligence",
+            "Blockchain Development",
+            "Game Development",
+            "Technical Writing",
+            "IT Support",
+        ];
 
-    let jobTransactionActor = actor ("cuj6u-c4aaa-aaaaa-qaajq-cai") : actor {
-        getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>
-    }; 
+        for (categoryName in defaultCategories.vals()) {
+            let categoryId = Int.toText(nextCategoryId);
+            let newCategory : Job.JobCategory = {
+                id = categoryId;
+                jobCategoryName = categoryName;
+            };
+            jobCategories.put(categoryId, newCategory);
+            nextCategoryId += 1;
+        };
+    };
 
-    let userActor = actor("ajuq4-ruaaa-aaaaa-qaaga-cai") : actor{
+
+    let userActor = actor(Global.canister_id.user) : actor{
         transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float) -> async Result.Result<Text, Text>;
     };
 
@@ -114,7 +117,7 @@ actor JobModel{
             jobRating = 0.0;
             jobTags = payload.jobTags;
             jobSlots = payload.jobSlots;
-            jobStatus = "Ongoing";
+            jobStatus = "Start";
             userId = payload.userId; 
             createdAt = timestamp;
             updatedAt = timestamp;
@@ -124,6 +127,7 @@ actor JobModel{
         jobs.put(jobId, newJob);
         nextId += 1;
         
+        await jobTransactionActor.createTransaction(payload.userId, jobId);
         #ok(newJob);
     };
 

@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, Filter, Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../../components/Navbar";
 import { useEffect, useState } from "react";
-import JobCard from "../../components/JobCard";
+import JobCard from "../../components/cards/JobCard";
 import Footer from "../../components/Footer";
 import { FiSearch, FiX } from "react-icons/fi";
 import {
@@ -264,13 +264,12 @@ export default function FindJobPage() {
                       key={category.id}
                       whileHover={{ scale: 1.05 }}
                       className={`p-3 rounded-lg cursor-pointer transition 
-                                                ${
-                                                  selectedCategories.includes(
-                                                    category.jobCategoryName
-                                                  )
-                                                    ? "bg-purple-200 text-purple-800"
-                                                    : "bg-gray-100 text-gray-700 hover:bg-purple-100"
-                                                }`}
+                                                ${selectedCategories.includes(
+                        category.jobCategoryName
+                      )
+                          ? "bg-purple-200 text-purple-800"
+                          : "bg-gray-100 text-gray-700 hover:bg-purple-100"
+                        }`}
                       onClick={() =>
                         handleCategoryToggle(category.jobCategoryName)
                       }
@@ -292,13 +291,12 @@ export default function FindJobPage() {
                       key={range.value}
                       whileHover={{ scale: 1.05 }}
                       className={`p-3 rounded-lg cursor-pointer transition 
-                                                ${
-                                                  selectedPriceRanges.includes(
-                                                    range.value
-                                                  )
-                                                    ? "bg-purple-200 text-purple-800"
-                                                    : "bg-gray-100 text-gray-700 hover:bg-purple-100"
-                                                }`}
+                                                ${selectedPriceRanges.includes(
+                        range.value
+                      )
+                          ? "bg-purple-200 text-purple-800"
+                          : "bg-gray-100 text-gray-700 hover:bg-purple-100"
+                        }`}
                       onClick={() => handlePriceRangeToggle(range.value)}
                     >
                       {range.label}

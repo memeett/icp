@@ -8,10 +8,12 @@ import { LogOut } from "lucide-react";
 import { NestedModalProvider } from "../../contexts/nested-modal-context.js";
 import { logout } from "../../controller/userController.js";
 import ProfileInvitationSection from "../../components/sections/ProfileInvitationSection.js";
+import ClientHistoryModal from "../../components/sections/ClientHistory.tsx";
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<string>("biodata");
   const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [isClientHistoryModalOpen, setIsClientHistoryModalOpen] = useState(false); 
 
   const logoutBtn = async () => {
     await logout()
@@ -76,9 +78,10 @@ export default function ProfilePage() {
           </div>
 
           <div className="w-full scrollbar-hide bg-[#F9F7F7] z-10 mb-16">
-              {activeSection === "biodata" ? <ProfileBiodata /> : activeSection === "invitation" ? <ProfileInvitationSection /> : <div></div>}
+              {activeSection === "biodata" ? <ProfileBiodata /> : activeSection === "invitation" ? <ProfileInvitationSection /> : activeSection === "client" ? <ClientHistoryModal /> : null}
           </div>
 
+         
 
       {/* Modal rendered conditionally based on tracking method */}
       {modalIndex !== null ? (

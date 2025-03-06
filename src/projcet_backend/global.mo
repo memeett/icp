@@ -14,7 +14,7 @@ module {
 
   public let canister_id : CanisterId = {
     userclicked="aovwi-4maaa-aaaaa-qaagq-cai";
-    user="ajuq4-ruaaa-aaaaa-qaaga-cai";
+    user="avqkn-guaaa-aaaaa-qaaea-cai";
     submission="cbopz-duaaa-aaaaa-qaaka-cai";
     session="ajuq4-ruaaa-aaaaa-qaaga-cai&id=avqkn-guaaa-aaaaa-qaaea-cai";
     job_transaction="cuj6u-c4aaa-aaaaa-qaajq-cai";

@@ -29,6 +29,7 @@ import {
 } from "../../controller/applyController";
 import LoadingOverlay from "../../components/ui/loading-animation";
 import { ApplierPayload } from "../../interface/Applier";
+import OngoingSection from "../../components/sections/OngoingSection";
 
 // Mock data for accepted users - replace with actual data fetching
 const mockAcceptedUsers: User[] = [

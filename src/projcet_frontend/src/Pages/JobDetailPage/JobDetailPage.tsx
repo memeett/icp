@@ -385,7 +385,7 @@ export default function JobDetailPage() {
         </div>
 
         {/* Ongoing Section */}
-        {job.jobStatus === "Ongoing" && (
+        {job.jobStatus === "Ongoing" && !isOwner && (
           <OngoingSection jobId={job.id} />
         )}
       </motion.div>

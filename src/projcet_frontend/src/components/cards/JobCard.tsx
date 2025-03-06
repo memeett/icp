@@ -2,8 +2,8 @@ import React, { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Briefcase, DollarSign, Users } from "lucide-react";
-import { addIncrementUserClicked } from "../controller/userClickedController";
-import { Job } from "../interface/job/Job";
+import { addIncrementUserClicked } from "../../controller/userClickedController";
+import { Job } from "../../interface/job/Job";
 
 export default function JobCard({ job }: { job: Job }) {
   const nav = useNavigate();

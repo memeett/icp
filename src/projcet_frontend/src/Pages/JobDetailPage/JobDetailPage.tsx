@@ -17,6 +17,7 @@ import {
   getAcceptedFreelancer,
   getJobApplier,
   getJobById,
+  startJob,
 } from "../../controller/jobController";
 import { authUtils } from "../../utils/authUtils";
 import { User } from "../../interface/User";
@@ -30,6 +31,13 @@ import {
 import LoadingOverlay from "../../components/ui/loading-animation";
 import { ApplierPayload } from "../../interface/Applier";
 import OngoingSection from "../../components/sections/OngoingSection";
+
+import { JobDetailContent } from "./JobDetailContent";
+import { ApplicantActions } from "./ApplicationActions";
+import { OwnerActions } from "./OwnerActions";
+import { ApplicantsModal } from "./ApplicationModal";
+import ManageJobDetailPage from "./SubmissionSection";
+import Modal from "./startModal";
 
 // Mock data for accepted users - replace with actual data fetching
 const mockAcceptedUsers: User[] = [
@@ -147,6 +155,13 @@ export default function JobDetailPage() {
   const [showApplicantsModal, setShowApplicantsModal] = useState(false);
 
   const [acceptedAppliers, setAccAppliers] = useState<User[]>([]);
+  // ka
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [requiredAmount, setRequiredAmount] = useState(0);
+
+  const handleClose = () => {
+    setIsModalOpen(false); // Close the modal
+};
 
   useEffect(() => {
     setLoading(true);
@@ -264,6 +279,14 @@ export default function JobDetailPage() {
     }
   };
 
+  useEffect(() => {
+    if (jobId) {
+        getAcceptedFreelancer(jobId).then((users) => {
+            setAccAppliers(users);
+        });
+    }
+  }, [jobId])
+
   const handleReject = async (userid: string): Promise<void> => {
     if (jobId) {
       await rejectApplier(userid, jobId);
@@ -288,307 +311,103 @@ export default function JobDetailPage() {
     );
   }
 
+  const handleStart = () => {
+    // Start the job
+  };
+
   if (!job) return null;
+
+
+
+const handlePay = async() => {
+    setIsModalOpen(false);
+    if (jobId) {
+        const userData = localStorage.getItem("current_user");
+        const parsedData = JSON.parse(userData ? userData : "");
+        if (userData && jobDetails) {
+            const length = acceptedAppliers.length
+            const amount = Number.parseFloat(jobDetails.salary) * length;
+            await startJob(parsedData.ok.id, jobId, amount)
+        }
+
+        }
+    };
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {loading && <LoadingOverlay message="Loading Job..." />}
       <Navbar />
 
-      {/* Accepted Users Modal */}
       {showAcceptedUsersModal && (
         <AcceptedUsersModal
-          users={mockAcceptedUsers}
+          users={acceptedAppliers}
           onClose={() => setShowAcceptedUsersModal(false)}
         />
       )}
 
       {showApplicantsModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-white/30 backdrop-blur-md z-50">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md mx-4 p-6">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">
-                Applicants
-              </h3>
-              <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => setShowApplicantsModal(false)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* List of Applicants */}
-            <div className="max-h-[400px] overflow-y-auto">
-              {appliers.map((applier, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 hover:bg-gray-50 transition-all duration-200 border-b border-gray-100 last:border-b-0"
-                >
-                  {/* Profile Picture and Name */}
-                  <div className="flex items-center space-x-3">
-                    <img
-                      src={URL.createObjectURL(applier.user.profilePicture)}
-                      alt={applier.user.username}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-purple-200"
-                    />
-                    <div>
-                      <span className="text-gray-800 font-semibold block text-sm">
-                        {applier.user.username}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        Applied 2 days ago
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <button
-                      className="px-3 py-1 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition-all duration-200"
-                      onClick={() => handleAccept(applier.user.id)}
-                    >
-                      Accept
-                    </button>
-                    <button
-                      className="px-3 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-all duration-200"
-                      onClick={() => handleReject(applier.user.id)}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Close Button */}
-            <div className="mt-6">
-              <button
-                className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold text-sm transition-all duration-300 shadow-md hover:shadow-lg"
-                onClick={() => setShowApplicantsModal(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <ApplicantsModal
+          appliers={appliers}
+          onClose={() => setShowApplicantsModal(false)}
+          handleAccept={handleAccept}
+          handleReject={handleReject}
+        />
       )}
 
-      <motion.div
-        className="container mx-auto px-4 mt-6 flex-grow"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Left Section (2/3 width) */}
-          <div className="lg:col-span-2 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8">
-            {/* Job Header */}
-            <div className="mb-8">
-              <motion.h1
-                className="text-3xl font-bold text-indigo-800 mb-4"
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-              >
-                {job.jobName}
-              </motion.h1>
-              <div className="mt-8 border-t pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-indigo-800 mb-2">
-                      Current Applicants
-                    </h3>
-                    <p className="text-gray-600">
-                      {currentApplicants.toString()} /{" "}
-                      {maxApplicants.toString()} positions filled
-                    </p>
-                  </div>
-                  <motion.div
-                    className="flex -space-x-3 cursor-pointer"
-                    onClick={() => setShowAcceptedUsersModal(true)}
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    {mockAcceptedUsers.slice(0, 3).map((user, index) => (
-                      <div
-                        key={user.id}
-                        className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center text-white font-bold"
-                        style={{ zIndex: 3 - index }}
-                      >
-                        {user.username.charAt(0).toUpperCase()}
-                      </div>
-                    ))}
-                    {mockAcceptedUsers.length > 3 && (
-                      <div className="w-10 h-10 rounded-full border-2 border-white bg-indigo-500 flex items-center justify-center text-white text-sm">
-                        +{mockAcceptedUsers.length - 3}
-                      </div>
-                    )}
-                  </motion.div>
-                </div>
-              </div>
-            </div>
+      <Modal
+                isOpen={isModalOpen}
+                onClose={handleClose}
+                onPay={handlePay}
+                amount={requiredAmount}
+                />
 
-            {/* Job Description */}
-            <motion.div
-              className="mb-8 bg-blue-50/30 p-6 rounded-xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <h2 className="text-xl font-semibold text-indigo-800 mb-4 flex items-center gap-2">
-                <Info className="w-5 h-5 text-indigo-500" />
-                Job Description
-              </h2>
-              <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                {job.jobDescription.map((desc, index) => (
-                  <li key={index}>{desc}</li>
-                ))}
-              </ul>
-            </motion.div>
-          </div>
+
+      <motion.div className="container mx-auto px-4 mt-6 flex-grow">
+      <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">
+              Job Detail
+            </h1>
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <JobDetailContent 
+            job={job}
+            currentApplicants={currentApplicants}
+            maxApplicants={maxApplicants} 
+            acceptedAppliers={acceptedAppliers}
+          />
 
           <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 h-fit sticky top-6">
             {isOwner ? (
-              <div className="space-y-4">
-                {/* Reward Section */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl shadow-sm">
-                  <h3 className="text-xl font-semibold text-indigo-800 mb-1">
-                    Manage Applicants
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Review and manage applicants for your job posting.
-                  </p>
-                </div>
-
-                {/* View Applicants Button */}
-                <button
-                  className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold text-sm transition-all duration-300 shadow-md hover:shadow-lg"
-                  onClick={() => setShowApplicantsModal(true)}
-                >
-                  View Applicants ({appliers.length})
-                </button>
-
-                {/* Start Job Button */}
-                <button
-                  className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold text-sm transition-all duration-300 shadow-md hover:shadow-lg"
-                  // onClick={handleStart}
-                >
-                  Start Job
-                </button>
-              </div>
+              <OwnerActions
+                job={job}
+                appliersCount={appliers.length}
+                onViewApplicants={() => setShowApplicantsModal(true)}
+                onStartJob={handleStart}
+              />
             ) : (
-              // UI for non-owners (applicants)
-              <div className="space-y-6">
-                {/* Reward Section */}
-                <div className="bg-blue-50/30 p-4 rounded-xl">
-                  <h3 className="text-3xl font-semibold text-indigo-800 mb-2">
-                    Job Reward
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-green-600">
-                      ${jobDetails?.salary}/person
-                    </span>
-                  </div>
-                </div>
-
-                {/* Terms and Conditions */}
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      id="terms"
-                      checked={termsAccepted}
-                      onChange={(e) => setTermsAccepted(e.target.checked)}
-                      className="mt-1 w-5 h-5 accent-indigo-500"
-                    />
-                    <label htmlFor="terms" className="text-sm text-gray-700">
-                      I have fully understood and meet all job requirements
-                    </label>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      id="responsibility"
-                      checked={responsibilityAccepted}
-                      onChange={(e) =>
-                        setResponsibilityAccepted(e.target.checked)
-                      }
-                      className="mt-1 w-5 h-5 accent-indigo-500"
-                    />
-                    <label
-                      htmlFor="responsibility"
-                      className="text-sm text-gray-700"
-                    >
-                      I apply to this job voluntarily and take full
-                      responsibility
-                    </label>
-                  </div>
-                </div>
-
-                {/* Application Status */}
-                {isApplicationClosed ? (
-                  <div className="bg-red-50 p-4 rounded-xl text-red-600 text-sm">
-                    ❌ This job has reached the maximum number of applicants
-                  </div>
-                ) : (
-                  <div className="bg-green-50 p-4 rounded-xl text-green-600 text-sm">
-                    ✅ {(maxApplicants - currentApplicants).toString()}{" "}
-                    positions remaining
-                  </div>
-                )}
-
-                {/* Apply Button */}
-                <motion.button
-                  className={`w-full py-4 rounded-xl text-white font-semibold text-lg transition-all duration-300 ${
-                    applied ||
-                    !termsAccepted ||
-                    !responsibilityAccepted ||
-                    isApplicationClosed
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
-                  }`}
-                  disabled={
-                    applied ||
-                    !termsAccepted ||
-                    !responsibilityAccepted ||
-                    isApplicationClosed
-                  }
-                  whileHover={!applied ? { scale: 1.02 } : undefined}
-                  whileTap={!applied ? { scale: 0.98 } : undefined}
-                  onClick={() => handleApply()}
-                >
-                  {applied ? "Applied" : "Apply"}
-                </motion.button>
-
-                {/* Info Text */}
-                <p className="text-xs text-gray-500 text-center">
-                  By applying, you agree to our terms of service and privacy
-                  policy
-                </p>
-              </div>
+              <ApplicantActions
+                salary={jobDetails?.salary || ""}
+                termsAccepted={termsAccepted}
+                responsibilityAccepted={responsibilityAccepted}
+                isApplicationClosed={isApplicationClosed}
+                remainingPositions={(maxApplicants - currentApplicants).toString()}
+                applied={applied}
+                onApply={handleApply}
+                onTermsChange={setTermsAccepted}
+                onResponsibilityChange={setResponsibilityAccepted}
+              />
             )}
           </div>
         </div>
 
-
-        {/* Ongoing Section */}
         {job.jobStatus === "Ongoing" && !isOwner && (
           <OngoingSection jobId={job.id} />
         )}
 
+
+        {isOwner && job.jobStatus === "Ongoing" &&(
+          <ManageJobDetailPage jobId={job.id} />
+        )}
       </motion.div>
+      
       <Footer />
     </div>
   );

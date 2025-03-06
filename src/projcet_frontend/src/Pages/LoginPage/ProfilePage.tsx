@@ -12,12 +12,14 @@ import { Job } from "../../../../declarations/job/job.did.js";
 import { job } from "../../../../declarations/job/index.js";
 import JobDetailModal from "../../components/modals/JobDetailModal.js";
 import ProfileFreelancerSection from "../../components/sections/ProfileFreelancerSection.js";
+import ClientHistoryModal from "../../components/sections/ClientHistory.tsx";
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<string>("biodata");
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [isJobDetailModal, setIsJobDetailModal] = useState<boolean>(false)
   const [jobDetail, setJobDetail] = useState<Job>()
+  const [isClientHistoryModalOpen, setIsClientHistoryModalOpen] = useState(false); 
 
   const logoutBtn = async () => {
     await logout()
@@ -93,7 +95,8 @@ export default function ProfilePage() {
           <div className="w-full scrollbar-hide bg-[#F9F7F7] z-10 mb-16">
               {activeSection === "biodata" ? <ProfileBiodata /> : 
               activeSection === "invitation" ? <ProfileInvitationSection onClickDetailJob={clickJobDetail}/> : 
-              activeSection == "freelancer" ? <ProfileFreelancerSection/> : <div></div>}
+              activeSection == "freelancer" ? <ProfileFreelancerSection/> :
+              activeSection === "client" ? <ClientHistoryModal /> : <div></div> }
           </div>
 
       

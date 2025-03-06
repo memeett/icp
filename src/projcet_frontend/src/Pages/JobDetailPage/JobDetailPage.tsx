@@ -312,6 +312,7 @@ export default function JobDetailPage() {
 
   const handleStart = () => {
     // Start the job
+    setIsModalOpen(true);
   };
 
   if (!job) return null;

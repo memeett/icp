@@ -7,20 +7,12 @@ import Time "mo:base/Time";
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Float "mo:base/Float";
-import Nat64 "mo:base/Nat64";
 import Array "mo:base/Array";
 import Job "../Job/model";
-import Global "../global"
 
 actor UserModel {
 
-
-
-    let session = actor ("asrmz-lmaaa-aaaaa-qaaeq-cai") : actor {
-
-        createSession : (userid : Text) -> async Text;
-        getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
-    };
+    
 
     private stable var usersEntries : [(Text, User.User)] = [];
 
@@ -45,11 +37,6 @@ actor UserModel {
             Text.hash,
         );
         usersEntries := [];
-    };
-
-    let jobActor = actor(Global.canister_id.job) : actor {
-        getJob: (job_id: Text) -> async ?Job.Job;
-        putJob: (job_id: Text, job: Job.Job) -> async ();
     };
 
 
@@ -92,7 +79,10 @@ actor UserModel {
         };
     };
 
-    public func login(id : Text, profilePic : Blob) : async Text {
+    public func login(id : Text, profilePic : Blob, session_canister: Text) : async Text {
+        let session = actor (session_canister) : actor {
+            createSession : (userid : Text) -> async Text;
+        };
         let currUser = switch (users.get(id)) {
             case (?user) user;
             case null {
@@ -106,7 +96,10 @@ actor UserModel {
         return sessionId;
     };
 
-    public func updateUser(sessionid : Text, payload : User.UpdateUserPayload) : async Result.Result<User.User, Text> {
+    public func updateUser(sessionid : Text, payload : User.UpdateUserPayload, session_canister: Text) : async Result.Result<User.User, Text> {
+        let session = actor (session_canister) : actor {
+            getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
+        };
         let userIdResult = await session.getUserIdBySession(sessionid);
         switch (userIdResult) {
             case (#ok(userId)) {
@@ -148,70 +141,85 @@ actor UserModel {
         };
     };
 
-    public shared func transfer_icp_to_user(from: Text, to: Text, amount: Nat64) : async Result.Result<Text, Text> {
-        switch (users.get(from)) {
-            case (?fromUser) {
-                if (fromUser.wallet < Float.fromInt(Nat64.toNat(amount))) {
-                    return #err("Insufficient balance");
-                } else {
-                    switch (users.get(to)) {
-                        case (?toUser) {
-                            let fromNewBalance = fromUser.wallet - Float.fromInt(Nat64.toNat(amount));
-                            let updatedFromUser: User.User = {
-                                id = fromUser.id;
-                                profilePicture = fromUser.profilePicture;
-                                username = fromUser.username;
-                                description = fromUser.description;
-                                preference = fromUser.preference;
-                                dob = fromUser.dob;
-                                wallet = fromNewBalance;
-                                rating = fromUser.rating;
-                                createdAt = fromUser.createdAt;
-                                updatedAt = Time.now();
-                                isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
-                            };
-                            users.put(from, updatedFromUser);
+    public shared func transfer_icp_to_user(from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
+    let jobActor = actor(job_canister) : actor {
+        getJob: (job_id: Text) -> async ?Job.Job;
+        putJob: (job_id: Text, job: Job.Job) -> async ();
+    };
+    // Step 1: Fetch the job's wallet balance
+        let maybeJob = await jobActor.getJob(from_job_id);
+        switch (maybeJob) {
+            case (?jobData) {
+                // Step 2: Validate the job's wallet balance
+                if (jobData.wallet < amount) {
+                    return #err("Insufficient balance in job wallet");
+                };
 
-                            let toNewBalance = toUser.wallet + Float.fromInt(Nat64.toNat(amount));
-                            let updatedToUser: User.User = {
-                                id = toUser.id;
-                                profilePicture = toUser.profilePicture;
-                                username = toUser.username;
-                                description = toUser.description;
-                                preference = toUser.preference;
-                                dob = toUser.dob;
-                                wallet = toNewBalance;
-                                rating = toUser.rating;
-                                createdAt = toUser.createdAt;
-                                updatedAt = Time.now();
-                                isFaceRecognitionOn = toUser.isFaceRecognitionOn;
-                            };
-                            users.put(to, updatedToUser);
-
-                            // Save transaction
-                            addTransaction({
-                                userId = from;
-                                transactionAt = Time.now();
-                                amount = Float.fromInt(Nat64.toNat(amount));
-                                transactionType = #transfer;
-                                toId = ?to;
-                            });
-
-                            return #ok("Transferred ckBTC successfully");
+                // Step 3: Fetch the recipient user's details
+                switch (users.get(to_user_id)) {
+                    case (?toUser) {
+                        // Step 4: Update the job's wallet
+                        let updatedJobWallet = jobData.wallet - amount;
+                        let updatedJob : Job.Job = {
+                            id = jobData.id;
+                            jobName = jobData.jobName;
+                            jobDescription = jobData.jobDescription;
+                            jobSalary = jobData.jobSalary;
+                            jobRating = jobData.jobRating;
+                            jobTags = jobData.jobTags;
+                            jobSlots = jobData.jobSlots;
+                            jobStatus = jobData.jobStatus;
+                            userId = jobData.userId;
+                            createdAt = jobData.createdAt;
+                            updatedAt = Time.now();
+                            wallet = updatedJobWallet;
                         };
-                        case null {
-                            return #err("Recipient not found");
+                        await jobActor.putJob(from_job_id, updatedJob);
+
+                        // Step 5: Update the recipient user's wallet
+                        let updatedUserWallet = toUser.wallet + amount;
+                        let updatedToUser : User.User = {
+                            id = toUser.id;
+                            profilePicture = toUser.profilePicture;
+                            username = toUser.username;
+                            description = toUser.description;
+                            preference = toUser.preference;
+                            dob = toUser.dob;
+                            wallet = updatedUserWallet;
+                            rating = toUser.rating;
+                            createdAt = toUser.createdAt;
+                            updatedAt = Time.now();
+                            isFaceRecognitionOn = toUser.isFaceRecognitionOn;
                         };
+                        users.put(to_user_id, updatedToUser);
+
+                        // Step 6: Record the transaction
+                        addTransaction({
+                            fromId = from_job_id; // Job ID as the sender
+                            transactionAt = Time.now();
+                            amount = amount;
+                            transactionType = #transfer;
+                            toId = ?to_user_id;
+                        });
+
+                        return #ok("Transferred ckBTC from job to user successfully");
+                    };
+                    case null {
+                        return #err("Recipient user not found");
                     };
                 };
             };
             case null {
-                return #err("Sender not found");
+                return #err("Job not found");
             };
         };
     };
 
-    public shared func transfer_icp_to_job(user_id: Text, job_id: Text, amount: Float) : async Result.Result<Text, Text> {
+    public shared func transfer_icp_to_job(user_id: Text, job_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
+        let jobActor = actor(job_canister) : actor {
+            getJob: (job_id: Text) -> async ?Job.Job;
+            putJob: (job_id: Text, job: Job.Job) -> async ();
+        };
         switch (users.get(user_id)) {
             case (?fromUser) {
                 let amtFloat = amount;
@@ -265,7 +273,7 @@ actor UserModel {
                             
                             // Record the transaction (assuming addTransaction is available)
                             addTransaction({
-                                userId = user_id;
+                                fromId = user_id;
                                 transactionAt = Time.now();
                                 amount = amtFloat;
                                 transactionType = #transferToJob;
@@ -338,7 +346,7 @@ actor UserModel {
 
                 // Save transaction
                 addTransaction({
-                    userId = userId;
+                    fromId = userId;
                     transactionAt = Time.now();
                     amount = amount;
                     transactionType = #topUp;
@@ -362,7 +370,7 @@ actor UserModel {
 
     public query func getUserTransactions(userId: Text): async [User.CashFlowHistory] {
         return Array.filter<User.CashFlowHistory>(cashFlowHistories, func(t: User.CashFlowHistory): Bool {
-            t.userId == userId or (switch (t.toId) { 
+            t.fromId == userId or (switch (t.toId) { 
                 case (?to) to == userId;
                 case (_) false;
             })

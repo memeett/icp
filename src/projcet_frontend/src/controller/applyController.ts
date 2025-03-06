@@ -17,7 +17,7 @@ export const applyJob = async (userId: string, jobId : string): Promise<boolean>
     }
     try {
         const payload: ApplyPayload = { userId, jobId };
-        const result = await applier.applyJob(payload);
+        const result = await applier.applyJob(payload, process.env.CANISTER_ID_JOB!);
         if ("ok" in result) {
             console.log("Applied for job:", result.ok);
             return true;
@@ -41,7 +41,7 @@ export const acceptApplier = async (userId: string, jobId: string): Promise<bool
     }
     const payload: ApplyPayload = { userId, jobId };
     try {
-        const result = await applier.acceptApplier(payload);
+        const result = await applier.acceptApplier(payload, process.env.CANISTER_ID_JOB_TRANSACTION!);
         if ("ok" in result) {
             return true; // Success: Applier was accepted
         } else {
@@ -80,7 +80,7 @@ export const rejectApplier = async (userId: string, jobId: string): Promise<bool
 
 export const getUserApply = async (userId: string): Promise<Job[] | null> => {
     try {
-        const result = await applier.getUserApply(userId);
+        const result = await applier.getUserApply(userId, process.env.CANISTER_ID_JOB!);
         console.log("User applied jobs:", result);
         return result.map((job: any) => job.job);
     } catch (error) {

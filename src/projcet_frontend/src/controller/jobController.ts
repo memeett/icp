@@ -59,7 +59,7 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
             };
             
             
-            const result = await job.createJob(payload);
+            const result = await job.createJob(payload, process.env.CANISTER_ID_JOB_TRANSACTION!);
             if ("ok" in result) {
                 console.log("Job created:", result.ok);
                 return ["Success", "Success post a job"];
@@ -279,7 +279,7 @@ export const getJobApplier = async (jobId: string): Promise<ApplierPayload[]> =>
         await agent.fetchRootKey();
     }
     try {
-        const result = await applier.getJobApplier(jobId);
+        const result = await applier.getJobApplier(jobId, process.env.CANISTER_ID_USER!);
         if (!result || !("ok" in result)) {
             console.error("Invalid response format:", result);
             return [];
@@ -380,7 +380,7 @@ export const startJob = async (user_id: string, job_id: string, amount: number):
         }
 
         // Call the startJob method on the job actor
-        const result = await job.startJob(user_id, job_id);
+        const result = await job.startJob(user_id, job_id, process.env.CANISTER_ID_JOB!, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_USER!);
 
         // Check if the result is successful
         if ("ok" in result) {

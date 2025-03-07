@@ -132,41 +132,48 @@ export default function JobDetailPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log("tes");
+      console.log("Fetching data...");
       setLoading(true);
 
-      const userData = localStorage.getItem("current_user");
-      const parsedData = JSON.parse(userData ? userData : "");
+      try {
+        const userData = localStorage.getItem("current_user");
+        const parsedData = userData ? JSON.parse(userData) : null;
 
-      if (userData) {
-        // Check if current user is the job owner
-        if (job && job.userId === parsedData.ok.id) {
+        if (!parsedData || !parsedData.ok) {
+          console.error("User data not found or invalid.");
+          setLoading(false);
+          return;
+        }
+
+        const userId = parsedData.ok.id;
+
+        if (job && job.userId === userId) {
           setIsOwner(true);
         }
-      }
 
-      if (jobId) {
-        // Fetch accepted freelancers and job appliers
-        const [acceptedFreelancers, jobAppliers] = await Promise.all([
-          getAcceptedFreelancer(jobId),
-          getJobApplier(jobId),
-        ]);
+        if (jobId) {
+          const [acceptedFreelancers, jobAppliers] = await Promise.all([
+            getAcceptedFreelancer(jobId),
+            getJobApplier(jobId),
+          ]);
 
-        setAccAppliers(acceptedFreelancers);
-        setAppliers(jobAppliers);
+          setAccAppliers(acceptedFreelancers);
+          setAppliers(jobAppliers);
 
-        // Check if the user has applied to the job
-        if (parsedData.ok.id) {
-          const result = await hasUserApplied(parsedData.ok.id, jobId);
-          acceptedFreelancers.forEach((user) => {
-            if (user.id === parsedData.ok.id || result) {
-              setApplied(true);
-            }
-          });
+          const hasApplied = await hasUserApplied(userId, jobId);
+
+          const isUserAcceptedOrApplied =
+            acceptedFreelancers.some((user) => user.id === userId) || hasApplied;
+
+          if (isUserAcceptedOrApplied) {
+            setApplied(true);
+          }
         }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false); 
       }
-
-      setLoading(false);
     };
 
     fetchData();
@@ -226,6 +233,7 @@ export default function JobDetailPage() {
     try {
       const parsedData = JSON.parse(userData);
       const result = await applyJob(parsedData.ok.id, jobId!);
+      console.log(job!.userId)
       await createInbox(
         job!.userId,
         parsedData.ok.id,

@@ -236,29 +236,6 @@ const EditJobForm = ({ job, onSave, onCancel, refreshData, modalIndex }: EditJob
             </div>
           </div>
 
-          {/* Job Status */}
-          <div className="space-y-2 px-8 pb-4">
-            <label className="block text-lg font-medium text-[#112D4E]">
-              Job Status
-            </label>
-            <div className="flex space-x-4">
-              {["Start", "Pending", "Completed"].map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => setJobStatus(status)}
-                  className={`px-4 py-2 rounded-full transition-colors ${
-                    jobStatus === status 
-                      ? 'bg-[#112D4E] text-white' 
-                      : 'bg-transparent border-2 border-[#112D4E] text-[#112D4E]'
-                  }`}
-                >
-                  {status}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Form Footer */}
           <div className="grid grid-cols-2 border-t border-gray-200">
             <button

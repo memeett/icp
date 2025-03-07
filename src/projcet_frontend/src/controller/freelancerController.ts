@@ -122,22 +122,22 @@ import { HttpAgent } from "@dfinity/agent";
 //     }
 // }
 
-// export const getTransactionByFreelancer = async (freelancerId: string): Promise<JobTransaction [] | null> => {
-//     const authClient = await AuthClient.create();
-//     const identity = authClient.getIdentity();
-//     const agent = new HttpAgent({ identity });
+export const getTransactionByFreelancer = async (freelancerId: string): Promise<JobTransaction [] | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
 
-//     if (process.env.DFX_NETWORK === "local") {
-//         await agent.fetchRootKey();
-//     }
-//     try {
-//         const res = await job_transaction.getTransactionByFreelancerId(freelancerId);
-//         return res;
-//     } catch (error) {
-//         console.error("Failed to get transaction:", error);
-//         return null;
-//     }
-// }
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    try {
+        const res = await job_transaction.getTransactionByFreelancerId(freelancerId);
+        return res;
+    } catch (error) {
+        console.error("Failed to get transaction:", error);
+        return null;
+    }
+}
 
 export const getClientHistory = async (clientId: string): Promise<JobTransaction [] | null> => {
     const authClient = await AuthClient.create();

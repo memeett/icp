@@ -6,8 +6,8 @@ import { InboxResponse } from "../interface/Inbox";
 import { user } from "../../../declarations/user";
 
 export const createInbox = async (
-  senderId: string,
   receiverId: string,
+  senderId: string,
   submission_type: string,
   status: string
 ): Promise<Inbox | null> => {
@@ -176,8 +176,11 @@ export const getAllInboxByUserId = async (
         const receiverName = await user.getUsernameById(i.receiverId);
         const submission_type = i.submission_type;
         let message = "Invalid message";
-        console.log(submission_type)
-        if (submission_type.toLocaleLowerCase() === "submission".toLocaleLowerCase()) {
+        console.log("lele" + submission_type);
+        if (
+          submission_type.toLocaleLowerCase() ===
+          "submission".toLocaleLowerCase()
+        ) {
           if (i.status === "request") {
             message = `You have a new submission request from ${senderName}`;
           } else if (i.status === "accepted") {

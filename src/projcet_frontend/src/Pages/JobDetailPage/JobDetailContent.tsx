@@ -33,7 +33,7 @@ import OngoingSection from "../../components/sections/OngoingSection";
 
 export const JobDetailContent = ({ job, currentApplicants, maxApplicants, acceptedAppliers, onOpen }: { job: Job; currentApplicants: bigint; maxApplicants: bigint; acceptedAppliers: User[]; onOpen : ()=> void}) => {
     // const [showAcceptedUsersModal, setShowAcceptedUsersModal] = useState(false);
-    
+    console.log("Accepted Appliers:", acceptedAppliers);
     const mockAcceptedUsers: User[] = acceptedAppliers;
 
     return (

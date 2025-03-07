@@ -15,4 +15,5 @@ export interface Job {
   createdAt: bigint;
   updatedAt: bigint;
   userId: string;
+  wallet: number;
 }

@@ -14,6 +14,7 @@ import {
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import {
+  finishJob,
   getAcceptedFreelancer,
   getJobApplier,
   getJobById,
@@ -39,6 +40,7 @@ import { ApplicantsModal } from "./ApplicationModal";
 import ManageJobDetailPage from "./SubmissionSection";
 import Modal from "./startModal";
 import { createInbox } from "../../controller/inboxController";
+import ErrorModal from "../../components/modals/ErrorModal";
 
 const AcceptedUsersModal: React.FC<{
   users: User[];
@@ -301,18 +303,6 @@ export default function JobDetailPage() {
       });
     }
   };
-``
-  if (error) {
-    return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <Navbar />
-        <div className="container mx-auto px-4 mt-6 text-center py-20">
-          <h1 className="text-2xl text-red-500">{error}</h1>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   const handleStart = () => {
     // Start the job
@@ -325,28 +315,84 @@ export default function JobDetailPage() {
   if (!job) return null;
 
   const handlePay = async () => {
+    setLoading(true)
+    // Close the modal first
     setIsModalOpen(false);
-    if (jobId) {
-      const userData = localStorage.getItem("current_user");
-      const parsedData = JSON.parse(userData ? userData : "");
-      if (userData && jobDetails) {
-        const length = acceptedAppliers.length;
-        const amount = Number.parseFloat(jobDetails.salary) * length;
-        await startJob(parsedData.ok.id, jobId, amount);
+
+    if (!jobId) {
+      console.error("Job ID is missing");
+      return;
+    }
+
+    // Retrieve user data from local storage
+    const userData = localStorage.getItem("current_user");
+    if (!userData) {
+      console.error("User data not found");
+      return;
+    }
+
+    const parsedData = JSON.parse(userData);
+
+    if (!jobDetails) {
+      console.error("Job details are missing");
+      return;
+    }
+
+    // Calculate the required amount: job salary * number of accepted appliers
+    const numAppliers = acceptedAppliers.length;
+    const salary = Number.parseFloat(jobDetails.salary);
+    const amount = salary * numAppliers;
+
+    // Call the startJob function and handle the result
+    const result = await startJob(parsedData.ok.id, jobId, amount);
+
+    if (result.jobStarted) {
+      console.log("Success:", result.message);
+      fetchJob()
+      // Optionally, show a success toast/notification here
+    } else {
+      setError(result.message)
+    }
+    setLoading(false)
+  };
+
+  const handleFinish = async () =>{
+    setLoading(true)
+    if(jobId){
+      const result = await finishJob(jobId)
+      console.log("result", result)
+      if(result.jobFinished){
+        fetchJob()
+      }else{
+        setError(result.message)
       }
     }
-  };
+    setLoading(false)
+    
+  }
+
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {loading && <LoadingOverlay message="Loading Job..." />}
+      {error !== "" && !loading && (
+        <ErrorModal
+          isOpen={error !== ""}
+          onClose={() => {
+            setError("");
+          }}
+          message={error}
+          duration={2000}
+        />
+      )}
       <Navbar />
-
       {showAcceptedUsersModal && (
         <AcceptedUsersModal
           users={acceptedAppliers}
           onClose={() => setShowAcceptedUsersModal(false)}
         />
       )}
+
 
       {showApplicantsModal && (
         <ApplicantsModal
@@ -385,6 +431,7 @@ export default function JobDetailPage() {
                 appliersCount={appliers.length}
                 onViewApplicants={() => setShowApplicantsModal(true)}
                 onStartJob={handleStart}
+                onFinishJob={handleFinish}
               />
             ) : (
               <ApplicantActions

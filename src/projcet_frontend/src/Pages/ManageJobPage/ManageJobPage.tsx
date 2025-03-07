@@ -273,7 +273,7 @@ export default function ManageJobPage() {
               >
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-purple-50">
+                    <thead className="bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
                       <tr>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
                           Job Title

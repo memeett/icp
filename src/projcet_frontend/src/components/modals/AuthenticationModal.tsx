@@ -120,6 +120,8 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                   onClick={async () => {
                     const res = await login("43djee4");
                     // const res = await login("q1tsvi");
+                    // const res = await login("gzs612n");
+                    // const res = await login("q1tsvi");
                     if (res) {
                       setOpen(false);
                     }

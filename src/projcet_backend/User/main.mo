@@ -377,6 +377,15 @@ actor UserModel {
         });
     };
 
-
+    public query func getUsernameById(userId: Text): async Text {
+        switch (users.get(userId)) {
+            case (?user) {
+                return user.username;
+            };
+            case null {
+                return "";
+            };
+        };
+    };
 
 };

@@ -90,7 +90,7 @@ export default function ManageJobPage() {
   };
 
   const handleEditClick = (e: React.MouseEvent, job: Job) => {
-    e.stopPropagation(); // Prevent row click event from firing
+    e.stopPropagation();
     setSelectedJob(job);
     setOpen(true);     
     const modalIndex = openModal();

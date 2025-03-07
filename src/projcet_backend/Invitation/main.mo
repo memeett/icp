@@ -45,7 +45,8 @@ actor InvitationModel{
         invitationsEntries := [];
     };
 
-    let jobActor = actor (Global.canister_id.job) : actor {
+
+    let jobActor = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
     };
 

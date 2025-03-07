@@ -154,7 +154,6 @@ actor JobModel{
         jobs.put(job_id, job);
     };
 
-
     public query func getJobCategory(categoryId : Text) : async Result.Result<Job.JobCategory, Text> {
         switch (jobCategories.get(categoryId)) {
             case (?category) { #ok(category) };
@@ -230,105 +229,96 @@ actor JobModel{
         userJobs
     };
 
- public shared func startJob(user_id: Text, job_id: Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
-    let jobTransactionActor = actor (job_transaction_canister) : actor {
-        getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
-    };
-    let userActor = actor(user_canister) : actor {
-        transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
-    };
-
-    // Await the getJob function and handle its result
-    let jobResult = await getJob(job_id);
-    switch (jobResult) {
-        case (#ok(existingJob)) {
-            // Validate if the current user is the owner of the job
-            if (user_id != existingJob.userId) {
-                return #err("User is not the owner of the job");
-            };
-
-            // Get job transaction to determine how many freelancers have been accepted
-            let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
-            switch (transactionResult) {
-                case (#ok(transaction)) {
-                    // Count the number of accepted freelancers using a fold function.
-                    let numAccepted : Nat = List.foldRight<Text, Nat>(
-                        transaction.freelancers,
-                        0,
-                        func (_: Text, acc: Nat) { acc + 1 }
-                    );
-
-                    // Check if no freelancers have been accepted
-                    if (numAccepted == 0) {
-                        return #err("No freelancers have been accepted for this job");
-                    };
-
-                    // Calculate the required amount as jobSalary * number of accepted freelancers.
-                    let requiredAmount = existingJob.jobSalary * Float.fromInt(numAccepted);
-            
-                    // Call transfer_icp_to_job and check its result.
-                    let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, requiredAmount, job_canister);
-                    switch (transferResult) {
-                        case (#ok(_msg)) { 
-                            return #ok(true); 
-                        };
-                        case (#err(errMsg)) { 
-                            return #err("Transfer failed: " # errMsg); 
-                        };
-                    }
-                };
-                case (#err(_err)) {
-                    return #err("No transaction found for the job");
-                };
-            }
-        };
-        case (#err(errorMsg)) {
-            return #err(errorMsg);
-        };
-    };
-};
-
-    public shared func finishJob(job_id: Text, job_canister: Text,  job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
+    public shared func startJob(user_id: Text, job_id: Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
         let jobTransactionActor = actor (job_transaction_canister) : actor {
             getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
         };
-        let userActor = actor(user_canister) : actor{
-            transfer_icp_to_user:(from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>
+        let userActor = actor(user_canister) : actor {
+            transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
         };
+
         switch (jobs.get(job_id)) {
             case (?existingJob) {
-                // Step 1: Update the job status to "Finished"
-                let updatedJob : Job.Job = {
-                    id = existingJob.id;
-                    jobName = existingJob.jobName;
-                    jobDescription = existingJob.jobDescription;
-                    jobSalary = existingJob.jobSalary;
-                    jobRating = existingJob.jobRating;
-                    jobTags = existingJob.jobTags;
-                    jobSlots = existingJob.jobSlots;
-                    jobStatus = "Finished"; // Update status
-                    userId = existingJob.userId;
-                    createdAt = existingJob.createdAt;
-                    updatedAt = Time.now();
-                    wallet = existingJob.wallet;
+                if (existingJob.jobStatus == "Ongoing") {
+                    return #err("Job is already ongoing");
                 };
-                jobs.put(job_id, updatedJob);
+                // Validate if the current user is the owner of the job
+                if (user_id != existingJob.userId) {
+                    return #err("User is not the owner of the job");
+                };
 
-                // Step 2: Retrieve the job transaction
+                // Get job transaction to determine how many freelancers have been accepted.
                 let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
                 switch (transactionResult) {
                     case (#ok(transaction)) {
-                        // Step 3: Calculate payment per freelancer
+                        // Count the number of accepted freelancers using a fold function.
+                        let numAccepted : Nat = List.foldRight<Text, Nat>(
+                            transaction.freelancers,
+                            0,
+                            func (_: Text, acc: Nat) { acc + 1 }
+                        );
+
+                        // Check if no freelancers have been accepted
+                        if (numAccepted == 0) {
+                            return #err("No freelancers have been accepted for this job");
+                        };
+
+                        // Calculate the required amount as jobSalary * number of accepted freelancers.
+                        let requiredAmount = existingJob.jobSalary * Float.fromInt(numAccepted);
+                
+                        // Call transfer_icp_to_job and check its result.
+                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, requiredAmount, job_canister);
+                        switch (transferResult) {
+                            case (#ok(_msg)) { 
+                                return #ok(true); 
+                            };
+                            case (#err(errMsg)) { 
+                                return #err("Transfer failed: " # errMsg); 
+                            };
+                        }
+                    };
+                    case (#err(_err)) {
+                        // If there's no transaction record, assume no accepted freelancers.
+                        return #err("No transaction found for the job");
+                    };
+                }
+            };
+            case null { 
+                return #err("Job not found"); 
+            };
+        }
+    };
+
+    public shared func finishJob(job_id: Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
+        let jobTransactionActor = actor (job_transaction_canister) : actor {
+            getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
+        };
+
+        let userActor = actor(user_canister) : actor {
+            transfer_icp_to_user: (from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
+        };
+
+        switch (jobs.get(job_id)) {
+            case (?existingJob) {
+                // Step 1: Retrieve the job transaction
+                let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
+                switch (transactionResult) {
+                    case (#ok(transaction)) {
+                        // Step 2: Calculate payment per freelancer
                         let numFreelancers = Float.fromInt(List.size(transaction.freelancers));
                         if (numFreelancers == 0) {
                             return #err("No freelancers have been accepted for this job");
                         };
 
                         let paymentPerFreelancer = existingJob.wallet / numFreelancers;
+
                         // Step 4: Transfer payments to freelancers
+                        var remainingWallet = existingJob.wallet; // Track remaining wallet balance
                         for (freelancerId in Iter.fromList(transaction.freelancers)) {
+               
+
                             let transferResult = await userActor.transfer_icp_to_user(
-                                existingJob.userId, // From: job owner
+                                job_id, // From: job owner
                                 freelancerId,      // To: freelancer
                                 paymentPerFreelancer, // Amount
                                 job_canister
@@ -337,11 +327,32 @@ actor JobModel{
                                 case (#err(errMsg)) {
                                     return #err("Failed to transfer payment to freelancer " # freelancerId # ": " # errMsg);
                                 };
-                                case (#ok(_)) {};
+                                case (#ok(_)) {
+                                    remainingWallet -= paymentPerFreelancer; // Deduct payment from walle
+                                };
                             };
                         };
 
-                        // Step 5: Return success
+                        // Step 5: Update the job status and wallet balance
+                        let updatedJob : Job.Job = {
+                            id = existingJob.id;
+                            jobName = existingJob.jobName;
+                            jobDescription = existingJob.jobDescription;
+                            jobSalary = existingJob.jobSalary;
+                            jobRating = existingJob.jobRating;
+                            jobTags = existingJob.jobTags;
+                            jobSlots = existingJob.jobSlots;
+                            jobStatus = "Finished"; // Update status
+                            userId = existingJob.userId;
+                            createdAt = existingJob.createdAt;
+                            updatedAt = Time.now();
+                            wallet = remainingWallet; // Update wallet balance
+                        };
+                        jobs.put(job_id, updatedJob);
+
+                        // Step 6: Debug print the final wallet balance
+
+                        // Step 7: Return success
                         return #ok(true);
                     };
                     case (#err(errMsg)) {

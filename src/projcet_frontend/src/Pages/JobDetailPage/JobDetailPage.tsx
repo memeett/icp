@@ -31,6 +31,7 @@ import {
 import LoadingOverlay from "../../components/ui/loading-animation";
 import { ApplierPayload } from "../../interface/Applier";
 import OngoingSection from "../../components/sections/OngoingSection";
+
 import { JobDetailContent } from "./JobDetailContent";
 import { ApplicantActions } from "./ApplicationActions";
 import { OwnerActions } from "./OwnerActions";
@@ -123,7 +124,7 @@ const AcceptedUsersModal: React.FC<{
                   {user?.username}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {new Date(Number(user?.createdAt)).toLocaleDateString()}
+                  {new Date(Number(user?.createdAt / 1_000_000n)).toLocaleDateString()}
                 </p>
               </div>
             </motion.div>
@@ -146,14 +147,14 @@ export default function JobDetailPage() {
 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [responsibilityAccepted, setResponsibilityAccepted] = useState(false);
-  const currentApplicants = BigInt(mockAcceptedUsers.length);
-  const maxApplicants = BigInt(Number(job?.jobSlots || 0));
-  const isApplicationClosed = currentApplicants >= maxApplicants;
-
+  
   const [appliers, setAppliers] = useState<ApplierPayload[]>([]);
   const [showApplicantsModal, setShowApplicantsModal] = useState(false);
-
+  
   const [acceptedAppliers, setAccAppliers] = useState<User[]>([]);
+  const currentApplicants = BigInt(acceptedAppliers.length);
+  const maxApplicants = BigInt(Number(job?.jobSlots || 0));
+  const isApplicationClosed = currentApplicants >= maxApplicants;
   // ka
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [requiredAmount, setRequiredAmount] = useState(0);
@@ -283,6 +284,9 @@ export default function JobDetailPage() {
         getAcceptedFreelancer(jobId).then((users) => {
             setAccAppliers(users);
         });
+        getJobApplier(jobId).then((users) => {
+          setAppliers(users);
+        });
     }
   }, [jobId])
 
@@ -312,6 +316,10 @@ export default function JobDetailPage() {
 
   const handleStart = () => {
     // Start the job
+    setIsModalOpen(true)
+    const length = acceptedAppliers.length
+    const amount = Number.parseFloat(jobDetails!.salary) * length;
+    setRequiredAmount(amount)
   };
 
   if (!job) return null;
@@ -329,8 +337,8 @@ const handlePay = async() => {
             await startJob(parsedData.ok.id, jobId, amount)
         }
 
-        }
-    };
+        }
+    };
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -367,6 +375,7 @@ const handlePay = async() => {
             </h1>
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <JobDetailContent 
+            onOpen={() => setShowAcceptedUsersModal(true)}
             job={job}
             currentApplicants={currentApplicants}
             maxApplicants={maxApplicants} 

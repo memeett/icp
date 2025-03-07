@@ -6,6 +6,7 @@ import { HttpAgent } from "@dfinity/agent";
 import { useState } from "react";
 import { get } from "http";
 import { JobCategory } from "../interface/job/Job";
+import { preprocessCSS } from "vite";
 
 export const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");
@@ -27,7 +28,7 @@ export const login = async (principalId: string): Promise<boolean> => {
     const arrayBuffer = await imageBlob.arrayBuffer();
     const profilePicBlob = new Uint8Array(arrayBuffer);
 
-    const res = await user.login(principalId, profilePicBlob);
+    const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
     if (!res) {
         console.log("Login Failed");
         return false;
@@ -82,8 +83,8 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
 
         const arrayBuffer = await imageBlob.arrayBuffer();
         const profilePicBlob = new Uint8Array(arrayBuffer);
-
-        const res = await user.login(principalId, profilePicBlob);
+        
+        const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
         if (!res) {
             console.log("Login Failed");
             return false;
@@ -265,8 +266,9 @@ export const updateUserProfile = async (payload: UpdateUserPayload): Promise<voi
                 isFaceRecognitionOn: payload.isFaceRecognitionOn || [],
               };
               
-
-            await user.updateUser(cleanSession, fixedPayload);
+            if(process.env.CANISTER_ID_SESSION){
+                await user.updateUser(cleanSession, fixedPayload, process.env.CANISTER_ID_SESSION);
+            }
         } catch (err) {
             console.error("Error updating user profile:", err);
         }
@@ -375,3 +377,42 @@ export const getUserById = async (userId: string): Promise<User | null> => {
         return null;
     }
 }
+
+export const getUserByName = async (username: string): Promise<User | null> => {
+  try {
+    const result = await user.getUserByName(username);
+
+    if ("ok" in result) {
+      const userData = result.ok;
+      let profilePictureBlob: Blob;
+      if (userData.profilePicture) {
+        const uint8Array = new Uint8Array(userData.profilePicture);
+        profilePictureBlob = new Blob([uint8Array.buffer], {
+          type: "image/jpeg",
+        });
+      } else {
+        profilePictureBlob = new Blob([], { type: "image/jpeg" });
+      }
+
+      const convertedUser: User = {
+        ...userData,
+        profilePicture: profilePictureBlob,
+        createdAt: BigInt(userData.createdAt),
+        updatedAt: BigInt(userData.updatedAt),
+      };
+
+      console.log("User fetched:", {
+        ...convertedUser,
+        profilePicture: convertedUser.profilePicture,
+      });
+
+      return convertedUser;
+    } else {
+      console.error("Error fetching user:", result.err);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);
+    return null;
+  }
+};

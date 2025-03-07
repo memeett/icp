@@ -14,9 +14,9 @@ module {
 
   public let canister_id : CanisterId = {
     userclicked="aovwi-4maaa-aaaaa-qaagq-cai";
-    user="ajuq4-ruaaa-aaaaa-qaaga-cai";
+    user="avqkn-guaaa-aaaaa-qaaea-cai";
     submission="cbopz-duaaa-aaaaa-qaaka-cai";
-    session="ajuq4-ruaaa-aaaaa-qaaga-cai&id=avqkn-guaaa-aaaaa-qaaea-cai";
+    session="a4tbr-q4aaa-aaaaa-qaafq-cai";
     job_transaction="bw4dl-smaaa-aaaaa-qaacq-cai";
     job="avqkn-guaaa-aaaaa-qaaea-cai";
     invitation="by6od-j4aaa-aaaaa-qaadq-cai";

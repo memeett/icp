@@ -20,7 +20,7 @@ export function AuroraText({
   return (
     <MotionComponent
       className={cn(
-        "relative inline-block overflow-hidden bg-transparent",
+        "relative inline-block overflow-hidden bg-transparent py-2",
         className
       )}
       {...props}
@@ -37,6 +37,7 @@ export function AuroraText({
     bg-clip-text 
     animate-aurora-gradient
     text-transparent
+    dark:selection:text-blue-950
     selection:text-white
     selection:bg-clip-border
   "

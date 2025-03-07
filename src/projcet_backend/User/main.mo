@@ -5,7 +5,6 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Option "mo:base/Option";
-import Debug "mo:base/Debug";
 import Float "mo:base/Float";
 import Array "mo:base/Array";
 import Job "../Job/model";
@@ -131,9 +130,8 @@ actor UserModel {
 
     public func deleteUser(userID : Text) : async () {
         switch (users.get(userID)) {
-            case (?user) {
+            case (?_user) {
                 users.delete(userID);
-                Debug.print(user.username);
             };
             case null {
 
@@ -142,14 +140,19 @@ actor UserModel {
     };
 
     public shared func transfer_icp_to_user(from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
-    let jobActor = actor(job_canister) : actor {
-        getJob: (job_id: Text) -> async ?Job.Job;
-        putJob: (job_id: Text, job: Job.Job) -> async ();
-    };
-    // Step 1: Fetch the job's wallet balance
-        let maybeJob = await jobActor.getJob(from_job_id);
-        switch (maybeJob) {
-            case (?jobData) {
+
+        // Dynamically create the job actor
+        let jobActor = actor(job_canister) : actor {
+            getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
+            putJob: (job_id: Text, job: Job.Job) -> async ();
+        };
+
+        // Step 1: Fetch the job's wallet balance
+        let jobResult = await jobActor.getJob(from_job_id);
+        switch (jobResult) {
+            case (#ok(jobData)) {
+                // Debug: Print the job data
+
                 // Step 2: Validate the job's wallet balance
                 if (jobData.wallet < amount) {
                     return #err("Insufficient balance in job wallet");
@@ -202,96 +205,98 @@ actor UserModel {
                             toId = ?to_user_id;
                         });
 
-                        return #ok("Transferred ckBTC from job to user successfully");
+                        // Debug: Print success message
+
+                        return #ok("Transferred ICP from job to user successfully");
                     };
                     case null {
                         return #err("Recipient user not found");
                     };
                 };
             };
-            case null {
-                return #err("Job not found");
+            case (#err(errMsg)) {
+                return #err("Failed to fetch job details: " # errMsg);
             };
         };
     };
 
     public shared func transfer_icp_to_job(user_id: Text, job_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
+        // Dynamically create the job actor
         let jobActor = actor(job_canister) : actor {
-            getJob: (job_id: Text) -> async ?Job.Job;
+            getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
             putJob: (job_id: Text, job: Job.Job) -> async ();
         };
+
+        // Fetch the sender's details
         switch (users.get(user_id)) {
             case (?fromUser) {
-                let amtFloat = amount;
-                if (fromUser.wallet < amtFloat) {
-                    return #err("Insufficient balance");
-                } else {
-                    // Fetch job details from the jobs canister
-                    let maybeJob = await jobActor.getJob(job_id);
-                    switch (maybeJob) {
-                        case (?jobData) {
-                            // Validate if the current user is the owner of the job
-                            if (user_id != jobData.userId) {
-                                return #err("User is not the owner of the job");
-                            };
-                            
-                            // Optionally, if you need to check against accepted appliers,
-                            // call your accepted appliers function here and compute required amount.
-                            
-                            // Update the job wallet and job status (set to "Ongoing")
-                            let updatedJob : Job.Job = {
-                                id = jobData.id;
-                                jobName = jobData.jobName;
-                                jobDescription = jobData.jobDescription;
-                                jobSalary = jobData.jobSalary;
-                                jobRating = jobData.jobRating;
-                                jobTags = jobData.jobTags;
-                                jobSlots = jobData.jobSlots;
-                                jobStatus = "Ongoing";
-                                userId = jobData.userId;
-                                createdAt = jobData.createdAt;
-                                updatedAt = Time.now();
-                                wallet = jobData.wallet + amtFloat;
-                            };
-                            await jobActor.putJob(job_id, updatedJob);
-                            
-                            // Update the sender's wallet
-                            let updatedFromUser : User.User = {
-                                id = fromUser.id;
-                                profilePicture = fromUser.profilePicture;
-                                username = fromUser.username;
-                                description = fromUser.description;
-                                preference = fromUser.preference;
-                                dob = fromUser.dob;
-                                wallet = fromUser.wallet - amtFloat;
-                                rating = fromUser.rating;
-                                createdAt = fromUser.createdAt;
-                                updatedAt = Time.now();
-                                isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
-                            };
-                            users.put(user_id, updatedFromUser);
-                            
-                            // Record the transaction (assuming addTransaction is available)
-                            addTransaction({
-                                fromId = user_id;
-                                transactionAt = Time.now();
-                                amount = amtFloat;
-                                transactionType = #transferToJob;
-                                toId = ?job_id;
-                            });
-                            
-                            return #ok("Transferred ckBTC to job successfully");
+                // Validate the sender's wallet balance
+                if (fromUser.wallet < amount) {
+                    return #err("Insufficient balance in sender's wallet");
+                };
+
+                // Fetch job details from the jobs canister
+                let jobResult = await jobActor.getJob(job_id);
+                switch (jobResult) {
+                    case (#ok(jobData)) {
+                        // Validate if the current user is the owner of the job
+                        if (user_id != jobData.userId) {
+                            return #err("User is not the owner of the job");
                         };
-                        case null { 
-                            return #err("Job not found");
+
+                        // Update the job wallet and job status (set to "Ongoing")
+                        let updatedJob : Job.Job = {
+                            id = jobData.id;
+                            jobName = jobData.jobName;
+                            jobDescription = jobData.jobDescription;
+                            jobSalary = jobData.jobSalary;
+                            jobRating = jobData.jobRating;
+                            jobTags = jobData.jobTags;
+                            jobSlots = jobData.jobSlots;
+                            jobStatus = "Ongoing";
+                            userId = jobData.userId;
+                            createdAt = jobData.createdAt;
+                            updatedAt = Time.now();
+                            wallet = jobData.wallet + amount;
                         };
-                    }
-                }
+                        await jobActor.putJob(job_id, updatedJob);
+
+                        // Update the sender's wallet
+                        let updatedFromUser : User.User = {
+                            id = fromUser.id;
+                            profilePicture = fromUser.profilePicture;
+                            username = fromUser.username;
+                            description = fromUser.description;
+                            preference = fromUser.preference;
+                            dob = fromUser.dob;
+                            wallet = fromUser.wallet - amount;
+                            rating = fromUser.rating;
+                            createdAt = fromUser.createdAt;
+                            updatedAt = Time.now();
+                            isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
+                        };
+                        users.put(user_id, updatedFromUser);
+
+                        // Record the transaction
+                        addTransaction({
+                            fromId = user_id;
+                            transactionAt = Time.now();
+                            amount = amount;
+                            transactionType = #transferToJob;
+                            toId = ?job_id;
+                        });
+
+                        return #ok("Transferred ckBTC to job successfully");
+                    };
+                    case (#err(errMsg)) {
+                        return #err("Failed to fetch job details in user: " # errMsg);
+                    };
+                };
             };
             case null {
                 return #err("Sender not found");
             };
-        }
+        };
     };
 
 
@@ -377,6 +382,15 @@ actor UserModel {
         });
     };
 
-
+    public query func getUsernameById(userId: Text): async Text {
+        switch (users.get(userId)) {
+            case (?user) {
+                return user.username;
+            };
+            case null {
+                return "";
+            };
+        };
+    };
 
 };

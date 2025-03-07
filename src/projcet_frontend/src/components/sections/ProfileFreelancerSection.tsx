@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
+import FreelancerActiveJobTab from "../tabs/FreelancerActiveJobTab";
+import FreelancerJobHistoryTab from "../tabs/FreelancerJobHistoryTab";
 
 export default function ProfileFreelancerSection() {
     const [activeTab, setActiveTab] = useState("active");
@@ -93,15 +95,9 @@ export default function ProfileFreelancerSection() {
                         {/* Tab Content */}
                         <div className="py-2">
                             {activeTab === "active" ? (
-                                <div>
-                                    <p className="mb-4 text-gray-600">Currently active projects you're working on.</p>
-                                    {/* {renderJobList(activeJobs)} */}
-                                </div>
+                                <FreelancerActiveJobTab/>
                             ) : (
-                                <div>
-                                    <p className="mb-4 text-gray-600">Your completed job history.</p>
-                                    {/* {renderJobList(historyJobs)} */}
-                                </div>
+                                <FreelancerJobHistoryTab/>
                             )}
                         </div>
                     </div>

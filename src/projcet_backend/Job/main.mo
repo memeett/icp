@@ -99,9 +99,9 @@ actor JobModel{
 
     
 
-    public func createJob (payload : Job.CreateJobPayload, job_transaction_canister: Text) : async Result.Result<Job.Job, Text> {
+    public func createJob (payload : Job.CreateJobPayload, job_transaction_canister: Text, job_canister: Text) : async Result.Result<Job.Job, Text> {
         let jobTransactionActor = actor (job_transaction_canister) : actor {
-            createTransaction: (owner_id : Text, job_id : Text) -> async ()
+            createTransaction: (owner_id : Text, job_id : Text, job_canister: Text) -> async ()
         };
 
         let jobId = Int.toText(nextId);
@@ -125,7 +125,7 @@ actor JobModel{
         jobs.put(jobId, newJob);
         nextId += 1;
         
-        await jobTransactionActor.createTransaction(payload.userId, jobId);
+        await jobTransactionActor.createTransaction(payload.userId, jobId, job_canister);
         #ok(newJob);
     };
 
@@ -153,7 +153,6 @@ actor JobModel{
     public shared func putJob(job_id: Text, job: Job.Job) : async () {
         jobs.put(job_id, job);
     };
-
 
     public query func getJobCategory(categoryId : Text) : async Result.Result<Job.JobCategory, Text> {
         switch (jobCategories.get(categoryId)) {
@@ -234,11 +233,15 @@ actor JobModel{
         let jobTransactionActor = actor (job_transaction_canister) : actor {
             getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
         };
-        let userActor = actor(user_canister) : actor{
-            transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>
+        let userActor = actor(user_canister) : actor {
+            transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
         };
+
         switch (jobs.get(job_id)) {
             case (?existingJob) {
+                if (existingJob.jobStatus == "Ongoing") {
+                    return #err("Job is already ongoing");
+                };
                 // Validate if the current user is the owner of the job
                 if (user_id != existingJob.userId) {
                     return #err("User is not the owner of the job");
@@ -286,47 +289,36 @@ actor JobModel{
         }
     };
 
-    public shared func finishJob(job_id: Text, job_canister: Text,  job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
+    public shared func finishJob(job_id: Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
         let jobTransactionActor = actor (job_transaction_canister) : actor {
             getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
         };
-        let userActor = actor(user_canister) : actor{
-            transfer_icp_to_user:(from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>
+
+        let userActor = actor(user_canister) : actor {
+            transfer_icp_to_user: (from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
         };
+
         switch (jobs.get(job_id)) {
             case (?existingJob) {
-                // Step 1: Update the job status to "Finished"
-                let updatedJob : Job.Job = {
-                    id = existingJob.id;
-                    jobName = existingJob.jobName;
-                    jobDescription = existingJob.jobDescription;
-                    jobSalary = existingJob.jobSalary;
-                    jobRating = existingJob.jobRating;
-                    jobTags = existingJob.jobTags;
-                    jobSlots = existingJob.jobSlots;
-                    jobStatus = "Finished"; // Update status
-                    userId = existingJob.userId;
-                    createdAt = existingJob.createdAt;
-                    updatedAt = Time.now();
-                    wallet = existingJob.wallet;
-                };
-                jobs.put(job_id, updatedJob);
-
-                // Step 2: Retrieve the job transaction
+                // Step 1: Retrieve the job transaction
                 let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
                 switch (transactionResult) {
                     case (#ok(transaction)) {
-                        // Step 3: Calculate payment per freelancer
+                        // Step 2: Calculate payment per freelancer
                         let numFreelancers = Float.fromInt(List.size(transaction.freelancers));
                         if (numFreelancers == 0) {
                             return #err("No freelancers have been accepted for this job");
                         };
 
                         let paymentPerFreelancer = existingJob.wallet / numFreelancers;
+
                         // Step 4: Transfer payments to freelancers
+                        var remainingWallet = existingJob.wallet; // Track remaining wallet balance
                         for (freelancerId in Iter.fromList(transaction.freelancers)) {
+               
+
                             let transferResult = await userActor.transfer_icp_to_user(
-                                existingJob.userId, // From: job owner
+                                job_id, // From: job owner
                                 freelancerId,      // To: freelancer
                                 paymentPerFreelancer, // Amount
                                 job_canister
@@ -335,11 +327,32 @@ actor JobModel{
                                 case (#err(errMsg)) {
                                     return #err("Failed to transfer payment to freelancer " # freelancerId # ": " # errMsg);
                                 };
-                                case (#ok(_)) {};
+                                case (#ok(_)) {
+                                    remainingWallet -= paymentPerFreelancer; // Deduct payment from walle
+                                };
                             };
                         };
 
-                        // Step 5: Return success
+                        // Step 5: Update the job status and wallet balance
+                        let updatedJob : Job.Job = {
+                            id = existingJob.id;
+                            jobName = existingJob.jobName;
+                            jobDescription = existingJob.jobDescription;
+                            jobSalary = existingJob.jobSalary;
+                            jobRating = existingJob.jobRating;
+                            jobTags = existingJob.jobTags;
+                            jobSlots = existingJob.jobSlots;
+                            jobStatus = "Finished"; // Update status
+                            userId = existingJob.userId;
+                            createdAt = existingJob.createdAt;
+                            updatedAt = Time.now();
+                            wallet = remainingWallet; // Update wallet balance
+                        };
+                        jobs.put(job_id, updatedJob);
+
+                        // Step 6: Debug print the final wallet balance
+
+                        // Step 7: Return success
                         return #ok(true);
                     };
                     case (#err(errMsg)) {

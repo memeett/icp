@@ -1,94 +1,66 @@
-import React, { useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, Star, Users, UserCircle } from 'lucide-react';
-import { User } from '../../interface/User';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback } from "react";
+import { motion } from "framer-motion";
+import { Calendar, Star, Users, UserCircle } from "lucide-react";
+import { User } from "../../interface/User";
+import { useNavigate } from "react-router-dom";
 
 export default function FreelancerCard({ user }: { user: User }) {
+  const nav = useNavigate();
 
-    const nav = useNavigate();
+  const viewDetails = useCallback(() => {
+    nav("/profile/" + user.id);
+  }, [nav]);
 
-    const viewDetails = useCallback(() => {
-        nav("/profile/" + user.id);
-    }, [nav]);
+  return (
+    <motion.div
+      className=" bg-white rounded-2xl overflow-hidden shadow-lg"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      whileHover={{ scale: 1.02 }}
+      onClick={viewDetails}
+    >
+      {/* Aurora gradient header */}
+      <div className="h-24 bg-gradient-to-r from-blue-400 to-purple-400" />
 
-    return (
+      {/* Profile content */}
+      <div className="px-6 pb-6 -mt-12">
+        {/* Profile picture */}
+        <motion.div
+          className="flex justify-center"
+        >
+          <img
+            src={URL.createObjectURL(user.profilePicture) || "/pic.jpeg"}
+            alt="Profile"
+            className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover"
+          />
+        </motion.div>
 
-            <div className="p-1 bg-gradient-to-br from-blue-600 to-purple-500 rounded-3xl" onClick={viewDetails}>
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="w-80 bg-white 
-                    rounded-[1.5rem] 
-                    p-6 space-y-6 
-                    relative overflow-hidden"
-                >
-                    <div className="flex flex-col items-center space-y-4">
-                      
-                        <motion.img
-                            src={
+        {/* User info */}
+        <div className="text-center mt-3 mb-4">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
+            {user.username}
+          </h2>
 
-                                URL.createObjectURL(user.profilePicture) ||
-                                "/pic.jpeg"
-                            }
-                            // src="assets/profilePicture/default_profile_pict.jpg"
-                        alt="assets/profilePicture/default_profile_pict.jpg"
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            className="w-28 h-28 rounded-full border-4 border-gray-100 
-                       shadow-lg object-cover"
-                        />
+          <div className="flex items-center justify-center mt-1 text-gray-600">
+            <Star className="w-4 h-4 text-purple-400 mr-1" />
+            <span>{user.rating}/5</span>
+          </div>
+        </div>
 
-                        <div className="text-center">
-                            <h2 className="text-3xl font-bold 
-                           bg-clip-text text-transparent 
-                           bg-gradient-to-r from-blue-600 to-purple-500">
-                                {user.username}
-                            </h2>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4 mt-4">
-                        {[
-                            {
-                                icon: <Users className="text-blue-600" />,
-                                label: 'Username',
-                                value: user.username
-                            },
-                            {
-                                icon: <Calendar className="text-purple-600" />,
-                                label: 'Date of Birth',
-                                value: user.dob
-                            },
-                            {
-                                icon: <Star className="text-indigo-600" />,
-                                label: 'Rating',
-                                value: `${user.rating}/5`
-                            }
-                        ].map((item, index) => (
-                            <motion.div
-                                key={index}
-                                className="flex items-center space-x-3 
-                         bg-gray-100 p-3 rounded-xl"
-                                whileHover={{
-                                    scale: 1.05,
-                                    backgroundColor: 'rgb(243 244 246)'
-                                }}
-                                transition={{ type: "spring", stiffness: 300 }}
-                            >
-                                {item.icon}
-                                <div>
-                                    <span className="text-xs text-gray-500 block">
-                                        {item.label}
-                                    </span>
-                                    <span className="text-gray-800 font-medium">
-                                        {item.value}
-                                    </span>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </motion.div>
-            </div>
-        );
-    };
+        {/* Category preferences as tags */}
+        <div className="flex flex-wrap gap-2 justify-center">
+          {user.preference?.map((pref, index) => (
+            <motion.span
+              key={index}
+              className="px-3 py-1 text-sm rounded-full bg-gradient-to-r from-blue-400/20 to-purple-400/20 text-blue-600"
+              whileHover={{ scale: 1.05 }}
+            >
+              {pref.jobCategoryName}
+            </motion.span>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}

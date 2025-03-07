@@ -25,7 +25,7 @@ import { useJobCategories } from "../../utils/useJobCategories";
 import { set } from "date-fns";
 import LoadingOverlay from "../ui/loading-animation";
 import ErrorModal from "../modals/ErrorModal";
-import FaceRecognition from "../FaceRecognition";
+// import FaceRecognition from "../FaceRecognition";
 
 export default function ProfileBiodata() {
   const [user, setUser] = useState<User | null>(null);
@@ -66,7 +66,7 @@ export default function ProfileBiodata() {
         if (!plug) {
           console.error("Plug Wallet not detected");
           alert(
-            "Plug Wallet is not installed. Please install it and try again."
+            "Plug Wallet is not installed. Please install it at https://chromewebstore.google.com/detail/plug/cfbfdhimifdmdehjmkdobpcjfefblkjm?pli=1."
           );
           return;
         }
@@ -96,6 +96,7 @@ export default function ProfileBiodata() {
   };
 
   const sendICP = async () => {
+    
     try {
       const plug = (window as any).ic?.plug;
 
@@ -103,12 +104,11 @@ export default function ProfileBiodata() {
         alert("Plug Wallet not detected");
         return;
       }
-
+      
       const connected = await plug.isConnected();
       if (!connected) {
         await plug.requestConnect();
       }
-
       const transferArgs = {
         to: "Ergasia",
         amount: parseFloat(amount) * 100000000, // 8 decimals for ICP
@@ -119,9 +119,10 @@ export default function ProfileBiodata() {
           price: true,
         },
       };
+      console.log("kanjut")
       console.log("Sending ICP:", transferArgs);
       const result = await plug.requestTransfer(transferArgs);
-
+      console.log("kanjut")
       console.log("Transaction successful:", result);
       topUp(parseFloat(amount));
       //later add success modal
@@ -286,7 +287,7 @@ export default function ProfileBiodata() {
 
     setLoading(true);
     const usernameTaken = await getUserByName(tempUsername);
-    if (usernameTaken) {
+    if (usernameTaken && tempUsername !== user?.username) {
       setErrors("Username already taken");
       setLoading(false);
       return;
@@ -628,7 +629,7 @@ export default function ProfileBiodata() {
                 </div>
               </div>
             </div>
-            <FaceRecognition
+            {/* <FaceRecognition
               principalId={user.id}
               onSuccess={() => console.log("Operation successful!")}
               onError={(error: string) =>
@@ -637,7 +638,7 @@ export default function ProfileBiodata() {
               mode="register" // Change to "verify" for verification mode
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-            />
+            /> */}
 
             {/* Category Selection Modal */}
             {isCategoryModalOpen && (

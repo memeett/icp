@@ -1,10 +1,14 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FreelancerActiveJobTab from "../tabs/FreelancerActiveJobTab";
 import FreelancerJobHistoryTab from "../tabs/FreelancerJobHistoryTab";
 
 export default function ProfileFreelancerSection() {
     const [activeTab, setActiveTab] = useState("active");
+
+    useEffect(() => {
+        
+    }, [])
 
     // // Mock data for demonstration - replace with your actual data source
     // const activeJobs = [

@@ -58,6 +58,15 @@ export default function ProfilePage() {
                 Biodata
               </li>
               <li
+                className={`cursor-pointer p-2 ${activeSection === "invitation"
+                    ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
+                    : "hover:font-semibold"
+                  }`}
+                onClick={() => setActiveSection("invitation")}
+              >
+                Invitation
+              </li>
+              <li
                 className={`cursor-pointer p-2 ${
                   activeSection === "transaction"
                     ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
@@ -66,15 +75,6 @@ export default function ProfilePage() {
                 onClick={() => setActiveSection("transaction")}
               >
                 Transaction History
-              </li>
-              <li
-                className={`cursor-pointer p-2 ${activeSection === "invitation"
-                    ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
-                    : "hover:font-semibold"
-                  }`}
-                onClick={() => setActiveSection("invitation")}
-              >
-                Invitation
               </li>
               <li
                 className={`cursor-pointer p-2 ${

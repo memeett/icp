@@ -77,10 +77,8 @@ const CreateJobPageContent = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Update handleSubmit to validate correct step
   const handleSubmit = () => {
     if (validateStep(5)) {
-      // Changed from 4 to 5
       setLoading(true);
       createJob(
         jobName.trim(),

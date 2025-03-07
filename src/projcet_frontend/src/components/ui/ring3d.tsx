@@ -31,9 +31,9 @@ const VantaRingsBackground: React.FC<VantaRingsProps> = ({ className }) => {
             minWidth: 400.0,
             scale: 1.0,
             scaleMobile: 1.0,
-            backgroundColor: 0xf9f7f7, // Light background to match your theme
+            backgroundColor: 0xf7f7f9, // Light background to match your theme
             color: 0x41b8aa, // Your brand color
-            backgroundAlpha: 0.8, // Slight transparency
+            backgroundAlpha: 1.0, // Slight transparency
             ringColor: 0x41b8aa, // Match your brand color
           });
 
@@ -77,10 +77,10 @@ const VantaRingsBackground: React.FC<VantaRingsProps> = ({ className }) => {
       />
 
       {/* Text overlay - dark text for light background */}
-      <div className="relative z-10 w-full h-full items-center px-6 lg:px-16 text-center lg:text-left">
-        <div className="max-w-4xl mx-auto lg:mx-0 mt-12">
+      <div className="relative z-10 w-full h-full flex flex-col items-center px-6 lg:px-16 text-center lg:text-left">
+        <div className="max-w-4xl mx-auto lg:mx-0 mt-16">
           <motion.div
-            className="flex flex-wrap items-center justify-start flex-row"
+            className="flex flex-wrap items-center justify-start"
             initial="hidden"
             animate="visible"
             variants={{

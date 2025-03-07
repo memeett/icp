@@ -101,7 +101,7 @@ export const AnimatedNavLink: React.FC<AnimatedNavLinkProps> = ({
 
   return (
     <div
-      className={`relative inline-block p-3 rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${className}`}
+      className={`relative inline-block p-3 bg-transparent rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

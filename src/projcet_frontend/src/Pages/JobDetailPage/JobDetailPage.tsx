@@ -301,7 +301,7 @@ export default function JobDetailPage() {
       });
     }
   };
-
+``
   if (error) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -339,7 +339,7 @@ const handlePay = async() => {
 
         }
     };
-
+  console.log(acceptApplier)
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {loading && <LoadingOverlay message="Loading Job..." />}
@@ -407,7 +407,7 @@ const handlePay = async() => {
         </div>
 
         {job.jobStatus === "Ongoing" && !isOwner && (
-          <OngoingSection jobId={job.id} />
+          <OngoingSection job={job} />
         )}
 
 

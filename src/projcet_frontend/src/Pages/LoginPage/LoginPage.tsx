@@ -19,6 +19,7 @@ import JobCategories from "../../components/cards/CategoriesCard.tsx";
 import { User } from "../../interface/User.ts";
 import { getAllUsers } from "../../controller/userController.ts";
 import LoadingOverlay from "../../components/ui/loading-animation.tsx";
+import VantaRingsBackground from "../../components/ui/ring3d.tsx";
 
 const BackgroundPattern = () => (
   <svg
@@ -116,13 +117,14 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F9F7F7]">
+    <div className="flex flex-col h-screen bg-[#f7f7f9]">
       <Navbar />
       {/* main */}
-        {isLoading && <LoadingOverlay message="Loading freelancers..." />}
+      {isLoading && <LoadingOverlay message="Loading freelancers..." />}
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
         <div className="relative min-h-screen">
-          <WavyBackground className="w-screen mx-auto pb-40 px-16 align-middle mt-24">
+      <VantaRingsBackground />
+          {/* <WavyBackground className="w-screen mx-auto pb-40 px-16 align-middle mt-24">
             <p className="inline text-2xl md:text-4xl lg:text-7xl text-white font-bold inter-var text-left">
               With Love, Passion and{" "}
             </p>
@@ -132,12 +134,12 @@ function LoginPageContent() {
             <p className="text-base md:text-lg mt-4 text-white font-normal inter-var text-left">
               Empowering Freelancers & Businesses with Web3 Technology.
             </p>
-          </WavyBackground>
+          </WavyBackground> */}
         </div>
 
-        <div className="relative flex flex-col items-center justify-center mt-24">
+        <div className="relative flex flex-col items-center justify-center mt-12">
           <motion.div
-            className="relative overflow-hidden bg-gradient-to-br from-[#41b8aa] to-[#2a8f84] w-[85%] h-72 px-12 py-8 text-4xl rounded-4xl font-bold shadow-lg"
+            className="relative overflow-hidden bg-gradient-to-br from-blue-400  to-purple-400 w-[85%] h-72 px-12 py-8 text-4xl rounded-4xl font-bold shadow-lg"
             initial={{ opacity: 0.9 }}
             animate={{
               boxShadow: isHovered
@@ -228,21 +230,6 @@ function LoginPageContent() {
         </div>
 
         <JobCategories />
-
-        <div className="flex flex-col w-full justify-center text-center mt-12 mb-24">
-          <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
-            Hire our Top Rated Freelancers
-          </h2>
-          <CardCarousel
-            cards={freelancers.map((freelancer) => (
-              <motion.div key={freelancer.id} whileHover={{ scale: 1.02 }}>
-                <ProfileCard key={freelancer.id} {...freelancer} />
-              </motion.div>
-            ))}
-            cardWidth={320}
-            gap={24}
-          />
-        </div>
         <Footer />
       </div>
       {/* end main */}

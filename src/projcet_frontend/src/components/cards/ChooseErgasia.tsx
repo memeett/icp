@@ -90,7 +90,7 @@ export default function WhyChoose() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-200 mb-4">
+          <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-200 mb-4">
             Why Choose Ergasia?
           </h2>
           <p className="text-2xl text-white max-w-2xl mx-auto">
@@ -146,7 +146,7 @@ export default function WhyChoose() {
                         ))}
                       </div>
         <div className="w-full max-w-6xl mx-auto pt-20 pb-12">
-          <h2 className="text-5xl text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-100">
+          <h2 className="text-4xl text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-100">
             Start Your Crypto Journey
           </h2>
           <p className="text-center text-white text-xl mb-12 max-w-2xl mx-auto">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { JobTransaction } from "../../../../declarations/job_transaction/job_transaction.did";
-import { getTransactionByFreelancer } from "../../controller/freelancerController";
+import { getActiveTransactionByFreelancer } from "../../controller/freelancerController";
 import FreelancerJobCard from "./FreelancerJobCard";
 
 export default function FreelancerActiveJobTab() {
@@ -26,7 +26,7 @@ export default function FreelancerActiveJobTab() {
                     return;
                 }
 
-                const result = await getTransactionByFreelancer(freelancerId);
+                const result = await getActiveTransactionByFreelancer(freelancerId);
                 if (result) {
                     setActiveJob(result);
                 } else {

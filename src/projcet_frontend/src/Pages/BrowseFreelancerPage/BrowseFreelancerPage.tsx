@@ -133,7 +133,7 @@ export default function BrowseFreelancerPage() {
         )}
       </div>
 
-      <div className="text-purple-700 text-4xl font-semibold text-center my-8">
+      <div className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-400 text-center py-6">
         Find Our Top Featured Freelancers here
       </div>
 

@@ -36,7 +36,7 @@ export default function FreelancerInvitationCard({ invitation, onReject, onClick
             throw new Error("User data not found");
         }
         
-        await createInbox(invitation.job.userId, parsedData.ok.id, "invitation", messageType)
+        await createInbox(invitation.job.userId, parsedData.ok.id,"invitation", messageType)
     };
 
     const accept = () => {

@@ -61,31 +61,41 @@ actor JobModel{
 
     
     
-    private func seedJobCategories() {
-        let defaultCategories = [
-            "Software Development",
-            "Graphic Design",
-            "Marketing",
-            "Customer Support",
-            "Data Analysis",
-            "Web Development",
-            "Mobile App Development",
-            "UI/UX Design",
-            "Project Management",
-            "Content Writing",
-            "Social Media Management",
-            "SEO Optimization",
-            "Cybersecurity",
-            "Cloud Computing",
-            "DevOps",
-            "Artificial Intelligence",
-            "Blockchain Development",
-            "Game Development",
-            "Technical Writing",
-            "IT Support",
-        ];
+private func seedJobCategories() {
+    let defaultCategories = [
+        "Software Development",
+        "Graphic Design",
+        "Marketing",
+        "Customer Support",
+        "Data Analysis",
+        "Web Development",
+        "Mobile App Development",
+        "UI/UX Design",
+        "Project Management",
+        "Content Writing",
+        "Social Media Management",
+        "SEO Optimization",
+        "Cybersecurity",
+        "Cloud Computing",
+        "DevOps",
+        "Artificial Intelligence",
+        "Blockchain Development",
+        "Game Development",
+        "Technical Writing",
+        "IT Support",
+    ];
 
-        for (categoryName in defaultCategories.vals()) {
+    for (categoryName in defaultCategories.vals()) {
+        var categoryExists = false;
+        for (category in jobCategories.vals()) {
+            if (category.jobCategoryName == categoryName) {
+                categoryExists := true;
+                return;
+            };
+        };
+
+        // If the category does not exist, add it
+        if (not categoryExists) {
             let categoryId = Int.toText(nextCategoryId);
             let newCategory : Job.JobCategory = {
                 id = categoryId;
@@ -95,8 +105,7 @@ actor JobModel{
             nextCategoryId += 1;
         };
     };
-
-
+};
     
 
     public func createJob (payload : Job.CreateJobPayload, job_transaction_canister: Text, job_canister: Text) : async Result.Result<Job.Job, Text> {

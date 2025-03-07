@@ -85,7 +85,7 @@ export default function InviteModal({
             const res = await createInvitation(parsedData.ok.id, selectedJobId, freelancerId);
 
             if (res) {
-                await createInbox(parsedData.ok.id, freelancerId, "Invitation", "-")
+                await createInbox(parsedData.ok.id, freelancerId, "invitation", "request")
                 setInviteSuccess(true);
                 setError("");
             } else {

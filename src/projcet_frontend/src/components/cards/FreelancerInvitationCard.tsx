@@ -4,6 +4,7 @@ import { useState } from "react";
 import { acceptInvitation, rejectInvitation } from "../../controller/invitationController";
 import { appendFreelancers } from "../../controller/jobTransactionController";
 import { Job } from "../../../../declarations/job/job.did";
+import { createInbox } from "../../controller/inboxController";
 
 export default function FreelancerInvitationCard({ invitation, onReject, onClickDetailJob }: { invitation: UserInvitationPayload; onReject: () => void;  onClickDetailJob: (job : Job) => Promise<void>}) {
     const invitedAtDate = new Date(Number(invitation.invitedAt / 1_000_000n));
@@ -28,6 +29,16 @@ export default function FreelancerInvitationCard({ invitation, onReject, onClick
         });
     };
 
+    const sendInboxMessage = async (messageType: string) => {
+        const userData = localStorage.getItem("current_user");
+        const parsedData = userData ? JSON.parse(userData) : null;
+        if (!parsedData || !parsedData.ok?.id) {
+            throw new Error("User data not found");
+        }
+        
+        await createInbox(invitation.job.userId, parsedData.ok.id, "invitation", messageType)
+    };
+
     const accept = () => {
         const userData = localStorage.getItem("current_user");
         const parsedData = userData ? JSON.parse(userData) : null;
@@ -40,6 +51,9 @@ export default function FreelancerInvitationCard({ invitation, onReject, onClick
         appendFreelancers(invitation.job.id, parsedData.ok.id).then((res) => {
             console.log(res[0], res[1]);
         });
+
+        sendInboxMessage("accepted");
+        
     };
 
     const reject = () => {
@@ -51,6 +65,8 @@ export default function FreelancerInvitationCard({ invitation, onReject, onClick
         rejectInvitation(parsedData.ok.id, invitation.id).then(() => {
             onReject();
         });
+
+        sendInboxMessage("rejected");
     };
 
     return (

@@ -99,9 +99,9 @@ actor JobModel{
 
     
 
-    public func createJob (payload : Job.CreateJobPayload, job_transaction_canister: Text) : async Result.Result<Job.Job, Text> {
+    public func createJob (payload : Job.CreateJobPayload, job_transaction_canister: Text, job_canister: Text) : async Result.Result<Job.Job, Text> {
         let jobTransactionActor = actor (job_transaction_canister) : actor {
-            createTransaction: (owner_id : Text, job_id : Text) -> async ()
+            createTransaction: (owner_id : Text, job_id : Text, job_canister: Text) -> async ()
         };
 
         let jobId = Int.toText(nextId);
@@ -125,7 +125,7 @@ actor JobModel{
         jobs.put(jobId, newJob);
         nextId += 1;
         
-        await jobTransactionActor.createTransaction(payload.userId, jobId);
+        await jobTransactionActor.createTransaction(payload.userId, jobId, job_canister);
         #ok(newJob);
     };
 
@@ -230,61 +230,63 @@ actor JobModel{
         userJobs
     };
 
-    public shared func startJob(user_id: Text, job_id: Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
-        let jobTransactionActor = actor (job_transaction_canister) : actor {
-            getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
-        };
-        let userActor = actor(user_canister) : actor{
-            transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>
-        };
-        switch (jobs.get(job_id)) {
-            case (?existingJob) {
-                // Validate if the current user is the owner of the job
-                if (user_id != existingJob.userId) {
-                    return #err("User is not the owner of the job");
-                };
-
-                // Get job transaction to determine how many freelancers have been accepted.
-                let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
-                switch (transactionResult) {
-                    case (#ok(transaction)) {
-                        // Count the number of accepted freelancers using a fold function.
-                        let numAccepted : Nat = List.foldRight<Text, Nat>(
-                            transaction.freelancers,
-                            0,
-                            func (_: Text, acc: Nat) { acc + 1 }
-                        );
-
-                        // Check if no freelancers have been accepted
-                        if (numAccepted == 0) {
-                            return #err("No freelancers have been accepted for this job");
-                        };
-
-                        // Calculate the required amount as jobSalary * number of accepted freelancers.
-                        let requiredAmount = existingJob.jobSalary * Float.fromInt(numAccepted);
-                
-                        // Call transfer_icp_to_job and check its result.
-                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, requiredAmount, job_canister);
-                        switch (transferResult) {
-                            case (#ok(_msg)) { 
-                                return #ok(true); 
-                            };
-                            case (#err(errMsg)) { 
-                                return #err("Transfer failed: " # errMsg); 
-                            };
-                        }
-                    };
-                    case (#err(_err)) {
-                        // If there's no transaction record, assume no accepted freelancers.
-                        return #err("No transaction found for the job");
-                    };
-                }
-            };
-            case null { 
-                return #err("Job not found"); 
-            };
-        }
+ public shared func startJob(user_id: Text, job_id: Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
+    let jobTransactionActor = actor (job_transaction_canister) : actor {
+        getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
     };
+    let userActor = actor(user_canister) : actor {
+        transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
+    };
+
+    // Await the getJob function and handle its result
+    let jobResult = await getJob(job_id);
+    switch (jobResult) {
+        case (#ok(existingJob)) {
+            // Validate if the current user is the owner of the job
+            if (user_id != existingJob.userId) {
+                return #err("User is not the owner of the job");
+            };
+
+            // Get job transaction to determine how many freelancers have been accepted
+            let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
+            switch (transactionResult) {
+                case (#ok(transaction)) {
+                    // Count the number of accepted freelancers using a fold function.
+                    let numAccepted : Nat = List.foldRight<Text, Nat>(
+                        transaction.freelancers,
+                        0,
+                        func (_: Text, acc: Nat) { acc + 1 }
+                    );
+
+                    // Check if no freelancers have been accepted
+                    if (numAccepted == 0) {
+                        return #err("No freelancers have been accepted for this job");
+                    };
+
+                    // Calculate the required amount as jobSalary * number of accepted freelancers.
+                    let requiredAmount = existingJob.jobSalary * Float.fromInt(numAccepted);
+            
+                    // Call transfer_icp_to_job and check its result.
+                    let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, requiredAmount, job_canister);
+                    switch (transferResult) {
+                        case (#ok(_msg)) { 
+                            return #ok(true); 
+                        };
+                        case (#err(errMsg)) { 
+                            return #err("Transfer failed: " # errMsg); 
+                        };
+                    }
+                };
+                case (#err(_err)) {
+                    return #err("No transaction found for the job");
+                };
+            }
+        };
+        case (#err(errorMsg)) {
+            return #err(errorMsg);
+        };
+    };
+};
 
     public shared func finishJob(job_id: Text, job_canister: Text,  job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
         let jobTransactionActor = actor (job_transaction_canister) : actor {

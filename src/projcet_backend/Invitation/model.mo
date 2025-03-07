@@ -13,11 +13,14 @@ module{
     };
 
     public type UserInvitationPayload = {
+        id : Int;
         job : Job.Job;
         invitedAt: Int;
+        isAccepted : Bool;
     };
 
     public type JobInvitationPayload = {
+        id : Int;
         user : User.User;
         isAccepted : Bool;
     }

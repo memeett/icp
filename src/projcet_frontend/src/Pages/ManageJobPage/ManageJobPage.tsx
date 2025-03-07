@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, X, Edit, Trash2, Plus, Filter, Briefcase, CheckCircle } from "lucide-react";
+import {
+  Search,
+  X,
+  Edit,
+  Trash2,
+  Plus,
+  Filter,
+  Briefcase,
+  CheckCircle,
+} from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { getUserJobs, deleteJob } from "../../controller/jobController";
@@ -21,7 +30,7 @@ export default function ManageJobPage() {
     "Start",
     "Ongoing",
     "Finished",
-    "All"
+    "All",
   ]);
   const [selectedStatus, setSelectedStatus] = useState("Start");
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -48,7 +57,7 @@ export default function ManageJobPage() {
       setLoading(true);
       const jobs = await getUserJobs(currentUser?.id || "");
       if (jobs) {
-        const convertedJobs = jobs.map(job => ({
+        const convertedJobs = jobs.map((job) => ({
           ...job,
           createdAt: BigInt(job.createdAt),
           updatedAt: BigInt(job.updatedAt),
@@ -78,7 +87,7 @@ export default function ManageJobPage() {
   }, [currentUser, refreshKey]);
 
   const handleRowClick = (jobId: string, e: React.MouseEvent) => {
-    const actionsCell = (e.target as HTMLElement).closest('td:last-child');
+    const actionsCell = (e.target as HTMLElement).closest("td:last-child");
     if (!actionsCell) {
       navigate(`/jobs/${jobId}`);
     }
@@ -92,7 +101,7 @@ export default function ManageJobPage() {
   };
 
   const handleSaveJob = (updatedJob: Job) => {
-    const updatedJobs = myJobs.map(job =>
+    const updatedJobs = myJobs.map((job) =>
       job.id === updatedJob.id ? updatedJob : job
     );
     setMyJobs(updatedJobs);
@@ -118,10 +127,6 @@ export default function ManageJobPage() {
     return matchesSearch && matchesStatus;
   });
 
-  if (loading) {
-    return <LoadingOverlay />;
-  }
-
   // Status color mapping
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -140,6 +145,7 @@ export default function ManageJobPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white">
+      {loading && <LoadingOverlay />}
       <Navbar />
 
       <div className="flex-grow container mx-auto px-4 py-8 max-w-6xl">
@@ -149,13 +155,8 @@ export default function ManageJobPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between mb-8"
         >
-          <h1 className="text-3xl font-bold text-gray-800">
-            Manage Your Jobs
-          </h1>
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <h1 className="text-3xl font-bold text-gray-800">Manage Your Jobs</h1>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               to="/post"
               className="bg-purple-600 text-white px-6 py-3 rounded-xl 
@@ -205,10 +206,11 @@ export default function ManageJobPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`p-3 rounded-xl transition shadow-sm ${isFilterOpen
+              className={`p-3 rounded-xl transition shadow-sm ${
+                isFilterOpen
                   ? "bg-purple-200 text-purple-700"
                   : "bg-purple-100 text-purple-600 hover:bg-purple-200"
-                }`}
+              }`}
             >
               <Filter />
             </motion.button>
@@ -238,10 +240,11 @@ export default function ManageJobPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedStatus(status)}
-                    className={`px-4 py-2 rounded-full border flex items-center gap-2 transition-all duration-200 ${selectedStatus === status
+                    className={`px-4 py-2 rounded-full border flex items-center gap-2 transition-all duration-200 ${
+                      selectedStatus === status
                         ? `${getStatusColor(status)} font-medium`
                         : "bg-white/50 text-gray-600 border-gray-200 hover:border-purple-200"
-                      }`}
+                    }`}
                   >
                     {selectedStatus === status && <CheckCircle size={16} />}
                     {status}
@@ -272,11 +275,21 @@ export default function ManageJobPage() {
                   <table className="w-full">
                     <thead className="bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
                       <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Job Title</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Salary</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Slots</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                          Job Title
+                        </th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                          Status
+                        </th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                          Salary
+                        </th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                          Slots
+                        </th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -294,17 +307,20 @@ export default function ManageJobPage() {
                               {job.jobName}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {job.jobTags.map((tag) => tag.jobCategoryName).join(", ")}
+                              {job.jobTags
+                                .map((tag) => tag.jobCategoryName)
+                                .join(", ")}
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <span
-                              className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${job.jobStatus === "Start"
+                              className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                job.jobStatus === "Start"
                                   ? "bg-green-100 text-green-800"
                                   : job.jobStatus === "Ongoing"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-blue-100 text-blue-800"
-                                }`}
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-blue-100 text-blue-800"
+                              }`}
                             >
                               {job.jobStatus}
                             </span>
@@ -349,7 +365,9 @@ export default function ManageJobPage() {
                 animate={{ opacity: 1 }}
                 className="text-center py-12 bg-white/70 rounded-xl"
               >
-                <p className="text-gray-500 mb-6">You haven't created any jobs yet</p>
+                <p className="text-gray-500 mb-6">
+                  You haven't created any jobs yet
+                </p>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

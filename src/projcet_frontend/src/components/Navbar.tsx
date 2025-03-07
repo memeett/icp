@@ -44,9 +44,10 @@ const Navbar = () => {
   }, [current_user]);
   const [inboxOpen, setInboxOpen] = useState(false);
   const [inboxes, setInboxes] = useState<InboxResponse[]>([]);
-  const fetchInbox = useCallback(async () => {
+  const fetchInbox =useCallback( async () => {
     try {
       const inboxResult = await getAllInboxByUserId(user?.id || "");
+      console.log("mama" + inboxResult);
       if (inboxResult) {
         setInboxes(inboxResult);
       }
@@ -143,7 +144,7 @@ const Navbar = () => {
               onClick={logoClick}
               className="text-4xl font-thin tracking-tighter hover:cursor-pointer"
             >
-              <img src={logo} alt="ERGASIA" className="w-[10rem]"/>
+              <img src={logo} alt="ERGASIA" className="w-[10rem]" />
             </div>
           </div>
 

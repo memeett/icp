@@ -4,6 +4,7 @@ import { getUserTransaction } from "../../controller/userController";
 import { CashFlowHistory, TransactionType } from "../../../../declarations/user/user.did";
 import { getUserById } from "../../controller/userController";
 import { getJobById } from "../../controller/jobController";
+import { C } from "vitest/dist/chunks/reporters.66aFHiyX";
 
 export default function ProfileTransactionsSection({ userId }: { userId: string }) {
     const [transactions, setTransactions] = useState<CashFlowHistory[] | null>(null);
@@ -109,6 +110,7 @@ export default function ProfileTransactionsSection({ userId }: { userId: string 
 function TransactionCard({ transaction, userId }: { transaction: CashFlowHistory; userId: string }) {
     const [fromName, setFromName] = useState<string>("Loading...");
     const [toNames, setToNames] = useState<string[]>([]);
+    const [isCardLoading, setIsCardLoading] = useState(true);
     
     // Format date from bigint timestamp
     const formatDate = (timestamp: bigint) => {
@@ -141,11 +143,10 @@ function TransactionCard({ transaction, userId }: { transaction: CashFlowHistory
     };
 
     const isIncomingToUser = Array.isArray(transaction.toId) && transaction.toId.some(id => id === userId);
-    // Top-up is always incoming (positive) when it's the user's own top-up
+
     const isTopUp = 'topUp' in transaction.transactionType;
     const isTopUpByUser = isTopUp && transaction.fromId === userId;
     
-    // If money is coming to the user OR it's a top-up by the user, it's incoming (positive)
     const isIncoming = isIncomingToUser || isTopUpByUser;
     
     useEffect(() => {
@@ -155,22 +156,42 @@ function TransactionCard({ transaction, userId }: { transaction: CashFlowHistory
                 const fromResult = await getUserById(transaction.fromId);
                 if (fromResult) {
                     setFromName(fromResult.username);
-                }else{
+                } else {
                     const fromJob = await getJobById(transaction.fromId);
-                    if(fromJob){
+                    if (fromJob) {
                         setFromName(fromJob.jobName);
                     }
                 }
                 
-                // Get to user names for each ID in the toId array
-                const toNamesPromises = transaction.toId.map(id => getUserById(id));
-                const toResults = await Promise.all(toNamesPromises);
-                const validNames = toResults
-                    .filter(result => result !== null)
-                    .map(result => result!.username);
-                setToNames(validNames);
+                const toNamesResult = await Promise.all(
+                    transaction.toId.map(async (id) => {
+                        const userResult = await getUserById(id);
+                        if (userResult) {
+                            return userResult.username;
+                        }
+                        
+                        try {
+                            const jobResult = await getJobById(id);
+                            const clientResult = await getUserById(jobResult?.userId || "");
+                            if (jobResult) {
+                                return (`${jobResult.jobName}` + ` (created by ${clientResult?.username})`);
+                            }
+                        } catch (jobError) {
+                            console.error("Error fetching job:", jobError);
+                        }
+                        
+                        if (!isNaN(Number(id))) {
+                            return `Job #${id}`;
+                        }
+                        
+                        return "Unknown Recipient";
+                    })
+                );
+               
+                setToNames(toNamesResult);
+                setIsCardLoading(false);
             } catch (error) {
-                console.error("Failed to get user names:", error);
+                console.error("Failed to get user/job names:", error);
             }
         };
         
@@ -181,9 +202,28 @@ function TransactionCard({ transaction, userId }: { transaction: CashFlowHistory
         if ('topUp' in transaction.transactionType) {
             return "Bank Account";
         }
-    
         return fromName || "Unknown User";
     };
+
+    if (isCardLoading) {
+        return (
+          <div className="bg-white rounded-lg shadow p-6 border border-purple-50 hover:border-purple-200 transition-all">
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-pulse flex space-x-4 w-full">
+                <div className="rounded-full bg-slate-200 h-12 w-12"></div>
+                <div className="flex-1 space-y-4 py-1">
+                  <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-slate-200 rounded w-5/6"></div>
+                    <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      
 
     return (
         <div className="bg-white rounded-lg shadow p-6 border border-purple-50 hover:border-purple-200 transition-all">
@@ -218,7 +258,14 @@ function TransactionCard({ transaction, userId }: { transaction: CashFlowHistory
                 {transaction.toId.length > 0 && (
                     <p className="mb-2 flex">
                         <span className="font-medium w-10">To:</span> 
-                        <span className="flex-1">{toNames.length > 0 ? toNames.join(", ") : "Loading..."}</span>
+                        <span className="flex-1">
+                            {toNames.length > 0 ? 
+                                toNames.join(", ") : 
+                                ('transferToJob' in transaction.transactionType && transaction.toId.some(id => !isNaN(Number(id)))) ?
+                                    transaction.toId.map(id => `Job #${id}`).join(", ") :
+                                    "Loading..."
+                            }
+                        </span>
                     </p>
                 )}
             </div>

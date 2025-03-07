@@ -19,7 +19,7 @@ export default function ManageJobPage() {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [jobStatus] = useState<string[]>([
-    "Open",
+    "Start",
     "Ongoing",
     "Finished",
   ]);

@@ -259,7 +259,7 @@ export default function FindJobPage() {
                   Select Job Categories
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {JOB_CATEGORIES.map((category) => (
+                  {jobTags.map((category) => (
                     <motion.div
                       key={category.id}
                       whileHover={{ scale: 1.05 }}

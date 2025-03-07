@@ -124,7 +124,7 @@ const AcceptedUsersModal: React.FC<{
                   {user?.username}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {new Date(Number(user?.createdAt)).toLocaleDateString()}
+                  {new Date(Number(user?.createdAt / 1_000_000n)).toLocaleDateString()}
                 </p>
               </div>
             </motion.div>
@@ -147,14 +147,14 @@ export default function JobDetailPage() {
 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [responsibilityAccepted, setResponsibilityAccepted] = useState(false);
-  const currentApplicants = BigInt(mockAcceptedUsers.length);
-  const maxApplicants = BigInt(Number(job?.jobSlots || 0));
-  const isApplicationClosed = currentApplicants >= maxApplicants;
-
+  
   const [appliers, setAppliers] = useState<ApplierPayload[]>([]);
   const [showApplicantsModal, setShowApplicantsModal] = useState(false);
-
+  
   const [acceptedAppliers, setAccAppliers] = useState<User[]>([]);
+  const currentApplicants = BigInt(acceptedAppliers.length);
+  const maxApplicants = BigInt(Number(job?.jobSlots || 0));
+  const isApplicationClosed = currentApplicants >= maxApplicants;
   // ka
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [requiredAmount, setRequiredAmount] = useState(0);

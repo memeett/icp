@@ -126,7 +126,7 @@ export const createJobTransaction = async (ownerId: string, jobId: string): Prom
 //     }
 // }
 
-export const getTransactionByFreelancer = async (freelancerId: string): Promise<JobTransaction [] | null> => {
+export const getActiveTransactionByFreelancer = async (freelancerId: string): Promise<JobTransaction[] | null> => {
     const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();
     const agent = new HttpAgent({ identity });
@@ -134,14 +134,31 @@ export const getTransactionByFreelancer = async (freelancerId: string): Promise<
     if (process.env.DFX_NETWORK === "local") {
         await agent.fetchRootKey();
     }
+
     try {
         const res = await job_transaction.getTransactionByFreelancerId(freelancerId);
-        return res;
+        const jobTransactions = await Promise.all(
+            res.map(async (jt) => {
+                try {
+                    const jobDetail = await getJobById(jt.jobId);
+                    if (jobDetail && jobDetail.jobStatus !== "Finished") {
+                        return jt; 
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch job details for job ID:", jt.jobId, error);
+                }
+                return null; 
+            })
+        );
+
+        const filteredTransactions = jobTransactions.filter((jt) => jt !== null) as JobTransaction[];
+
+        return filteredTransactions;
     } catch (error) {
         console.error("Failed to get transaction:", error);
         return null;
     }
-}
+};
 
 export const getClientHistory = async (clientId: string): Promise<JobTransaction [] | null> => {
     const authClient = await AuthClient.create();

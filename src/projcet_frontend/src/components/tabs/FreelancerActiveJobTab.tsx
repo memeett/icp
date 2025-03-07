@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { JobTransaction } from "../../../../declarations/job_transaction/job_transaction.did";
-import { getTransactionByFreelancer } from "../../controller/freelancerController";
+import { getActiveTransactionByFreelancer } from "../../controller/freelancerController";
 import FreelancerJobCard from "./FreelancerJobCard";
 
 export default function FreelancerActiveJobTab() {

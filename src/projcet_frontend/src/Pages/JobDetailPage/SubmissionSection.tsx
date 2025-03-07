@@ -8,8 +8,11 @@ import { getJobDetail } from "../../controller/jobController";
 import { Job } from "../../interface/job/Job";
 import { User } from "../../interface/User";
 import { Submission } from "../../../../declarations/submission/submission.did";
-import { getSubmissionByJobId, updateSubmissionStatus } from "../../controller/submissionController";
-
+import {
+  getSubmissionByJobId,
+  updateSubmissionStatus,
+} from "../../controller/submissionController";
+import { createInbox } from "../../controller/inboxController";
 
 export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
   // const { jobId } = useParams();
@@ -18,18 +21,18 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
   const [loading, setLoading] = useState(false);
   const [rejectMessage, setRejectMessage] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
+  const [selectedApplication, setSelectedApplication] =
+    useState<Submission | null>(null);
 
-   useEffect(() => {
-     const fetchData = async (jobId: string) => {
+  useEffect(() => {
+    const fetchData = async (jobId: string) => {
       //  setLoading(true);
-       try {
-
+      try {
         const job = await getJobDetail(jobId);
         const submissions = await getSubmissionByJobId(jobId);
         console.log("Submissions:", submissions);
         setSubmissions(submissions);
-
+        setJob(job);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -42,19 +45,29 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
     }
   }, [jobId]);
 
-  const handleAccept = async (submissionId: string) => {
+  const handleAccept = async (submission: Submission) => {
     try {
-        await updateSubmissionStatus(submissionId, "accepted","");
-        setSubmissions(submissions.map(sub => 
-          sub.id === submissionId ? { ...sub, status: "accepted" } : sub
-        ));
+      await updateSubmissionStatus(submission.id, "accepted", "");
+      setSubmissions(
+        submissions.map((sub) =>
+          sub.id === submission.id ? { ...sub, status: "accepted" } : sub
+        )
+      );
+      if (job) {
+        await createInbox(
+          submission.user.id,
+          job.userId,
+          "submission",
+          "accepted"
+        );
+      }
     } catch (error) {
       console.error("Error accepting application:", error);
     }
   };
 
-  const handleReject = async (submissionId: string) => {
-    setSelectedApplication(submissionId);
+  const handleReject = async (submission: Submission) => {
+    setSelectedApplication(submission);
     setShowRejectModal(true);
   };
 
@@ -62,10 +75,24 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
     if (!selectedApplication) return;
 
     try {
-      await updateSubmissionStatus(selectedApplication, "rejected", rejectMessage);
-      setSubmissions(submissions.map(sub => 
-        sub.id === selectedApplication ? { ...sub, status: "rejected" } : sub
-      ));
+      await updateSubmissionStatus(
+        selectedApplication.id,
+        "rejected",
+        rejectMessage
+      );
+      setSubmissions(
+        submissions.map((sub) =>
+          sub.id === selectedApplication.id ? { ...sub, status: "rejected" } : sub
+        )
+      );
+      if (job) {
+        await createInbox(
+          selectedApplication.id,
+          job.userId,
+          "submission",
+          "rejected"
+        );
+      }
       setShowRejectModal(false);
     } catch (error) {
       console.error("Error rejecting application:", error);
@@ -73,8 +100,8 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">      
-      <motion.div 
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="container mx-auto px-6 py-8"
@@ -93,23 +120,45 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Applicant</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Username</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Rating</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                      Applicant
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                      Username
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                      Rating
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {submissions.map((application) => (
-                    <tr key={application.id} className="border-b border-gray-100 hover:bg-white/50">
+                    <tr
+                      key={application.id}
+                      className="border-b border-gray-100 hover:bg-white/50"
+                    >
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div className="flex items-center space-x-3">
                           <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden">
                             {/* Handle profile picture display safely */}
                             {application.user.profilePicture && (
-                              <img 
-                                src={URL.createObjectURL(new Blob([new Uint8Array(application.user.profilePicture)], { type: 'image/jpeg' }))}
+                              <img
+                                src={URL.createObjectURL(
+                                  new Blob(
+                                    [
+                                      new Uint8Array(
+                                        application.user.profilePicture
+                                      ),
+                                    ],
+                                    { type: "image/jpeg" }
+                                  )
+                                )}
                                 alt="Profile"
                                 className="h-full w-full object-cover"
                               />
@@ -117,13 +166,19 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{application.user.username}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {application.user.username}
+                      </td>
                       <td className="px-6 py-4">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          application.submissionStatus === "accepted" ? "bg-green-100 text-green-800" :
-                          application.submissionStatus === "rejected" ? "bg-red-100 text-red-800" :
-                          "bg-yellow-100 text-yellow-800"
-                        }`}>
+                        <span
+                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            application.submissionStatus === "accepted"
+                              ? "bg-green-100 text-green-800"
+                              : application.submissionStatus === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
                           {application.submissionStatus}
                         </span>
                       </td>
@@ -131,23 +186,29 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
                         {application.user.rating.toFixed(1)}
                       </td>
                       <td className="px-6 py-4">
-  {(application.submissionStatus || application.submissionStatus || "").toLowerCase().trim() === "waiting" && (
-    <div className="flex space-x-3 ">
-      <button
-        onClick={() => handleAccept(application.id)}
-        className="text-green-500 hover:text-green-700"
-      >
-        <FiCheck className="h-5 w-5" />
-      </button>
-      <button
-        onClick={() => handleReject(application.id)}
-        className="text-red-500 hover:text-red-700"
-      >
-        <FiX className="h-5 w-5" />
-      </button>
-    </div>
-  )}
-</td>
+                        {(
+                          application.submissionStatus ||
+                          application.submissionStatus ||
+                          ""
+                        )
+                          .toLowerCase()
+                          .trim() === "waiting" && (
+                          <div className="flex space-x-3 ">
+                            <button
+                              onClick={() => handleAccept(application)}
+                              className="text-green-500 hover:text-green-700"
+                            >
+                              <FiCheck className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleReject(application)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <FiX className="h-5 w-5" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

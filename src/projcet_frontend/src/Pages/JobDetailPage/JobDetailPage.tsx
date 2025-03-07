@@ -21,7 +21,7 @@ import {
 } from "../../controller/jobController";
 import { authUtils } from "../../utils/authUtils";
 import { User } from "../../interface/User";
-import { Job } from "../../interface/job/Job";
+import { Job } from "../../../../declarations/job/job.did";
 import {
   acceptApplier,
   applyJob,
@@ -38,6 +38,7 @@ import { OwnerActions } from "./OwnerActions";
 import { ApplicantsModal } from "./ApplicationModal";
 import ManageJobDetailPage from "./SubmissionSection";
 import Modal from "./startModal";
+import { createInbox } from "../../controller/inboxController";
 
 const AcceptedUsersModal: React.FC<{
   users: User[];
@@ -81,7 +82,9 @@ const AcceptedUsersModal: React.FC<{
                   {user?.username}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {new Date(Number(user?.createdAt / 1_000_000n)).toLocaleDateString()}
+                  {new Date(
+                    Number(user?.createdAt / 1_000_000n)
+                  ).toLocaleDateString()}
                 </p>
               </div>
             </motion.div>
@@ -104,10 +107,10 @@ export default function JobDetailPage() {
 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [responsibilityAccepted, setResponsibilityAccepted] = useState(false);
-  
+
   const [appliers, setAppliers] = useState<ApplierPayload[]>([]);
   const [showApplicantsModal, setShowApplicantsModal] = useState(false);
-  
+
   const [acceptedAppliers, setAccAppliers] = useState<User[]>([]);
   const currentApplicants = BigInt(acceptedAppliers.length);
   const maxApplicants = BigInt(Number(job?.jobSlots || 0));
@@ -118,7 +121,7 @@ export default function JobDetailPage() {
 
   const handleClose = () => {
     setIsModalOpen(false); // Close the modal
-};
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -185,6 +188,8 @@ export default function JobDetailPage() {
       setError("");
       setLoading(false);
     }
+
+    console.log("Job ID:", acceptedAppliers);
   }, [jobId]);
 
   useEffect(() => {
@@ -214,6 +219,12 @@ export default function JobDetailPage() {
     try {
       const parsedData = JSON.parse(userData);
       const result = await applyJob(parsedData.ok.id, jobId!);
+      await createInbox(
+        job!.userId,
+        parsedData.ok.id,
+        "application",
+        "request"
+      );
       if (result) {
         console.log("Applied for the job");
         setApplied(true);
@@ -245,7 +256,10 @@ export default function JobDetailPage() {
 
   const handleAccept = async (userid: string): Promise<void> => {
     if (jobId) {
-      await acceptApplier(userid, jobId);
+      const result = await acceptApplier(userid, jobId);
+      if (result) {
+        await createInbox(userid, job!.userId, "application", "accepted");
+      }
       getJobApplier(jobId).then((users) => {
         setAppliers(users);
       });
@@ -255,13 +269,30 @@ export default function JobDetailPage() {
     }
   };
 
- 
-  
-  
+
+  useEffect(() => {
+    const fetchAcceptedFreelancers = async () => {
+      if (jobId) {
+        console.log("tes" + jobId);
+        const users = await getAcceptedFreelancer(jobId);
+        console.log("tes" + users);
+        setAccAppliers(users);
+        getJobApplier(jobId).then((users) => {
+          setAppliers(users);
+        });
+      }
+    };
+    fetchAcceptedFreelancers();
+
+  }, [jobId]);
+
 
   const handleReject = async (userid: string): Promise<void> => {
     if (jobId) {
-      await rejectApplier(userid, jobId);
+      const result = await rejectApplier(userid, jobId);
+      if (result) {
+        await createInbox(userid, job!.userId, "application", "rejected");
+      }
       getJobApplier(jobId).then((users) => {
         setAppliers(users);
       });
@@ -285,30 +316,26 @@ export default function JobDetailPage() {
 
   const handleStart = () => {
     // Start the job
-    setIsModalOpen(true)
-    const length = acceptedAppliers.length
+    setIsModalOpen(true);
+    const length = acceptedAppliers.length;
     const amount = Number.parseFloat(jobDetails!.salary) * length;
-    setRequiredAmount(amount)
+    setRequiredAmount(amount);
   };
 
   if (!job) return null;
 
-
-
-const handlePay = async() => {
+  const handlePay = async () => {
     setIsModalOpen(false);
     if (jobId) {
-        const userData = localStorage.getItem("current_user");
-        const parsedData = JSON.parse(userData ? userData : "");
-        if (userData && jobDetails) {
-            const length = acceptedAppliers.length
-            const amount = Number.parseFloat(jobDetails.salary) * length;
-            await startJob(parsedData.ok.id, jobId, amount)
-        }
-
-        }
-    };
-  console.log(acceptApplier)
+      const userData = localStorage.getItem("current_user");
+      const parsedData = JSON.parse(userData ? userData : "");
+      if (userData && jobDetails) {
+        const length = acceptedAppliers.length;
+        const amount = Number.parseFloat(jobDetails.salary) * length;
+        await startJob(parsedData.ok.id, jobId, amount);
+      }
+    }
+  };
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {loading && <LoadingOverlay message="Loading Job..." />}
@@ -331,23 +358,23 @@ const handlePay = async() => {
       )}
 
       <Modal
-                isOpen={isModalOpen}
-                onClose={handleClose}
-                onPay={handlePay}
-                amount={requiredAmount}
-                />
-
+        isOpen={isModalOpen}
+        onClose={handleClose}
+        onPay={handlePay}
+        amount={requiredAmount}
+      />
 
       <motion.div className="container mx-auto px-4 mt-6 flex-grow">
       <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 ml-45">
               Job Detail
             </h1>
+
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          <JobDetailContent 
+          <JobDetailContent
             onOpen={() => setShowAcceptedUsersModal(true)}
             job={job}
             currentApplicants={currentApplicants}
-            maxApplicants={maxApplicants} 
+            maxApplicants={maxApplicants}
             acceptedAppliers={acceptedAppliers}
           />
 
@@ -365,7 +392,9 @@ const handlePay = async() => {
                 termsAccepted={termsAccepted}
                 responsibilityAccepted={responsibilityAccepted}
                 isApplicationClosed={isApplicationClosed}
-                remainingPositions={(maxApplicants - currentApplicants).toString()}
+                remainingPositions={(
+                  maxApplicants - currentApplicants
+                ).toString()}
                 applied={applied}
                 onApply={handleApply}
                 onTermsChange={setTermsAccepted}
@@ -379,12 +408,11 @@ const handlePay = async() => {
           <OngoingSection job={job} />
         )}
 
-
-        {isOwner && job.jobStatus === "Ongoing" &&(
+        {isOwner && job.jobStatus === "Ongoing" && (
           <ManageJobDetailPage jobId={job.id} />
         )}
       </motion.div>
-      
+
       <Footer />
     </div>
   );

@@ -60,7 +60,7 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
             };
             
             
-            const result = await job.createJob(payload, process.env.CANISTER_ID_JOB_TRANSACTION!);
+            const result = await job.createJob(payload, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_JOB!);
             if ("ok" in result) {
                 console.log("Job created:", result.ok);
                 return ["Success", "Success post a job"];
@@ -327,6 +327,8 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
     const identity = authClient.getIdentity();
     const agent = new HttpAgent({ identity });
 
+    console.log("Getting accepted freelancers for job:", jobId);
+
     if (process.env.DFX_NETWORK === "local") {
         await agent.fetchRootKey();
     }
@@ -337,6 +339,8 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
             return [];
         }
         const users = result.ok; // This is the array of users from the canister
+
+        console.log("Accepted freelancersssss:", users);
 
         const processedUsers = await Promise.all(users.map(async (userData) => {
             let profilePictureBlob: Blob;
@@ -370,6 +374,7 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
 
 export const startJob = async (user_id: string, job_id: string, amount: number): Promise<void> => {
     try {
+        // console.log("JOb", job_id)
         // Authenticate the user
         const authClient = await AuthClient.create();
         const identity = authClient.getIdentity();

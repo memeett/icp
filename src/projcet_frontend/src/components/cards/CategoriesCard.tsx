@@ -47,7 +47,7 @@ export default function JobCategoriesLight() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
             Featured Categories
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">

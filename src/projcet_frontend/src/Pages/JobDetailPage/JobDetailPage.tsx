@@ -212,6 +212,8 @@ export default function JobDetailPage() {
       setError("");
       setLoading(false);
     }
+
+    console.log("Job ID:", acceptedAppliers);
   }, [jobId]);
 
   useEffect(() => {
@@ -292,14 +294,19 @@ export default function JobDetailPage() {
   };
 
   useEffect(() => {
-    if (jobId) {
-      getAcceptedFreelancer(jobId).then((users) => {
+    const fetchAcceptedFreelancers = async () => {
+      if (jobId) {
+        console.log("tes" + jobId);
+        const users = await getAcceptedFreelancer(jobId);
+        console.log("tes" + users);
         setAccAppliers(users);
-      });
-      getJobApplier(jobId).then((users) => {
-        setAppliers(users);
-      });
-    }
+        getJobApplier(jobId).then((users) => {
+          setAppliers(users);
+        });
+      }
+    };
+    fetchAcceptedFreelancers();
+
   }, [jobId]);
 
   const handleReject = async (userid: string): Promise<void> => {

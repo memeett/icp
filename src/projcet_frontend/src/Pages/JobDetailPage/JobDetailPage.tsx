@@ -39,6 +39,8 @@ import { ApplicantsModal } from "./ApplicationModal";
 import ManageJobDetailPage from "./SubmissionSection";
 import Modal from "./startModal";
 import { createInbox } from "../../controller/inboxController";
+import { ModalProvider } from "../../contexts/modal-context";
+import { NestedModalProvider } from "../../contexts/nested-modal-context";
 
 // Mock data for accepted users - replace with actual data fetching
 const mockAcceptedUsers: User[] = [
@@ -425,12 +427,17 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        {job.jobStatus === "Ongoing" && !isOwner && (
+        {job.jobStatus === "ongoing" && !isOwner && (
           <OngoingSection job={job} />
         )}
 
-        {isOwner && job.jobStatus === "Ongoing" && (
-          <ManageJobDetailPage jobId={job.id} />
+        {isOwner && job.jobStatus === "ongoing" && (
+          <ModalProvider>
+             {/* <NestedModalProvider> */}
+
+              <ManageJobDetailPage jobId={job.id} />
+            {/* </NestedModalProvider> */}
+          </ModalProvider>
         )}
       </motion.div>
 

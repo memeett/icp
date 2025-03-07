@@ -21,7 +21,7 @@ import {
 } from "../../controller/jobController";
 import { authUtils } from "../../utils/authUtils";
 import { User } from "../../interface/User";
-import { Job } from "../../interface/job/Job";
+import { Job } from "../../../../declarations/job/job.did";
 import {
   acceptApplier,
   applyJob,

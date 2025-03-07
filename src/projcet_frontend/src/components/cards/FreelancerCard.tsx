@@ -21,7 +21,7 @@ export default function FreelancerCard({ user }: { user: User }) {
       onClick={viewDetails}
     >
       {/* Aurora gradient header */}
-      <div className="h-24 bg-gradient-to-r from-blue-400 to-purple-400" />
+      <div className="h-24 bg-gradient-to-r from-blue-300 to-purple-400" />
 
       {/* Profile content */}
       <div className="px-6 pb-6 -mt-12">
@@ -38,7 +38,7 @@ export default function FreelancerCard({ user }: { user: User }) {
 
         {/* User info */}
         <div className="text-center mt-3 mb-4">
-          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-400">
             {user.username}
           </h2>
 

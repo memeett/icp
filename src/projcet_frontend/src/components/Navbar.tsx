@@ -11,6 +11,7 @@ import { Inbox } from "../../../declarations/inbox/inbox.did";
 import { getUserById } from "../controller/userController";
 import FloatingInbox from "./sections/Inbox";
 import { InboxResponse } from "../interface/Inbox";
+import logo from "../assets/ergasia_logo.png";
 
 const Navbar = () => {
   const { setOpen } = useModal();
@@ -142,7 +143,7 @@ const Navbar = () => {
               onClick={logoClick}
               className="text-4xl font-thin tracking-tighter hover:cursor-pointer"
             >
-              <span className="text-[#3F72AF]">E</span>RGASIA.
+              <img src={logo} alt="ERGASIA" className="w-[10rem]"/>
             </div>
           </div>
 
@@ -150,7 +151,6 @@ const Navbar = () => {
             <div className="ml-10 flex justify-around items-center">
               <AnimatedNavLink href="/find">Find Work</AnimatedNavLink>
               <AnimatedNavLink href="/manage">Manage Jobs</AnimatedNavLink>
-              <AnimatedNavLink href="/post">Post a Job</AnimatedNavLink>
               <AnimatedNavLink href="/browse">
                 Browse Freelancers
               </AnimatedNavLink>

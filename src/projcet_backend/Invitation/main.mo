@@ -44,7 +44,7 @@ actor InvitationModel{
         invitationsEntries := [];
     };
 
-    let jobActor = actor ("br5f7-7uaaa-aaaaa-qaaca-cai") : actor {
+    let jobActor = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
         getJob : (Text) -> async Result.Result<Job.Job, Text>;
     };
 

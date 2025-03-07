@@ -85,12 +85,12 @@ export default function ManageJobPage() {
 
     const actionsCell = (e.target as HTMLElement).closest('td:last-child');
     if (!actionsCell) {
-      navigate(`/manage-jobs/${jobId}`);
+      navigate(`/jobs/${jobId}`);
     }
   };
 
   const handleEditClick = (e: React.MouseEvent, job: Job) => {
-    e.stopPropagation(); // Prevent row click event from firing
+    e.stopPropagation();
     setSelectedJob(job);
     setOpen(true);     
     const modalIndex = openModal();

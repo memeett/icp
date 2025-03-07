@@ -11,6 +11,8 @@ import { createJob } from "../../controller/jobController.ts";
 import { PopUpModal } from "../../components/modals/PopUpModal.tsx";
 import { RequirementsStep } from "./Requirements.tsx";
 import { useNavigate } from "react-router-dom";
+import { createJobTransaction } from "../../controller/freelancerController.ts";
+import { authUtils } from "../../utils/authUtils.tsx";
 
 const BackgroundPattern = () => (
   <svg
@@ -72,6 +74,7 @@ const CreateJobPageContent = () => {
 
   const [modalMessage, setModalMessage] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const currentUser = authUtils().current_user;
   const handleSubmit = () => {
     if (validateStep(4)) {
       // Add your submission logic here
@@ -95,6 +98,11 @@ const CreateJobPageContent = () => {
           setLoading(false);
           navigate(-1);
         });
+
+      // createJobTransaction(
+      //   currentUser,
+        
+      // )
     }
   };
 

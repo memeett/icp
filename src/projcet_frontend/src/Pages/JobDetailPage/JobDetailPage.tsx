@@ -46,6 +46,7 @@ import { NestedModalProvider } from "../../contexts/nested-modal-context";
 
 
 import ErrorModal from "../../components/modals/ErrorModal";
+import FinishJobModal from "./JobWarningModal";
 
 const AcceptedUsersModal: React.FC<{
   users: User[];
@@ -126,47 +127,57 @@ export default function JobDetailPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [requiredAmount, setRequiredAmount] = useState(0);
 
+  const [applicationLoading, setApplicationLoading] = useState(false)
+  const [showFinishJobModal, setShowFinishJobModal] = useState(false);
+
   const handleClose = () => {
     setIsModalOpen(false); // Close the modal
   };
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log("tes");
+      console.log("Fetching data...");
       setLoading(true);
 
-      const userData = localStorage.getItem("current_user");
-      const parsedData = JSON.parse(userData ? userData : "");
+      try {
+        const userData = localStorage.getItem("current_user");
+        const parsedData = userData ? JSON.parse(userData) : null;
 
-      if (userData) {
-        // Check if current user is the job owner
-        if (job && job.userId === parsedData.ok.id) {
+        if (!parsedData || !parsedData.ok) {
+          console.error("User data not found or invalid.");
+          setLoading(false);
+          return;
+        }
+
+        const userId = parsedData.ok.id;
+
+        if (job && job.userId === userId) {
           setIsOwner(true);
         }
-      }
 
-      if (jobId) {
-        // Fetch accepted freelancers and job appliers
-        const [acceptedFreelancers, jobAppliers] = await Promise.all([
-          getAcceptedFreelancer(jobId),
-          getJobApplier(jobId),
-        ]);
+        if (jobId) {
+          const [acceptedFreelancers, jobAppliers] = await Promise.all([
+            getAcceptedFreelancer(jobId),
+            getJobApplier(jobId),
+          ]);
 
-        setAccAppliers(acceptedFreelancers);
-        setAppliers(jobAppliers);
+          setAccAppliers(acceptedFreelancers);
+          setAppliers(jobAppliers);
 
-        // Check if the user has applied to the job
-        if (parsedData.ok.id) {
-          const result = await hasUserApplied(parsedData.ok.id, jobId);
-          acceptedFreelancers.forEach((user) => {
-            if (user.id === parsedData.ok.id || result) {
-              setApplied(true);
-            }
-          });
+          const hasApplied = await hasUserApplied(userId, jobId);
+
+          const isUserAcceptedOrApplied =
+            acceptedFreelancers.some((user) => user.id === userId) || hasApplied;
+
+          if (isUserAcceptedOrApplied) {
+            setApplied(true);
+          }
         }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchData();
@@ -226,6 +237,7 @@ export default function JobDetailPage() {
     try {
       const parsedData = JSON.parse(userData);
       const result = await applyJob(parsedData.ok.id, jobId!);
+      console.log(job!.userId)
       await createInbox(
         job!.userId,
         parsedData.ok.id,
@@ -262,6 +274,7 @@ export default function JobDetailPage() {
   //   }
 
   const handleAccept = async (userid: string): Promise<void> => {
+    setApplicationLoading(true)
     if (jobId) {
       const result = await acceptApplier(userid, jobId);
       if (result) {
@@ -274,20 +287,22 @@ export default function JobDetailPage() {
         setAccAppliers(users);
       });
     }
+    setApplicationLoading(false)
   };
 
 
   useEffect(() => {
+
     const fetchAcceptedFreelancers = async () => {
+      setApplicationLoading(true)
       if (jobId) {
-        console.log("tes" + jobId);
         const users = await getAcceptedFreelancer(jobId);
-        console.log("tes" + users);
         setAccAppliers(users);
         getJobApplier(jobId).then((users) => {
           setAppliers(users);
         });
       }
+      setApplicationLoading(false)
     };
     fetchAcceptedFreelancers();
 
@@ -295,6 +310,7 @@ export default function JobDetailPage() {
 
 
   const handleReject = async (userid: string): Promise<void> => {
+    setApplicationLoading(true)
     if (jobId) {
       const result = await rejectApplier(userid, jobId);
       if (result) {
@@ -307,6 +323,7 @@ export default function JobDetailPage() {
         setAccAppliers(users);
       });
     }
+    setApplicationLoading(false)
   };
 
   const handleStart = () => {
@@ -361,19 +378,21 @@ export default function JobDetailPage() {
     setLoading(false)
   };
 
-  const handleFinish = async () =>{
+  const handleFinish = async () => {
+    setShowFinishJobModal(false)
     setLoading(true)
-    if(jobId){
+    if (jobId) {
       const result = await finishJob(jobId)
       console.log("result", result)
-      if(result.jobFinished){
+      if (result.jobFinished) {
         fetchJob()
-      }else{
+      } else {
         setError(result.message)
       }
     }
+    fetchJob()
     setLoading(false)
-    
+
   }
 
 
@@ -391,6 +410,16 @@ export default function JobDetailPage() {
         />
       )}
       <Navbar />
+
+      {showFinishJobModal && (
+        <FinishJobModal
+          isOpen={showFinishJobModal}
+          onClose={() => setShowFinishJobModal(false)}
+          onConfirm={handleFinish}
+          isLoading={loading}
+        />
+      )}
+
       {showAcceptedUsersModal && (
         <AcceptedUsersModal
           users={acceptedAppliers}
@@ -405,6 +434,7 @@ export default function JobDetailPage() {
           onClose={() => setShowApplicantsModal(false)}
           handleAccept={handleAccept}
           handleReject={handleReject}
+          isLoading={applicationLoading}
         />
       )}
 
@@ -416,9 +446,9 @@ export default function JobDetailPage() {
       />
 
       <motion.div className="container mx-auto px-4 mt-6 flex-grow">
-      <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 ml-45">
-              Job Detail
-            </h1>
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 ml-45">
+          Job Detail
+        </h1>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <JobDetailContent
@@ -451,20 +481,21 @@ export default function JobDetailPage() {
                 onApply={handleApply}
                 onTermsChange={setTermsAccepted}
                 onResponsibilityChange={setResponsibilityAccepted}
+                jobStatus={job.jobStatus}
               />
             )}
           </div>
         </div>
 
-        {job.jobStatus === "ongoing" && !isOwner && (
+        { (job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && !isOwner && (
           <OngoingSection job={job} />
         )}
 
-        {isOwner && job.jobStatus === "ongoing" && (
+        {isOwner && (job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && (
           <ModalProvider>
-             {/* <NestedModalProvider> */}
+            {/* <NestedModalProvider> */}
 
-              <ManageJobDetailPage jobId={job.id} />
+            <ManageJobDetailPage jobId={job.id} />
             {/* </NestedModalProvider> */}
           </ModalProvider>
         )}

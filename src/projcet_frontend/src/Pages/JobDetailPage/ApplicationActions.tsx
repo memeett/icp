@@ -1,4 +1,3 @@
-
 import { ApplyButton } from "./ApplyButton";
 import { TermsCheckbox } from "./TermsCheckBox";
 
@@ -12,6 +11,7 @@ export const ApplicantActions = ({
   onApply,
   onTermsChange,
   onResponsibilityChange,
+  jobStatus,
 }: {
   salary: string;
   termsAccepted: boolean;
@@ -22,6 +22,7 @@ export const ApplicantActions = ({
   onApply: () => void;
   onTermsChange: (checked: boolean) => void;
   onResponsibilityChange: (checked: boolean) => void;
+  jobStatus: string; // Change type to string to match job status values
 }) => (
   <div className="space-y-6">
     <div className="bg-blue-50/30 p-4 rounded-xl">
@@ -56,11 +57,21 @@ export const ApplicantActions = ({
       </div>
     )}
 
-    <ApplyButton
-      applied={applied}
-      disabled={applied || !termsAccepted || !responsibilityAccepted || isApplicationClosed}
-      onClick={onApply}
-    />
+    {/* Disable ApplyButton if job is finished */}
+    {jobStatus === "Finished" ? (
+      <ApplyButton
+        applied={true} // Set to true to show "Applied" state
+        disabled={true} // Disable the button
+        onClick={onApply}
+        label="Job Finished" // Custom label for finished jobs
+      />
+    ) : (
+      <ApplyButton
+        applied={applied}
+        disabled={applied || !termsAccepted || !responsibilityAccepted || isApplicationClosed}
+        onClick={onApply}
+      />
+    )}
 
     <p className="text-xs text-gray-500 text-center">
       By applying, you agree to our terms of service and privacy policy

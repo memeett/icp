@@ -331,7 +331,7 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
         await agent.fetchRootKey();
     }
     try {
-        const result = await job_transaction.getAcceptedFreelancers(jobId)
+        const result = await job_transaction.getAcceptedFreelancers(jobId, process.env.CANISTER_ID_USER!)
         if (!result || !("ok" in result)) {
             console.error("Invalid response format:", result);
             return [];

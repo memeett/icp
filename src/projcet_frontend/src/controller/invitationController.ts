@@ -6,7 +6,7 @@ export const createInvitation = async (
     job_id: string,
     freelancer_id: string
 ): Promise<boolean> => {
-    const result = await invitation.createInvitation(owner_id, job_id, freelancer_id);
+    const result = await invitation.createInvitation(owner_id, job_id, freelancer_id, process.env.CANISTER_ID_JOB!);
 
     if ("err" in result) {
         console.error("Error creating invitation:", result.err);
@@ -20,7 +20,7 @@ export const createInvitation = async (
 
 export const getInvitationByUserId = async (userId: string): Promise<UserInvitationPayload[]> => {
 
-    const result = await invitation.getInvitationByUserID(userId)
+    const result = await invitation.getInvitationByUserID(userId, process.env.CANISTER_ID_JOB!)
 
     return result;
 }

@@ -7,7 +7,6 @@ import Result "mo:base/Result";
 import Array "mo:base/Array";
 import Job "../Job/model";
 import User "../User/model";
-import Global "../global";
 
 actor JobTransactionModel {
 
@@ -36,16 +35,11 @@ actor JobTransactionModel {
         jobTransactionsEntries := [];
     };
 
-    let jobActor = actor (Global.canister_id.job) : actor {
-        getJob : (Text) -> async Result.Result<Job.Job, Text>;
-    };
 
-    let userActor = actor (Global.canister_id.user): actor {
-        getUserById : (userId : Text) -> async Result.Result<User.User, Text>;
-    };
-
-
-    public func createTransaction(owner_id : Text, job_id : Text) : async () {
+    public func createTransaction(owner_id : Text, job_id : Text, job_canister: Text) : async () {
+        let jobActor = actor (job_canister) : actor {
+            getJob : (Text) -> async Result.Result<Job.Job, Text>;
+        };
         try {
             // Fetch the job details
             let jobResult = await jobActor.getJob(job_id);
@@ -93,7 +87,10 @@ actor JobTransactionModel {
         };
     };
 
-    public func getAcceptedFreelancers(job_id: Text) : async Result.Result<[User.User], Text> {
+    public func getAcceptedFreelancers(job_id: Text, user_canister: Text) : async Result.Result<[User.User], Text> {
+        let userActor = actor (user_canister): actor {
+            getUserById : (userId : Text) -> async Result.Result<User.User, Text>;
+        };
     // Step 1: Retrieve the job transaction for the given job_id
         switch (jobTransactions.get(job_id)) {
             case (null) {

@@ -9,7 +9,8 @@ export const createInvitation = async (
   const result = await invitation.createInvitation(
     owner_id,
     job_id,
-    freelancer_id
+    freelancer_id,
+    process.env.CANISTER_ID_JOB!
   );
 
   if ("err" in result) {
@@ -24,17 +25,22 @@ export const createInvitation = async (
 export const getInvitationByUserId = async (
   userId: string
 ): Promise<UserInvitationPayload[]> => {
-  const result = await invitation.getInvitationByUserID(userId);
+  const result = await invitation.getInvitationByUserID(
+    userId,
+    process.env.CANISTER_ID_JOB!
+  );
 
   return result;
 };
 
-export const acceptInvitation = async (userId : string, invitationId : bigint) : Promise<boolean> => {
+export const acceptInvitation = async (
+  userId: string,
+  invitationId: bigint
+): Promise<boolean> => {
+  const result = await invitation.acceptInvitation(userId, invitationId);
 
-    const result = await invitation.acceptInvitation(userId, invitationId)
-
-    return result
-}
+  return result;
+};
 
 export const rejectInvitation = async (
   userId: string,

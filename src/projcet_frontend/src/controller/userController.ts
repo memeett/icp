@@ -7,6 +7,7 @@ import { useState } from "react";
 import { get } from "http";
 import { JobCategory } from "../interface/job/Job";
 import { preprocessCSS } from "vite";
+import { CashFlowHistory } from "../../../declarations/user/user.did";
 
 export const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");
@@ -416,3 +417,14 @@ export const getUserByName = async (username: string): Promise<User | null> => {
     return null;
   }
 };
+
+export const getUserTransaction = async (userId: string): Promise<CashFlowHistory[] | null> => {
+    try {
+        const result = await user.getUserTransactions(userId);
+        console.log(result)
+        return result;
+    } catch (error) {
+        console.error("Failed to get user transaction:", error);
+        return null;
+    }
+}

@@ -12,7 +12,8 @@ import { Job } from "../../../../declarations/job/job.did.js";
 import { job } from "../../../../declarations/job/index.js";
 import JobDetailModal from "../../components/modals/JobDetailModal.js";
 import ProfileFreelancerSection from "../../components/sections/ProfileFreelancerSection.js";
-import ClientHistoryModal from "../../components/sections/ClientHistory.tsx";
+import ProfileTransactionsSection from "../../components/sections/ProfileTransactionHistory.tsx";
+import ProfileClientHistory from "../../components/sections/ClientHistory.tsx";
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<string>("biodata");
@@ -20,7 +21,9 @@ export default function ProfilePage() {
   const [isJobDetailModal, setIsJobDetailModal] = useState<boolean>(false)
   const [jobDetail, setJobDetail] = useState<Job>()
   const [isClientHistoryModalOpen, setIsClientHistoryModalOpen] = useState(false); 
-
+  const user = localStorage.getItem("current_user");
+  const userData = user ? JSON.parse(user).ok : null;
+  const id = userData ? userData.id : null;
   const logoutBtn = async () => {
     await logout()
     window.location.href = "/";
@@ -55,6 +58,16 @@ export default function ProfilePage() {
                 Biodata
               </li>
               <li
+                className={`cursor-pointer p-2 ${
+                  activeSection === "transaction"
+                    ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
+                    : "hover:font-semibold"
+                }`}
+                onClick={() => setActiveSection("transaction")}
+              >
+                Transaction History
+              </li>
+              <li
                 className={`cursor-pointer p-2 ${activeSection === "invitation"
                     ? "font-semibold pl-4 bg-[#DBE2EF] rounded-l-xl"
                     : "hover:font-semibold"
@@ -71,7 +84,7 @@ export default function ProfilePage() {
                 }`}
                 onClick={() => setActiveSection("freelancer")}
               >
-                Freelancer
+                Freelancer History
               </li>
               <li
                 className={`cursor-pointer p-2 ${
@@ -96,7 +109,9 @@ export default function ProfilePage() {
               {activeSection === "biodata" ? <ProfileBiodata /> : 
               activeSection === "invitation" ? <ProfileInvitationSection onClickDetailJob={clickJobDetail}/> : 
               activeSection == "freelancer" ? <ProfileFreelancerSection/> :
-              activeSection === "client" ? <ClientHistoryModal /> : <div></div> }
+              activeSection === "client" ? <ProfileClientHistory /> : 
+              activeSection === "transaction" ? <ProfileTransactionsSection userId={id} /> :
+              <div></div> }
           </div>
 
       

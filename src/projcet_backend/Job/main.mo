@@ -229,10 +229,18 @@ private func seedJobCategories() {
     };
 
     public func getUserJob(owner_id : Text): async [Job.Job] {
-        // Get all jobs and filter by owner_id
         let allJobs = Iter.toArray(jobs.vals());
         let userJobs = Array.filter(allJobs, func(job : Job.Job) : Bool {
             return job.userId == owner_id;
+        });
+        
+        userJobs
+    };
+
+    public func getUserJobByStatusFinished(owner_id : Text): async [Job.Job] {
+        let allJobs = Iter.toArray(jobs.vals());
+        let userJobs = Array.filter(allJobs, func(job : Job.Job) : Bool {
+            return job.userId == owner_id and job.jobStatus == "Finished";
         });
         
         userJobs

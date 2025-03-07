@@ -33,6 +33,8 @@ export default function ProfileClientHistory() {
                     const freelancerUsers = await Promise.all(
                         transaction.freelancers.map(([userId, _]) => getUserById(userId))
                     );
+                    const jobName = job?.jobName || "Untitled Job";
+                    console.log("Transaction:", jobName);
 
                     return {
                         transaction,
@@ -134,10 +136,9 @@ export default function ProfileClientHistory() {
 function ClientHistoryCard({ data }: { data: EnhancedTransaction }) {
     const { transaction, job, clientUser, freelancerUsers } = data;
     
-    // Get job status for styling
     const getStatusDetails = () => {
-        if (job && job.status) {
-            const status = job.status.toLowerCase();
+        if (job && job.jobStatus) {
+            const status = job.jobStatus.toLowerCase();
             if (status === "completed" || status === "success") {
                 return {
                     color: "green",
@@ -148,7 +149,7 @@ function ClientHistoryCard({ data }: { data: EnhancedTransaction }) {
                     )
                 };
             }
-            if (status === "in progress" || status === "active") {
+            if (status === "In Progress" || status === "Ongoing") {
                 return {
                     color: "blue",
                     icon: (
@@ -201,7 +202,7 @@ function ClientHistoryCard({ data }: { data: EnhancedTransaction }) {
                             {job?.jobName || "Untitled Job"}
                         </h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium bg-${statusDetails.color}-100 text-${statusDetails.color}-800`}>
-                            {job?.status || "Unknown Status"}
+                            {job?.jobStatus || "Unknown Status"}
                         </span>
                     </div>
                     
@@ -215,8 +216,8 @@ function ClientHistoryCard({ data }: { data: EnhancedTransaction }) {
                             <span className="flex-1">{freelancerUsers.map(u => u?.username).filter(Boolean).join(", ") || "No freelancers"}</span>
                         </p>
                         <p className="mb-2 flex">
-                            <span className="font-medium w-24">Job ID:</span> 
-                            <span className="flex-1 font-mono text-xs">{transaction.jobId}</span>
+                            <span className="font-medium w-24">Job Salary:</span> 
+                            <span className="flex-1 ">{job?.jobSalary}</span>
                         </p>
                     </div>
                     

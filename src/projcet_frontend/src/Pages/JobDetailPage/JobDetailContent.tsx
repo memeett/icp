@@ -5,6 +5,7 @@ import { Info } from "lucide-react";
 import { User } from "../../interface/User";
 import { Job } from "../../interface/job/Job";
 
+
 export const JobDetailContent = ({
   job,
   currentApplicants,
@@ -21,6 +22,7 @@ export const JobDetailContent = ({
   // const [showAcceptedUsersModal, setShowAcceptedUsersModal] = useState(false);
 
   const mockAcceptedUsers: User[] = acceptedAppliers;
+
 
   return (
     <div className="lg:col-span-2 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8">

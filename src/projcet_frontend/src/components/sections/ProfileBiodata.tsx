@@ -25,7 +25,7 @@ import { useJobCategories } from "../../utils/useJobCategories";
 import { set } from "date-fns";
 import LoadingOverlay from "../ui/loading-animation";
 import ErrorModal from "../modals/ErrorModal";
-import FaceRecognition from "../FaceRecognition";
+// import FaceRecognition from "../FaceRecognition";
 
 export default function ProfileBiodata() {
   const [user, setUser] = useState<User | null>(null);
@@ -628,7 +628,7 @@ export default function ProfileBiodata() {
                 </div>
               </div>
             </div>
-            <FaceRecognition
+            {/* <FaceRecognition
               principalId={user.id}
               onSuccess={() => console.log("Operation successful!")}
               onError={(error: string) =>
@@ -637,7 +637,7 @@ export default function ProfileBiodata() {
               mode="register" // Change to "verify" for verification mode
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-            />
+            /> */}
 
             {/* Category Selection Modal */}
             {isCategoryModalOpen && (

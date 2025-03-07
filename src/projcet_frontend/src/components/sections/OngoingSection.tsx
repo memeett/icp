@@ -14,6 +14,7 @@ export default function OngoingSection({job} : {job : Job}){
     const [additionalMessage, setAdditionalMessage] = useState<string>('');
 
      const fetchHistorySubmission = useCallback(async () => {
+
         if (!job) {
           return;
         }

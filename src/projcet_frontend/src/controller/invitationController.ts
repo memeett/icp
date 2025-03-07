@@ -29,14 +29,12 @@ export const getInvitationByUserId = async (
   return result;
 };
 
-export const acceptInvitation = async (
-  userId: string,
-  invitationId: bigint
-): Promise<boolean> => {
-  const result = await invitation.acceptInvitation(userId, invitationId);
+export const acceptInvitation = async (userId : string, invitationId : bigint) : Promise<boolean> => {
 
-  return result;
-};
+    const result = await invitation.acceptInvitation(userId, invitationId)
+
+    return result
+}
 
 export const rejectInvitation = async (
   userId: string,

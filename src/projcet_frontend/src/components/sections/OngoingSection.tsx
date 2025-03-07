@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { Inbox } from "lucide-react";
 import HistorySubmissionCard from "../cards/HistorySubmissionCard";
 import { createSubmission, getAllSubmissionbyUserJobId } from "../../controller/submissionController";
-import { Job } from "../../../../declarations/job/job.did";
+import { Job } from "../../interface/job/Job";
+import { createInbox } from "../../controller/inboxController";
 export default function OngoingSection({job} : {job : Job}){
 
     const [submission, setSubmission] = useState<ResponseSubmission[] | []>([]);
@@ -13,14 +14,15 @@ export default function OngoingSection({job} : {job : Job}){
     const [additionalMessage, setAdditionalMessage] = useState<string>('');
 
      const fetchHistorySubmission = useCallback(async () => {
-        if (!job.id) {
+
+        if (!job) {
           return;
         }
     
         try {
           const userData = localStorage.getItem("current_user");
           const parsedData = JSON.parse(userData ? userData : "");
-            getAllSubmissionbyUserJobId(parsedData.ok, job.id).then((res) => {
+          getAllSubmissionbyUserJobId(parsedData.ok, job.id).then((res) => {
             console.log(res)
             setSubmission(res);
           }).catch((err) => {
@@ -30,7 +32,7 @@ export default function OngoingSection({job} : {job : Job}){
           console.error("Error fetching submission:", err);
         } finally {
         }
-     }, [job]);
+      }, [job]);
     
       useEffect(() => {
         fetchHistorySubmission();
@@ -62,17 +64,27 @@ export default function OngoingSection({job} : {job : Job}){
         const userData = localStorage.getItem("current_user");
         const parsedData = JSON.parse(userData ? userData : "");
         if (job) {
-            try {
-                await createSubmission(job.id, parsedData.ok, fileBlob, additionalMessage);
-                console.log("Submission created successfully");
-                
-                await fetchHistorySubmission();
-            } catch (err) {
-                console.error("Error creating submission:", err);
-                setErrorMessage("Failed to create submission. Please try again.");
-            }
+          try {
+            await createSubmission(
+              job.id,
+              parsedData.ok,
+              fileBlob,
+              additionalMessage
+            );
+            console.log("Submission created successfully");
+
+            await fetchHistorySubmission();
+            setFile(null);
+            setAdditionalMessage("");
+            setErrorMessage(null);
+
+            await createInbox(job.userId, parsedData.ok.id, "submission", "request");
+          } catch (err) {
+            console.error("Error creating submission:", err);
+            setErrorMessage("Failed to create submission. Please try again.");
+          }
         } else {
-            console.log("no job id");
+          console.log("no job id");
         }
     };
     return(

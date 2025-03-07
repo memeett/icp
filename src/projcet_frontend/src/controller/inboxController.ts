@@ -176,27 +176,34 @@ export const getAllInboxByUserId = async (
         const receiverName = await user.getUsernameById(i.receiverId);
         const submission_type = i.submission_type;
         let message = "Invalid message";
-        if (submission_type === "submission") {
+        console.log(submission_type)
+        if (submission_type.toLocaleLowerCase() === "submission".toLocaleLowerCase()) {
           if (i.status === "request") {
             message = `You have a new submission request from ${senderName}`;
-          } else if (i.status === "approved") {
-            message = `Your submission request has been approved by ${senderName}`;
+          } else if (i.status === "accepted") {
+            message = `Your submission request has been accepted by ${senderName}`;
           } else if (i.status === "rejected") {
             message = `Your submission request has been rejected by ${senderName}`;
           }
-        } else if (submission_type === "appliance") {
+        } else if (
+          submission_type.toLocaleLowerCase() ===
+          "application".toLocaleLowerCase()
+        ) {
           if (i.status === "request") {
-            message = `You have a new appliance request from ${senderName}`;
-          } else if (i.status === "approved") {
-            message = `Your appliance request has been approved by ${senderName}`;
+            message = `You have a new application request from ${senderName}`;
+          } else if (i.status === "accepted") {
+            message = `Your application request has been accepted by ${senderName}`;
           } else if (i.status === "rejected") {
-            message = `Your appliance request has been rejected by ${senderName}`;
+            message = `Your application request has been rejected by ${senderName}`;
           }
-        } else if (submission_type === "invitation") {
+        } else if (
+          submission_type.toLocaleLowerCase() ===
+          "invitation".toLocaleLowerCase()
+        ) {
           if (i.status === "request") {
             message = `You have a new invitation request from ${senderName}`;
-          } else if (i.status === "approved") {
-            message = `Your invitation request has been approved by ${senderName}`;
+          } else if (i.status === "accepted") {
+            message = `Your invitation request has been accepted by ${senderName}`;
           } else if (i.status === "rejected") {
             message = `Your invitation request has been rejected by ${senderName}`;
           }

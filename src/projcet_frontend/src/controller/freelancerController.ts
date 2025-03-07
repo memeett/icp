@@ -7,22 +7,23 @@ import { job } from "../../../declarations/job";
 import { getJobById } from "./jobController";
   
 
-// export const createJobTransaction = async (ownerId: string, jobId: string): Promise<boolean> => {
-//     const authClient = await AuthClient.create();
-//         const identity = authClient.getIdentity();
-//         const agent = new HttpAgent({ identity });
+export const createJobTransaction = async (ownerId: string, jobId: string): Promise<boolean> => {
+    const authClient = await AuthClient.create();
+        const identity = authClient.getIdentity();
+        const agent = new HttpAgent({ identity });
     
-//         if (process.env.DFX_NETWORK === "local") {
-//             await agent.fetchRootKey();
-//         }
-//     try {
-//         await job_transaction.createTransaction(ownerId, jobId);
-//         return true;
-//     } catch (error) {
-//         console.error("Failed to create job transaction:", error);
-//         return false;
-//     }
-// }
+        if (process.env.DFX_NETWORK === "local") {
+            await agent.fetchRootKey();
+        }
+    try {
+        await job_transaction.createTransaction(ownerId, jobId, process.env.CANISTER_ID_JOB_TRANSACTION!);
+        console.log("Job transaction created successfully");
+        return true;
+    } catch (error) {
+        console.error("Failed to create job transaction:", error);
+        return false;
+    }
+}
 
 // export const updateFreelancer = async (transactionId: string, freelancerId: string): Promise<boolean> => {
 //     const authClient = await AuthClient.create();

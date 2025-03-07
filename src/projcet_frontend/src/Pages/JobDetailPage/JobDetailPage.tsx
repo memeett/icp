@@ -14,6 +14,7 @@ import {
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import {
+  finishJob,
   getAcceptedFreelancer,
   getJobApplier,
   getJobById,
@@ -39,51 +40,12 @@ import { ApplicantsModal } from "./ApplicationModal";
 import ManageJobDetailPage from "./SubmissionSection";
 import Modal from "./startModal";
 import { createInbox } from "../../controller/inboxController";
+
 import { ModalProvider } from "../../contexts/modal-context";
 import { NestedModalProvider } from "../../contexts/nested-modal-context";
 
-// Mock data for accepted users - replace with actual data fetching
-const mockAcceptedUsers: User[] = [
-  // {
-  //   id: "550e8400-e29b-41d4-a716-446655440000",
-  //   profilePicture: new Blob(),
-  //   username: "CloudExpertSarah",
-  //   dob: "1985-04-12",
-  //   description:
-  //     "AWS Certified Solutions Architect with 8+ years experience in cloud infrastructure design and implementation.",
-  //   wallet: 24500,
-  //   rating: 4.9,
-  //   createdAt: BigInt(new Date("2018-03-15").getTime() * 1e6), // Convert to nanoseconds
-  //   updatedAt: BigInt(new Date("2023-07-01").getTime() * 1e6),
-  //   isFaceRecognitionOn: true,
-  // },
-  // {
-  //   id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
-  //   profilePicture: new Blob(),
-  //   username: "FullStackDevMike",
-  //   dob: "1992-11-30",
-  //   description:
-  //     "React/Node.js specialist focused on building scalable web applications with modern best practices.",
-  //   wallet: 18250,
-  //   rating: 4.7,
-  //   createdAt: BigInt(new Date("2019-08-22").getTime() * 1e6),
-  //   updatedAt: BigInt(new Date("2023-06-15").getTime() * 1e6),
-  //   isFaceRecognitionOn: false,
-  // },
-  // {
-  //   id: "6ba7b811-9dad-11d1-80b4-00c04fd430c9",
-  //   profilePicture: new Blob(),
-  //   username: "DistributedSystemsJane",
-  //   dob: "1988-07-17",
-  //   description:
-  //     "Microservices and Kubernetes expert with strong background in high-availability systems.",
-  //   wallet: 31200,
-  //   rating: 4.95,
-  //   createdAt: BigInt(new Date("2017-05-10").getTime() * 1e6),
-  //   updatedAt: BigInt(new Date("2023-07-10").getTime() * 1e6),
-  //   isFaceRecognitionOn: true,
-  // },
-];
+
+import ErrorModal from "../../components/modals/ErrorModal";
 
 const AcceptedUsersModal: React.FC<{
   users: User[];
@@ -169,27 +131,46 @@ export default function JobDetailPage() {
   };
 
   useEffect(() => {
-    setLoading(true);
-    const userData = localStorage.getItem("current_user");
-    const parsedData = JSON.parse(userData ? userData : "");
-    if (userData) {
-      // Check if current user is the job owner
-      if (job && job.userId === parsedData.ok.id) {
-        setIsOwner(true);
-      }
-    }
+    const fetchData = async () => {
+      console.log("tes");
+      setLoading(true);
 
-    const checkApplied = async () => {
-      if (!current_user) return;
-      // Check if user has already applied to this job
-      // const hasApplied = await checkIfUserApplied(jobId, current_user.id);
-      // setApplied(hasApplied);
-      const result = await hasUserApplied(parsedData.ok.id, jobId!);
-      setApplied(result);
+      const userData = localStorage.getItem("current_user");
+      const parsedData = JSON.parse(userData ? userData : "");
+
+      if (userData) {
+        // Check if current user is the job owner
+        if (job && job.userId === parsedData.ok.id) {
+          setIsOwner(true);
+        }
+      }
+
+      if (jobId) {
+        // Fetch accepted freelancers and job appliers
+        const [acceptedFreelancers, jobAppliers] = await Promise.all([
+          getAcceptedFreelancer(jobId),
+          getJobApplier(jobId),
+        ]);
+
+        setAccAppliers(acceptedFreelancers);
+        setAppliers(jobAppliers);
+
+        // Check if the user has applied to the job
+        if (parsedData.ok.id) {
+          const result = await hasUserApplied(parsedData.ok.id, jobId);
+          acceptedFreelancers.forEach((user) => {
+            if (user.id === parsedData.ok.id || result) {
+              setApplied(true);
+            }
+          });
+        }
+      }
+
+      setLoading(false);
     };
-    checkApplied();
-    setLoading(false);
-  }, [job]);
+
+    fetchData();
+  }, [job, jobId]);
 
   const fetchJob = useCallback(async () => {
     if (!jobId) {
@@ -295,6 +276,7 @@ export default function JobDetailPage() {
     }
   };
 
+
   useEffect(() => {
     const fetchAcceptedFreelancers = async () => {
       if (jobId) {
@@ -311,6 +293,7 @@ export default function JobDetailPage() {
 
   }, [jobId]);
 
+
   const handleReject = async (userid: string): Promise<void> => {
     if (jobId) {
       const result = await rejectApplier(userid, jobId);
@@ -325,18 +308,6 @@ export default function JobDetailPage() {
       });
     }
   };
-``
-  if (error) {
-    return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <Navbar />
-        <div className="container mx-auto px-4 mt-6 text-center py-20">
-          <h1 className="text-2xl text-red-500">{error}</h1>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   const handleStart = () => {
     // Start the job
@@ -349,28 +320,84 @@ export default function JobDetailPage() {
   if (!job) return null;
 
   const handlePay = async () => {
+    setLoading(true)
+    // Close the modal first
     setIsModalOpen(false);
-    if (jobId) {
-      const userData = localStorage.getItem("current_user");
-      const parsedData = JSON.parse(userData ? userData : "");
-      if (userData && jobDetails) {
-        const length = acceptedAppliers.length;
-        const amount = Number.parseFloat(jobDetails.salary) * length;
-        await startJob(parsedData.ok.id, jobId, amount);
+
+    if (!jobId) {
+      console.error("Job ID is missing");
+      return;
+    }
+
+    // Retrieve user data from local storage
+    const userData = localStorage.getItem("current_user");
+    if (!userData) {
+      console.error("User data not found");
+      return;
+    }
+
+    const parsedData = JSON.parse(userData);
+
+    if (!jobDetails) {
+      console.error("Job details are missing");
+      return;
+    }
+
+    // Calculate the required amount: job salary * number of accepted appliers
+    const numAppliers = acceptedAppliers.length;
+    const salary = Number.parseFloat(jobDetails.salary);
+    const amount = salary * numAppliers;
+
+    // Call the startJob function and handle the result
+    const result = await startJob(parsedData.ok.id, jobId, amount);
+
+    if (result.jobStarted) {
+      console.log("Success:", result.message);
+      fetchJob()
+      // Optionally, show a success toast/notification here
+    } else {
+      setError(result.message)
+    }
+    setLoading(false)
+  };
+
+  const handleFinish = async () =>{
+    setLoading(true)
+    if(jobId){
+      const result = await finishJob(jobId)
+      console.log("result", result)
+      if(result.jobFinished){
+        fetchJob()
+      }else{
+        setError(result.message)
       }
     }
-  };
+    setLoading(false)
+    
+  }
+
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {loading && <LoadingOverlay message="Loading Job..." />}
+      {error !== "" && !loading && (
+        <ErrorModal
+          isOpen={error !== ""}
+          onClose={() => {
+            setError("");
+          }}
+          message={error}
+          duration={2000}
+        />
+      )}
       <Navbar />
-
       {showAcceptedUsersModal && (
         <AcceptedUsersModal
           users={acceptedAppliers}
           onClose={() => setShowAcceptedUsersModal(false)}
         />
       )}
+
 
       {showApplicantsModal && (
         <ApplicantsModal
@@ -389,9 +416,10 @@ export default function JobDetailPage() {
       />
 
       <motion.div className="container mx-auto px-4 mt-6 flex-grow">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">
-          Job Detail
-        </h1>
+      <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 ml-45">
+              Job Detail
+            </h1>
+
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <JobDetailContent
             onOpen={() => setShowAcceptedUsersModal(true)}
@@ -408,6 +436,7 @@ export default function JobDetailPage() {
                 appliersCount={appliers.length}
                 onViewApplicants={() => setShowApplicantsModal(true)}
                 onStartJob={handleStart}
+                onFinishJob={handleFinish}
               />
             ) : (
               <ApplicantActions

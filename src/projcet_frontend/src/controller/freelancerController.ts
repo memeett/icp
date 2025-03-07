@@ -1,7 +1,10 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { job_transaction } from "../../../declarations/job_transaction";
+import { Job } from "../../../declarations/job/job.did";
 import { JobTransaction, User } from "../../../declarations/job_transaction/job_transaction.did";
 import { HttpAgent } from "@dfinity/agent";
+import { job } from "../../../declarations/job";
+import { getJobById } from "./jobController";
   
 
 export const createJobTransaction = async (ownerId: string, jobId: string): Promise<boolean> => {
@@ -157,19 +160,36 @@ export const getClientHistory = async (clientId: string): Promise<JobTransaction
     }
 }
 
-// export const getFreelancerHistory = async (freelancerId: string): Promise<JobTransaction [] | null> => {
-//     const authClient = await AuthClient.create();
-//     const identity = authClient.getIdentity();
-//     const agent = new HttpAgent({ identity });
+export const getFreelancerHistory = async (freelancerId: string): Promise<JobTransaction [] | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
 
-//     if (process.env.DFX_NETWORK === "local") {
-//         await agent.fetchRootKey();
-//     }
-//     try {
-//         const res = await job_transaction.getFreelancerHistory(freelancerId);
-//         return res;
-//     } catch (error) {
-//         console.error("Failed to get freelancer history:", error);
-//         return null;
-//     }
-// }
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    try {
+        const jobTransaction : JobTransaction[] = []
+        const res = await job_transaction.getFreelancerHistory(freelancerId);
+
+        res.forEach(jt => {
+            try {
+                const jobDetail = getJobById(jt.jobId)
+                if(jobDetail != null){
+                    jobDetail.then((res)=>{
+                        if(res?.jobStatus == "Finished"){
+                            jobTransaction.push(jt)
+
+                        }
+                    })
+                }
+            } catch (error) {
+                
+            }
+        });
+        return jobTransaction;
+    } catch (error) {
+        console.error("Failed to get freelancer history:", error);
+        return null;
+    }
+}

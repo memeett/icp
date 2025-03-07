@@ -96,6 +96,7 @@ export default function ProfileBiodata() {
   };
 
   const sendICP = async () => {
+    
     try {
       const plug = (window as any).ic?.plug;
 
@@ -103,12 +104,11 @@ export default function ProfileBiodata() {
         alert("Plug Wallet not detected");
         return;
       }
-
+      
       const connected = await plug.isConnected();
       if (!connected) {
         await plug.requestConnect();
       }
-
       const transferArgs = {
         to: "Ergasia",
         amount: parseFloat(amount) * 100000000, // 8 decimals for ICP
@@ -119,9 +119,10 @@ export default function ProfileBiodata() {
           price: true,
         },
       };
+      console.log("kanjut")
       console.log("Sending ICP:", transferArgs);
       const result = await plug.requestTransfer(transferArgs);
-
+      console.log("kanjut")
       console.log("Transaction successful:", result);
       topUp(parseFloat(amount));
       //later add success modal

@@ -160,7 +160,7 @@ export const getClientHistory = async (clientId: string): Promise<JobTransaction
     }
 }
 
-export const getFreelancerHistory = async (freelancerId: string): Promise<JobTransaction [] | null> => {
+export const getFreelancerHistory = async (freelancerId: string): Promise<JobTransaction[] | null> => {
     const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();
     const agent = new HttpAgent({ identity });
@@ -168,28 +168,33 @@ export const getFreelancerHistory = async (freelancerId: string): Promise<JobTra
     if (process.env.DFX_NETWORK === "local") {
         await agent.fetchRootKey();
     }
+
     try {
-        const jobTransaction : JobTransaction[] = []
+        // Fetch the freelancer's transaction history
         const res = await job_transaction.getFreelancerHistory(freelancerId);
 
-        res.forEach(jt => {
-            try {
-                const jobDetail = getJobById(jt.jobId)
-                if(jobDetail != null){
-                    jobDetail.then((res)=>{
-                        if(res?.jobStatus == "Finished"){
-                            jobTransaction.push(jt)
-
-                        }
-                    })
+        // Use Promise.all to handle asynchronous operations
+        const jobTransactions = await Promise.all(
+            res.map(async (jt) => {
+                try {
+                    // Fetch job details for each transaction
+                    const jobDetail = await getJobById(jt.jobId);
+                    if (jobDetail && jobDetail.jobStatus === "Finished") {
+                        return jt; // Include the transaction if the job is finished
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch job details for job ID:", jt.jobId, error);
                 }
-            } catch (error) {
-                
-            }
-        });
-        return jobTransaction;
+                return null; // Exclude the transaction if the job is not finished or an error occurs
+            })
+        );
+
+        // Filter out null values (transactions that were excluded)
+        const filteredTransactions = jobTransactions.filter((jt) => jt !== null) as JobTransaction[];
+
+        return filteredTransactions;
     } catch (error) {
         console.error("Failed to get freelancer history:", error);
         return null;
     }
-}
+};

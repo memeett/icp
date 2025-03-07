@@ -17,6 +17,20 @@ export const JobNameStep = ({
     <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent ">
       Job Title
     </h2>
+    <p className="text-gray-600">
+      Provide a clear and concise job title that describes the role you're
+      hiring for. A good job title should include:
+    </p>
+    <ul className="list-disc list-inside text-gray-600 space-y-2">
+      <li>
+        The primary skill or expertise required (e.g., "Blockchain Developer")
+      </li>
+      <li>The level of experience (e.g., "Senior", "Junior", "Entry-Level")</li>
+      <li>Any specific technologies or tools (e.g., "React", "Solidity")</li>
+      <li>
+        The type of project or role (e.g., "Freelance", "Contract", "Full-Time")
+      </li>
+    </ul>
     <input
       type="text"
       value={jobName}

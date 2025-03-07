@@ -1,7 +1,10 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { job_transaction } from "../../../declarations/job_transaction";
+import { Job } from "../../../declarations/job/job.did";
 import { JobTransaction, User } from "../../../declarations/job_transaction/job_transaction.did";
 import { HttpAgent } from "@dfinity/agent";
+import { job } from "../../../declarations/job";
+import { getJobById } from "./jobController";
   
 
 export const createJobTransaction = async (ownerId: string, jobId: string): Promise<boolean> => {
@@ -157,19 +160,41 @@ export const getClientHistory = async (clientId: string): Promise<JobTransaction
     }
 }
 
-// export const getFreelancerHistory = async (freelancerId: string): Promise<JobTransaction [] | null> => {
-//     const authClient = await AuthClient.create();
-//     const identity = authClient.getIdentity();
-//     const agent = new HttpAgent({ identity });
+export const getFreelancerHistory = async (freelancerId: string): Promise<JobTransaction[] | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
 
-//     if (process.env.DFX_NETWORK === "local") {
-//         await agent.fetchRootKey();
-//     }
-//     try {
-//         const res = await job_transaction.getFreelancerHistory(freelancerId);
-//         return res;
-//     } catch (error) {
-//         console.error("Failed to get freelancer history:", error);
-//         return null;
-//     }
-// }
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+
+    try {
+        // Fetch the freelancer's transaction history
+        const res = await job_transaction.getFreelancerHistory(freelancerId);
+
+        // Use Promise.all to handle asynchronous operations
+        const jobTransactions = await Promise.all(
+            res.map(async (jt) => {
+                try {
+                    // Fetch job details for each transaction
+                    const jobDetail = await getJobById(jt.jobId);
+                    if (jobDetail && jobDetail.jobStatus === "Finished") {
+                        return jt; // Include the transaction if the job is finished
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch job details for job ID:", jt.jobId, error);
+                }
+                return null; // Exclude the transaction if the job is not finished or an error occurs
+            })
+        );
+
+        // Filter out null values (transactions that were excluded)
+        const filteredTransactions = jobTransactions.filter((jt) => jt !== null) as JobTransaction[];
+
+        return filteredTransactions;
+    } catch (error) {
+        console.error("Failed to get freelancer history:", error);
+        return null;
+    }
+};

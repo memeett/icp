@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getUserTransaction } from "../../controller/userController";
 import { CashFlowHistory, TransactionType } from "../../../../declarations/user/user.did";
 import { getUserById } from "../../controller/userController";
+import { getJobById } from "../../controller/jobController";
 
 export default function ProfileTransactionsSection({ userId }: { userId: string }) {
     const [transactions, setTransactions] = useState<CashFlowHistory[] | null>(null);
@@ -154,6 +155,11 @@ function TransactionCard({ transaction, userId }: { transaction: CashFlowHistory
                 const fromResult = await getUserById(transaction.fromId);
                 if (fromResult) {
                     setFromName(fromResult.username);
+                }else{
+                    const fromJob = await getJobById(transaction.fromId);
+                    if(fromJob){
+                        setFromName(fromJob.jobName);
+                    }
                 }
                 
                 // Get to user names for each ID in the toId array
@@ -175,6 +181,7 @@ function TransactionCard({ transaction, userId }: { transaction: CashFlowHistory
         if ('topUp' in transaction.transactionType) {
             return "Bank Account";
         }
+    
         return fromName || "Unknown User";
     };
 

@@ -380,44 +380,44 @@ export const getUserById = async (userId: string): Promise<User | null> => {
 }
 
 export const getUserByName = async (username: string): Promise<User | null> => {
-  try {
-    const result = await user.getUserByName(username);
-
-    if ("ok" in result) {
-      const userData = result.ok;
-      let profilePictureBlob: Blob;
-      if (userData.profilePicture) {
-        const uint8Array = new Uint8Array(userData.profilePicture);
-        profilePictureBlob = new Blob([uint8Array.buffer], {
-          type: "image/jpeg",
+    try {
+      const result = await user.getUserByName(username);
+  
+      if ("ok" in result) {
+        const userData = result.ok;
+        let profilePictureBlob: Blob;
+        if (userData.profilePicture) {
+          const uint8Array = new Uint8Array(userData.profilePicture);
+          profilePictureBlob = new Blob([uint8Array.buffer], {
+            type: "image/jpeg",
+          });
+        } else {
+          profilePictureBlob = new Blob([], { type: "image/jpeg" });
+        }
+  
+        const convertedUser: User = {
+          ...userData,
+          profilePicture: profilePictureBlob,
+          createdAt: BigInt(userData.createdAt),
+          updatedAt: BigInt(userData.updatedAt),
+        };
+  
+        console.log("User fetched:", {
+          ...convertedUser,
+          profilePicture: convertedUser.profilePicture,
         });
+  
+        return convertedUser;
       } else {
-        profilePictureBlob = new Blob([], { type: "image/jpeg" });
+        console.error("Error fetching user:", result.err);
+        return null;
       }
-
-      const convertedUser: User = {
-        ...userData,
-        profilePicture: profilePictureBlob,
-        createdAt: BigInt(userData.createdAt),
-        updatedAt: BigInt(userData.updatedAt),
-      };
-
-      console.log("User fetched:", {
-        ...convertedUser,
-        profilePicture: convertedUser.profilePicture,
-      });
-
-      return convertedUser;
-    } else {
-      console.error("Error fetching user:", result.err);
+    } catch (error) {
+      console.error("Error fetching user by ID:", error);
       return null;
     }
-  } catch (error) {
-    console.error("Error fetching user by ID:", error);
-    return null;
-  }
-};
-
+  };
+  
 export const getUserTransaction = async (userId: string): Promise<CashFlowHistory[] | null> => {
     try {
         const result = await user.getUserTransactions(userId);

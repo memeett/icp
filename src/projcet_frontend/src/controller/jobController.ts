@@ -443,7 +443,26 @@ export const startJob = async (
       };
     }
   };
-  
+
+export const getUserJobByStatusFinished = async (userId: string): Promise<Job[] | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
+
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    try {
+        const result = await job.getUserJobByStatusFinished(userId);
+        console.log("Jobs:", result);
+        return result;
+    } catch (error) {
+        console.error("Failed to get all jobs:", error);
+        return null;
+    }
+}
+
+
 
 export const finishJob = async (job_id: string): Promise<{ jobFinished: boolean; message: string }> =>{
     try {
@@ -451,7 +470,7 @@ export const finishJob = async (job_id: string): Promise<{ jobFinished: boolean;
         const identity = authClient.getIdentity();
         const agent = new HttpAgent({ identity });
 
-        // Fetch the root key for local development
+
         if (process.env.DFX_NETWORK === "local") {
         await agent.fetchRootKey();
         }

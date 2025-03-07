@@ -109,7 +109,7 @@ actor InboxModule {
         let userInbox = Array.filter(
             allInbox,
             func(inbox : Inbox.Inbox) : Bool {
-                inbox.receiverId == userId or inbox.senderId == userId;
+                inbox.receiverId == userId
             },
         );
         userInbox;

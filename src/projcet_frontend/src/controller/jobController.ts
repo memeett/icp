@@ -60,7 +60,7 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
             };
             
             
-            const result = await job.createJob(payload, process.env.CANISTER_ID_JOB_TRANSACTION!);
+            const result = await job.createJob(payload, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_JOB!);
             if ("ok" in result) {
                 console.log("Job created:", result.ok);
                 return ["Success", "Success post a job"];
@@ -327,16 +327,20 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
     const identity = authClient.getIdentity();
     const agent = new HttpAgent({ identity });
 
+    console.log("Getting accepted freelancers for job:", jobId);
+
     if (process.env.DFX_NETWORK === "local") {
         await agent.fetchRootKey();
     }
     try {
-        const result = await job_transaction.getAcceptedFreelancers(jobId)
+        const result = await job_transaction.getAcceptedFreelancers(jobId, process.env.CANISTER_ID_USER!)
         if (!result || !("ok" in result)) {
             console.error("Invalid response format:", result);
             return [];
         }
         const users = result.ok; // This is the array of users from the canister
+
+        console.log("Accepted freelancersssss:", users);
 
         const processedUsers = await Promise.all(users.map(async (userData) => {
             let profilePictureBlob: Blob;
@@ -368,52 +372,100 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
     }
 };
 
-export const startJob = async (user_id: string, job_id: string, amount: number): Promise<void> => {
+export const startJob = async (
+    user_id: string,
+    job_id: string,
+    amount: number
+  ): Promise<{ jobStarted: boolean; message: string }> => {
     try {
-        // Authenticate the user
+      // Authenticate the user
+      const authClient = await AuthClient.create();
+      const identity = authClient.getIdentity();
+      const agent = new HttpAgent({ identity });
+  
+      // Fetch the root key for local development
+      if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+      }
+  
+      // Call the startJob method on the job actor
+      const result = await job.startJob(
+        user_id,
+        job_id,
+        process.env.CANISTER_ID_JOB!,
+        process.env.CANISTER_ID_JOB_TRANSACTION!,
+        process.env.CANISTER_ID_USER!
+      );
+  
+      // Check if the result is successful
+      if ("ok" in result) {
+        // Update the user's wallet balance in local storage
+        const userStr = localStorage.getItem("current_user");
+        if (userStr) {
+          const parsedData = JSON.parse(userStr);
+          if (parsedData && typeof parsedData === "object" && "ok" in parsedData) {
+            const updatedUser = {
+              ...parsedData.ok,
+              wallet: parsedData.ok.wallet - amount,
+            };
+  
+            localStorage.setItem(
+              "current_user",
+              JSON.stringify({ ok: updatedUser })
+            );
+            return {
+              jobStarted: true,
+              message: "Job started and wallet updated successfully",
+            };
+          } else {
+            return {
+              jobStarted: true,
+              message: "Job started but user data in local storage is invalid",
+            };
+          }
+        } else {
+          return {
+            jobStarted: true,
+            message: "Job started but user not found in local storage",
+          };
+        }
+      } else {
+        return {
+          jobStarted: false,
+          message: "Failed to start job: " + JSON.stringify(result.err),
+        };
+      }
+    } catch (error) {
+      console.error("Error in startJob:", error);
+      return {
+        jobStarted: false,
+        message: "Error: " + String(error),
+      };
+    }
+  };
+  
+
+export const finishJob = async (job_id: string): Promise<{ jobFinished: boolean; message: string }> =>{
+    try {
         const authClient = await AuthClient.create();
         const identity = authClient.getIdentity();
         const agent = new HttpAgent({ identity });
 
         // Fetch the root key for local development
         if (process.env.DFX_NETWORK === "local") {
-            await agent.fetchRootKey();
+        await agent.fetchRootKey();
         }
 
-        // Call the startJob method on the job actor
-        const result = await job.startJob(user_id, job_id, process.env.CANISTER_ID_JOB!, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_USER!);
+        const result =await job.finishJob(job_id, process.env.CANISTER_ID_JOB!, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_USER!)
 
-        // Check if the result is successful
         if ("ok" in result) {
-            // Update the user's wallet balance in local storage
-            const user = localStorage.getItem("current_user");
-            if (user) {
-                const parsedData = JSON.parse(user);
-
-                // Ensure the parsed data has the expected structure
-                if (parsedData && typeof parsedData === "object" && "ok" in parsedData) {
-                    const updatedUser = {
-                        ...parsedData.ok,
-                        wallet: parsedData.ok.wallet - amount,
-                    };
-
-                    // Save the updated user data back to local storage
-                    localStorage.setItem(
-                        "current_user",
-                        JSON.stringify({ ok: updatedUser })
-                    );
-                } else {
-                    throw new Error("Invalid user data in local storage");
-                }
-            } else {
-                throw new Error("User not found in local storage");
-            }
+            return { jobFinished: true, message: "Job finished successfully." };
         } else {
-            throw new Error("Failed to start job: " + JSON.stringify(result.err));
+            return { jobFinished: false, message: result.err || "Failed to finish job." };
         }
     } catch (error) {
-        console.error("Error in startJob:", error);
-        throw error; // Re-throw the error for the caller to handle
+        return { jobFinished: false, message: "An error occurred while finishing the job." };
     }
-};
+    
+}
 

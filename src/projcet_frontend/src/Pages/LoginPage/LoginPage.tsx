@@ -20,6 +20,7 @@ import { User } from "../../interface/User.ts";
 import { getAllUsers } from "../../controller/userController.ts";
 import LoadingOverlay from "../../components/ui/loading-animation.tsx";
 import VantaRingsBackground from "../../components/ui/ring3d.tsx";
+import { Vortex } from "../../components/ui/vortex.tsx";
 
 const BackgroundPattern = () => (
   <svg
@@ -123,18 +124,8 @@ function LoginPageContent() {
       {isLoading && <LoadingOverlay message="Loading freelancers..." />}
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
         <div className="relative min-h-screen">
-      <VantaRingsBackground />
-          {/* <WavyBackground className="w-screen mx-auto pb-40 px-16 align-middle mt-24">
-            <p className="inline text-2xl md:text-4xl lg:text-7xl text-white font-bold inter-var text-left">
-              With Love, Passion and{" "}
-            </p>
-            <AuroraText className="inline text-7xl font-bold">
-              Talent
-            </AuroraText>
-            <p className="text-base md:text-lg mt-4 text-white font-normal inter-var text-left">
-              Empowering Freelancers & Businesses with Web3 Technology.
-            </p>
-          </WavyBackground> */}
+          <VantaRingsBackground />
+
         </div>
 
         <div className="relative flex flex-col items-center justify-center mt-12">

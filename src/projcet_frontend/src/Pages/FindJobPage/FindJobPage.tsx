@@ -1,10 +1,9 @@
-import { ChevronLeft, ChevronRight, Filter, Search, X } from "lucide-react";
+import { Briefcase, ChevronLeft, ChevronRight, Filter, Search, Users, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../../components/Navbar";
 import { useEffect, useState } from "react";
 import JobCard from "../../components/cards/JobCard";
 import Footer from "../../components/Footer";
-import { FiSearch, FiX } from "react-icons/fi";
 import {
   viewAllJobCategories,
   viewAllJobs,
@@ -14,16 +13,6 @@ import { getUserClickedByUserId } from "../../controller/userClickedController";
 import { Job, JobCategory } from "../../interface/job/Job";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LoadingOverlay from "../../components/ui/loading-animation";
-const JOB_CATEGORIES: JobCategory[] = [
-  { id: "1", jobCategoryName: "Software Engineering" },
-  { id: "2", jobCategoryName: "Design" },
-  { id: "3", jobCategoryName: "Product Management" },
-  { id: "4", jobCategoryName: "Marketing" },
-  { id: "5", jobCategoryName: "Sales" },
-  { id: "6", jobCategoryName: "Customer Support" },
-  { id: "7", jobCategoryName: "Data Science" },
-  { id: "8", jobCategoryName: "Finance" },
-];
 
 const PRICE_RANGES = [
   { label: "< $50", value: "0-50" },
@@ -35,15 +24,13 @@ const PRICE_RANGES = [
 
 export default function FindJobPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [startIndex, setStartIndex] = useState(0);
   const [jobTags, setJobTags] = useState<JobCategory[]>([]);
   const [listJobs, setListJobs] = useState<Job[]>([]);
   const [listUserClickeds, setListUserClickeds] = useState<UserClicked[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
   const [recommendationJobs, setRecommendationJobs] = useState<Job[]>([]);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     searchParams.getAll("categories") || []
@@ -51,17 +38,21 @@ export default function FindJobPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [recommendationStartIndex, setRecommendationStartIndex] = useState(0);
 
+  // Show 3 cards per recommendation page
+  const cardsPerPage = 3;
+
   const nextRecommendationSlide = () => {
-    if (recommendationStartIndex + 5 < recommendationJobs.length) {
-      setRecommendationStartIndex(recommendationStartIndex + 5);
+    if (recommendationStartIndex + cardsPerPage < recommendationJobs.length) {
+      setRecommendationStartIndex(recommendationStartIndex + cardsPerPage);
     }
   };
 
   const prevRecommendationSlide = () => {
     if (recommendationStartIndex > 0) {
-      setRecommendationStartIndex(recommendationStartIndex - 5);
+      setRecommendationStartIndex(recommendationStartIndex - cardsPerPage);
     }
   };
+
   const handleCategoryToggle = (categoryName: string) => {
     setSelectedCategories((prev) =>
       prev.includes(categoryName)
@@ -69,28 +60,30 @@ export default function FindJobPage() {
         : [...prev, categoryName]
     );
   };
+
   const handlePriceRangeToggle = (range: string) => {
     setSelectedPriceRanges((prev) =>
       prev.includes(range) ? prev.filter((r) => r !== range) : [...prev, range]
     );
   };
 
-  const fetchData = async () => {
-    try {
-      const jobs = await viewAllJobs();
-      const categories = await viewAllJobCategories();
+const fetchData = async () => {
+  try {
+    const jobs = await viewAllJobs();
+    const categories = await viewAllJobCategories();
 
-      if (jobs) setListJobs(jobs);
-      if (categories) setJobTags(categories);
+    const filteredJobs = jobs ? jobs.filter((job) => job.jobStatus !== "Finished") : [];
 
-      await getRecommendationJoblList(jobs || []);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      return;
-    } finally {
-      setLoading(false);
-    }
-  };
+    if (filteredJobs.length > 0) setListJobs(filteredJobs);
+    if (categories) setJobTags(categories);
+
+    await getRecommendationJoblList(filteredJobs);
+  } catch (err) {
+    console.error("Error fetching data:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchData();
@@ -163,8 +156,6 @@ export default function FindJobPage() {
       return;
     }
 
-    console.log(data);
-
     try {
       const response = await fetch("http://localhost:5000/getRecommendation", {
         method: "POST",
@@ -182,7 +173,6 @@ export default function FindJobPage() {
       }
 
       const result = await response.json();
-      console.log("Response from Flask:", result);
       setRecommendationJobs(result.top_jobs);
     } catch (error) {
       const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);
@@ -192,12 +182,49 @@ export default function FindJobPage() {
     }
   };
 
+  // Determine if we need navigation buttons based on recommendation count
+  const showRecommendationNav = recommendationJobs.length > cardsPerPage;
+
+  // For centered layout when fewer than 3 cards
+  const getRecommendationLayout = () => {
+    const visibleCards = recommendationJobs.slice(
+      recommendationStartIndex,
+      recommendationStartIndex + cardsPerPage
+    );
+
+    if (visibleCards.length === 0) {
+      return <div className="text-center py-8 text-gray-500">No recommended jobs available</div>;
+    }
+
+    if (visibleCards.length < cardsPerPage) {
+      // Center cards when fewer than cardsPerPage
+      return (
+        <div className="flex justify-center gap-6 w-full px-4">
+          {visibleCards.map((job) => (
+            <div key={job.id} className="w-full max-w-[320px]">
+              <JobCard job={job} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Regular layout for 3 or more cards
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full px-4">
+        {visibleCards.map((job) => (
+          <JobCard key={job.id} job={job} />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white">
       {loading && <LoadingOverlay />}
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Search Bar with Modern Design */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -212,22 +239,23 @@ export default function FindJobPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-10 py-3 rounded-xl 
-                                    bg-white/70 backdrop-blur-sm 
-                                    border border-purple-100/50 
-                                    focus:ring-2 focus:ring-purple-300 
-                                    transition duration-300 
-                                    text-gray-700 placeholder-gray-400"
+                  bg-white/70 backdrop-blur-sm 
+                  border border-purple-100/50 
+                  focus:ring-2 focus:ring-purple-300 
+                  transition duration-300 
+                  text-gray-700 placeholder-gray-400
+                  shadow-sm"
               />
               <Search
                 className="absolute left-4 top-1/2 -translate-y-1/2 
-                                    text-purple-400"
+                  text-purple-400"
               />
               {searchQuery && (
                 <X
                   onClick={() => setSearchQuery("")}
                   className="absolute right-4 top-1/2 -translate-y-1/2 
-                                        text-gray-400 cursor-pointer 
-                                        hover:text-purple-500 transition"
+                    text-gray-400 cursor-pointer 
+                    hover:text-purple-500 transition"
                 />
               )}
             </div>
@@ -237,7 +265,7 @@ export default function FindJobPage() {
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="bg-purple-100 text-purple-600 p-3 rounded-xl 
-                                hover:bg-purple-200 transition"
+                hover:bg-purple-200 transition shadow-sm"
             >
               <Filter />
             </motion.button>
@@ -263,10 +291,8 @@ export default function FindJobPage() {
                     <motion.div
                       key={category.id}
                       whileHover={{ scale: 1.05 }}
-                      className={`p-3 rounded-lg cursor-pointer transition 
-                                                ${selectedCategories.includes(
-                        category.jobCategoryName
-                      )
+                      className={`p-3 rounded-lg cursor-pointer transition text-center
+                        ${selectedCategories.includes(category.jobCategoryName)
                           ? "bg-purple-200 text-purple-800"
                           : "bg-gray-100 text-gray-700 hover:bg-purple-100"
                         }`}
@@ -290,10 +316,8 @@ export default function FindJobPage() {
                     <motion.div
                       key={range.value}
                       whileHover={{ scale: 1.05 }}
-                      className={`p-3 rounded-lg cursor-pointer transition 
-                                                ${selectedPriceRanges.includes(
-                        range.value
-                      )
+                      className={`p-3 rounded-lg cursor-pointer transition text-center
+                        ${selectedPriceRanges.includes(range.value)
                           ? "bg-purple-200 text-purple-800"
                           : "bg-gray-100 text-gray-700 hover:bg-purple-100"
                         }`}
@@ -309,53 +333,62 @@ export default function FindJobPage() {
         </AnimatePresence>
 
         {/* Job Listings Section */}
-        <div className="space-y-8">
+        <div className="space-y-10">
           {/* Recommended Jobs */}
-          <div className="mb-8 relative">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <section className="bg-white/50 rounded-xl shadow-sm p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-3">
+                <Users size={20} />
+              </span>
               Recommended Jobs
             </h2>
 
-            <div className="relative flex items-center">
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={prevRecommendationSlide}
-                disabled={recommendationStartIndex === 0}
-                className="absolute left-0 z-10 bg-purple-500/20 text-purple-700 p-2 rounded-full 
-                                disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft />
-              </motion.button>
+            <div className="relative">
+              {showRecommendationNav && (
+                <>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={prevRecommendationSlide}
+                    disabled={recommendationStartIndex === 0}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 
+                      bg-purple-500/20 text-purple-700 p-2 rounded-full 
+                      disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft />
+                  </motion.button>
 
-              <div className="flex gap-4 overflow-hidden w-full px-12">
-                {recommendationJobs
-                  .slice(recommendationStartIndex, recommendationStartIndex + 5)
-                  .map((job) => (
-                    <JobCard key={job.id} job={job} />
-                  ))}
-              </div>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={nextRecommendationSlide}
+                    disabled={
+                      recommendationStartIndex + cardsPerPage >= recommendationJobs.length
+                    }
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 
+                      bg-purple-500/20 text-purple-700 p-2 rounded-full 
+                      disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight />
+                  </motion.button>
+                </>
+              )}
 
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={nextRecommendationSlide}
-                disabled={
-                  recommendationStartIndex + 5 >= recommendationJobs.length
-                }
-                className="absolute right-0 z-10 bg-purple-500/20 text-purple-700 p-2 rounded-full 
-                                disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight />
-              </motion.button>
+              {getRecommendationLayout()}
             </div>
-          </div>
+          </section>
 
           {/* All Jobs */}
-          <section>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">All Jobs</h2>
+          <section className="bg-white/50 rounded-xl shadow-sm p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-3">
+                <Briefcase size={20} />
+              </span>
+              All Jobs
+            </h2>
+
             {filteredJobs.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredJobs.map((job) => (
                   <JobCard key={job.id} job={job} />
                 ))}

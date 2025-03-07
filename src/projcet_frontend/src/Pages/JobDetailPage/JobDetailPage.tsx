@@ -148,7 +148,6 @@ export default function JobDetailPage() {
           setLoading(false);
           return;
         }
-
         const userId = parsedData.ok.id;
 
         if (job && job.userId === userId) {

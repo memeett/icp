@@ -21,7 +21,7 @@ import {
 } from "../../controller/jobController";
 import { authUtils } from "../../utils/authUtils";
 import { User } from "../../interface/User";
-import { Job } from "../../interface/job/Job";
+import { Job } from "../../../../declarations/job/job.did";
 import {
   acceptApplier,
   applyJob,
@@ -316,7 +316,7 @@ export default function JobDetailPage() {
       });
     }
   };
-
+``
   if (error) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -351,7 +351,6 @@ export default function JobDetailPage() {
       }
     }
   };
-
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {loading && <LoadingOverlay message="Loading Job..." />}

@@ -66,7 +66,7 @@ export default function ProfileBiodata() {
         if (!plug) {
           console.error("Plug Wallet not detected");
           alert(
-            "Plug Wallet is not installed. Please install it and try again."
+            "Plug Wallet is not installed. Please install it at https://chromewebstore.google.com/detail/plug/cfbfdhimifdmdehjmkdobpcjfefblkjm?pli=1."
           );
           return;
         }

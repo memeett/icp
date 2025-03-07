@@ -12,7 +12,6 @@ import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
 import Job "../Job/model";
 import User "../User/model";
-import Global "../global";
 
 actor InvitationModel{
     private stable var nextId : Int = 0;
@@ -45,12 +44,11 @@ actor InvitationModel{
         invitationsEntries := [];
     };
 
+    public func createInvitation(owner_id : Text, job_id: Text, freelancer_id : Text, job_canister: Text) : async Result.Result<Invitation.Invitation, Text> {
+        let jobActor = actor (job_canister) : actor {
+            getJob : (Text) -> async Result.Result<Job.Job, Text>;
+        };
 
-    let jobActor = actor ("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
-        getJob : (Text) -> async Result.Result<Job.Job, Text>;
-    };
-
-    public func createInvitation(owner_id : Text, job_id: Text, freelancer_id : Text) : async Result.Result<Invitation.Invitation, Text> {
         try {
             let jobResult = await jobActor.getJob(job_id);
             
@@ -90,7 +88,10 @@ actor InvitationModel{
         };
     };
 
-    public func deleteInvitation(owner_id : Text, invitation_id: Int) : async Bool {
+    public func deleteInvitation(owner_id : Text, invitation_id: Int, job_canister: Text) : async Bool {
+        let jobActor = actor (job_canister) : actor {
+            getJob : (Text) -> async Result.Result<Job.Job, Text>;
+        };
         switch (invitations.get(invitation_id)) {
             case (null) {
                 return false;
@@ -118,7 +119,10 @@ actor InvitationModel{
         };
     };
 
-    public func getInvitationByUserID(user_id: Text) : async [Invitation.UserInvitationPayload] {
+    public func getInvitationByUserID(user_id: Text, job_canister: Text) : async [Invitation.UserInvitationPayload] {
+        let jobActor = actor (job_canister) : actor {
+            getJob : (Text) -> async Result.Result<Job.Job, Text>;
+        };
         var userInvitations : Buffer.Buffer<Invitation.UserInvitationPayload> = Buffer.Buffer(0);
         
         for ((_, invitation) in invitations.entries()) {
@@ -147,11 +151,11 @@ actor InvitationModel{
         return Buffer.toArray(userInvitations);
     };
 
-    let userActor = actor (Global.canister_id.user): actor{
-        getUserById : (Text) -> async Result.Result<User.User, Text>;
-    };
     
-    public func getInvitationByJobId(job_id: Text) : async [Invitation.JobInvitationPayload] {
+    public func getInvitationByJobId(job_id: Text, user_canister: Text) : async [Invitation.JobInvitationPayload] {
+        let userActor = actor (user_canister): actor{
+            getUserById : (Text) -> async Result.Result<User.User, Text>;
+        };
         var jobInvitations : Buffer.Buffer<Invitation.JobInvitationPayload> = Buffer.Buffer(0);
         
         for ((_, invitation) in invitations.entries()) {

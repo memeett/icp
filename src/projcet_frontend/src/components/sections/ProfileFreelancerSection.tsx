@@ -63,87 +63,82 @@ export default function ProfileFreelancerSection() {
     // };
 
     return (
-        <div className="w-full bg-gradient-to-r">
-            <div className="max-w-5xl mx-auto px-4">
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-purple-100"
-                >
-                    {/* Header with gradient background */}
-                    <div className="relative overflow-hidden h-32 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400">
-                        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSgxMzUpIj48cGF0aCBkPSJNMjAgMCBMMjAgNDAgTDAgMjAgTDQwIDIwIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3BhdHRlcm4pIiBvcGFjaXR5PSIwLjQiLz48L3N2Zz4=')] opacity-30"></div>
-                        <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t"></div>
-                        <div className="relative p-6 flex items-end h-full">
-                            <h1 className="text-3xl font-bold text-white drop-shadow-md">Freelancer Jobs</h1>
-                        </div>
-                    </div>
-
-                    <div className="p-6">
-                        {/* Tab Navigation */}
-                        <div className="flex justify-between items-center mb-6">
-                            <div className="flex border-b border-gray-200">
-                                <button
-                                    className={`py-2 px-4 font-medium text-sm focus:outline-none ${activeTab === "active"
-                                        ? "border-b-2 border-purple-500 text-purple-600"
-                                        : "text-gray-500 hover:text-gray-700"
-                                        }`}
-                                    onClick={() => setActiveTab("active")}
-                                >
-                                    Active Jobs
-                                </button>
-                                <button
-                                    className={`py-2 px-4 font-medium text-sm focus:outline-none ${activeTab === "history"
-                                        ? "border-b-2 border-purple-500 text-purple-600"
-                                        : "text-gray-500 hover:text-gray-700"
-                                        }`}
-                                    onClick={() => setActiveTab("history")}
-                                >
-                                    Job History
-                                </button>
-                            </div>
-                            {/* Refresh button */}
-                            <div className="flex space-x-2">
-                                <button
-                                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Tab Content */}
-                        <div className="py-2">
-                            {activeTab === "active" ? (
-                                <FreelancerActiveJobTab />
-                            ) : (
-                                <FreelancerJobHistoryTab />
-                            )}
-                        </div>
-
-                        {/* Empty state (can be conditionally rendered based on data availability) */}
-                        {/* Uncomment and use this when needed */}
-                        {/* <div className="text-center py-12">
-                            <div className="p-4 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-full inline-block mb-4">
-                                <svg className="h-16 w-16 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                </svg>
-                            </div>
-                            <p className="mt-4 text-lg text-gray-600">No freelancer jobs found</p>
-                            <p className="text-gray-500">Your active jobs will appear here.</p>
-                            <button
-                                className="mt-6 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-purple-300 transition-all duration-300"
-                            >
-                                Refresh
-                            </button>
-                        </div> */}
-                       
-                    </div>
-                </motion.div>
+      <div className="w-full bg-gradient-to-r">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-purple-100"
+          >
+            {/* Header with gradient background */}
+            <div className="relative overflow-hidden h-32 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSgxMzUpIj48cGF0aCBkPSJNMjAgMCBMMjAgNDAgTDAgMjAgTDQwIDIwIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3BhdHRlcm4pIiBvcGFjaXR5PSIwLjQiLz48L3N2Zz4=')] opacity-30"></div>
+              <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t"></div>
+              <div className="relative p-6 flex items-end h-full">
+                <h1 className="text-3xl font-bold text-purple-700 drop-shadow-md">
+                  Freelancer Jobs
+                </h1>
+              </div>
             </div>
+
+            <div className="p-6 m">
+              {/* Tab Navigation */}
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex border-b border-gray-200">
+                  <button
+                    className={`py-2 px-4 font-medium text-lg focus:outline-none ${
+                      activeTab === "active"
+                        ? "border-b-2 border-purple-500 text-purple-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                    onClick={() => setActiveTab("active")}
+                  >
+                    Active Jobs
+                  </button>
+                  <button
+                    className={`py-2 px-4 font-medium text-lg focus:outline-none ${
+                      activeTab === "history"
+                        ? "border-b-2 border-purple-500 text-purple-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                    onClick={() => setActiveTab("history")}
+                  >
+                    Job History
+                  </button>
+                </div>
+                {/* Refresh button */}
+                <div className="flex space-x-2">
+                  <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Tab Content */}
+              <div className="py-2 min-h-[60vh] flex justify-center items-center">
+                {activeTab === "active" ? (
+                  <FreelancerActiveJobTab />
+                ) : (
+                  <FreelancerJobHistoryTab />
+                )}
+              </div>
+            </div>
+          </motion.div>
         </div>
+      </div>
     );
 }

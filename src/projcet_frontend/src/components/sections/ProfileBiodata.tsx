@@ -419,7 +419,7 @@ export default function ProfileBiodata() {
 
           <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-purple-50">
             {/* Profile Header */}
-            <div className="bg-gradient-to-r from-[#DBE2EF] to-blue-200 p-8">
+            <div className="bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 p-8">
               <div className="flex items-center gap-6">
                 <motion.div
                   whileHover={{ scale: 1.05 }}

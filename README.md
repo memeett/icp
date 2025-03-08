@@ -110,9 +110,9 @@ deepface==0.0.89
 #### **2. Set Up Virtual Environment**
 ```bash
 # Create and activate virtual environment
-python -m venv ergasia-ai
-source ergasia-ai/bin/activate  # Linux/Mac
-ergasia-ai\Scripts\activate     # Windows
+python -m venv recommendation_venv
+source recommendation_venv/bin/activate  # Linux/Mac
+recommendation_venv\Scripts\activate     # Windows
 
 # Install dependencies
 pip install --upgrade pip
@@ -122,7 +122,7 @@ pip install -r requirements.txt
 #### **3. Run the Recommendation System**
 ```bash
 # Change the directory to project_backend/AI
-cd ./project_backend/AI
+cd ./src/project_backend/AI
 
 # Run the Python file
 python main.py
@@ -138,13 +138,12 @@ Ensure you have Conda installed, then run:
 ```bash
 
 # Create a Conda environment from environment.yml
-conda env create -f environment.yml
+conda env create -f environment.yml -n fr_venv python=3.9.10
 
 # Activate the environment
-conda activate ergasia-face-recognition
+conda activate fr_venv
 
 #### **2. Run the Face Recognition System**
-```bash
 # Change the directory to project_backend/face_recognition
 cd ./../face_recognition/app
 

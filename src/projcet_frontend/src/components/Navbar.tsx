@@ -42,12 +42,13 @@ const Navbar = () => {
       setUser(null);
     }
   }, [current_user]);
+
   const [inboxOpen, setInboxOpen] = useState(false);
   const [inboxes, setInboxes] = useState<InboxResponse[]>([]);
-  const fetchInbox =useCallback( async () => {
+
+  const fetchInbox = useCallback(async () => {
     try {
       const inboxResult = await getAllInboxByUserId(user?.id || "");
-      console.log("mama" + inboxResult);
       if (inboxResult) {
         setInboxes(inboxResult);
       }
@@ -56,16 +57,16 @@ const Navbar = () => {
     }
   }, [user?.id]);
 
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [receiverInbox, setReceiverInbox] = useState<Inbox[]>([]);
-  const [senderInbox, setSenderInbox] = useState<Inbox[]>([]);
-  const [usernames, setUsernames] = useState<{ [key: string]: string }>({});
-
   useEffect(() => {
     if (user?.id) {
       fetchInbox();
     }
   }, [user?.id, fetchInbox]);
+
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [receiverInbox, setReceiverInbox] = useState<Inbox[]>([]);
+  const [senderInbox, setSenderInbox] = useState<Inbox[]>([]);
+  const [usernames, setUsernames] = useState<{ [key: string]: string }>({});
 
   const getUsernameById = useCallback(
     async (userId: string): Promise<string | null> => {
@@ -186,6 +187,10 @@ const Navbar = () => {
                     }`}
                   >
                     <Bell className="w-6 h-6 text-gray-600" />
+                    {/* Red dot indicator */}
+                    {inboxes.length > 0 && (
+                      <div className="absolute top-2 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                    )}
                   </button>
                 </div>
               ) : (

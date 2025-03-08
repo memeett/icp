@@ -144,7 +144,6 @@ conda env create -f environment.yml -n fr_venv python=3.9.10
 conda activate fr_venv
 
 #### **2. Run the Face Recognition System**
-```bash
 # Change the directory to project_backend/face_recognition
 cd ./../face_recognition/app
 

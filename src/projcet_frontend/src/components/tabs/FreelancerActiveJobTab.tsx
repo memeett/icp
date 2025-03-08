@@ -51,7 +51,7 @@ export default function FreelancerActiveJobTab() {
   }
 
   return (
-    <div>
+    <div className="w-full">
       {activeJob.length === 0 ? (
         <div className="text-center py-16 px-4">
           <div className="p-4 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-full inline-block mb-4">
@@ -84,7 +84,7 @@ export default function FreelancerActiveJobTab() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="">
           {activeJob.map((job, index) => (
             <FreelancerJobCard
               key={job.jobId + index}

@@ -475,7 +475,7 @@ export const finishJob = async (job_id: string): Promise<{ jobFinished: boolean;
         await agent.fetchRootKey();
         }
 
-        const result =await job.finishJob(job_id, process.env.CANISTER_ID_JOB!, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_USER!)
+        const result =await job.finishJob(job_id, process.env.CANISTER_ID_JOB!, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_USER!, process.env.CANISTER_ID_RATING!)
 
         if ("ok" in result) {
             return { jobFinished: true, message: "Job finished successfully." };

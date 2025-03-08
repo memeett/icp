@@ -134,7 +134,7 @@ python main.py
 Ensure you have Conda installed, then run:
 ```bash
 # Download environment.yml (if not already available)
-wget https://raw.githubusercontent.com/memeett/icp/environment.yml
+- [environment.yml](https://github.com/memeett/icp/blob/master/environment.yml)
 
 # Create a Conda environment from environment.yml
 conda env create -f environment.yml

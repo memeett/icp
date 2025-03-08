@@ -231,7 +231,6 @@ actor RatingModel{
         let userActor = actor(user_canister) : actor {
             updateUserRating : (userId: Text, newRating: Float) -> async Result.Result<Text, Text>;
         };
-
         let updateResult = await userActor.updateUserRating(user_id, averageRating);
         switch (updateResult) {
             case (#ok(_)) {
@@ -244,4 +243,59 @@ actor RatingModel{
             };
         };
     };
+
+   public func getRatingByUserIdJobId(jobId : Text, userId : Text, user_canister : Text, job_canister: Text) : async Result.Result<Rating.HistoryRatingPayload, Text> {
+    if (Text.size(jobId) == 0) {
+        return #err("Job ID cannot be empty");
+    };
+    if (Text.size(userId) == 0) {
+        return #err("User ID cannot be empty");
+    };
+
+    let userActor = actor(user_canister) : actor {
+        getUserById : (userId : Text) -> async Result.Result<User.User, Text>;
+    };
+
+    let jobActor = actor(job_canister) : actor {
+        getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
+    };
+
+    let jobResult = await jobActor.getJob(jobId);
+    switch (jobResult) {
+        case (#ok(job)) {
+            let userResult = await userActor.getUserById(userId);
+            switch (userResult) {
+                case (#ok(user)) {
+                    let foundRating = Array.find<Rating.Rating>(
+                        Iter.toArray(ratings.vals()),
+                        func(rating : Rating.Rating) : Bool {
+                            rating.job_id == jobId and rating.user_id == userId
+                        }
+                    );
+
+                    switch (foundRating) {
+                        case (?rating) {
+                            let historyRatingPayload : Rating.HistoryRatingPayload = {
+                                job = job;
+                                user = user;
+                                rating = rating.rating;
+                                isEdit = rating.isEdit;
+                            };
+                            #ok(historyRatingPayload);
+                        };
+                        case null {
+                            return #err("Rating not found for the given job ID and user ID");
+                        };
+                    };
+                };
+                case (#err(errMsg)) {
+                    return #err("Failed to fetch user data: " # errMsg);
+                };
+            };
+        };
+        case (#err(errMsg)) {
+            return #err("Failed to fetch job details: " # errMsg);
+        };
+    };
+};
 }

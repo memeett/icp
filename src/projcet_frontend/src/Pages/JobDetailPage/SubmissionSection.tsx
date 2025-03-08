@@ -249,10 +249,10 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
                         <td className="px-6 py-4 text-gray-600">{application.user.username}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${application.submissionStatus.toLowerCase() === "accepted"
-                              ? "bg-green-100 text-green-800"
-                              : application.submissionStatus.toLowerCase() === "rejected"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-yellow-100 text-yellow-800"
+                            ? "bg-green-100 text-green-800"
+                            : application.submissionStatus.toLowerCase() === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
                             }`}>
                             {application.submissionStatus}
                           </span>
@@ -291,7 +291,6 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
         )}
       </motion.div>
 
-      <Footer />
     </div>
   );
 }

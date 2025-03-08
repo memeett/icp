@@ -164,6 +164,8 @@ export default function JobDetailPage() {
             getJobApplier(jobId),
           ]);
 
+
+
           setAccAppliers(acceptedFreelancers);
           setAppliers(jobAppliers);
 
@@ -248,7 +250,7 @@ export default function JobDetailPage() {
     try {
       const parsedData = JSON.parse(userData);
       const result = await applyJob(parsedData.ok.id, jobId!);
-      console.log(job!.userId)
+      console.log(job)
       await createInbox(
         job!.userId,
         parsedData.ok.id,

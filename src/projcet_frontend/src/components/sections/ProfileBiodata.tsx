@@ -25,6 +25,7 @@ import { useJobCategories } from "../../utils/useJobCategories";
 import { set } from "date-fns";
 import LoadingOverlay from "../ui/loading-animation";
 import ErrorModal from "../modals/ErrorModal";
+import FaceRecognition from "../FaceRecognition";
 // import FaceRecognition from "../FaceRecognition";
 
 export default function ProfileBiodata() {
@@ -119,11 +120,7 @@ export default function ProfileBiodata() {
           price: true,
         },
       };
-      console.log("kanjut")
-      console.log("Sending ICP:", transferArgs);
       const result = await plug.requestTransfer(transferArgs);
-      console.log("kanjut")
-      console.log("Transaction successful:", result);
       topUp(parseFloat(amount));
       //later add success modal
 
@@ -133,7 +130,6 @@ export default function ProfileBiodata() {
         const profilePicture = await blobToUint8Array(
           user ? user.profilePicture : new Blob()
         );
-        console.log("memememe" + profilePicture);
         localStorage.setItem(
           "current_user",
           JSON.stringify({
@@ -155,7 +151,6 @@ export default function ProfileBiodata() {
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files?.[0]) {
       const file = event.target.files[0];
-      console.log(file);
       setSelectedImage(file);
       setPreviewImage(URL.createObjectURL(file));
       setShowImagePreview(true);
@@ -631,7 +626,6 @@ export default function ProfileBiodata() {
             </div>
             {/* <FaceRecognition
               principalId={user.id}
-              onSuccess={() => console.log("Operation successful!")}
               onError={(error: string) =>
                 console.error("Operation failed:", error)
               }

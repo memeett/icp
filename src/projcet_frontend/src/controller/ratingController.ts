@@ -1,6 +1,6 @@
 import { User } from "../interface/User";
 import { rating } from "../../../declarations/rating";
-import { RequestRatingPayload } from "../../../declarations/rating/rating.did";
+import { HistoryRatingPayload, RequestRatingPayload } from "../../../declarations/rating/rating.did";
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent } from "@dfinity/agent";
 
@@ -118,3 +118,17 @@ export const ratingUser = async (rating_id: string , ratingValue: number): Promi
         return "Error rating user. Please try again later.";
     }
 };
+
+
+export const getRatingByUserIdJobId = async (jobId: string, userId : string): Promise<HistoryRatingPayload | string> => {
+
+    const result = await rating.getRatingByUserIdJobId(jobId, userId, process.env.CANISTER_ID_USER!, process.env.CANISTER_ID_JOB!)
+    if ("ok" in result) {
+            // Success case: Return the success message
+            return result.ok;
+    } else {
+            // Error case: Log the error and return the error message
+            console.error("Failed to rate user:", result.err);
+            return result.err;
+    }
+}

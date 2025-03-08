@@ -131,7 +131,7 @@ python main.py
 ### Face Recognition System Setup
 
 #### **1. Install Dependencies from environment.yml**
-# Download environment.yml (if not already available)
+#### Download environment.yml (if not already available)
 - [environment.yml](https://github.com/memeett/icp/blob/master/environment.yml)
 
 Ensure you have Conda installed, then run:

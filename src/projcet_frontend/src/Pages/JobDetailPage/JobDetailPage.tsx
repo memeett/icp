@@ -47,6 +47,8 @@ import { NestedModalProvider } from "../../contexts/nested-modal-context";
 
 import ErrorModal from "../../components/modals/ErrorModal";
 import FinishJobModal from "./JobWarningModal";
+import { useBoolean } from "../../components/context/Context";
+import FinishedSection from "./RatingSection";
 
 const AcceptedUsersModal: React.FC<{
   users: User[];
@@ -134,6 +136,8 @@ export default function JobDetailPage() {
     setIsModalOpen(false); // Close the modal
   };
 
+  const {setIsActive} = useBoolean()
+
   useEffect(() => {
     const fetchData = async () => {
       console.log("Fetching data...");
@@ -165,11 +169,12 @@ export default function JobDetailPage() {
 
           const hasApplied = await hasUserApplied(userId, jobId);
 
-          const isUserAcceptedOrApplied =
+          const isUserAcceptedOrApplied = await
             acceptedFreelancers.some((user) => user.id === userId) || hasApplied;
 
           if (isUserAcceptedOrApplied) {
             setApplied(true);
+            setIsActive(true)
           }
         }
       } catch (error) {
@@ -181,6 +186,13 @@ export default function JobDetailPage() {
 
     fetchData();
   }, [job, jobId]);
+
+
+  useEffect(() => {
+    setIsActive(true)
+  }
+  , [applied])
+
 
   const fetchJob = useCallback(async () => {
     if (!jobId) {
@@ -445,7 +457,7 @@ export default function JobDetailPage() {
       />
 
       <motion.div className="container mx-auto px-4 mt-6 flex-grow">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 ml-45">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 ">
           Job Detail
         </h1>
 
@@ -476,7 +488,7 @@ export default function JobDetailPage() {
                 remainingPositions={(
                   maxApplicants - currentApplicants
                 ).toString()}
-                applied={applied}
+                // applied={applied}
                 onApply={handleApply}
                 onTermsChange={setTermsAccepted}
                 onResponsibilityChange={setResponsibilityAccepted}
@@ -489,6 +501,12 @@ export default function JobDetailPage() {
         { (job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && !isOwner && (
           <OngoingSection job={job} />
         )}
+        {isOwner && job.jobStatus === "Finished" && (
+          <FinishedSection job={job} acceptedFreelancers={acceptedAppliers} />
+          
+
+        )
+        }
 
         {isOwner && (job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && (
           <ModalProvider>
@@ -498,6 +516,8 @@ export default function JobDetailPage() {
             {/* </NestedModalProvider> */}
           </ModalProvider>
         )}
+
+        
       </motion.div>
 
       <Footer />

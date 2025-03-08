@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { useBoolean } from "../../components/context/Context";
 import { ApplyButton } from "./ApplyButton";
 import { TermsCheckbox } from "./TermsCheckBox";
 
@@ -7,7 +9,7 @@ export const ApplicantActions = ({
   responsibilityAccepted,
   isApplicationClosed,
   remainingPositions,
-  applied,
+  // applied,
   onApply,
   onTermsChange,
   onResponsibilityChange,
@@ -18,12 +20,28 @@ export const ApplicantActions = ({
   responsibilityAccepted: boolean;
   isApplicationClosed: boolean;
   remainingPositions: string;
-  applied: boolean;
+  // applied: boolean;
   onApply: () => void;
   onTermsChange: (checked: boolean) => void;
   onResponsibilityChange: (checked: boolean) => void;
-  jobStatus: string; // Change type to string to match job status values
-}) => (
+  jobStatus: string
+}
+  
+
+
+) => {
+
+  const { isActive } = useBoolean();
+  const [applied, setApplied] = useState(false);
+  useEffect(() => {
+    setApplied(isActive);
+  }
+  , [isActive]);
+
+
+  return (
+  
+
   <div className="space-y-6">
     <div className="bg-blue-50/30 p-4 rounded-xl">
       <h3 className="text-3xl font-semibold text-indigo-800 mb-2">Job Reward</h3>
@@ -68,7 +86,7 @@ export const ApplicantActions = ({
     ) : (
       <ApplyButton
         applied={applied}
-        disabled={applied || !termsAccepted || !responsibilityAccepted || isApplicationClosed}
+        disabled={applied  || !termsAccepted || !responsibilityAccepted || isApplicationClosed}
         onClick={onApply}
       />
     )}
@@ -77,4 +95,7 @@ export const ApplicantActions = ({
       By applying, you agree to our terms of service and privacy policy
     </p>
   </div>
-);
+  )
+
+
+};

@@ -19,6 +19,7 @@ import LoginFace from "./Pages/LoginPage/LoginFace.tsx";
 import BrowseFreelancerPage from "./Pages/BrowseFreelancerPage/BrowseFreelancerPage.tsx";
 import PublicProfile from "./Pages/profile/PublicProfile.tsx";
 import ManageJobDetailPage from "./Pages/JobDetailPage/SubmissionSection.tsx";
+import { BooleanProvider } from "./components/context/Context.tsx";
 
 
 const route = createBrowserRouter([
@@ -69,9 +70,12 @@ const route = createBrowserRouter([
 const rootElement = document.getElementById("root");
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
+    <BooleanProvider>
+      
     <ModalProvider>
       <RouterProvider router={route}></RouterProvider>
     </ModalProvider>
+    </BooleanProvider>
   );
 } else {
   console.error("Root element not found");

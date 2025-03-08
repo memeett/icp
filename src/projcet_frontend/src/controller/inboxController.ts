@@ -26,7 +26,6 @@ export const createInbox = async (
       status
     );
     if ("ok" in result) {
-      console.log("Created inbox:", result.ok);
       return result.ok;
     }
     console.error("Failed to create inbox:", result.err);
@@ -48,7 +47,6 @@ export const getInbox = async (inboxId: string): Promise<Inbox | null> => {
   try {
     const result = await inbox.getInbox(inboxId);
     if ("ok" in result) {
-      console.log("Inbox:", result.ok);
       return result.ok;
     }
     console.error("Failed to get inbox:", result.err);
@@ -128,7 +126,6 @@ export const updateInbox = async (
   try {
     const result = await inbox.updateInboxStatus(inboxId, status);
     if ("ok" in result) {
-      console.log("Updated inbox:", result.ok);
       return true;
     }
     console.error("Failed to update inbox:", result.err);
@@ -176,7 +173,6 @@ export const getAllInboxByUserId = async (
         const receiverName = await user.getUsernameById(i.receiverId);
         const submission_type = i.submission_type;
         let message = "Invalid message";
-        console.log("lele" + submission_type);
         if (
           submission_type.toLocaleLowerCase() ===
           "submission".toLocaleLowerCase()
@@ -260,7 +256,6 @@ export const acceptInbox = async (inboxId: string): Promise<boolean> => {
   try {
     const result = await inbox.acceptInbox(inboxId);
     if ("ok" in result) {
-      console.log("Accepted inbox:", result.ok);
       return true;
     }
     console.error("Failed to accept inbox:", result.err);
@@ -282,7 +277,6 @@ export const rejectInbox = async (inboxId: string): Promise<boolean> => {
   try {
     const result = await inbox.rejectInbox(inboxId);
     if ("ok" in result) {
-      console.log("Rejected inbox:", result.ok);
       return true;
     }
     console.error("Failed to reject inbox:", result.err);
@@ -304,7 +298,6 @@ export const markInboxAsRead = async (inboxId: string): Promise<boolean> => {
   try {
     const result = await inbox.markAsRead(inboxId);
     if ("ok" in result) {
-      console.log("Marked inbox as read:", result.ok);
       return true;
     }
     console.error("Failed to mark inbox as read:", result.err);
@@ -329,7 +322,6 @@ export const updateInboxStatus = async (
   try {
     const result = await inbox.updateInboxStatus(inboxId, status);
     if ("ok" in result) {
-      console.log("Updated inbox status:", result.ok);
       return true;
     }
     console.error("Failed to update inbox status:", result.err);

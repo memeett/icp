@@ -7,6 +7,7 @@ import List "mo:base/List";
 import Result "mo:base/Result";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
+import Float "mo:base/Float";
 import User "../User/model";
 import Job "../Job/model";
 
@@ -137,7 +138,7 @@ actor RatingModel{
         };
     };
 
-    public func ratingUser(payloads : [Rating.RequestRatingPayload]) : async Result.Result<Text, Text> {
+    public func ratingUser(payloads : [Rating.RequestRatingPayload], user_canister: Text) : async Result.Result<Text, Text> {
         // Step 1: Convert HashMap values to an array
         let ratingsArray = Iter.toArray(ratings.vals());
 
@@ -173,6 +174,16 @@ actor RatingModel{
 
                     // Step 7: Save the updated rating back to the HashMap
                     ratings.put(payload.rating_id, updatedRating);
+
+                    // Step 8: Call updateUserRating for the user associated with this rating
+                    let updateResult = await updateUserRating(rating.user_id, user_canister);
+                    switch (updateResult) {
+                        case (#ok(_msg)) {};
+                        case (#err(errMsg)) {
+                            // Return the error message if updating the user's rating fails
+                            return #err("Failed to update user rating for user " # rating.user_id # ": " # errMsg);
+                        };
+                    };
                 };
                 case null {
                     return #err("Rating with ID " # payload.rating_id # " not found");
@@ -180,7 +191,7 @@ actor RatingModel{
             };
         };
 
-        // Step 8: Return success message
+        // Step 9: Return success message
         #ok("Ratings updated successfully");
     };
 
@@ -188,5 +199,103 @@ actor RatingModel{
         Iter.toArray(ratings.vals());
     };
 
+    public func updateUserRating(user_id: Text, user_canister: Text): async Result.Result<Text, Text> {
+        // Step 1: Filter ratings by user_id
+        let userRatings = Iter.toArray(
+            Iter.filter<Rating.Rating>(
+                ratings.vals(),
+                func(rating : Rating.Rating) : Bool {
+                    rating.user_id == user_id
+                }
+            )
+        );
 
+        // Step 2: Calculate the total sum of ratings
+        let totalRatings = Array.size(userRatings);
+        if (totalRatings == 0) {
+            return #err("No ratings found for the user"); // Return an error if there are no ratings
+        };
+
+        let sumRatings = Array.foldLeft<Rating.Rating, Float>(
+            userRatings,
+            0.0,
+            func(acc : Float, rating : Rating.Rating) : Float {
+                acc + rating.rating
+            }
+        );
+
+        // Step 3: Calculate the average rating
+        let averageRating = sumRatings / Float.fromInt(totalRatings);
+
+        // Step 4: Update the user's rating in the UserModel actor
+        let userActor = actor(user_canister) : actor {
+            updateUserRating : (userId: Text, newRating: Float) -> async Result.Result<Text, Text>;
+        };
+        let updateResult = await userActor.updateUserRating(user_id, averageRating);
+        switch (updateResult) {
+            case (#ok(_)) {
+                // Successfully updated the user's rating
+                #ok("User rating updated successfully. New average rating: " # Float.toText(averageRating));
+            };
+            case (#err(errMsg)) {
+                // Return the error message
+                #err("Failed to update user rating: " # errMsg);
+            };
+        };
+    };
+
+   public func getRatingByUserIdJobId(jobId : Text, userId : Text, user_canister : Text, job_canister: Text) : async Result.Result<Rating.HistoryRatingPayload, Text> {
+    if (Text.size(jobId) == 0) {
+        return #err("Job ID cannot be empty");
+    };
+    if (Text.size(userId) == 0) {
+        return #err("User ID cannot be empty");
+    };
+
+    let userActor = actor(user_canister) : actor {
+        getUserById : (userId : Text) -> async Result.Result<User.User, Text>;
+    };
+
+    let jobActor = actor(job_canister) : actor {
+        getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
+    };
+
+    let jobResult = await jobActor.getJob(jobId);
+    switch (jobResult) {
+        case (#ok(job)) {
+            let userResult = await userActor.getUserById(userId);
+            switch (userResult) {
+                case (#ok(user)) {
+                    let foundRating = Array.find<Rating.Rating>(
+                        Iter.toArray(ratings.vals()),
+                        func(rating : Rating.Rating) : Bool {
+                            rating.job_id == jobId and rating.user_id == userId
+                        }
+                    );
+
+                    switch (foundRating) {
+                        case (?rating) {
+                            let historyRatingPayload : Rating.HistoryRatingPayload = {
+                                job = job;
+                                user = user;
+                                rating = rating.rating;
+                                isEdit = rating.isEdit;
+                            };
+                            #ok(historyRatingPayload);
+                        };
+                        case null {
+                            return #err("Rating not found for the given job ID and user ID");
+                        };
+                    };
+                };
+                case (#err(errMsg)) {
+                    return #err("Failed to fetch user data: " # errMsg);
+                };
+            };
+        };
+        case (#err(errMsg)) {
+            return #err("Failed to fetch job details: " # errMsg);
+        };
+    };
+};
 }

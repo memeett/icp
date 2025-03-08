@@ -142,7 +142,6 @@ export default function JobDetailPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log("Fetching data...");
       setLoading(true);
 
       try {
@@ -150,7 +149,6 @@ export default function JobDetailPage() {
         const parsedData = userData ? JSON.parse(userData) : null;
 
         if (!parsedData || !parsedData.ok) {
-          console.error("User data not found or invalid.");
           setLoading(false);
           return;
         }
@@ -182,7 +180,6 @@ export default function JobDetailPage() {
           }
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
@@ -208,21 +205,18 @@ export default function JobDetailPage() {
     try {
       setLoading(true);
       const jobData = await getJobById(jobId);
-      console.log(jobData);
       if (jobData) {
         setJob(jobData);
       } else {
         setError("Job not found");
       }
     } catch (err) {
-      console.error("Error fetching job:", err);
       setError("Failed to load job details");
     } finally {
       setError("");
       setLoading(false);
     }
 
-    console.log("Job ID:", acceptedAppliers);
   }, [jobId]);
 
   useEffect(() => {
@@ -234,7 +228,6 @@ export default function JobDetailPage() {
   const getUserRating = async () => {
     if (jobId) {
       const ratings = await getFreelancerForRating(jobId);
-      console.log(ratings);
       setUserR(ratings);
     }
   };
@@ -263,7 +256,6 @@ export default function JobDetailPage() {
     setLoading(true);
     const userData = localStorage.getItem("current_user");
     if (!userData) {
-      console.error("User data not found");
       setLoading(false);
       return;
     }
@@ -271,7 +263,6 @@ export default function JobDetailPage() {
     try {
       const parsedData = JSON.parse(userData);
       const result = await applyJob(parsedData.ok.id, jobId!);
-      console.log(job)
       await createInbox(
         job!.userId,
         parsedData.ok.id,
@@ -279,13 +270,10 @@ export default function JobDetailPage() {
         "request"
       );
       if (result) {
-        console.log("Applied for the job");
         setApplied(true);
       } else {
-        console.error("Failed to apply for the job");
       }
     } catch (err) {
-      console.error("Error applying for job:", err);
     } finally {
       setLoading(false);
     }
@@ -377,21 +365,18 @@ export default function JobDetailPage() {
     setIsModalOpen(false);
 
     if (!jobId) {
-      console.error("Job ID is missing");
       return;
     }
 
     // Retrieve user data from local storage
     const userData = localStorage.getItem("current_user");
     if (!userData) {
-      console.error("User data not found");
       return;
     }
 
     const parsedData = JSON.parse(userData);
 
     if (!jobDetails) {
-      console.error("Job details are missing");
       return;
     }
 
@@ -404,7 +389,6 @@ export default function JobDetailPage() {
     const result = await startJob(parsedData.ok.id, jobId, amount);
 
     if (result.jobStarted) {
-      console.log("Success:", result.message);
       fetchJob()
       // Optionally, show a success toast/notification here
     } else {
@@ -418,7 +402,6 @@ export default function JobDetailPage() {
     setLoading(true)
     if (jobId) {
       const result = await finishJob(jobId)
-      console.log("result", result)
       if (result.jobFinished) {
         fetchJob()
       } else {

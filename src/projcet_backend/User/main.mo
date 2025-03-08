@@ -393,4 +393,36 @@ actor UserModel {
         };
     };
 
+    public func updateUserRating(userId: Text, newRating: Float) : async Result.Result<Text, Text> {
+    // Step 1: Retrieve the user by userId
+        switch (users.get(userId)) {
+            case (?user) {
+                // Step 2: Update the user's rating
+                let updatedUser : User.User = {
+                    id = user.id;
+                    profilePicture = user.profilePicture;
+                    username = user.username;
+                    dob = user.dob;
+                    preference = user.preference;
+                    description = user.description;
+                    wallet = user.wallet;
+                    rating = newRating; // Update the rating
+                    createdAt = user.createdAt;
+                    updatedAt = Time.now(); // Update the timestamp
+                    isFaceRecognitionOn = user.isFaceRecognitionOn;
+                };
+
+                // Step 3: Save the updated user back to the HashMap
+                users.put(userId, updatedUser);
+
+                // Step 4: Return success message
+                #ok("User rating updated successfully");
+            };
+            case null {
+                // Step 4: Return error if user not found
+                #err("User not found");
+            };
+        };
+    };
+
 };

@@ -9,7 +9,7 @@ export const ApplicantActions = ({
   responsibilityAccepted,
   isApplicationClosed,
   remainingPositions,
-  // applied,
+  applied,
   onApply,
   onTermsChange,
   onResponsibilityChange,
@@ -20,7 +20,7 @@ export const ApplicantActions = ({
   responsibilityAccepted: boolean;
   isApplicationClosed: boolean;
   remainingPositions: string;
-  // applied: boolean;
+  applied: boolean;
   onApply: () => void;
   onTermsChange: (checked: boolean) => void;
   onResponsibilityChange: (checked: boolean) => void;
@@ -31,12 +31,9 @@ export const ApplicantActions = ({
 
 ) => {
 
-  const { isActive } = useBoolean();
-  const [applied, setApplied] = useState(false);
-  useEffect(() => {
-    setApplied(isActive);
-  }
-  , [isActive]);
+  // const { isActive } = useBoolean();
+  // const [applied, setApplied] = useState(false);
+
 
 
   return (
@@ -78,10 +75,10 @@ export const ApplicantActions = ({
     {/* Disable ApplyButton if job is finished */}
     {jobStatus === "Finished" ? (
       <ApplyButton
-        applied={true} // Set to true to show "Applied" state
-        disabled={true} // Disable the button
+        applied={true}
+        disabled={true}
         onClick={onApply}
-        label="Job Finished" // Custom label for finished jobs
+        label="Job Finished"
       />
     ) : (
       <ApplyButton

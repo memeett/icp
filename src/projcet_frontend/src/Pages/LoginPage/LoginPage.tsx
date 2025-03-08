@@ -21,6 +21,7 @@ import { getAllUsers } from "../../controller/userController.ts";
 import LoadingOverlay from "../../components/ui/loading-animation.tsx";
 import VantaRingsBackground from "../../components/ui/ring3d.tsx";
 import { Vortex } from "../../components/ui/vortex.tsx";
+import CallToAction from "../../components/buttons/DualAction.tsx";
 
 const BackgroundPattern = () => (
   <svg
@@ -125,9 +126,22 @@ function LoginPageContent() {
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
         <div className="relative min-h-screen">
           <VantaRingsBackground />
-
         </div>
 
+        <div className="relative my-12 flex flex-col border-2 mx-6 border-blue-400 px-8 py-8  rounded-4xl">
+          <div className="w-full max-w-6xl mx-auto pb-12">
+            <h2 className="text-4xl text-center mb-8 font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+              Start Your Crypto Journey
+            </h2>
+            <p className="text-center text-purple-700 text-xl mb-12 max-w-2xl mx-auto">
+              Join the decentralized workforce marketplace where payments are
+              secure, instant, and borderless.
+            </p>
+            <CallToAction />
+          </div>
+          <ProcessFlow />
+        </div>
+          <WhyChoose />
         <div className="relative flex flex-col items-center justify-center mt-12">
           <motion.div
             className="relative overflow-hidden bg-gradient-to-br from-blue-400  to-purple-400 w-[85%] h-72 px-12 py-8 text-4xl rounded-4xl font-bold shadow-lg"
@@ -214,12 +228,6 @@ function LoginPageContent() {
             </div>
           </motion.div>
         </div>
-
-        <div className="relative my-12 flex flex-col">
-          <ProcessFlow />
-          <WhyChoose />
-        </div>
-
         <JobCategories />
         <Footer />
       </div>

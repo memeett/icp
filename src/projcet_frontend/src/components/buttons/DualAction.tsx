@@ -13,7 +13,7 @@ export default function CallToAction() {
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="relative group w-full md:w-64 h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-900/50 to-purple-900/50 border border-cyan-500/30"
+        className="relative group w-full md:w-64 h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500/50 to-purple-500/50 border border-cyan-500/30"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -22,7 +22,7 @@ export default function CallToAction() {
             <Briefcase className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-xl font-semibold text-cyan-50 mb-2">Find Work</h3>
-          <p className="text-cyan-200 text-sm">
+          <p className="text-cyan-50 text-sm">
             Start earning crypto for your skills
           </p>
 
@@ -39,13 +39,13 @@ export default function CallToAction() {
       </motion.button>
 
       {/* OR Divider */}
-      <div className="text-white font-semibold">OR</div>
+      <div className="text-purple-700 font-semibold">OR</div>
 
       {/* Hire Talent Button */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="relative group w-full md:w-64 h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-900/50 to-purple-900/50 border border-cyan-500/30"
+        className="relative group w-full md:w-64 h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500/50 to-purple-500/50 border border-cyan-500/30"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -56,7 +56,7 @@ export default function CallToAction() {
           <h3 className="text-xl font-semibold text-cyan-50 mb-2">
             Hire Talent
           </h3>
-          <p className="text-cyan-200 text-sm">Find experts paid in crypto</p>
+          <p className="text-cyan-50 text-sm">Find experts paid in crypto</p>
 
           {/* Animated sparkle */}
           <motion.div

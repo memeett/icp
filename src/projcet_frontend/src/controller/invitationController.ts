@@ -37,7 +37,13 @@ export const acceptInvitation = async (
   userId: string,
   invitationId: bigint
 ): Promise<boolean> => {
-  const result = await invitation.acceptInvitation(userId, invitationId);
+  const result = await invitation.acceptInvitation(
+    userId,
+    invitationId,
+    process.env.CANISTER_ID_JOB!,
+    process.env.CANISTER_ID_JOB_TRANSACTION!,
+    process.env.CANISTER_ID_USER!
+  );
 
   return result;
 };

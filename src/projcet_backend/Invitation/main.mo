@@ -183,7 +183,14 @@ actor InvitationModel{
         return Buffer.toArray(jobInvitations);
     };
 
-    public func acceptInvitation(user_id: Text, invitation_id: Int) : async Bool {
+    public func acceptInvitation(user_id: Text, invitation_id: Int, job_canister: Text, job_transaction_canister: Text, user_canister: Text) : async Bool {
+        let jobActor = actor (job_canister) : actor {
+            getJob : (Text) -> async Result.Result<Job.Job, Text>;
+        };
+
+        let jobTransactionActor = actor (job_transaction_canister) : actor {
+            getAcceptedFreelancers : (Text, Text) -> async Result.Result<[User.User], Text>;
+        };
         switch (invitations.get(invitation_id)) {
             case (null) {
                 return false;
@@ -191,6 +198,30 @@ actor InvitationModel{
             case (?invitation) {
                 if (invitation.user_id != user_id) {
                     return false;
+                };
+                let jobData = await jobActor.getJob(invitation.job_id);
+                switch (jobData) {
+                    
+                    case (#err(_)) {
+                        return false;
+                    };
+                    case (#ok(jobData)) {
+                        let acceptedUsers = await jobTransactionActor.getAcceptedFreelancers(invitation.job_id, user_canister);
+                        switch(acceptedUsers) {
+                            case (#err(_)) {
+                                return false;
+                            };
+                            case (#ok(acceptedUsers)) {
+                                if (jobData.jobSlots <= Array.size(acceptedUsers)) {
+                                    return false;
+                                };
+                                invitations.put(invitation_id, {invitation with isAccepted = true});
+                                return true;
+                            };
+                        };
+                        invitations.put(invitation_id, {invitation with isAccepted = true});
+                        return true;
+                    };
                 };
                 invitations.put(invitation_id, {invitation with isAccepted = true});
                 return true;

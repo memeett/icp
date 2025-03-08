@@ -25,6 +25,7 @@ import { useJobCategories } from "../../utils/useJobCategories";
 import { set } from "date-fns";
 import LoadingOverlay from "../ui/loading-animation";
 import ErrorModal from "../modals/ErrorModal";
+import FaceRecognition from "../FaceRecognition";
 // import FaceRecognition from "../FaceRecognition";
 
 export default function ProfileBiodata() {
@@ -96,7 +97,6 @@ export default function ProfileBiodata() {
   };
 
   const sendICP = async () => {
-    
     try {
       const plug = (window as any).ic?.plug;
 
@@ -104,7 +104,7 @@ export default function ProfileBiodata() {
         alert("Plug Wallet not detected");
         return;
       }
-      
+
       const connected = await plug.isConnected();
       if (!connected) {
         await plug.requestConnect();
@@ -119,10 +119,10 @@ export default function ProfileBiodata() {
           price: true,
         },
       };
-      console.log("kanjut")
+      console.log("kanjut");
       console.log("Sending ICP:", transferArgs);
       const result = await plug.requestTransfer(transferArgs);
-      console.log("kanjut")
+      console.log("kanjut");
       console.log("Transaction successful:", result);
       topUp(parseFloat(amount));
       //later add success modal
@@ -629,7 +629,7 @@ export default function ProfileBiodata() {
                 </div>
               </div>
             </div>
-            {/* <FaceRecognition
+            <FaceRecognition
               principalId={user.id}
               onSuccess={() => console.log("Operation successful!")}
               onError={(error: string) =>
@@ -638,7 +638,7 @@ export default function ProfileBiodata() {
               mode="register" // Change to "verify" for verification mode
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-            /> */}
+            />
 
             {/* Category Selection Modal */}
             {isCategoryModalOpen && (

@@ -21,7 +21,7 @@ export default function FreelancerCard({ user }: { user: User }) {
       onClick={viewDetails}
     >
       {/* Aurora gradient header */}
-      <div className="h-24 bg-gradient-to-r from-blue-300 to-purple-400" />
+      <div className="h-24 bg-gradient-to-r from-blue-400 to-purple-400 min-w-64" />
 
       {/* Profile content */}
       <div className="px-6 pb-6 -mt-12">

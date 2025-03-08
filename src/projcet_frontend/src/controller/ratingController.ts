@@ -1,8 +1,8 @@
 import { User } from "../interface/User";
 import { rating } from "../../../declarations/rating";
-import { RequestRatingPayload } from "../../../declarations/rating/rating.did";
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent } from "@dfinity/agent";
+import { RequestRatingPayload } from "../../../declarations/rating/rating.did";
 
 export interface JobRatingPayload {
     rating_id: number;
@@ -101,7 +101,7 @@ export const ratingUser = async (rating_id: string , ratingValue: number): Promi
         };
 
         // Step 2: Call the `ratingUser` method on the rating actor with an array of payloads
-        const result = await rating.ratingUser([payload]);
+        const result = await rating.ratingUser([payload], process.env.CANISTER_ID_USER!);
 
         // Step 3: Handle the result
         if ("ok" in result) {

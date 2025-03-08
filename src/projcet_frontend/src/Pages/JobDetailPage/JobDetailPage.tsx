@@ -242,7 +242,6 @@ export default function JobDetailPage() {
   }, [jobId]);
 
   const handleFinishRating = () => {
-    alert("All ratings have been submitted successfully!");
     setUserR([]); // Reset ratings setelah selesai
   };
 

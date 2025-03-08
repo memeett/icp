@@ -101,7 +101,6 @@ export default function ProfileBiodata() {
       const plug = (window as any).ic?.plug;
 
       if (!plug) {
-        alert("Plug Wallet not detected");
         return;
       }
       
@@ -148,7 +147,7 @@ export default function ProfileBiodata() {
       window.location.reload();
     } catch (error) {
       console.error("Payment error:", error);
-      alert("Payment failed!");
+      // alert("Payment failed!");
     }
   };
 

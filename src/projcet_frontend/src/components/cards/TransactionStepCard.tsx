@@ -64,7 +64,7 @@ const ProcessFlow = () => {
   ];
 
   return (
-    <div ref={ref} className="relative w-full max-w-6xl mx-auto border-2 border-blue-400 px-8 pb-4  rounded-4xl">
+    <div ref={ref} className="relative w-full max-w-6xl mx-auto">
       <h2 className="text-3xl font-bold text-center my-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
         How It Works
       </h2>

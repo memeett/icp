@@ -119,6 +119,9 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                   className="ml-1 text-blue-600 hover:text-blue-600 dark:text-blue-400 cursor-pointer"
                   onClick={async () => {
                     const res = await login("gzs612n");
+                    //const res = await login("43djee4");
+                    // const res = await login("q1tsvi");
+                    // const res = await login("gzs612n");
                     // const res = await login("q1tsvi");
                     if (res) {
                       setOpen(false);

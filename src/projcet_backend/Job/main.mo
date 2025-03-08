@@ -306,22 +306,25 @@ private func seedJobCategories() {
         }
     };
 
-    public shared func finishJob(job_id: Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
-        let jobTransactionActor = actor (job_transaction_canister) : actor {
-            getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
-        };
-
-        let userActor = actor(user_canister) : actor {
-            transfer_icp_to_user: (from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
-        };
-
+    public shared func finishJob(
+        job_id: Text,
+        job_canister: Text,
+        job_transaction_canister: Text,
+        user_canister: Text,
+        rating_canister: Text
+    ): async Result.Result<Bool, Text> {
+        // Step 1: Retrieve the job from the jobs HashMap
         switch (jobs.get(job_id)) {
             case (?existingJob) {
-                // Step 1: Retrieve the job transaction
+                // Step 2: Retrieve the job transaction
+                let jobTransactionActor = actor (job_transaction_canister) : actor {
+                    getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
+                };
+
                 let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
                 switch (transactionResult) {
                     case (#ok(transaction)) {
-                        // Step 2: Calculate payment per freelancer
+                        // Step 3: Calculate payment per freelancer
                         let numFreelancers = Float.fromInt(List.size(transaction.freelancers));
                         if (numFreelancers == 0) {
                             return #err("No freelancers have been accepted for this job");
@@ -332,11 +335,13 @@ private func seedJobCategories() {
                         // Step 4: Transfer payments to freelancers
                         var remainingWallet = existingJob.wallet; // Track remaining wallet balance
                         for (freelancerId in Iter.fromList(transaction.freelancers)) {
-               
+                            let userActor = actor(user_canister) : actor {
+                                transfer_icp_to_user: (from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
+                            };
 
                             let transferResult = await userActor.transfer_icp_to_user(
                                 job_id, // From: job owner
-                                freelancerId,      // To: freelancer
+                                freelancerId, // To: freelancer
                                 paymentPerFreelancer, // Amount
                                 job_canister
                             );
@@ -345,7 +350,7 @@ private func seedJobCategories() {
                                     return #err("Failed to transfer payment to freelancer " # freelancerId # ": " # errMsg);
                                 };
                                 case (#ok(_)) {
-                                    remainingWallet -= paymentPerFreelancer; // Deduct payment from walle
+                                    remainingWallet -= paymentPerFreelancer; // Deduct payment from wallet
                                 };
                             };
                         };
@@ -367,20 +372,30 @@ private func seedJobCategories() {
                         };
                         jobs.put(job_id, updatedJob);
 
-                        // Step 6: Debug print the final wallet balance
+                        // Step 6: Create ratings for freelancers
+                        let ratingActor = actor(rating_canister) : actor {
+                            createRating: (job_id : Text, user_ids : List.List<Text>) -> async Result.Result<Text, Text>;
+                        };
 
-                        // Step 7: Return success
-                        return #ok(true);
+                        let ratingResult = await ratingActor.createRating(job_id, transaction.freelancers);
+                        switch (ratingResult) {
+                            case (#err(errMsg)) {
+                                return #err("Failed to create ratings: " # errMsg);
+                            };
+                            case (#ok(_)) {
+                                // Step 7: Return success
+                                return #ok(true);
+                            };
+                        };
                     };
                     case (#err(errMsg)) {
                         return #err("Failed to fetch job transaction: " # errMsg);
                     };
-                }
+                };
             };
             case null {
                 return #err("Job not found");
             };
-        }
+        };
     };
-
 }

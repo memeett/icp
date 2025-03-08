@@ -51,6 +51,10 @@
       "main": "src/projcet_backend/Inbox/main.mo",
       "type": "motoko"
     },
+    "rating": {
+      "main": "src/projcet_backend/Rating/main.mo",
+      "type": "motoko"
+    },
     "projcet_frontend": {
       "dependencies": [
         "projcet_backend"

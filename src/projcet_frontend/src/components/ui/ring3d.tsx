@@ -107,11 +107,49 @@ const VantaRingsBackground: React.FC<VantaRingsProps> = ({ className }) => {
             variants={textVariants}
           >
             <div className="w-3/4">
-              <TypingAnimation className="inline" >
+              <TypingAnimation className="inline">
                 Join Ergasia now and transform how you work.
               </TypingAnimation>
             </div>
-
+            <button
+              className="
+        px-8 
+        py-3 
+        bg-purple-600/75
+        text-white 
+        font-medium 
+        rounded-lg
+        hover:bg-purple-700
+        hover:shadow-lg
+        transform 
+        hover:-translate-y-1
+        transition-all 
+        duration-300
+        focus:outline-none 
+        focus:ring-4 
+        focus:ring-purple-300
+        flex
+        items-center
+        gap-2
+        mt-6
+      "
+            >
+              Get Started
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
+              </svg>
+            </button>
           </motion.div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { JobTransaction } from "../../../../declarations/job_transaction/job_transaction.did";
 import { getFreelancerHistory } from "../../controller/freelancerController";
 import FreelancerJobCard from "./FreelancerJobCard";
+import FreelancerJobHistoryCard from "./FreelancerJobHistoryCard";
 
 export default function FreelancerJobHistoryTab() {
   const [historyJob, setHistoryJob] = useState<JobTransaction[]>([]);
@@ -86,7 +87,7 @@ export default function FreelancerJobHistoryTab() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {historyJob.map((job, index) => (
-            <FreelancerJobCard
+            <FreelancerJobHistoryCard
               key={job.jobId + index}
               jobId={job.jobId}
               isLoading={() => setLoading(false)}

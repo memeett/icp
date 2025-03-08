@@ -9,6 +9,8 @@ import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Float "mo:base/Float";
 import List "mo:base/List";
+import Debug "mo:base/Debug";
+
 import JobTransaction "../JobTransaction/model";
 
 actor JobModel{
@@ -373,13 +375,21 @@ private func seedJobCategories() {
                         jobs.put(job_id, updatedJob);
 
                         // Step 6: Create ratings for freelancers
-                        let ratingActor = actor(rating_canister) : actor {
-                            createRating: (job_id : Text, user_ids : List.List<Text>) -> async Result.Result<Text, Text>;
-                        };
+let ratingActor = actor(rating_canister) : actor {
+    createRating: (job_id : Text, user_ids : List.List<Text>) -> async Result.Result<Text, Text>;
+};
 
-                        let ratingResult = await ratingActor.createRating(job_id, transaction.freelancers);
+Debug.print("Calling createRating with rating_canister: " # rating_canister);
+
+let ratingResult = await ratingActor.createRating(job_id, transaction.freelancers);
+Debug.print("Rating result received");
+                        
+
                         switch (ratingResult) {
+                            // Debug.print("Rating result: ", ratingResult);
+                            // Debug.print("Rating result: ", ratingResult);
                             case (#err(errMsg)) {
+                                // D
                                 return #err("Failed to create ratings: " # errMsg);
                             };
                             case (#ok(_)) {

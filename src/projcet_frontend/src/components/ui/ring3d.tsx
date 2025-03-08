@@ -107,8 +107,8 @@ const VantaRingsBackground: React.FC<VantaRingsProps> = ({ className }) => {
             variants={textVariants}
           >
             <div className="w-3/4">
-              <TypingAnimation className="inline ">
-                Join Ergasia today and transform how you work.
+              <TypingAnimation className="inline" >
+                Join Ergasia now and transform how you work.
               </TypingAnimation>
             </div>
 

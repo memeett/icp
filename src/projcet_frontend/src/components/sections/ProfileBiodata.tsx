@@ -622,7 +622,7 @@ export default function ProfileBiodata() {
                 </div>
               </div>
             </div>
-            <FaceRecognition
+            <FaceRecognition onSuccess={() => setIsModalOpen(false)}
               principalId={user.id}
               onError={(error: string) =>
                 console.error("Operation failed:", error)

@@ -22,7 +22,7 @@ ERGASIA is a decentralized platform connecting clients and freelancers, develope
 ## Technology Stack
 - **Backend**: Motoko (Internet Computer)
 - **Frontend**: React (TypeScript)
-- **AI Components**:
+- **AI Components**: 
   - Python DeepFace for face recognition
   - Scikit-learn for job recommendation system
 - **Wallet Integration**: Plug Wallet Extension
@@ -31,7 +31,7 @@ ERGASIA is a decentralized platform connecting clients and freelancers, develope
 ## Installation & Setup
 
 ### Prerequisites
-- Node.js
+- Node.js 
 - DFX (Internet Computer SDK)
 - Python 3.x
 - Plug Wallet Extension ([Chrome](https://chromewebstore.google.com/detail/plug/dfjmiogamkkfklemondpoohhiknbiami) / [Firefox](https://addons.mozilla.org/en-US/firefox/addon/plug-wallet/))  
@@ -80,9 +80,73 @@ To make transactions on ERGASIA, you may need to fund your Plug Wallet with **IC
 
 #### **4. Connect Plug Wallet to ERGASIA**  
 1. Open the ERGASIA platform.  
-2. Click **"Connect Wallet"** on the login page.  
+2. Click **"Connect Wallet"** on the profile page.  
 3. Select **Plug Wallet** from the options.  
 4. Approve the connection request.  
 
 Your Plug Wallet is now linked to ERGASIA, and you can start making transactions. 🚀
 
+## Python Installation & Setup
+
+### AI Recommendation System Setup
+
+#### **1. Create requirements.txt**
+Create a file named `requirements.txt` with the following content:
+```txt
+absl-py==2.1.0
+astunparse==1.6.3
+Flask==3.1.0
+flask-cors==5.0.1
+scikit-learn==1.6.1
+pandas==2.2.3
+numpy==2.0.2
+tensorflow==2.18.0
+keras==3.8.0
+joblib==1.4.2
+requests==2.32.3
+deepface==0.0.89
+```
+
+#### **2. Set Up Virtual Environment**
+```bash
+# Create and activate virtual environment
+python -m venv ergasia-ai
+source ergasia-ai/bin/activate  # Linux/Mac
+ergasia-ai\Scripts\activate     # Windows
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+#### **3. Run the Recommendation System**
+```bash
+# Change the directory to project_backend/AI
+cd ./project_backend/AI
+
+# Run the Python file
+python main.py
+```
+
+### Face Recognition System Setup
+
+#### **1. Install Dependencies from environment.yml**
+Ensure you have Conda installed, then run:
+```bash
+# Download environment.yml (if not already available)
+wget https://raw.githubusercontent.com/memeett/icp/environment.yml
+
+# Create a Conda environment from environment.yml
+conda env create -f environment.yml
+
+# Activate the environment
+conda activate ergasia-face-recognition
+
+#### **2. Run the Face Recognition System**
+```bash
+# Change the directory to project_backend/face_recognition
+cd ./../face_recognition/app
+
+# Run the Python file
+python main.py
+```

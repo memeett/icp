@@ -25,7 +25,7 @@ export default function FreelancerActiveJobTab() {
         return;
       }
 
-      const result = await getTransactionByFreelancer(freelancerId);
+      const result = await getActiveTransactionByFreelancer(freelancerId);
       if (result) {
         setActiveJob(result);
       } else {

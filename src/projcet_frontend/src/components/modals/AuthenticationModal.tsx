@@ -93,7 +93,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
               </motion.div>
             </div>
 
-            <div className="text-center text-md text-black">
+            {/* <div className="text-center text-md text-black">
               <p>
                 Don't have an account?
                 <button
@@ -112,7 +112,7 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                   Secret Sign In
                 </button>
               </p>
-            </div>
+            </div> */}
           </div>
 
           <ModalFooter className="flex items-center justify-center mt-2 p-0 ">

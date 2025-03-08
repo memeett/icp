@@ -3,7 +3,6 @@ import { rating } from "../../../declarations/rating";
 import { HistoryRatingPayload, RequestRatingPayload } from "../../../declarations/rating/rating.did";
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent } from "@dfinity/agent";
-import { RequestRatingPayload } from "../../../declarations/rating/rating.did";
 
 export interface JobRatingPayload {
     rating_id: number;

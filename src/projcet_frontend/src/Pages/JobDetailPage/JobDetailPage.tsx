@@ -49,6 +49,8 @@ import ErrorModal from "../../components/modals/ErrorModal";
 import FinishJobModal from "./JobWarningModal";
 import { useBoolean } from "../../components/context/Context";
 import FinishedSection from "./RatingSection";
+import { getFreelancerForRating, JobRatingPayload } from "../../controller/ratingController";
+import RatingSection from "./RatingSection";
 
 const AcceptedUsersModal: React.FC<{
   users: User[];
@@ -227,6 +229,25 @@ export default function JobDetailPage() {
     fetchJob();
   }, [fetchJob]);
 
+  const [userR, setUserR] = useState<JobRatingPayload[]>([]);
+
+  const getUserRating = async () => {
+    if (jobId) {
+      const ratings = await getFreelancerForRating(jobId);
+      console.log(ratings);
+      setUserR(ratings);
+    }
+  };
+
+  useEffect(() => {
+    getUserRating();
+  }, [jobId]);
+
+  const handleFinishRating = () => {
+    alert("All ratings have been submitted successfully!");
+    setUserR([]); // Reset ratings setelah selesai
+  };
+
   const jobDetails = useMemo(() => {
     if (!job) return null;
 
@@ -268,6 +289,7 @@ export default function JobDetailPage() {
     } finally {
       setLoading(false);
     }
+    window.location.reload()
   }, [jobId]);
 
   //   if (loading) {
@@ -408,10 +430,11 @@ export default function JobDetailPage() {
 
   }
 
+  
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {loading && <LoadingOverlay message="Loading Job..." />}
+      {/* {loading && <LoadingOverlay message="Loading Job..." />}
       {error !== "" && !loading && (
         <ErrorModal
           isOpen={error !== ""}
@@ -421,7 +444,7 @@ export default function JobDetailPage() {
           message={error}
           duration={2000}
         />
-      )}
+      )} */}
       <Navbar />
 
       {showFinishJobModal && (
@@ -490,7 +513,7 @@ export default function JobDetailPage() {
                 remainingPositions={(
                   maxApplicants - currentApplicants
                 ).toString()}
-                // applied={applied}
+                applied={applied}
                 onApply={handleApply}
                 onTermsChange={setTermsAccepted}
                 onResponsibilityChange={setResponsibilityAccepted}
@@ -504,11 +527,8 @@ export default function JobDetailPage() {
           <OngoingSection job={job} />
         )}
         {isOwner && job.jobStatus === "Finished" && (
-          <FinishedSection job={job} acceptedFreelancers={acceptedAppliers} />
-          
-
-        )
-        }
+          <RatingSection ratings={userR} onFinish={handleFinishRating} />
+        )}
 
         {isOwner && (job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && (
           <ModalProvider>

@@ -1,5 +1,4 @@
 import Rating "./model";
-import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
 import Int "mo:base/Int";
@@ -7,36 +6,34 @@ import Text "mo:base/Text";
 import List "mo:base/List";
 import Result "mo:base/Result";
 import Array "mo:base/Array";
+import Nat "mo:base/Nat";
 import User "../User/model";
 import Job "../Job/model";
 
 actor RatingModel{
-    private stable var nextId : Int = 0;
+    private stable var nextId : Nat = 0;
 
-    private stable var ratingsEntries : [(Int, Rating.Rating)] = [];
-    
-    private func intHash(n : Int) : Hash.Hash {
-        let text = Int.toText(n);
-        let hash = Text.hash(text);
-        hash
-    };
+    private stable var ratingsEntries : [(Text, Rating.Rating)] = [];
 
-    private var ratings = HashMap.HashMap<Int, Rating.Rating>(
+    private var ratings = HashMap.fromIter<Text, Rating.Rating>(
+        ratingsEntries.vals(),
         0,
-        Int.equal,
-        intHash
+        Text.equal,
+        Text.hash,
     );
 
+    // Save state before upgrade
     system func preupgrade() {
         ratingsEntries := Iter.toArray(ratings.entries());
     };
 
+    // Restore state after upgrade
     system func postupgrade() {
-        ratings := HashMap.fromIter<Int, Rating.Rating>(
+        ratings := HashMap.fromIter<Text, Rating.Rating>(
             ratingsEntries.vals(),
             0,
-            Int.equal,
-            intHash
+            Text.equal,
+            Text.hash,
         );
         ratingsEntries := [];
     };
@@ -56,8 +53,10 @@ actor RatingModel{
         List.iterate<Text>(
             user_ids,
             func(user_id : Text) {
+                let ratingId = Int.toText(nextId);
+
                 let newRating : Rating.Rating = {
-                    id = nextId;          // Assign the next unique ID
+                    id = nextId+1;          // Assign the next unique ID
                     job_id = job_id;      // Job ID for the rating
                     user_id = user_id;    // User ID for the rating
                     rating = 0;           // Default rating value
@@ -65,9 +64,7 @@ actor RatingModel{
                 };
 
                 // Add the new rating to the HashMap
-                ratings.put(nextId, newRating);
-
-                // Increment the nextId for the next rating
+                ratings.put(ratingId, newRating);
                 nextId += 1;
             }
         );
@@ -140,18 +137,32 @@ actor RatingModel{
         };
     };
 
-    public func ratingUser(payloads : [Rating.RequestRatingPaylod]) : async Result.Result<Text, Text> {
-        // Step 1: Iterate over the payloads
+    public func ratingUser(payloads : [Rating.RequestRatingPayload]) : async Result.Result<Text, Text> {
+        // Step 1: Convert HashMap values to an array
+        let ratingsArray = Iter.toArray(ratings.vals());
+
+        // Step 2: Iterate over the payloads
         for (payload in payloads.vals()) {
-            // Step 2: Retrieve the rating from the HashMap
-            switch (ratings.get(payload.rating_id)) {
+            // Step 3: Find the rating with the matching ID
+            let foundRating = Array.find<Rating.Rating>(
+                ratingsArray,
+                func(rating : Rating.Rating) : Bool {
+                    switch (Nat.fromText(payload.rating_id)) {
+                        case (?natId) rating.id == natId;
+                        case null false;
+                    }
+                }
+            );
+
+            // Step 4: Check if the rating was found
+            switch (foundRating) {
                 case (?rating) {
-                    // Step 3: Check if the rating is editable
+                    // Step 5: Check if the rating is editable
                     if (rating.isEdit) {
-                        return #err("Rating with ID " # Int.toText(payload.rating_id) # " is not editable");
+                        return #err("Rating with ID " # payload.rating_id # " is not editable");
                     };
 
-                    // Step 4: Update the rating
+                    // Step 6: Update the rating
                     let updatedRating : Rating.Rating = {
                         id = rating.id;
                         job_id = rating.job_id;
@@ -160,16 +171,22 @@ actor RatingModel{
                         isEdit = true; // Mark the rating as edited
                     };
 
-                    // Step 5: Save the updated rating
+                    // Step 7: Save the updated rating back to the HashMap
                     ratings.put(payload.rating_id, updatedRating);
                 };
                 case null {
-                    return #err("Rating with ID " # Int.toText(payload.rating_id) # " not found");
+                    return #err("Rating with ID " # payload.rating_id # " not found");
                 };
             };
         };
 
-        // Step 6: Return success message
+        // Step 8: Return success message
         #ok("Ratings updated successfully");
     };
+
+    public func getAllRating(): async [Rating.Rating] {
+        Iter.toArray(ratings.vals());
+    };
+
+
 }

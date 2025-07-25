@@ -1,38 +1,81 @@
 @import "tailwindcss";
+/* This is where we define the actual color values for our themes.
+  We'll use HSL (Hue, Saturation, Lightness) values as they are easier 
+  to manipulate and understand for theming.
+*/
 
+@layer base {
+  /* Light Theme (default) */
+  :root {
+    --background: 0 0% 100%; /* White */
+    --foreground: 240 10% 3.9%; /* Dark Slate */
 
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
 
-/* Thin scrollbar with thumb near the edge */
-.scrollbar-cool::-webkit-scrollbar {
-  width: 8px; /* Width of the scrollbar */
-  border: 2px solid #FFF;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 262.1 83.3% 57.8%; /* Our main Purple */
+    --primary-foreground: 0 0% 98%; /* Almost White */
+
+    --secondary: 240 4.8% 95.9%; /* Light Gray */
+    --secondary-foreground: 240 5.9% 10%; /* Dark Slate */
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%; /* Red for errors */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 262.1 83.3% 57.8%; /* Purple for focus rings */
+
+    --radius: 0.75rem;
+  }
+
+  /* Dark Theme */
+  /* We target the root element when it has the data-theme="dark" attribute */
+  [data-theme="dark"] {
+    --background: 240 10% 3.9%; /* Dark Slate */
+    --foreground: 0 0% 98%; /* Almost White */
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 263.4 92.5% 67.3%; /* A slightly brighter Purple for dark mode */
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%; /* Darker Gray */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 263.4 92.5% 67.3%; /* Brighter Purple for focus rings */
+  }
 }
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
-
-/* Hide scrollbar for Firefox */
-.scrollbar-hide {
-  scrollbar-width: none;
-}
-
-.scrollbar-cool::-webkit-scrollbar-track {
-  background: transparent; /* Transparent track */
-  margin: 4px 0; 
-}
-
-.scrollbar-cool::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.scrollbar-cool::-webkit-scrollbar-thumb:hover {
-  
-  background: #555;
-  border-radius: 4px;
-  background-clip: padding-box;
-}
-

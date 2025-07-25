@@ -17,6 +17,7 @@
   ],
   "dependencies": {
     "@headlessui/react": "^2.2.0",
+    "@radix-ui/react-slot": "^1.2.3",
     "@react-oauth/google": "^0.12.1",
     "@tailwindcss/vite": "^4.0.8",
     "@types/react-router-dom": "^5.3.3",
@@ -25,8 +26,10 @@
     "antd": "^5.26.6",
     "axios": "^1.7.9",
     "canvas-confetti": "^1.9.3",
+    "class-variance-authority": "^0.7.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
+    "jotai": "^2.12.5",
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^9.15.1",
     "react-router-dom": "^7.2.0",

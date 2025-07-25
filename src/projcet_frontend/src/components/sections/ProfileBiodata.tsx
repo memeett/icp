@@ -97,13 +97,15 @@ export default function ProfileBiodata() {
   };
 
   const sendICP = async () => {
+    
     try {
       const plug = (window as any).ic?.plug;
 
       if (!plug) {
+        alert("Plug Wallet not detected");
         return;
       }
-
+      
       const connected = await plug.isConnected();
       if (!connected) {
         await plug.requestConnect();
@@ -118,7 +120,11 @@ export default function ProfileBiodata() {
           price: true,
         },
       };
+      console.log("kanjut")
+      console.log("Sending ICP:", transferArgs);
       const result = await plug.requestTransfer(transferArgs);
+      console.log("kanjut")
+      console.log("Transaction successful:", result);
       topUp(parseFloat(amount));
       //later add success modal
 
@@ -128,6 +134,7 @@ export default function ProfileBiodata() {
         const profilePicture = await blobToUint8Array(
           user ? user.profilePicture : new Blob()
         );
+        console.log("memememe" + profilePicture);
         localStorage.setItem(
           "current_user",
           JSON.stringify({
@@ -142,13 +149,14 @@ export default function ProfileBiodata() {
       window.location.reload();
     } catch (error) {
       console.error("Payment error:", error);
-      // alert("Payment failed!");
+      alert("Payment failed!");
     }
   };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files?.[0]) {
       const file = event.target.files[0];
+      console.log(file);
       setSelectedImage(file);
       setPreviewImage(URL.createObjectURL(file));
       setShowImagePreview(true);
@@ -624,6 +632,7 @@ export default function ProfileBiodata() {
             </div>
             <FaceRecognition
               principalId={user.id}
+              onSuccess={() => console.log("Operation successful!")}
               onError={(error: string) =>
                 console.error("Operation failed:", error)
               }

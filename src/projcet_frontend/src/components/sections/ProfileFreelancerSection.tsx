@@ -129,7 +129,7 @@ export default function ProfileFreelancerSection() {
               </div>
 
               {/* Tab Content */}
-              <div className="py-2 min-h-[60vh] flex justify-center items-center">
+              <div className="py-2 min-h-[60vh] w-full ">
                 {activeTab === "active" ? (
                   <FreelancerActiveJobTab />
                 ) : (

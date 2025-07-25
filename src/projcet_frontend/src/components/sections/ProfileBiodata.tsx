@@ -630,7 +630,7 @@ export default function ProfileBiodata() {
                 </div>
               </div>
             </div>
-            <FaceRecognition
+            <FaceRecognition onSuccess={() => setIsModalOpen(false)}
               principalId={user.id}
               onSuccess={() => console.log("Operation successful!")}
               onError={(error: string) =>

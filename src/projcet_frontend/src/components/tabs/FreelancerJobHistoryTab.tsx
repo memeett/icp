@@ -85,7 +85,7 @@ export default function FreelancerJobHistoryTab() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {historyJob.map((job, index) => (
             <FreelancerJobHistoryCard
               key={job.jobId + index}

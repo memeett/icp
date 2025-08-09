@@ -14,6 +14,10 @@ import BrowseFreelancerPage from './Pages/BrowseFreelancerPage/BrowseFreelancerP
 import PublicProfile from './Pages/profile/PublicProfile.tsx';
 import { BooleanProvider } from './components/context/Context.tsx';
 import LandingPage from './Pages/general/LandingPage.tsx';
+import CompleteProfilePage from './Pages/CompleteProfilePage/CompleteProfilePage.tsx';
+import SimpleLoginPage from './Pages/LoginPage/SimpleLoginPage.tsx';
+import ProfileCompletionGuard from './components/guards/ProfileCompletionGuard.tsx';
+import AuthInitializer from './hooks/useAuthInitializer.tsx';
 
 const route = createBrowserRouter([
     {
@@ -21,8 +25,20 @@ const route = createBrowserRouter([
         element: <LandingPage />,
     },
     {
+        path: '/login',
+        element: <SimpleLoginPage />,
+    },
+    {
+        path: '/complete-profile',
+        element: <CompleteProfilePage />,
+    },
+    {
         path: '/profile',
-        element: <ProfilePage />,
+        element: (
+            <ProfileCompletionGuard>
+                <ProfilePage />
+            </ProfileCompletionGuard>
+        ),
     },
     {
         path: '/profile/:id',
@@ -30,24 +46,43 @@ const route = createBrowserRouter([
     },
     {
         path: '/find',
-        element: <FindJobPage />,
+        element: (
+            <ProfileCompletionGuard>
+                <FindJobPage />
+            </ProfileCompletionGuard>
+        ),
     },
     {
         path: '/post',
-        element: <PostJobPage />,
+        element: (
+            <ProfileCompletionGuard>
+                <PostJobPage />
+            </ProfileCompletionGuard>
+        ),
     },
     {
         path: '/jobs/:jobId',
-        element: <JobDetailPage />,
+        element: (
+            <ProfileCompletionGuard>
+                <JobDetailPage />
+            </ProfileCompletionGuard>
+        ),
     },
     {
         path: '/manage',
-        element: <ManageJobPage />,
+        element: (
+            <ProfileCompletionGuard>
+                <ManageJobPage />
+            </ProfileCompletionGuard>
+        ),
     },
-
     {
         path: '/browse',
-        element: <BrowseFreelancerPage />,
+        element: (
+            <ProfileCompletionGuard>
+                <BrowseFreelancerPage />
+            </ProfileCompletionGuard>
+        ),
     },
     {
         path: '/face-recognition/register',
@@ -64,6 +99,7 @@ if (rootElement) {
     ReactDOM.createRoot(rootElement).render(
         <BooleanProvider>
             <ModalProvider>
+                <AuthInitializer />
                 <RouterProvider router={route}></RouterProvider>
             </ModalProvider>
         </BooleanProvider>

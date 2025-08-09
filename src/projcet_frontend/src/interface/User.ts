@@ -13,6 +13,7 @@ export interface User {
   createdAt: bigint;
   updatedAt: bigint;
   isFaceRecognitionOn: boolean;
+  isProfileCompleted: boolean;
 }
 export interface UpdateUserPayload {
   username: [] | [string];
@@ -21,4 +22,5 @@ export interface UpdateUserPayload {
   dob: [] | [string];
   isFaceRecognitionOn: [] | [boolean];
   preference: [] | [JobCategory[]];
+  isProfileCompleted: [] | [boolean];
 }

@@ -279,7 +279,7 @@ export const updateUserProfile = async (payload: UpdateUserPayload): Promise<voi
 
 export const getAllUsers = async (): Promise<User[] | null> => {
     try {
-        const result = await user.getAllUser();
+        const result = await user.getAllUsers();
 
         if (!result || !Array.isArray(result)) {
             console.error("Invalid response format:", result);

@@ -9,13 +9,11 @@ import Float "mo:base/Float";
 import Array "mo:base/Array";
 import Job "../Job/model";
 
-persistent actor UserModel {
-
-    
+actor UserModel {
 
     private stable var usersEntries : [(Text, User.User)] = [];
 
-    private transient var users = HashMap.fromIter<Text, User.User>(
+    private var users = HashMap.fromIter<Text, User.User>(
         usersEntries.vals(),
         0,
         Text.equal,

@@ -30,12 +30,15 @@ export const authActionsAtom = atom(
       case 'LOGIN':
         set(userAtom, action.user);
         set(authStatusAtom, 'authenticated');
+        // Always set a new mock session for login
+        const mockSession = `mock-session-${Date.now()}`;
+        set(sessionAtom, mockSession);
         break;
       case 'LOGOUT':
         set(userAtom, null);
         set(authStatusAtom, 'unauthenticated');
         set(sessionAtom, null);
-        // Clear localStorage
+        // Clear any additional localStorage items
         localStorage.removeItem('current_user');
         break;
       case 'SET_LOADING':

@@ -15,6 +15,8 @@ const ManageJobPage = lazy(() => import('../../pages/ManageJobPage'));
 const BrowseFreelancerPage = lazy(() => import('../../pages/BrowseFreelancerPage'));
 const RegisterFacePage = lazy(() => import('../../pages/RegisterFacePage'));
 const LoginFacePage = lazy(() => import('../../pages/LoginFacePage'));
+const LoginPage = lazy(() => import('../../pages/LoginPage'));
+const RegisterPage = lazy(() => import('../../pages/RegisterPage'));
 
 // Loading component for suspense fallback
 const PageLoader: React.FC = () => (
@@ -113,7 +115,23 @@ export const AppRouter: React.FC = () => {
           <RouteWrapper>
             <LoginFacePage />
           </RouteWrapper>
-        } 
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <RouteWrapper>
+            <LoginPage />
+          </RouteWrapper>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <RouteWrapper>
+            <RegisterPage />
+          </RouteWrapper>
+        }
       />
       {/* 404 Route */}
       <Route 

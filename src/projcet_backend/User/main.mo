@@ -9,13 +9,13 @@ import Float "mo:base/Float";
 import Array "mo:base/Array";
 import Job "../Job/model";
 
-actor UserModel {
+persistent actor UserModel {
 
     
 
     private stable var usersEntries : [(Text, User.User)] = [];
 
-    private var users = HashMap.fromIter<Text, User.User>(
+    private transient var users = HashMap.fromIter<Text, User.User>(
         usersEntries.vals(),
         0,
         Text.equal,
@@ -67,7 +67,7 @@ actor UserModel {
         newUser;
     };
 
-    public func getAllUser() : async [User.User] {
+    public query func getAllUsers() : async [User.User] {
         Iter.toArray(users.vals());
     };
 

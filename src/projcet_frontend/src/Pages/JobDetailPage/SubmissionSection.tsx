@@ -60,7 +60,12 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
       setSubmissions(submissions.map(sub =>
         sub.id === submission.id ? { ...sub, status: "Accepted" } : sub
       ));
-      job && await createInbox(submission.user.id, job.userId, "submission", "accepted");
+      job && await createInbox(
+        submission.user.id,
+        job.id,
+         job.userId, 
+         "submission", 
+         "accepted");
     } catch (error) {
       console.error("Error accepting application:", error);
     }
@@ -80,7 +85,12 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
       setSubmissions(submissions.map(sub =>
         sub.id === selectedApplication.id ? { ...sub, status: "Rejected" } : sub
       ));
-      job && await createInbox(selectedApplication.id, job.userId, "submission", "rejected");
+      job && await createInbox(
+        selectedApplication.id, 
+        job.id,
+        job.userId, 
+        "submission", 
+        "rejected");
       setShowRejectModal(false);
     } catch (error) {
       console.error("Error rejecting application:", error);

@@ -88,36 +88,36 @@ actor InvitationModel{
         };
     };
 
-    public func deleteInvitation(owner_id : Text, invitation_id: Int, job_canister: Text) : async Bool {
-        let jobActor = actor (job_canister) : actor {
-            getJob : (Text) -> async Result.Result<Job.Job, Text>;
-        };
-        switch (invitations.get(invitation_id)) {
-            case (null) {
-                return false;
-            };
-            case (?invitation) {
-                try {
-                    let jobResult = await jobActor.getJob(invitation.job_id);
+    // public func deleteInvitation(owner_id : Text, invitation_id: Int, job_canister: Text) : async Bool {
+    //     let jobActor = actor (job_canister) : actor {
+    //         getJob : (Text) -> async Result.Result<Job.Job, Text>;
+    //     };
+    //     switch (invitations.get(invitation_id)) {
+    //         case (null) {
+    //             return false;
+    //         };
+    //         case (?invitation) {
+    //             try {
+    //                 let jobResult = await jobActor.getJob(invitation.job_id);
                     
-                    switch (jobResult) {
-                        case (#err(_)) {
-                            return false;
-                        };
-                        case (#ok(job)) {
-                            if (job.userId != owner_id) {
-                                return false;
-                            };
-                            invitations.delete(invitation_id);
-                            return true;
-                        };
-                    };
-                } catch (_) {
-                    return false;
-                };
-            };
-        };
-    };
+    //                 switch (jobResult) {
+    //                     case (#err(_)) {
+    //                         return false;
+    //                     };
+    //                     case (#ok(job)) {
+    //                         if (job.userId != owner_id) {
+    //                             return false;
+    //                         };
+    //                         invitations.delete(invitation_id);
+    //                         return true;
+    //                     };
+    //                 };
+    //             } catch (_) {
+    //                 return false;
+    //             };
+    //         };
+    //     };
+    // };
 
     public func getInvitationByUserID(user_id: Text, job_canister: Text) : async [Invitation.UserInvitationPayload] {
         let jobActor = actor (job_canister) : actor {

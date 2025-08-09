@@ -18,6 +18,7 @@ export const applyJob = async (userId: string, jobId : string): Promise<boolean>
     try {
         const payload: ApplyPayload = { userId, jobId };
         const result = await applier.applyJob(payload, process.env.CANISTER_ID_JOB!);
+        
         if ("ok" in result) {
             console.log("Applied for job:", result.ok);
             return true;

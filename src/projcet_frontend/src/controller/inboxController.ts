@@ -7,9 +7,10 @@ import { user } from "../../../declarations/user";
 
 export const createInbox = async (
   receiverId: string,
+  jobId: string,
   senderId: string,
-  submission_type: string,
-  status: string
+  inbox_type: string,
+  message: string
 ): Promise<Inbox | null> => {
   const authClient = await AuthClient.create();
   const identity = authClient.getIdentity();
@@ -21,10 +22,10 @@ export const createInbox = async (
   try {
     const result = await inbox.createInbox(
       receiverId,
+      jobId,
       senderId,
-      submission_type,
-      status,
-      "message"
+      inbox_type,
+      message,
     );
     if ("ok" in result) {
       console.log("Created inbox:", result.ok);

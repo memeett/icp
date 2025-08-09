@@ -246,7 +246,7 @@ const LoginFacePage: React.FC = () => {
                 </Text>
                 <Button
                   icon={<LockOutlined />}
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/login')}
                 >
                   Use Traditional Login
                 </Button>

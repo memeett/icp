@@ -28,6 +28,7 @@ export interface UseAuthReturn {
   
   // Actions
   login: (user: User) => void;
+  loginWithMock: () => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   validateSession: () => Promise<boolean>;
@@ -58,6 +59,28 @@ export const useAuth = (): UseAuthReturn => {
       }
     });
   }, [authActions, notificationActions]);
+
+  // Mock login function for development
+  const loginWithMock = useCallback(() => {
+    const mockUser: User = {
+      id: 'mock-user-1',
+      username: 'John Doe',
+      email: 'john.doe@example.com',
+      profilePicture: null,
+      balance: 1250.50,
+      preference: [
+        { id: '1', jobCategoryName: 'Web Development' },
+        { id: '2', jobCategoryName: 'React' },
+        { id: '3', jobCategoryName: 'TypeScript' }
+      ],
+      isFaceRecognitionOn: true,
+      createdAt: BigInt(Date.now()),
+      updatedAt: BigInt(Date.now()),
+    };
+    
+    // Login with the mock user - this will handle session creation
+    login(mockUser);
+  }, [login]);
 
   // Logout function
   const logout = useCallback(async () => {
@@ -132,11 +155,36 @@ export const useAuth = (): UseAuthReturn => {
   // Initialize auth state on mount
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log('useAuth - Initializing auth with session:', session);
       authActions({ type: 'SET_LOADING' });
       
       if (session) {
-        await validateSession();
+        console.log('useAuth - Session found:', session);
+        // For mock sessions, skip validation and set as authenticated
+        if (session.startsWith('mock-session-')) {
+          console.log('useAuth - Mock session detected, logging in');
+          // Mock session is valid, set as authenticated
+          authActions({ type: 'LOGIN', user: {
+            id: 'mock-user-1',
+            username: 'John Doe',
+            email: 'john.doe@example.com',
+            profilePicture: null,
+            balance: 1250.50,
+            preference: [
+              { id: '1', jobCategoryName: 'Web Development' },
+              { id: '2', jobCategoryName: 'React' },
+              { id: '3', jobCategoryName: 'TypeScript' }
+            ],
+            isFaceRecognitionOn: true,
+            createdAt: BigInt(Date.now()),
+            updatedAt: BigInt(Date.now()),
+          }});
+        } else {
+          console.log('useAuth - Real session, validating');
+          await validateSession();
+        }
       } else {
+        console.log('useAuth - No session, logging out');
         authActions({ type: 'LOGOUT' });
       }
     };
@@ -165,6 +213,7 @@ export const useAuth = (): UseAuthReturn => {
     
     // Actions
     login,
+    loginWithMock,
     logout,
     refreshUser,
     validateSession,

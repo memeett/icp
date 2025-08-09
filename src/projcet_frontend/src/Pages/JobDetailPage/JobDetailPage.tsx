@@ -138,7 +138,7 @@ export default function JobDetailPage() {
     setIsModalOpen(false); // Close the modal
   };
 
-  const {setIsActive} = useBoolean()
+  const { setIsActive } = useBoolean()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -195,7 +195,7 @@ export default function JobDetailPage() {
   useEffect(() => {
     setIsActive(true)
   }
-  , [applied])
+    , [applied])
 
 
   const fetchJob = useCallback(async () => {
@@ -272,12 +272,17 @@ export default function JobDetailPage() {
       const parsedData = JSON.parse(userData);
       const result = await applyJob(parsedData.ok.id, jobId!);
       console.log(job)
-      await createInbox(
+      const inbox = await createInbox(
         job!.userId,
+        jobId!,
         parsedData.ok.id,
         "application",
         "request"
       );
+      if (!inbox) {
+        console.error("Failed to create inbox message");
+      }
+      console.log("Inbox message created:", inbox);
       if (result) {
         console.log("Applied for the job");
         setApplied(true);
@@ -313,7 +318,13 @@ export default function JobDetailPage() {
     if (jobId) {
       const result = await acceptApplier(userid, jobId);
       if (result) {
-        await createInbox(userid, job!.userId, "application", "accepted");
+        await createInbox(
+          userid,
+          jobId,
+          job!.userId,
+          "application",
+          "accepted"
+        );
       }
       getJobApplier(jobId).then((users) => {
         setAppliers(users);
@@ -349,7 +360,12 @@ export default function JobDetailPage() {
     if (jobId) {
       const result = await rejectApplier(userid, jobId);
       if (result) {
-        await createInbox(userid, job!.userId, "application", "rejected");
+        await createInbox(
+          userid,
+          jobId,
+          job!.userId,
+          "application",
+          "rejected");
       }
       getJobApplier(jobId).then((users) => {
         setAppliers(users);
@@ -430,7 +446,7 @@ export default function JobDetailPage() {
 
   }
 
-  
+
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -523,7 +539,7 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        { (job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && !isOwner && (
+        {(job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && !isOwner && (
           <OngoingSection job={job} />
         )}
         {isOwner && job.jobStatus === "Finished" && (
@@ -539,7 +555,7 @@ export default function JobDetailPage() {
           </ModalProvider>
         )}
 
-        
+
       </motion.div>
 
       <Footer />

@@ -76,7 +76,12 @@ export default function OngoingSection({ job }: { job: Job }) {
         setAdditionalMessage("");
         setErrorMessage(null);
 
-        await createInbox(job.userId, parsedData.ok.id, "submission", "request");
+        await createInbox(
+          job.userId,
+          job.id,
+           parsedData.ok.id, 
+           "submission",
+            "request");
       } catch (err) {
         console.error("Error creating submission:", err);
         setErrorMessage("Failed to create submission. Please try again.");

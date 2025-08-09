@@ -86,6 +86,7 @@ export default function InviteModal({
             if (res) {
                 await createInbox(
                   freelancerId,
+                    selectedJobId,
                   parsedData.ok.id,
                   "invitation",
                   "request"

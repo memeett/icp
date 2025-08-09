@@ -23,7 +23,8 @@ export const createInbox = async (
       receiverId,
       senderId,
       submission_type,
-      status
+      status,
+      "message"
     );
     if ("ok" in result) {
       console.log("Created inbox:", result.ok);
@@ -114,49 +115,49 @@ export const getSenderInbox = async (
   }
 };
 
-export const updateInbox = async (
-  inboxId: string,
-  status: string
-): Promise<boolean> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
+// export const updateInbox = async (
+//   inboxId: string,
+//   status: string
+// ): Promise<boolean> => {
+//   const authClient = await AuthClient.create();
+//   const identity = authClient.getIdentity();
+//   const agent = new HttpAgent({ identity });
 
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
-  try {
-    const result = await inbox.updateInboxStatus(inboxId, status);
-    if ("ok" in result) {
-      console.log("Updated inbox:", result.ok);
-      return true;
-    }
-    console.error("Failed to update inbox:", result.err);
-    return false;
-  } catch (error) {
-    console.error("Failed to update inbox:", error);
-    return false;
-  }
-};
+//   if (process.env.DFX_NETWORK === "local") {
+//     await agent.fetchRootKey();
+//   }
+//   try {
+//     const result = await inbox.updateInboxStatus(inboxId, status);
+//     if ("ok" in result) {
+//       console.log("Updated inbox:", result.ok);
+//       return true;
+//     }
+//     console.error("Failed to update inbox:", result.err);
+//     return false;
+//   } catch (error) {
+//     console.error("Failed to update inbox:", error);
+//     return false;
+//   }
+// };
 
-export const getAllInboxByStatus = async (
-  status: string
-): Promise<Inbox[] | null> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
+// export const getAllInboxByStatus = async (
+//   status: string
+// ): Promise<Inbox[] | null> => {
+//   const authClient = await AuthClient.create();
+//   const identity = authClient.getIdentity();
+//   const agent = new HttpAgent({ identity });
 
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
-  try {
-    const result = await inbox.getAllInboxByStatus(status);
-    return result;
-  } catch (error) {
-    console.error("Failed to get inbox:", error);
-    return null;
-  }
-};
+//   if (process.env.DFX_NETWORK === "local") {
+//     await agent.fetchRootKey();
+//   }
+//   try {
+//     const result = await inbox.getAllInboxByStatus(status);
+//     return result;
+//   } catch (error) {
+//     console.error("Failed to get inbox:", error);
+//     return null;
+//   }
+// };
 
 export const getAllInboxByUserId = async (
   userId: string
@@ -174,43 +175,43 @@ export const getAllInboxByUserId = async (
       result.map(async (i) => {
         const senderName = await user.getUsernameById(i.senderId);
         const receiverName = await user.getUsernameById(i.receiverId);
-        const submission_type = i.submission_type;
-        let message = "Invalid message";
-        console.log("lele" + submission_type);
-        if (
-          submission_type.toLocaleLowerCase() ===
-          "submission".toLocaleLowerCase()
-        ) {
-          if (i.status === "request") {
-            message = `You have a new submission request from ${senderName}`;
-          } else if (i.status === "accepted") {
-            message = `Your submission request has been accepted by ${senderName}`;
-          } else if (i.status === "rejected") {
-            message = `Your submission request has been rejected by ${senderName}`;
-          }
-        } else if (
-          submission_type.toLocaleLowerCase() ===
-          "application".toLocaleLowerCase()
-        ) {
-          if (i.status === "request") {
-            message = `You have a new application request from ${senderName}`;
-          } else if (i.status === "accepted") {
-            message = `Your application request has been accepted by ${senderName}`;
-          } else if (i.status === "rejected") {
-            message = `Your application request has been rejected by ${senderName}`;
-          }
-        } else if (
-          submission_type.toLocaleLowerCase() ===
-          "invitation".toLocaleLowerCase()
-        ) {
-          if (i.status === "request") {
-            message = `You have a new invitation request from ${senderName}`;
-          } else if (i.status === "accepted") {
-            message = `Your invitation request has been accepted by ${senderName}`;
-          } else if (i.status === "rejected") {
-            message = `Your invitation request has been rejected by ${senderName}`;
-          }
-        }
+        // const submission_type = i.submission_type;
+        // let message = "Invalid message";
+        // console.log("lele" + submission_type);
+        // if (
+        //   submission_type.toLocaleLowerCase() ===
+        //   "submission".toLocaleLowerCase()
+        // ) {
+        //   if (i.status === "request") {
+        //     message = `You have a new submission request from ${senderName}`;
+        //   } else if (i.status === "accepted") {
+        //     message = `Your submission request has been accepted by ${senderName}`;
+        //   } else if (i.status === "rejected") {
+        //     message = `Your submission request has been rejected by ${senderName}`;
+        //   }
+        // } else if (
+        //   submission_type.toLocaleLowerCase() ===
+        //   "application".toLocaleLowerCase()
+        // ) {
+        //   if (i.status === "request") {
+        //     message = `You have a new application request from ${senderName}`;
+        //   } else if (i.status === "accepted") {
+        //     message = `Your application request has been accepted by ${senderName}`;
+        //   } else if (i.status === "rejected") {
+        //     message = `Your application request has been rejected by ${senderName}`;
+        //   }
+        // } else if (
+        //   submission_type.toLocaleLowerCase() ===
+        //   "invitation".toLocaleLowerCase()
+        // ) {
+        //   if (i.status === "request") {
+        //     message = `You have a new invitation request from ${senderName}`;
+        //   } else if (i.status === "accepted") {
+        //     message = `Your invitation request has been accepted by ${senderName}`;
+        //   } else if (i.status === "rejected") {
+        //     message = `Your invitation request has been rejected by ${senderName}`;
+        //   }
+        // }
         return {
           id: i.id,
           senderName: senderName,
@@ -219,7 +220,7 @@ export const getAllInboxByUserId = async (
             Number(BigInt(i.createdAt) / BigInt(1_000_000))
           ).toLocaleString(),
           read: i.read,
-          message: message,
+          message: i.message,
         };
       })
     );
@@ -249,49 +250,49 @@ export const getAllInboxBySubmissionType = async (
   }
 };
 
-export const acceptInbox = async (inboxId: string): Promise<boolean> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
+// export const acceptInbox = async (inboxId: string): Promise<boolean> => {
+//   const authClient = await AuthClient.create();
+//   const identity = authClient.getIdentity();
+//   const agent = new HttpAgent({ identity });
 
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
-  try {
-    const result = await inbox.acceptInbox(inboxId);
-    if ("ok" in result) {
-      console.log("Accepted inbox:", result.ok);
-      return true;
-    }
-    console.error("Failed to accept inbox:", result.err);
-    return false;
-  } catch (error) {
-    console.error("Failed to accept inbox:", error);
-    return false;
-  }
-};
+//   if (process.env.DFX_NETWORK === "local") {
+//     await agent.fetchRootKey();
+//   }
+//   try {
+//     const result = await inbox.acceptInbox(inboxId);
+//     if ("ok" in result) {
+//       console.log("Accepted inbox:", result.ok);
+//       return true;
+//     }
+//     console.error("Failed to accept inbox:", result.err);
+//     return false;
+//   } catch (error) {
+//     console.error("Failed to accept inbox:", error);
+//     return false;
+//   }
+// };
 
-export const rejectInbox = async (inboxId: string): Promise<boolean> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
+// export const rejectInbox = async (inboxId: string): Promise<boolean> => {
+//   const authClient = await AuthClient.create();
+//   const identity = authClient.getIdentity();
+//   const agent = new HttpAgent({ identity });
 
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
-  try {
-    const result = await inbox.rejectInbox(inboxId);
-    if ("ok" in result) {
-      console.log("Rejected inbox:", result.ok);
-      return true;
-    }
-    console.error("Failed to reject inbox:", result.err);
-    return false;
-  } catch (error) {
-    console.error("Failed to reject inbox:", error);
-    return false;
-  }
-};
+//   if (process.env.DFX_NETWORK === "local") {
+//     await agent.fetchRootKey();
+//   }
+//   try {
+//     const result = await inbox.rejectInbox(inboxId);
+//     if ("ok" in result) {
+//       console.log("Rejected inbox:", result.ok);
+//       return true;
+//     }
+//     console.error("Failed to reject inbox:", result.err);
+//     return false;
+//   } catch (error) {
+//     console.error("Failed to reject inbox:", error);
+//     return false;
+//   }
+// };
 
 export const markInboxAsRead = async (inboxId: string): Promise<boolean> => {
   const authClient = await AuthClient.create();
@@ -315,27 +316,27 @@ export const markInboxAsRead = async (inboxId: string): Promise<boolean> => {
   }
 };
 
-export const updateInboxStatus = async (
-  inboxId: string,
-  status: string
-): Promise<boolean> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
+// export const updateInboxStatus = async (
+//   inboxId: string,
+//   status: string
+// ): Promise<boolean> => {
+//   const authClient = await AuthClient.create();
+//   const identity = authClient.getIdentity();
+//   const agent = new HttpAgent({ identity });
 
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
-  try {
-    const result = await inbox.updateInboxStatus(inboxId, status);
-    if ("ok" in result) {
-      console.log("Updated inbox status:", result.ok);
-      return true;
-    }
-    console.error("Failed to update inbox status:", result.err);
-    return false;
-  } catch (error) {
-    console.error("Failed to update inbox status:", error);
-    return false;
-  }
-};
+//   if (process.env.DFX_NETWORK === "local") {
+//     await agent.fetchRootKey();
+//   }
+//   try {
+//     const result = await inbox.updateInboxStatus(inboxId, status);
+//     if ("ok" in result) {
+//       console.log("Updated inbox status:", result.ok);
+//       return true;
+//     }
+//     console.error("Failed to update inbox status:", result.err);
+//     return false;
+//   } catch (error) {
+//     console.error("Failed to update inbox status:", error);
+//     return false;
+//   }
+// };

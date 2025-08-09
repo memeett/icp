@@ -313,6 +313,7 @@ export default function ProfileBiodata() {
         dob: tempDob ? [tempDob] : [],
         isFaceRecognitionOn: faceRecognitionOn ? [true] : [false],
         preference: [tempSelectedCategories],
+        isProfileCompleted: [],
       };
 
       await updateUserProfile(formattedPayload);
@@ -630,9 +631,12 @@ export default function ProfileBiodata() {
                 </div>
               </div>
             </div>
-            <FaceRecognition onSuccess={() => setIsModalOpen(false)}
+            <FaceRecognition 
               principalId={user.id}
-              onSuccess={() => console.log("Operation successful!")}
+              onSuccess={() => {
+                console.log("Operation successful!");
+                setIsModalOpen(false);
+              }}
               onError={(error: string) =>
                 console.error("Operation failed:", error)
               }

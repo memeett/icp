@@ -22,6 +22,16 @@ export const authUtils = () => {
                 await logout();
                 return;
             }
+
+            // Check if user needs to complete profile
+            if (user && !user.isProfileCompleted) {
+                const currentPath = window.location.pathname;
+                if (currentPath !== '/complete-profile') {
+                    navigate('/complete-profile');
+                    return;
+                }
+            }
+
             if (cookie && !session || !current_user) {
                 const isValid = await validateCookie();
                 if (!isValid) {

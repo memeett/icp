@@ -61,6 +61,7 @@ actor UserModel {
             createdAt = timestamp;
             updatedAt = timestamp;
             isFaceRecognitionOn = false;
+            isProfileCompleted = false;
         };
 
         users.put(newid, newUser);
@@ -117,6 +118,7 @@ actor UserModel {
                             createdAt = currUser.createdAt;
                             updatedAt = timestamp;
                             isFaceRecognitionOn = currUser.isFaceRecognitionOn;
+                            isProfileCompleted = Option.get(payload.isProfileCompleted, currUser.isProfileCompleted);
                         };
                         users.put(userId, updatedUser);
                         #ok(updatedUser);
@@ -193,6 +195,7 @@ actor UserModel {
                             createdAt = toUser.createdAt;
                             updatedAt = Time.now();
                             isFaceRecognitionOn = toUser.isFaceRecognitionOn;
+                            isProfileCompleted = toUser.isProfileCompleted;
                         };
                         users.put(to_user_id, updatedToUser);
 
@@ -274,6 +277,7 @@ actor UserModel {
                             createdAt = fromUser.createdAt;
                             updatedAt = Time.now();
                             isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
+                            isProfileCompleted = fromUser.isProfileCompleted;
                         };
                         users.put(user_id, updatedFromUser);
 
@@ -346,6 +350,7 @@ actor UserModel {
                     createdAt = user.createdAt;
                     updatedAt = Time.now();
                     isFaceRecognitionOn = user.isFaceRecognitionOn;
+                    isProfileCompleted = user.isProfileCompleted;
                 };
                 users.put(userId, updatedUser);
 
@@ -410,6 +415,7 @@ actor UserModel {
                     createdAt = user.createdAt;
                     updatedAt = Time.now(); // Update the timestamp
                     isFaceRecognitionOn = user.isFaceRecognitionOn;
+                    isProfileCompleted = user.isProfileCompleted;
                 };
 
                 // Step 3: Save the updated user back to the HashMap

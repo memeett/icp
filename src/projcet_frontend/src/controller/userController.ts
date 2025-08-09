@@ -85,14 +85,29 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
             return false;
         }
 
-
         const userIdResult = await session.getUserIdBySession(res);
         if ("ok" in userIdResult) {
             const userId = userIdResult.ok;
             const userDetail = await user.getUserById(userId);
-            localStorage.setItem("current_user", JSON.stringify(userDetail, (_, value) =>
-                typeof value === "bigint" ? value.toString() : value
-            ));
+            
+            if ("ok" in userDetail) {
+                const userData = userDetail.ok;
+                localStorage.setItem("current_user", JSON.stringify(userDetail, (_, value) =>
+                    typeof value === "bigint" ? value.toString() : value
+                ));
+
+                // Check if profile is completed
+                if (!userData.isProfileCompleted) {
+                    // Redirect to complete profile page
+                    window.location.href = "/complete-profile";
+                } else {
+                    // Redirect to profile page
+                    window.location.href = "/profile";
+                }
+            } else {
+                console.error("Error fetching user details:", userDetail.err);
+                return false;
+            }
         } else {
             console.error("Error fetching user ID:", userIdResult.err);
             return false;
@@ -248,6 +263,7 @@ export const updateUserProfile = async (payload: UpdateUserPayload): Promise<voi
                 dob: payload.dob || [],
                 preference: payload.preference,
                 isFaceRecognitionOn: payload.isFaceRecognitionOn || [],
+                isProfileCompleted: payload.isProfileCompleted || [],
               };
               
             if(process.env.CANISTER_ID_SESSION){

@@ -5,77 +5,90 @@
 */
 
 @layer base {
-  /* Light Theme (default) */
+  /* Light Theme (default) - Modern Elegant Colors */
   :root {
-    --background: 0 0% 100%; /* White */
-    --foreground: 240 10% 3.9%; /* Dark Slate */
+    --background: 0 0% 100%; /* Pure White */
+    --foreground: 222 84% 4.9%; /* Rich Dark Blue-Gray */
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 222 84% 4.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 222 84% 4.9%;
 
-    --primary: 262.1 83.3% 57.8%; /* Our main Purple */
-    --primary-foreground: 0 0% 98%; /* Almost White */
+    --primary: 238 75% 65%; /* Modern Indigo */
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 240 4.8% 95.9%; /* Light Gray */
-    --secondary-foreground: 240 5.9% 10%; /* Dark Slate */
+    --secondary: 220 14.3% 95.9%; /* Cool Light Gray */
+    --secondary-foreground: 220 8.9% 46.1%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220 8.9% 46.1%;
 
-    --destructive: 0 84.2% 60.2%; /* Red for errors */
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262.1 83.3% 57.8%; /* Purple for focus rings */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 238 75% 65%; /* Modern Indigo for focus */
 
     --radius: 0.75rem;
   }
 
-  /* Dark Theme */
-  /* We target the root element when it has the data-theme="dark" attribute */
-  [data-theme="dark"] {
-    --background: 240 10% 3.9%; /* Dark Slate */
-    --foreground: 0 0% 98%; /* Almost White */
+  /* Dark Theme - Modern Elegant Dark Colors */
+  [data-theme="dark"],
+  .dark {
+    --background: 222 84% 4.9%; /* Rich Dark Blue-Gray */
+    --foreground: 210 40% 98%; /* Soft White */
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 222 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 263.4 92.5% 67.3%; /* A slightly brighter Purple for dark mode */
-    --primary-foreground: 240 5.9% 10%;
+    --primary: 238 75% 65%; /* Modern Indigo - same as light for consistency */
+    --primary-foreground: 222 84% 4.9%;
 
-    --secondary: 240 3.7% 15.9%; /* Darker Gray */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 217 32.6% 17.5%; /* Sophisticated Dark Blue-Gray */
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 217 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 217 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 263.4 92.5% 67.3%; /* Brighter Purple for focus rings */
+    --border: 217 32.6% 17.5%;
+    --input: 217 32.6% 17.5%;
+    --ring: 238 75% 65%; /* Modern Indigo for focus */
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
+  
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  }
+  
+  /* Smooth transitions for theme changes */
+  *,
+  *::before,
+  *::after {
+    transition: background-color 0.2s ease-in-out,
+                border-color 0.2s ease-in-out,
+                color 0.2s ease-in-out,
+                box-shadow 0.2s ease-in-out;
   }
 }

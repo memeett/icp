@@ -8,18 +8,19 @@ import { agentService } from "../singleton/agentService";
 
 export const createInbox = async (
   receiverId: string,
+  jobId: string,
   senderId: string,
-  submission_type: string,
-  status: string
+  inbox_type: string,
+  message: string
 ): Promise<Inbox | null> => {
  const agent = await agentService.getAgent();
   try {
     const result = await inbox.createInbox(
       receiverId,
+      jobId,
       senderId,
-      submission_type,
-      status,
-      "message"
+      inbox_type,
+      message,
     );
     if ("ok" in result) {
       console.log("Created inbox:", result.ok);

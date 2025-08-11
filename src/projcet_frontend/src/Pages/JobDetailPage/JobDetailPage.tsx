@@ -172,7 +172,7 @@ export default function JobDetailPage() {
 
           const isUserAcceptedOrApplied = await
             acceptedFreelancers.some((user) => user.id === userId) || hasApplied;
-
+            
           if (isUserAcceptedOrApplied) {
             setApplied(true);
             setIsActive(true)

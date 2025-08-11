@@ -36,7 +36,6 @@ const FloatingInbox = ({ messages, isOpen, onClose }: FloatingInboxProps) => {
 
     return matchesSearch && matchesUnread;
   });
-  console.log(messages);
 
   const handleSelectMessage = async (message: InboxResponse) => {
     setSelectedMessage(message);

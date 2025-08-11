@@ -18,14 +18,14 @@ const PublicProfile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { current_user } = authUtils();
   const [userJoin, setUserJoin] = useState<string>("");
-  const [isInviteModal, setIsInviteModal] = useState(false);  const params = useParams();
+  const [isInviteModal, setIsInviteModal] = useState(false); const params = useParams();
   const nav = useNavigate();
   const [historyJob, setHistoryJob] = useState<JobTransaction[]>([]);
 
 
   useEffect(() => {
     const fetchData = async () => {
-      try{
+      try {
 
         if (current_user) {
           const curr_user = JSON.parse(current_user).ok;
@@ -33,10 +33,10 @@ const PublicProfile: React.FC = () => {
             nav("/profile");
             return;
           }
-          
+
           const fetchedUser = await getUserById(params.id as string);
-          
-          if(params.id){
+
+          if (params.id) {
             const result = await getFreelancerHistory(params.id);
             console.log("Fetched freelancer history:", result);
             if (result) {
@@ -45,15 +45,13 @@ const PublicProfile: React.FC = () => {
               setHistoryJob([]);
             }
           }
-          console.log(fetchedUser);
           if (fetchedUser) {
             setUserJoin(formatDate(fetchedUser.createdAt));
             setUser(fetchedUser);
           }
         }
         setLoading(false);
-      }catch{
-        console.log("something error while fetching data")
+      } catch {
       }
     };
     setLoading(true);
@@ -118,7 +116,7 @@ const PublicProfile: React.FC = () => {
     },
   };
 
-  
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -223,7 +221,7 @@ const PublicProfile: React.FC = () => {
               </div>
             </div>
             <button className="relative px-6 py-2 rounded-lg bg-gradient-to-br from-blue-400/80 to-purple-400/80 backdrop-blur-sm border border-indigo-100 shadow-sm shadow-indigo-100 transition-all hover:shadow-md hover:shadow-indigo-200 hover:scale-[1.02] active:scale-95 text-white font-medium overflow-hidden group">
-              <span className="relative z-10" onClick={() => { setIsInviteModal (true)}}>Invite Freelancer</span>
+              <span className="relative z-10" onClick={() => { setIsInviteModal(true) }}>Invite Freelancer</span>
             </button>
           </div>
         </motion.div>
@@ -287,7 +285,7 @@ const PublicProfile: React.FC = () => {
               {historyJob.length > 0 ? (
                 <div className="space-y-6">
                   {historyJob.map((job, index) => (
-                    <PublicProfileJobHistoryCard jobId={job.jobId} index={index} auroraColors={auroraColors.text}/>
+                    <PublicProfileJobHistoryCard jobId={job.jobId} index={index} auroraColors={auroraColors.text} />
                   ))}
                 </div>
               ) : (
@@ -453,7 +451,7 @@ const PublicProfile: React.FC = () => {
       )}
       <Footer />
     </div>
-    
+
   );
 };
 

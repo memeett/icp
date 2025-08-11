@@ -95,7 +95,7 @@ export const ratingUser = async (rating_id: string , ratingValue: number): Promi
         };
         console.log("Payload for rating:", payload);
         // Step 2: Call the `ratingUser` method on the rating actor with an array of payloads
-        const result = await rating.ratingUser([payload]);
+        const result = await rating.ratingUser([payload], process.env.CANISTER_ID_USER!);
 
         // Step 3: Handle the result
         if ("ok" in result) {

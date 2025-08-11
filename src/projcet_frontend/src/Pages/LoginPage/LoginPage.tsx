@@ -4,7 +4,6 @@ import { AuroraText } from "../../components/ui/aurora-text.js";
 import { AuthenticationModal } from "../../components/modals/AuthenticationModal.js";
 import { ModalProvider, useModal } from "../../contexts/modal-context.js";
 import { NestedModalProvider } from "../../contexts/nested-modal-context.js"; // Import new provider
-import Footer from "../../components/Footer.tsx";
 import { ProfileCard } from "../../components/cards/ProfileCard.tsx";
 import CardCarousel from "../../components/cards/CardCarousel.tsx";
 import image from "../../assets/pic.jpeg";
@@ -126,9 +125,6 @@ function LoginPageContent() {
       {/* main */}
       {isLoading && <LoadingOverlay message="Loading freelancers..." />}
       <div className="flex-grow overflow-x-hidden [&::-webkit-scrollbar]:hidden">
-        <div className="relative min-h-screen">
-          <VantaRingsBackground />
-        </div>
 
         <div className="relative my-12 flex flex-col border-2 mx-6 border-blue-400 px-8 py-8  rounded-4xl">
           <div className="w-full max-w-6xl mx-auto pb-12">
@@ -231,7 +227,7 @@ function LoginPageContent() {
           </motion.div>
         </div>
         <JobCategories />
-        <Footer />
+        
       </div>
       {/* end main */}
 

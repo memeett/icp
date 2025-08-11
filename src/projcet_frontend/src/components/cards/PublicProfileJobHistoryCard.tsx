@@ -5,6 +5,7 @@ import { getJobById } from "../../controller/jobController";
 import { User } from "../../interface/User";
 import { getUserById } from "../../controller/userController";
 import { user } from "../../../../declarations/user";
+import { formatDate } from "../../utils/dateUtils";
 
 export default function PublicProfileJobHistoryCard({ jobId, index, auroraColors }: { jobId: string; index: number, auroraColors: string }) {
     const [job, setJob] = useState<Job | null>(null);
@@ -18,9 +19,7 @@ export default function PublicProfileJobHistoryCard({ jobId, index, auroraColors
                 const res = await getJobById(jobId);
                 if (res) {
                     setJob(res);
-                    const createdAtMillis = Number(res.createdAt / 1_000_000n);
-                    const jobDate = new Date(createdAtMillis);
-                    setDate(jobDate.toLocaleDateString());
+                    setDate(formatDate(res.createdAt));
                     const user = await getUserById(res.userId)
                     if(user){
                         setClient(user)

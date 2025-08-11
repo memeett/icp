@@ -7,7 +7,8 @@ import {
 } from "../../../../declarations/user/user.did";
 import { getUserById } from "../../controller/userController";
 import { getJobById } from "../../controller/jobController";
-import { C } from "vitest/dist/chunks/reporters.66aFHiyX";
+import { formatDate } from "../../utils/dateUtils";
+import { formatCurrency } from "../../utils/currecncyUtils";
 
 export default function ProfileTransactionsSection({
   userId,
@@ -161,28 +162,6 @@ function TransactionCard({
   const [toNames, setToNames] = useState<string[]>([]);
   const [isCardLoading, setIsCardLoading] = useState(true);
 
-  // Format date from bigint timestamp
-  const formatDate = (timestamp: bigint) => {
-    // Convert from nanoseconds to milliseconds
-    const milliseconds = Number(timestamp / BigInt(1000000));
-    const date = new Date(milliseconds);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  // Format amount with currency symbol
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
   // Get transaction type as a string
   const getTransactionTypeString = (type: TransactionType): string => {
     if ("topUp" in type) return "Top Up";
@@ -328,7 +307,7 @@ function TransactionCard({
           }`}
         >
           {isIncoming ? "+" : "-"}
-          {formatAmount(transaction.amount)}
+          {formatCurrency(transaction.amount)}
         </span>
       </div>
 

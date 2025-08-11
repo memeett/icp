@@ -5,6 +5,7 @@ import { HttpAgent } from "@dfinity/agent";
 import { InboxResponse } from "../interface/Inbox";
 import { user } from "../../../declarations/user";
 import { agentService } from "../singleton/agentService";
+import { formatDate } from "../utils/dateUtils";
 
 export const createInbox = async (
   receiverId: string,
@@ -182,9 +183,7 @@ export const getAllInboxByUserId = async (
           id: i.id,
           senderName: senderName,
           receiverName: receiverName,
-          createdAt: new Date(
-            Number(BigInt(i.createdAt) / BigInt(1_000_000))
-          ).toLocaleString(),
+          createdAt: formatDate(i.createdAt),
           read: i.read,
           message: i.message,
         };

@@ -3,10 +3,10 @@ import { JobCategory } from "./job/Job";
 
 export interface User {
   id: string;
-  profilePicture: Blob;
+  profilePicture: Blob | null;
   username: string;
   dob: string;
-  preference: [] | JobCategory[];
+  preference: JobCategory[];
   description: string;
   wallet: number;
   rating: number;

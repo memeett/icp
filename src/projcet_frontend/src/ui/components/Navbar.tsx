@@ -20,35 +20,50 @@ import {
   WalletOutlined,
   StarOutlined,
   ProfileOutlined,
-  GlobalOutlined
+  GlobalOutlined,
+  SunOutlined,
+  MoonOutlined
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useAtom } from 'jotai';
 import { themeAtom } from '../../app/store/ui';
 import { getProfilePictureUrl } from '../../controller/userController';
+import { useTheme } from '../../app/providers/ThemeProvider';
+import FaceRecognition from '../../components/FaceRecognition';
+import { AuthenticationModal } from '../../components/modals/AuthenticationModal';
+import  ergasiaLogo from '../../assets/ergasia_logo.png'
+import ergasiaLogoWhite from '../../assets/ergasia_logo_white.png'
 
 const { Text } = Typography;
 
 const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('icp');
   const [theme] = useAtom(themeAtom);
-  const { 
-    isAuthenticated, 
-    isLoading, 
-    user, 
-    loginWithInternetIdentity, 
-    logout 
+  const { toggleTheme } = useTheme();
+  const {
+    isAuthenticated,
+    isLoading,
+    user,
+    loginWithInternetIdentity,
+    logout
   } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogin = async () => {
-    try {
-      await loginWithInternetIdentity();
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
+    setIsModalOpen(true);
+  };
+
+  const handleLoginSuccess = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleLoginError = (error: string) => {
+    console.error(error);
+    setIsModalOpen(false);
   };
 
   const handleLogout = async () => {
@@ -98,10 +113,13 @@ const Navbar: React.FC = () => {
       type: 'divider' as const,
     },
     {
-      key: 'settings',
+      type: 'divider' as const,
+    },
+    {
+      key: 'account',
       icon: <SettingOutlined />,
-      label: 'Settings',
-      onClick: () => navigate('/settings'),
+      label: 'Account Settings',
+      onClick: () => navigate('/account'),
     },
     {
       key: 'logout',
@@ -126,7 +144,7 @@ const Navbar: React.FC = () => {
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700"
+        className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -137,40 +155,57 @@ const Navbar: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center space-x-2"
               >
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Text className="text-white font-bold text-sm">E</Text>
-                </div>
-                <Text className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  ERGASIA
-                </Text>
+                <img src={ theme === 'dark' ? ergasiaLogoWhite : ergasiaLogo }
+                  alt="Ergasia Logo" className="h-8 w-auto"/>
               </motion.div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
+            <nav className="hidden md:flex items-center space-x-1">
               {navigationItems.map((item) => (
-                <Link
-                  key={item.key}
-                  to={item.path}
-                  className={`relative px-3 py-2 rounded-lg transition-all duration-200 ${
-                    isActivePath(item.path)
-                      ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                      : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
+                <motion.div
+                    key={item.key}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                 >
-                  {item.label}
-                  {isActivePath(item.path) && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"
-                    />
-                  )}
-                </Link>
-              ))}
-            </div>
+                    <Button
+                        type={
+                            isActivePath(item.path)
+                                ? 'primary'
+                                : 'text'
+                        }
+                        onClick={() => navigate(item.path)}
+                        className="relative"
+                    >
+                        {item.label}
+                        {isActivePath(item.path) && (
+                            <motion.div
+                                layoutId="activeTab"
+                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                                initial={false}
+                                transition={{
+                                    type: 'spring',
+                                    stiffness: 500,
+                                    damping: 30,
+                                }}
+                            />
+                        )}
+                    </Button>
+                  </motion.div>
+                ))}
+            </nav>
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
+              {/* Theme Toggle */}
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button
+                  type="text"
+                  icon={theme === 'light' ? <MoonOutlined /> : <SunOutlined />}
+                  onClick={toggleTheme}
+                  className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50"
+                />
+              </motion.div>
+
               {/* Notifications */}
               {isAuthenticated && (
                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
@@ -178,7 +213,7 @@ const Navbar: React.FC = () => {
                     <Button
                       type="text"
                       icon={<BellOutlined />}
-                      className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50"
                     />
                   </Badge>
                 </motion.div>
@@ -193,7 +228,7 @@ const Navbar: React.FC = () => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   </motion.div>
                 ) : isAuthenticated && user ? (
                   <motion.div
@@ -208,18 +243,18 @@ const Navbar: React.FC = () => {
                       placement="bottomRight"
                       trigger={['click']}
                     >
-                      <div className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="flex items-center space-x-6 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors">
                         <Avatar
                           size={32}
                           src={profilePictureUrl}
                           icon={<UserOutlined />}
-                          className="border-2 border-blue-200 dark:border-blue-800"
+                          className="border-2 border-primary/30"
                         />
-                        <div className="text-left">
-                          <Text className="block text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="text-left ml-4">
+                          <Text className="block text-sm font-bold text-foreground">
                             {user.username || 'User'}
                           </Text>
-                          <Text className="block text-xs text-gray-500 dark:text-gray-400">
+                          <Text className="block text-xs text-muted-foreground">
                             ${user.wallet?.toFixed(2) || '0.00'}
                           </Text>
                         </div>
@@ -238,9 +273,9 @@ const Navbar: React.FC = () => {
                       type="primary"
                       icon={<GlobalOutlined />}
                       onClick={handleLogin}
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 border-0 hover:from-blue-600 hover:to-purple-700 shadow-lg"
+                      className="shadow-lg"
                     >
-                      Login with Internet Identity
+                      Sign In
                     </Button>
                   </motion.div>
                 )}
@@ -271,7 +306,7 @@ const Navbar: React.FC = () => {
         <div className="flex flex-col space-y-4">
           {/* User Info */}
           {isAuthenticated && user && (
-            <div className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-lg">
               <Avatar
                 size={40}
                 src={profilePictureUrl}
@@ -279,7 +314,7 @@ const Navbar: React.FC = () => {
               />
               <div>
                 <Text className="block font-medium">{user.username || 'User'}</Text>
-                <Text className="block text-sm text-gray-500">
+                <Text className="block text-sm text-muted-foreground">
                   ${user.wallet?.toFixed(2) || '0.00'}
                 </Text>
               </div>
@@ -326,11 +361,11 @@ const Navbar: React.FC = () => {
                 block
                 icon={<SettingOutlined />}
                 onClick={() => {
-                  navigate('/settings');
+                  navigate('/account');
                   setMobileMenuOpen(false);
                 }}
               >
-                Settings
+                Account Settings
               </Button>
               <Button
                 block
@@ -347,13 +382,88 @@ const Navbar: React.FC = () => {
               type="primary"
               icon={<GlobalOutlined />}
               onClick={handleLogin}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 border-0"
+              className=""
             >
-              Login with Internet Identity
+              Sign In
             </Button>
           )}
         </div>
       </Drawer>
+
+      {/* Login Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setIsModalOpen(false)}
+          >
+            <motion.div
+              initial={{ y: "-100vh" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100vh" }}
+              className="bg-background rounded-lg shadow-lg p-6 w-full max-w-md border border-border"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-foreground">Login</h2>
+                <Button
+                  type="text"
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ×
+                </Button>
+              </div>
+              <div className="flex border-b border-border mb-4">
+                <button
+                  className={`py-2 px-4 text-foreground hover:text-primary transition-colors ${activeTab === 'icp' ? 'border-b-2 border-primary text-primary' : ''}`}
+                  onClick={() => setActiveTab('icp')}
+                >
+                  Internet Identity
+                </button>
+                <button
+                  className={`py-2 px-4 text-foreground hover:text-primary transition-colors ${activeTab === 'face' ? 'border-b-2 border-primary text-primary' : ''}`}
+                  onClick={() => setActiveTab('face')}
+                >
+                  Face Recognition
+                </button>
+              </div>
+              {activeTab === 'icp' && (
+                <div className="text-center">
+                  <Button
+                    type="primary"
+                    icon={<GlobalOutlined />}
+                    onClick={async () => {
+                      try {
+                        await loginWithInternetIdentity();
+                        setIsModalOpen(false);
+                      } catch (error) {
+                        console.error('Login failed:', error);
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    Continue with Internet Identity
+                  </Button>
+                </div>
+              )}
+              {activeTab === 'face' && user && (
+                <FaceRecognition
+                  principalId={user.id}
+                  onSuccess={handleLoginSuccess}
+                  onError={handleLoginError}
+                  mode="verify"
+                  isOpen={isModalOpen && activeTab === 'face'}
+                  onClose={() => setIsModalOpen(false)}
+                />
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

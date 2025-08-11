@@ -8,6 +8,7 @@ import { get } from "http";
 import { JobCategory } from "../interface/job/Job";
 import { preprocessCSS } from "vite";
 import { CashFlowHistory } from "../../../declarations/user/user.did";
+import { agentService } from "../singleton/agentService";
 
 export const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");
@@ -120,13 +121,7 @@ export const loginWithInternetIdentity = async (): Promise<boolean> => {
 
 
 export const validateCookie = async (): Promise<boolean> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const agent = await agentService.getAgent();
     try {
         const cookie = getCookie("cookie");
         if (!cookie) {
@@ -180,13 +175,7 @@ export const logout = async (): Promise<void> => {
 
 
 export const fetchUserBySession = async (): Promise<User | null> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const agent = await agentService.getAgent();
 
     try {
         const currSession = localStorage.getItem("session");
@@ -245,13 +234,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
 
 export const updateUserProfile = async (payload: UpdateUserPayload): Promise<void> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const agent = await agentService.getAgent();
 
     const cookie = localStorage.getItem("session");
     if (cookie) {

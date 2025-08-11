@@ -40,11 +40,8 @@ import { ApplicantsModal } from "./ApplicationModal";
 import ManageJobDetailPage from "./SubmissionSection";
 import Modal from "./startModal";
 import { createInbox } from "../../controller/inboxController";
-
 import { ModalProvider } from "../../contexts/modal-context";
 import { NestedModalProvider } from "../../contexts/nested-modal-context";
-
-
 import ErrorModal from "../../components/modals/ErrorModal";
 import FinishJobModal from "./JobWarningModal";
 import { useBoolean } from "../../components/context/Context";
@@ -408,6 +405,7 @@ export default function JobDetailPage() {
       fetchJob()
       // Optionally, show a success toast/notification here
     } else {
+      console.log("cek")
       setError(result.message)
     }
     setLoading(false)

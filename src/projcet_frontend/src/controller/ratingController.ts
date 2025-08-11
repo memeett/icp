@@ -3,6 +3,7 @@ import { rating } from "../../../declarations/rating";
 import { HistoryRatingPayload, RequestRatingPayload } from "../../../declarations/rating/rating.did";
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent } from "@dfinity/agent";
+import { agentService } from "../singleton/agentService";
 
 export interface JobRatingPayload {
     rating_id: number;
@@ -14,14 +15,7 @@ export interface JobRatingPayload {
 export const getFreelancerForRating = async (job_id: string): Promise<JobRatingPayload[]> => {
     // Step 1: Retrieve the current user's ID from local storage
 
-        const authClient = await AuthClient.create();
-        const identity = authClient.getIdentity();
-        const agent = new HttpAgent({ identity });
-
-
-        if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-        }
+       const agent = await agentService.getAgent();
 
     const userData = localStorage.getItem("current_user");
     const parsedData = userData ? JSON.parse(userData) : null;

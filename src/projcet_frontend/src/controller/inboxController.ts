@@ -4,6 +4,7 @@ import { Inbox } from "../../../declarations/inbox/inbox.did";
 import { HttpAgent } from "@dfinity/agent";
 import { InboxResponse } from "../interface/Inbox";
 import { user } from "../../../declarations/user";
+import { agentService } from "../singleton/agentService";
 
 export const createInbox = async (
   receiverId: string,
@@ -11,13 +12,7 @@ export const createInbox = async (
   submission_type: string,
   status: string
 ): Promise<Inbox | null> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
-
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
+ const agent = await agentService.getAgent();
   try {
     const result = await inbox.createInbox(
       receiverId,
@@ -39,13 +34,7 @@ export const createInbox = async (
 };
 
 export const getInbox = async (inboxId: string): Promise<Inbox | null> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
-
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
+ const agent = await agentService.getAgent();
   try {
     const result = await inbox.getInbox(inboxId);
     if ("ok" in result) {
@@ -61,13 +50,7 @@ export const getInbox = async (inboxId: string): Promise<Inbox | null> => {
 };
 
 export const getAllInbox = async (): Promise<Inbox[] | null> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
-
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
+ const agent = await agentService.getAgent();
   try {
     const result = await inbox.getAllInbox();
     return result;
@@ -80,13 +63,7 @@ export const getAllInbox = async (): Promise<Inbox[] | null> => {
 export const getReceiverInbox = async (
   receiverId: string
 ): Promise<Inbox[] | null> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
-
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
+ const agent = await agentService.getAgent();
   try {
     const result = await inbox.getReceiverInbox(receiverId);
     return result;
@@ -99,13 +76,7 @@ export const getReceiverInbox = async (
 export const getSenderInbox = async (
   senderId: string
 ): Promise<Inbox[] | null> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
-
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
+ const agent = await agentService.getAgent();
   try {
     const result = await inbox.getSenderInbox(senderId);
     return result;
@@ -162,13 +133,7 @@ export const getSenderInbox = async (
 export const getAllInboxByUserId = async (
   userId: string
 ): Promise<InboxResponse[] | null> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
-
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
+  const agent = await agentService.getAgent();
   try {
     const result = await inbox.getAllInboxByUserId(userId);
     const responses: InboxResponse[] = await Promise.all(
@@ -234,13 +199,7 @@ export const getAllInboxByUserId = async (
 export const getAllInboxBySubmissionType = async (
   submissionType: string
 ): Promise<Inbox[] | null> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
-
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
+ const agent = await agentService.getAgent();
   try {
     const result = await inbox.getAllInboxBySubmissionType(submissionType);
     return result;
@@ -295,13 +254,7 @@ export const getAllInboxBySubmissionType = async (
 // };
 
 export const markInboxAsRead = async (inboxId: string): Promise<boolean> => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
-  const agent = new HttpAgent({ identity });
-
-  if (process.env.DFX_NETWORK === "local") {
-    await agent.fetchRootKey();
-  }
+ const agent = await agentService.getAgent();
   try {
     const result = await inbox.markAsRead(inboxId);
     if ("ok" in result) {

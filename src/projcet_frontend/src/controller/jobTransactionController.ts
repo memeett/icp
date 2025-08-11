@@ -1,15 +1,10 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { job_transaction } from "../../../declarations/job_transaction";
 import { HttpAgent } from "@dfinity/agent";
+import { agentService } from "../singleton/agentService";
 
 export const appendFreelancers = async (jobId: string, newFreelancerId: string): Promise<string[]> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const agent = await agentService.getAgent();
     try {
         const result = await job_transaction.appendFreelancers(jobId, newFreelancerId);
 

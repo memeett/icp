@@ -20,7 +20,7 @@ import BrowseFreelancerPage from "./Pages/BrowseFreelancerPage/BrowseFreelancerP
 import PublicProfile from "./Pages/profile/PublicProfile.tsx";
 import ManageJobDetailPage from "./Pages/JobDetailPage/SubmissionSection.tsx";
 import { BooleanProvider } from "./components/context/Context.tsx";
-
+import { AgentProvider } from "./singleton/AgentProvider.tsx";
 
 const route = createBrowserRouter([
   {
@@ -73,7 +73,9 @@ if (rootElement) {
     <BooleanProvider>
       
     <ModalProvider>
-      <RouterProvider router={route}></RouterProvider>
+      <AgentProvider>
+        <RouterProvider router={route}></RouterProvider>
+      </AgentProvider>
     </ModalProvider>
     </BooleanProvider>
   );

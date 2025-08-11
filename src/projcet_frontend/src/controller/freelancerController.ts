@@ -5,16 +5,11 @@ import { JobTransaction, User } from "../../../declarations/job_transaction/job_
 import { HttpAgent } from "@dfinity/agent";
 import { job } from "../../../declarations/job";
 import { getJobById } from "./jobController";
+import { agentService } from "../singleton/agentService";
   
 
 export const createJobTransaction = async (ownerId: string, jobId: string): Promise<boolean> => {
-    const authClient = await AuthClient.create();
-        const identity = authClient.getIdentity();
-        const agent = new HttpAgent({ identity });
-    
-        if (process.env.DFX_NETWORK === "local") {
-            await agent.fetchRootKey();
-        }
+    const agent = await agentService.getAgent();
     try {
         await job_transaction.createTransaction(ownerId, jobId, process.env.CANISTER_ID_JOB_TRANSACTION!);
         console.log("Job transaction created successfully");

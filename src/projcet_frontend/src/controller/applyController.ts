@@ -76,8 +76,6 @@ export const getUserApply = async (userId: string): Promise<Job[] | null> => {
 
 
 export const hasUserApplied = async (userId: string, jobId: string): Promise<boolean> => {
-    const agent = await agentService.getAgent();
-
-    const result = await applier.hasUserApplied(userId, jobId, process.env.CANISTER_ID_JOB!);
+    const result = await applier.hasUserApplied(userId, jobId);
     return result;
 }

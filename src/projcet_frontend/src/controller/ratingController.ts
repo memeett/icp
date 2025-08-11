@@ -115,7 +115,8 @@ export const ratingUser = async (rating_id: string , ratingValue: number): Promi
 
 
 export const getRatingByUserIdJobId = async (jobId: string, userId : string): Promise<HistoryRatingPayload | string> => {
-
+    const agent = await agentService.getAgent();
+    
     const result = await rating.getRatingByUserIdJobId(jobId, userId, process.env.CANISTER_ID_USER!, process.env.CANISTER_ID_JOB!)
     if ("ok" in result) {
             // Success case: Return the success message

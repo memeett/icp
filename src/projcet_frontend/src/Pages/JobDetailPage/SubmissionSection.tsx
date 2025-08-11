@@ -12,6 +12,7 @@ import {
   updateSubmissionStatus,
 } from "../../controller/submissionController";
 import { createInbox } from "../../controller/inboxController";
+import { href } from "react-router-dom";
 
 export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
   const [job, setJob] = useState<Job | null>(null);
@@ -66,7 +67,8 @@ export default function ManageJobDetailPage({ jobId }: { jobId: string }) {
          job.userId, 
          "submission", 
          "accepted");
-    } catch (error) {
+      window.location.reload();
+        } catch (error) {
       console.error("Error accepting application:", error);
     }
   };

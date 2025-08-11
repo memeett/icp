@@ -31,10 +31,6 @@ export const ApplicantActions = ({
 
 ) => {
 
-  // const { isActive } = useBoolean();
-  // const [applied, setApplied] = useState(false);
-
-
 
   return (
 

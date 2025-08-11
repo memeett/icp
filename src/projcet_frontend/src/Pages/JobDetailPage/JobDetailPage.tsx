@@ -48,6 +48,7 @@ import { useBoolean } from "../../components/context/Context";
 import FinishedSection from "./RatingSection";
 import { getFreelancerForRating, JobRatingPayload } from "../../controller/ratingController";
 import RatingSection from "./RatingSection";
+import { formatDate } from "../../utils/dateUtils";
 
 const AcceptedUsersModal: React.FC<{
   users: User[];
@@ -91,9 +92,7 @@ const AcceptedUsersModal: React.FC<{
                   {user?.username}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {new Date(
-                    Number(user?.createdAt / 1_000_000n)
-                  ).toLocaleDateString()}
+                  {formatDate(user?.createdAt)}
                 </p>
               </div>
             </motion.div>
@@ -176,6 +175,7 @@ export default function JobDetailPage() {
           if (isUserAcceptedOrApplied) {
             setApplied(true);
             setIsActive(true)
+            
           }
         }
       } catch (error) {
@@ -251,7 +251,7 @@ export default function JobDetailPage() {
     return {
       salary: job.jobSalary.toLocaleString(),
       rating: job.jobRating.toFixed(1),
-      postedDate: new Date(Number(job.createdAt)).toLocaleDateString(),
+      postedDate: formatDate(job.createdAt),
     };
   }, [job]);
 
@@ -537,14 +537,14 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        {(job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && !isOwner && (
+        {(job.jobStatus === "Ongoing") && !isOwner && applied && (
           <OngoingSection job={job} />
         )}
         {isOwner && job.jobStatus === "Finished" && (
           <RatingSection ratings={userR} onFinish={handleFinishRating} />
         )}
 
-        {isOwner && (job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && (
+        {isOwner && job.jobStatus === "Ongoing" && (
           <ModalProvider>
             {/* <NestedModalProvider> */}
 

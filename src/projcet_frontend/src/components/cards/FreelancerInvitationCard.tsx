@@ -8,7 +8,7 @@ import {
 import { appendFreelancers } from "../../controller/jobTransactionController";
 import { Job } from "../../../../declarations/job/job.did";
 import { createInbox } from "../../controller/inboxController";
-import { job } from "../../../../declarations/job";
+import { formatDate } from "../../utils/dateUtils";
 
 export default function FreelancerInvitationCard({
   invitation,
@@ -21,27 +21,10 @@ export default function FreelancerInvitationCard({
   onClickDetailJob: (job: Job) => Promise<void>;
   onError: (message: string) => void;
 }) {
-  const invitedAtDate = new Date(Number(invitation.invitedAt / 1_000_000n));
   const [isAccepted, setIsAccepted] = useState<Boolean>(invitation.isAccepted);
 
-  const formattedDate = invitedAtDate.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
-  const formatJobDate = (timestamp: bigint) => {
-    const date = new Date(Number(timestamp / 1_000_000n));
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formattedDate = formatDate(invitation.invitedAt);
 
   const sendInboxMessage = async (messageType: string) => {
     const userData = localStorage.getItem("current_user");
@@ -74,7 +57,6 @@ export default function FreelancerInvitationCard({
         );
         sendInboxMessage("accepted");
       } else {
-        // Pass error to parent instead of handling locally
         onError("Failed: Reach max job slot.");
       }
     });

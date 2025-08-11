@@ -31,7 +31,6 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
   >("idle");
   const navigate = useNavigate();
 
-  // Reset states when modal opens or mode changes
   useEffect(() => {
     if (isOpen) {
       setCurrentMode(initialMode);

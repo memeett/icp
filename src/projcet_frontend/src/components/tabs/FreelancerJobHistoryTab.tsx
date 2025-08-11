@@ -27,6 +27,7 @@ export default function FreelancerJobHistoryTab() {
       }
 
       const result = await getFreelancerHistory(freelancerId);
+      console.log("Fetched freelancer history:", result);
       if (result) {
         setHistoryJob(result);
       } else {

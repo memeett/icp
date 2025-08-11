@@ -8,23 +8,14 @@ import Navbar from '../../components/Navbar';
 import { ModalProvider } from '../../contexts/modal-context';
 import { AuthenticationModal } from '../../components/modals/AuthenticationModal';
 import { getAllUsers } from '../../controller/userController';
+import { Job } from '../../interface/job/Job';
+import { formatDate } from '../../utils/dateUtils';
 
 interface JobCategory {
     id: string;
     jobCategoryName: string;
 }
 
-interface Job {
-    id: string;
-    jobName: string;
-    jobDescription: string[];
-    jobSalary: number;
-    jobRating: number;
-    jobTags: JobCategory[];
-    jobSlots: number;
-    createdAt: number;
-    updatedAt: number;
-}
 
 export default function SearchPage() {
   useEffect(() => {
@@ -41,26 +32,7 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const jobs: Job[] = [
-    {
-      id: "1",
-      jobName: "Senior Frontend Developer",
-      jobDescription: [
-        "We are looking for an experienced Frontend Developer",
-        "Must have strong knowledge in React and TypeScript",
-        "5+ years of experience required"
-      ],
-      jobSalary: 8000,
-      jobRating: 4.5,
-      jobTags: [
-        { id: "1", jobCategoryName: "React" },
-        { id: "2", jobCategoryName: "TypeScript" },
-        { id: "3", jobCategoryName: "Frontend" }
-      ],
-      jobSlots: 2,
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    },
-    // Add more jobs as needed
+
   ];
 
   return (
@@ -91,7 +63,7 @@ export default function SearchPage() {
             <div className="flex justify-between mb-4">
               <div>
                 <p className="text-gray-500 text-sm">
-                  Posted {new Date(job.createdAt).toLocaleDateString()}
+                  Posted {formatDate(job.createdAt)}
                 </p>
                 <h2 className="text-xl font-semibold mt-1 group-hover:text-green-600 transition duration-200">
                   {job.jobName}
@@ -116,7 +88,7 @@ export default function SearchPage() {
                 ))}
                 <span className="ml-1">{job.jobRating}</span>
               </div>
-              <span className="text-green-600">Slots: {job.jobSlots}</span>
+              <span className="text-green-600">Slots: {Number(job.jobSlots)}</span>
               <span className="text-green-600">${job.jobSalary}/month</span>
             </div>
 

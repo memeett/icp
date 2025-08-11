@@ -9,6 +9,7 @@ import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import User "../User/model";
 import Job "../Job/model";
+import Debug "mo:base/Debug";
 
 actor RatingModel{
     private stable var nextId : Nat = 0;

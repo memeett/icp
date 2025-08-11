@@ -231,8 +231,13 @@ export default function JobDetailPage() {
   const getUserRating = async () => {
     if (jobId) {
       const ratings = await getFreelancerForRating(jobId);
-      console.log(ratings);
-      setUserR(ratings);
+      const uniqueRatings = ratings.filter((rating, index, self) =>
+        index === self.findIndex((r) => r.user.id === rating.user.id)
+      );
+      const submittedRatings = userR.map((r) => r.user.id);
+      const filteredRatings = uniqueRatings.filter((r) => !submittedRatings.includes(r.user.id));
+      console.log("Filtered Ratings:", filteredRatings);
+      setUserR(filteredRatings);
     }
   };
 
@@ -428,18 +433,22 @@ export default function JobDetailPage() {
   };
 
   const handleFinish = async () => {
-    setShowFinishJobModal(false)
+    setShowFinishJobModal(true)
     setLoading(true)
     if (jobId) {
       const result = await finishJob(jobId)
       console.log("result", result)
       if (result.jobFinished) {
         fetchJob()
+        setShowFinishJobModal(false)
+
       } else {
         setError(result.message)
       }
     }
     fetchJob()
+    setShowFinishJobModal(false)
+
     setLoading(false)
 
   }

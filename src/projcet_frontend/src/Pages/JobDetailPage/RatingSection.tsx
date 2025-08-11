@@ -14,7 +14,11 @@ export default function RatingSection({ ratings, onFinish }: RatingSectionProps)
   // Inisialisasi selectedRating dengan nilai rating saat ini
   useEffect(() => {
     if (ratings.length > 0) {
-      setSelectedRating(ratings[currentRatingIndex].rating);
+      //make the person unique
+      const uniqueRatings = ratings.filter((rating, index, self) =>
+        index === self.findIndex((r) => r.user.id === rating.user.id)
+      );
+      setSelectedRating(uniqueRatings[currentRatingIndex].rating);
     }
   }, [currentRatingIndex, ratings]);
 
@@ -26,9 +30,10 @@ export default function RatingSection({ ratings, onFinish }: RatingSectionProps)
       alert("Please select a rating before proceeding.");
       return;
     }
-
-    console.log("Current Rating ID:", ratings[currentRatingIndex].rating_id);
-    console.log("Selected Rating:", selectedRating);
+   
+    // Cegah pengiriman ganda
+    if (isSubmitting) return;
+    // Set isSubmitting ke true untuk menandakan bahwa proses pengiriman sedang berlangsung
 
     setIsSubmitting(true);
 
@@ -38,7 +43,9 @@ export default function RatingSection({ ratings, onFinish }: RatingSectionProps)
         selectedRating
       );
 
-      if (result === "Success") {
+      console.log("Rating result:", result);
+
+      if (result === "Ratings updated successfully") {
         if (currentRatingIndex < ratings.length - 1) {
           setCurrentRatingIndex((prev) => prev + 1);
           // Set selectedRating ke nilai rating freelancer berikutnya

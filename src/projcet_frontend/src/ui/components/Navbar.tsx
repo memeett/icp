@@ -9,7 +9,9 @@ import {
   Drawer,
   Menu,
   Typography,
-  Divider
+  Divider,
+  Modal,
+  Tabs
 } from 'antd';
 import {
   UserOutlined,
@@ -391,50 +393,27 @@ const Navbar: React.FC = () => {
       </Drawer>
 
       {/* Login Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-            onClick={() => setIsModalOpen(false)}
-          >
-            <motion.div
-              initial={{ y: "-100vh" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100vh" }}
-              className="bg-background rounded-lg shadow-lg p-6 w-full max-w-md border border-border"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-foreground">Login</h2>
-                <Button
-                  type="text"
-                  onClick={() => setIsModalOpen(false)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  ×
-                </Button>
-              </div>
-              <div className="flex border-b border-border mb-4">
-                <button
-                  className={`py-2 px-4 text-foreground hover:text-primary transition-colors ${activeTab === 'icp' ? 'border-b-2 border-primary text-primary' : ''}`}
-                  onClick={() => setActiveTab('icp')}
-                >
-                  Internet Identity
-                </button>
-                <button
-                  className={`py-2 px-4 text-foreground hover:text-primary transition-colors ${activeTab === 'face' ? 'border-b-2 border-primary text-primary' : ''}`}
-                  onClick={() => setActiveTab('face')}
-                >
-                  Face Recognition
-                </button>
-              </div>
-              {activeTab === 'icp' && (
-                <div className="text-center">
+      <Modal
+        title={<Typography.Title level={3} style={{ margin: 0 }}>Login</Typography.Title>}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={500}
+        centered
+        destroyOnClose
+      >
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={[
+            {
+              key: 'icp',
+              label: 'Internet Identity',
+              children: (
+                <div className="text-center py-4">
                   <Button
                     type="primary"
+                    size="large"
                     icon={<GlobalOutlined />}
                     onClick={async () => {
                       try {
@@ -449,8 +428,12 @@ const Navbar: React.FC = () => {
                     Continue with Internet Identity
                   </Button>
                 </div>
-              )}
-              {activeTab === 'face' && user && (
+              ),
+            },
+            {
+              key: 'face',
+              label: 'Face Recognition',
+              children: user && (
                 <FaceRecognition
                   principalId={user.id}
                   onSuccess={handleLoginSuccess}
@@ -459,11 +442,11 @@ const Navbar: React.FC = () => {
                   isOpen={isModalOpen && activeTab === 'face'}
                   onClose={() => setIsModalOpen(false)}
                 />
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              ),
+            },
+          ]}
+        />
+      </Modal>
     </>
   );
 };

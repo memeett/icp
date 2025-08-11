@@ -14,6 +14,7 @@ module{
         createdAt: Int;
         updatedAt: Int;
         isFaceRecognitionOn: Bool;
+        isProfileCompleted: Bool;
     };
 
     public type UpdateUserPayload = {
@@ -22,6 +23,7 @@ module{
         description: ?Text;
         dob : ?Text;
         preference: ?[Job.JobCategory];
+        isProfileCompleted: ?Bool;
     };
 
     public type TransactionType = {

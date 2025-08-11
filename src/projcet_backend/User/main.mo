@@ -59,6 +59,7 @@ actor UserModel {
             createdAt = timestamp;
             updatedAt = timestamp;
             isFaceRecognitionOn = false;
+            isProfileCompleted = false;
         };
 
         users.put(newid, newUser);
@@ -115,6 +116,7 @@ actor UserModel {
                             createdAt = currUser.createdAt;
                             updatedAt = timestamp;
                             isFaceRecognitionOn = currUser.isFaceRecognitionOn;
+                            isProfileCompleted = Option.get(payload.isProfileCompleted, currUser.isProfileCompleted);
                         };
                         users.put(userId, updatedUser);
                         #ok(updatedUser);
@@ -191,6 +193,7 @@ actor UserModel {
                             createdAt = toUser.createdAt;
                             updatedAt = Time.now();
                             isFaceRecognitionOn = toUser.isFaceRecognitionOn;
+                            isProfileCompleted = toUser.isProfileCompleted;
                         };
                         users.put(to_user_id, updatedToUser);
 
@@ -272,6 +275,7 @@ actor UserModel {
                             createdAt = fromUser.createdAt;
                             updatedAt = Time.now();
                             isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
+                            isProfileCompleted = fromUser.isProfileCompleted;
                         };
                         users.put(user_id, updatedFromUser);
 
@@ -344,6 +348,7 @@ actor UserModel {
                     createdAt = user.createdAt;
                     updatedAt = Time.now();
                     isFaceRecognitionOn = user.isFaceRecognitionOn;
+                    isProfileCompleted = user.isProfileCompleted;
                 };
                 users.put(userId, updatedUser);
 
@@ -387,6 +392,39 @@ actor UserModel {
             };
             case null {
                 return "";
+            };
+        };
+    };
+
+    public func updateUserRating(userId: Text, newRating: Float) : async Result.Result<Text, Text> {
+    // Step 1: Retrieve the user by userId
+        switch (users.get(userId)) {
+            case (?user) {
+                // Step 2: Update the user's rating
+                let updatedUser : User.User = {
+                    id = user.id;
+                    profilePicture = user.profilePicture;
+                    username = user.username;
+                    dob = user.dob;
+                    preference = user.preference;
+                    description = user.description;
+                    wallet = user.wallet;
+                    rating = newRating; // Update the rating
+                    createdAt = user.createdAt;
+                    updatedAt = Time.now(); // Update the timestamp
+                    isFaceRecognitionOn = user.isFaceRecognitionOn;
+                    isProfileCompleted = user.isProfileCompleted;
+                };
+
+                // Step 3: Save the updated user back to the HashMap
+                users.put(userId, updatedUser);
+
+                // Step 4: Return success message
+                #ok("User rating updated successfully");
+            };
+            case null {
+                // Step 4: Return error if user not found
+                #err("User not found");
             };
         };
     };

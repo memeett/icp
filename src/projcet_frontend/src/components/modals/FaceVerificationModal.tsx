@@ -72,7 +72,7 @@ export function FaceVerificationModal({ parentIndex, index }: { parentIndex: num
       }
     } catch (error) {
       console.error('Error in face verification:', error);
-      alert(error instanceof Error ? error.message : 'Unknown error occurred');
+
     } finally {
       setIsCapturing(false);
     }

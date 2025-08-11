@@ -79,7 +79,7 @@ export default function FindJobPage() {
       if (filteredJobs.length > 0) setListJobs(filteredJobs);
       if (categories) setJobTags(categories);
 
-      await getRecommendationJoblList(filteredJobs); // dijalankan setelah filteredJobs siap
+      // await getRecommendationJoblList(filteredJobs); // dijalankan setelah filteredJobs siap
     } catch (err) {
       console.error("Error fetching data:", err);
     } finally {
@@ -91,6 +91,12 @@ export default function FindJobPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (jobTags.length > 0) {
+      getRecommendationJoblList(listJobs);
+    }
+  }, [jobTags]);
 
   const filteredJobs = listJobs.filter((job) => {
     const matchesSearch =
@@ -133,9 +139,10 @@ export default function FindJobPage() {
   };
 
   const getRecommendationJoblList = async (jobs: Job[]) => {
+
     const userClickeds = await getUserClickedByUserId();
     if (userClickeds) setListUserClickeds(userClickeds);
-    console.log(userClickeds)
+    
     if (userClickeds.length === 0) {
       const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);
       setRecommendationJobs(randomJobs);
@@ -148,11 +155,7 @@ export default function FindJobPage() {
       listUserClickeds: convertBigIntToString(userClickeds),
     };
 
-    if (
-      data.jobTags.length === 0 ||
-      data.listJobs.length === 0 ||
-      data.listUserClickeds.length === 0
-    ) {
+    if ( data.jobTags.length === 0 || data.listJobs.length === 0 || data.listUserClickeds.length === 0 ) {
       const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);
       setRecommendationJobs(randomJobs);
       setLoading(false);
@@ -160,6 +163,7 @@ export default function FindJobPage() {
     }
 
     try {
+      
       const response = await fetch("http://localhost:5001/getRecommendation", {
         method: "POST",
         headers: {
@@ -175,7 +179,9 @@ export default function FindJobPage() {
         throw new Error("Network response was not ok");
       }
 
+      console.log("csxadas")
       const result = await response.json();
+      console.log(result.top_jobs)
       setRecommendationJobs(result.top_jobs);
     } catch (error) {
       const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);

@@ -8,6 +8,7 @@ import {
 import { appendFreelancers } from "../../controller/jobTransactionController";
 import { Job } from "../../../../declarations/job/job.did";
 import { createInbox } from "../../controller/inboxController";
+import { job } from "../../../../declarations/job";
 
 export default function FreelancerInvitationCard({
   invitation,
@@ -51,6 +52,7 @@ export default function FreelancerInvitationCard({
 
     await createInbox(
       invitation.job.userId,
+      invitation.job.id,
       parsedData.ok.id,
       "invitation",
       messageType

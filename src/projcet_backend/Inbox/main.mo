@@ -50,7 +50,7 @@ actor InboxModule {
             jobId = jobId;
             receiverId = receiverId;
             senderId = senderId;
-            inbox_type = inbox_type; //  submission/apllication/invitation as inbox_type
+            inbox_type = inbox_type; //  submission/application/invitation
             message = formattedMessage;
             read = false;
             createdAt = Time.now();

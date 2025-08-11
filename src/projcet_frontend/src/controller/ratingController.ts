@@ -93,7 +93,7 @@ export const ratingUser = async (rating_id: string , ratingValue: number): Promi
             rating_id: rating_id,
             rating: Number(ratingValue)
         };
-
+        console.log("Payload for rating:", payload);
         // Step 2: Call the `ratingUser` method on the rating actor with an array of payloads
         const result = await rating.ratingUser([payload]);
 
@@ -116,7 +116,7 @@ export const ratingUser = async (rating_id: string , ratingValue: number): Promi
 
 export const getRatingByUserIdJobId = async (jobId: string, userId : string): Promise<HistoryRatingPayload | string> => {
     const agent = await agentService.getAgent();
-    
+    console.log("Fetching rating for jobId:", jobId, "and userId:", userId);
     const result = await rating.getRatingByUserIdJobId(jobId, userId, process.env.CANISTER_ID_USER!, process.env.CANISTER_ID_JOB!)
     if ("ok" in result) {
             // Success case: Return the success message

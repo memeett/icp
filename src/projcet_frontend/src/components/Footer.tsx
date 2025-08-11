@@ -1,4 +1,4 @@
-import { Button } from "./ui/Button";
+import { Button } from "antd";
 
 function Footer() {
     return (
@@ -9,10 +9,10 @@ function Footer() {
                     reserved.
                 </p>
                 <div className="flex gap-4 mt-4 md:mt-0">
-                    <Button variant="link" className="text-muted-foreground">
+                    <Button type="link" className="text-muted-foreground p-0">
                         Terms of Service
                     </Button>
-                    <Button variant="link" className="text-muted-foreground">
+                    <Button type="link" className="text-muted-foreground p-0">
                         Privacy Policy
                     </Button>
                 </div>

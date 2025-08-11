@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Spin } from 'antd';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from '../../shared/components/ErrorFallback';
+import ProfileCompletionGuard from '../../shared/components/ProfileCompletionGuard';
 
 // Lazy load pages for better performance
 const LandingPage = lazy(() => import('../../pages/LandingPage'));
@@ -13,10 +14,7 @@ const ProfilePage = lazy(() => import('../../pages/ProfilePage'));
 const PublicProfilePage = lazy(() => import('../../pages/PublicProfilePage'));
 const ManageJobPage = lazy(() => import('../../pages/ManageJobPage'));
 const BrowseFreelancerPage = lazy(() => import('../../pages/BrowseFreelancerPage'));
-const RegisterFacePage = lazy(() => import('../../pages/RegisterFacePage'));
-const LoginFacePage = lazy(() => import('../../pages/LoginFacePage'));
-const LoginPage = lazy(() => import('../../pages/LoginPage'));
-const RegisterPage = lazy(() => import('../../pages/RegisterPage'));
+const CompleteProfilePage = lazy(() => import('../../pages/CompleteProfilePage'));
 
 // Loading component for suspense fallback
 const PageLoader: React.FC = () => (
@@ -34,9 +32,19 @@ const RouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </ErrorBoundary>
 );
 
+// Protected route wrapper that checks for profile completion
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <ProfileCompletionGuard>
+    <RouteWrapper>
+      {children}
+    </RouteWrapper>
+  </ProfileCompletionGuard>
+);
+
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
+      {/* Public Routes */}
       <Route 
         path="/" 
         element={
@@ -45,94 +53,75 @@ export const AppRouter: React.FC = () => {
           </RouteWrapper>
         } 
       />
+      
+      {/* Profile Completion Route - No guard needed */}
+      <Route 
+        path="/complete-profile" 
+        element={
+          <RouteWrapper>
+            <CompleteProfilePage />
+          </RouteWrapper>
+        } 
+      />
+
+      {/* Protected Routes - Require authentication and profile completion */}
       <Route 
         path="/find" 
         element={
-          <RouteWrapper>
+          <ProtectedRoute>
             <FindJobPage />
-          </RouteWrapper>
+          </ProtectedRoute>
         } 
       />
       <Route 
         path="/post" 
         element={
-          <RouteWrapper>
+          <ProtectedRoute>
             <PostJobPage />
-          </RouteWrapper>
+          </ProtectedRoute>
         } 
       />
       <Route 
         path="/jobs/:jobId" 
         element={
-          <RouteWrapper>
+          <ProtectedRoute>
             <JobDetailPage />
-          </RouteWrapper>
+          </ProtectedRoute>
         } 
       />
       <Route 
         path="/profile" 
         element={
-          <RouteWrapper>
+          <ProtectedRoute>
             <ProfilePage />
-          </RouteWrapper>
+          </ProtectedRoute>
         } 
       />
       <Route 
         path="/profile/:id" 
         element={
-          <RouteWrapper>
+          <ProtectedRoute>
             <PublicProfilePage />
-          </RouteWrapper>
+          </ProtectedRoute>
         } 
       />
       <Route 
         path="/manage" 
         element={
-          <RouteWrapper>
+          <ProtectedRoute>
             <ManageJobPage />
-          </RouteWrapper>
+          </ProtectedRoute>
         } 
       />
       <Route 
         path="/browse" 
         element={
-          <RouteWrapper>
+          <ProtectedRoute>
             <BrowseFreelancerPage />
-          </RouteWrapper>
+          </ProtectedRoute>
         } 
       />
-      <Route 
-        path="/face-recognition/register" 
-        element={
-          <RouteWrapper>
-            <RegisterFacePage />
-          </RouteWrapper>
-        } 
-      />
-      <Route 
-        path="/face-recognition/login" 
-        element={
-          <RouteWrapper>
-            <LoginFacePage />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          <RouteWrapper>
-            <LoginPage />
-          </RouteWrapper>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <RouteWrapper>
-            <RegisterPage />
-          </RouteWrapper>
-        }
-      />
+
       {/* 404 Route */}
       <Route 
         path="*" 
@@ -140,9 +129,12 @@ export const AppRouter: React.FC = () => {
           <RouteWrapper>
             <div className="min-h-screen flex items-center justify-center">
               <div className="text-center">
-                <h1 className="text-4xl font-bold text-gray-800 mb-4">404</h1>
-                <p className="text-gray-600 mb-8">Page not found</p>
-                <a href="/" className="text-purple-600 hover:text-purple-800">
+                <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-4">404</h1>
+                <p className="text-gray-600 dark:text-gray-400 mb-8">Page not found</p>
+                <a 
+                  href="/" 
+                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                >
                   Go back home
                 </a>
               </div>

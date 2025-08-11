@@ -5,70 +5,31 @@ export interface JobCategory {
 
 export interface Job {
   id: string;
-  jobName: string;
-  jobDescription: string[];
-  jobSalary: number;
-  jobSlots: bigint;
-  jobTags: JobCategory[];
-  jobStatus: 'Open' | 'In Progress' | 'Completed' | 'Cancelled' | 'Finished';
+  title: string;
+  description: string;
+  category: JobCategory;
+  budget: number;
+  deadline: string;
+  status: 'open' | 'in_progress' | 'completed' | 'cancelled';
   clientId: string;
+  freelancerId?: string;
   createdAt: bigint;
   updatedAt: bigint;
-  deadline?: string;
-  requirements?: string[];
-  skillsRequired?: string[];
-  experienceLevel?: 'Beginner' | 'Intermediate' | 'Expert';
-  jobType?: 'Fixed Price' | 'Hourly';
 }
 
 export interface CreateJobPayload {
-  jobName: string;
-  jobDescription: string[];
-  jobSalary: number;
-  jobSlots: number;
-  jobTags: JobCategory[];
+  title: string;
+  description: string;
+  categoryId: string;
+  budget: number;
+  deadline: string;
+}
+
+export interface UpdateJobPayload {
+  title?: string;
+  description?: string;
+  categoryId?: string;
+  budget?: number;
   deadline?: string;
-  requirements?: string[];
-  skillsRequired?: string[];
-  experienceLevel?: 'Beginner' | 'Intermediate' | 'Expert';
-  jobType?: 'Fixed Price' | 'Hourly';
-}
-
-export interface UpdatedJobPayload {
-  jobName?: string;
-  jobDescription?: string[];
-  jobSalary?: number;
-  jobSlots?: number;
-  jobTags?: JobCategory[];
-  jobStatus?: 'Open' | 'In Progress' | 'Completed' | 'Cancelled' | 'Finished';
-  deadline?: string;
-  requirements?: string[];
-  skillsRequired?: string[];
-  experienceLevel?: 'Beginner' | 'Intermediate' | 'Expert';
-  jobType?: 'Fixed Price' | 'Hourly';
-}
-
-export interface JobApplication {
-  id: string;
-  jobId: string;
-  freelancerId: string;
-  coverLetter: string;
-  proposedRate?: number;
-  estimatedDuration?: string;
-  status: 'Pending' | 'Accepted' | 'Rejected';
-  createdAt: bigint;
-  updatedAt: bigint;
-}
-
-export interface JobSubmission {
-  id: string;
-  jobId: string;
-  freelancerId: string;
-  submissionContent: string;
-  attachments?: string[];
-  status: 'Submitted' | 'Under Review' | 'Approved' | 'Rejected';
-  feedback?: string;
-  rating?: number;
-  createdAt: bigint;
-  updatedAt: bigint;
+  status?: 'open' | 'in_progress' | 'completed' | 'cancelled';
 }

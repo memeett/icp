@@ -1,7 +1,5 @@
-
 import requests
 import json
-import subprocess
 from uagents_core.contrib.protocols.chat import (
     chat_protocol_spec,
     ChatMessage,
@@ -13,45 +11,35 @@ from uagents import Agent, Context, Protocol
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
-ASI1_API_KEY = "sk_fe44d0a20765479e8b337a7fb024c9c82005e45674204774b8c911e5f3a38a91"
+# ASI1 API settings
+ASI1_API_KEY = "sk_e6ca5699fe394c2ea28f700c1a1eac6de6f7e4f8a5fd404d97c625a387f3df1e"  # Replace with your ASI1 key
 ASI1_BASE_URL = "https://api.asi1.ai/v1"
 ASI1_HEADERS = {
     "Authorization": f"Bearer {ASI1_API_KEY}",
     "Content-Type": "application/json"
 }
 
-# Your canister IDs from dfx deployment
-USER_CANISTER_ID = "vu5yx-eh777-77774-qaaga-cai"
-SESSION_CANISTER_ID = "vg3po-ix777-77774-qaafa-cai"
-BASE_URL = "http://127.0.0.1:4943"
+CANISTER_ID = "u6s2n-gx777-77774-qaaba-cai" # Job canister ID
+BASE_URL = "http://127.0.0.1:4943"  # Local replica address
 
-# Get other canister IDs dynamically
-def get_canister_id(canister_name: str):
-    try:
-        result = subprocess.run(['dfx', 'canister', 'id', canister_name], 
-                              capture_output=True, text=True, cwd='/home/memet/hakaton/icp')
-        return result.stdout.strip()
-    except Exception as e:
-        print(f"Could not get canister ID for {canister_name}: {e}")
-        return None
+# Headers untuk ICP HTTP API calls
+HEADERS = {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+}
 
-JOB_CANISTER_ID = get_canister_id('job')
-APPLIER_CANISTER_ID = get_canister_id('applier')
-RATING_CANISTER_ID = get_canister_id('rating')
+# Ensure Host header routing to the canister on Windows
 
-print(f"Canister IDs:")
-print(f"USER: {USER_CANISTER_ID}")
-print(f"JOB: {JOB_CANISTER_ID}")
-print(f"APPLIER: {APPLIER_CANISTER_ID}")
-print(f"RATING: {RATING_CANISTER_ID}")
+def with_host(headers: dict) -> dict:
+    return {**headers, "Host": f"{CANISTER_ID}.localhost"}
 
 # Function definitions for ASI1 function calling
 tools = [
     {
         "type": "function",
         "function": {
-            "name": "get_current_fee_percentiles",
-            "description": "Gets the 100 fee percentiles measured in millisatoshi/byte.",
+            "name": "getAllJobs",
+            "description": "Gets the all jobs on platform.",
             "parameters": {
                 "type": "object",
                 "properties": {},
@@ -153,24 +141,44 @@ tools = [
 ]
 
 async def call_icp_endpoint(func_name: str, args: dict):
-    if func_name == "get_current_fee_percentiles":
-        url = f"{BASE_URL}/get-current-fee-percentiles"
-        response = requests.post(url, headers=HEADERS, json={})
-    elif func_name == "get_balance":
-        url = f"{BASE_URL}/get-balance"
-        response = requests.post(url, headers=HEADERS, json={"address": args["address"]})
-    elif func_name == "get_utxos":
-        url = f"{BASE_URL}/get-utxos"
-        response = requests.post(url, headers=HEADERS, json={"address": args["address"]})
-    elif func_name == "send":
-        url = f"{BASE_URL}/send"
-        response = requests.post(url, headers=HEADERS, json=args)
-    elif func_name == "get_p2pkh_address":
-        url = f"{BASE_URL}/get-p2pkh-address"
-        response = requests.post(url, headers=HEADERS, json={})
+    if func_name == "getAllJobs":
+        # Use 127.0.0.1 with Host header for Windows DNS compatibility
+        errors = []
+        headers_with_host = with_host(HEADERS)
+        # 1) GET /getAllJobs via Host header routing
+        try:
+            url_get = f"{BASE_URL}/getAllJobs"
+            resp_get = requests.get(url_get, headers=headers_with_host, timeout=10)
+            resp_get.raise_for_status()
+            return resp_get.json()
+        except Exception as e:
+            errors.append(f"GET(Host header) failed: {str(e)}")
+        # 2) POST /getAllJobs via Host header routing (upgrade to http_request_update)
+        try:
+            url_post = f"{BASE_URL}/getAllJobs"
+            resp_post = requests.post(url_post, headers=headers_with_host, json={}, timeout=15)
+            resp_post.raise_for_status()
+            return resp_post.json()
+        except Exception as e:
+            errors.append(f"POST(Host header) failed: {str(e)}")
+        raise RuntimeError("getAllJobs failed via both GET and POST with Host header: " + " | ".join(errors))
     elif func_name == "dummy_test":
         url = f"{BASE_URL}/dummy-test"
-        response = requests.post(url, headers=HEADERS, json={})
+        response = requests.post(url, headers=with_host(HEADERS), json={}, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    elif func_name == "get_balance":
+        url = f"{BASE_URL}/get-balance"
+        response = requests.post(url, headers=with_host(HEADERS), json={"address": args["address"]}, timeout=15)
+    elif func_name == "get_utxos":
+        url = f"{BASE_URL}/get-utxos"
+        response = requests.post(url, headers=with_host(HEADERS), json={"address": args["address"]}, timeout=15)
+    elif func_name == "send":
+        url = f"{BASE_URL}/send"
+        response = requests.post(url, headers=with_host(HEADERS), json=args, timeout=20)
+    elif func_name == "get_p2pkh_address":
+        url = f"{BASE_URL}/get-p2pkh-address"
+        response = requests.post(url, headers=with_host(HEADERS), json={}, timeout=10)
     else:
         raise ValueError(f"Unsupported function call: {func_name}")
     response.raise_for_status()
@@ -214,9 +222,12 @@ async def process_query(query: str, ctx: Context) -> str:
             ctx.logger.info(f"Executing {func_name} with arguments: {arguments}")
 
             try:
+                # Call actual endpoint (getAllJobs included)
                 result = await call_icp_endpoint(func_name, arguments)
                 content_to_send = json.dumps(result)
+                ctx.logger.info(f"API result: {content_to_send[:200]}...")
             except Exception as e:
+                ctx.logger.error(f"Error executing {func_name}: {str(e)}")
                 error_content = {
                     "error": f"Tool execution failed: {str(e)}",
                     "status": "failed"

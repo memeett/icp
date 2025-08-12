@@ -24,6 +24,7 @@ import {
   isAuthenticated as controllerIsAuthenticated,
 } from '../../controller/userController';
 import { storage } from '../../utils/storage';
+import { ensureUserData } from '../../utils/sessionUtils';
 
 export interface UseAuthReturn {
   user: User | null;
@@ -138,9 +139,15 @@ export const useAuth = (): UseAuthReturn => {
         if (sessionToken) {
           const isValid = await validateCookie();
           if (isValid) {
-            const userData = await fetchUserBySession();
-            if (userData) {
-              authActions({ type: 'LOGIN', user: userData, session: sessionToken });
+            // Ensure user data is loaded whenever we have a valid session
+            const hasUserData = await ensureUserData();
+            if (hasUserData) {
+              const userData = await fetchUserBySession();
+              if (userData) {
+                authActions({ type: 'LOGIN', user: userData, session: sessionToken });
+              } else {
+                authActions({ type: 'LOGOUT' });
+              }
             } else {
               authActions({ type: 'LOGOUT' });
             }

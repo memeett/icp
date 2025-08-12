@@ -8,21 +8,47 @@ import { job_transaction } from "../../../declarations/job_transaction";
 import { ApplierPayload } from "../interface/Applier";
 import { Wallet } from "lucide-react";
 import { agentService } from "../singleton/agentService";
+import { storage } from "../utils/storage";
+import { ensureUserData } from "../utils/sessionUtils";
+import { debugUserData } from "../utils/debugUtils";
+import { fixUserData } from "../utils/userDataFixer";
 
 
 
 export const createJob = async (jobName:string, jobDescription:string[], jobTags:string[], jobSalary: number, jobSlots: number): Promise<string[]> => {
    const agent = await agentService.getAgent();
     try {
-
-
         if (!jobName.trim()) return ["Failed", "Job name is required"];
         if (jobDescription.length === 0) return ["Failed", "Job description is required"];
         if (jobTags.length === 0) return ["Failed", "At least one job tag is required"];
         if (jobSalary < 1) return ["Failed", "Job salary must be at least 1"];
         if (jobSlots < 1) return ["Failed", "Job slots must be at least 1"];
         
-        const userData = localStorage.getItem("current_user");
+        // First, ensure we have user data if there's a session
+        const hasUserData = await ensureUserData();
+        if (!hasUserData) {
+            return ["Failed", "Authentication required. Please login before posting a job."];
+        }
+        
+        // Run debug utility to help troubleshoot
+        debugUserData();
+        
+        // Get user data from storage utility
+        let currentUser = storage.getUser();
+        console.log('Current user from storage for job creation:', currentUser);
+        
+        // If user data has issues, try to fix it
+        if (!currentUser || !currentUser.id) {
+            console.log('User data has issues, attempting to fix...');
+            currentUser = fixUserData();
+        }
+        if (currentUser) {
+            console.log('User ID:', currentUser.id);
+            console.log('User structure type:', typeof currentUser);
+            console.log('User keys:', Object.keys(currentUser));
+        } else {
+            console.log('No user data available');
+        }
 
         const newJobTags: JobCategory[] = [];
 
@@ -39,18 +65,31 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
             }
         }
 
-        if(userData){
-            const parsedData = JSON.parse(userData);
-    
+        if (currentUser) {
+            // Debug the user data structure
+            console.log('User ID:', currentUser.id);
+            console.log('User structure type:', typeof currentUser);
+            console.log('User keys:', Object.keys(currentUser));
+            
+            // Make sure the ID is a string
+            const userId = String(currentUser.id);
+            console.log('User ID as string:', userId);
+            
+            // Safely create the payload
             const payload : CreateJobPayload = {
                 jobName,
                 jobDescription,
                 jobTags: newJobTags, 
                 jobSalary,
                 jobSlots: BigInt(jobSlots),
-                userId: parsedData.ok.id
+                userId: userId
             };
             
+            console.log('Job payload being sent:', {
+                ...payload,
+                jobSlots: payload.jobSlots.toString(),
+                userId: payload.userId
+            });
             
             const result = await job.createJob(payload, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_JOB!);
             if ("ok" in result) {
@@ -58,11 +97,11 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
             } else {
                 return ["Failed","Error creating job"];
             }
-        }else{
-            return ["Failed", "Before your post a job, login First"];
+        } else {
+            return ["Failed", "Authentication required. Please login before posting a job."];
         }
         } catch (error) {
-        return ["Failed", "Failed to create job:"];
+        return ["Failed", `Failed to create job: ${error}`];
     }
 };
 

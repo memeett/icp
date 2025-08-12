@@ -8,10 +8,11 @@ import Time "mo:base/Time";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Float "mo:base/Float";
-import List "mo:base/List";
 import Debug "mo:base/Debug";
-
-import JobTransaction "../JobTransaction/model";
+import Blob "mo:base/Blob";
+import Nat16 "mo:base/Nat16";
+import Nat "mo:base/Nat";
+import Error "mo:base/Error";
 
 actor JobModel{
     private stable var nextId : Nat = 0;
@@ -48,364 +49,452 @@ actor JobModel{
             Text.equal,
             Text.hash
         );
-        
         jobCategories := HashMap.fromIter<Text, Job.JobCategory>(
             jobCategoriesEntries.vals(),
             0,
             Text.equal,
             Text.hash
         );
-
         jobsEntries := [];
         jobCategoriesEntries := [];
-        seedJobCategories();
     };
 
-    
-    
-private func seedJobCategories() {
-    let defaultCategories = [
-        "Software Development",
-        "Graphic Design",
-        "Marketing",
-        "Customer Support",
-        "Data Analysis",
-        "Web Development",
-        "Mobile App Development",
-        "UI/UX Design",
-        "Project Management",
-        "Content Writing",
-        "Social Media Management",
-        "SEO Optimization",
-        "Cybersecurity",
-        "Cloud Computing",
-        "DevOps",
-        "Artificial Intelligence",
-        "Blockchain Development",
-        "Game Development",
-        "Technical Writing",
-        "IT Support",
-    ];
+    public func createJob(payload: Job.CreateJobPayload, job_transaction_canister: Text, job_canister: Text): async Result.Result<Job.Job, Text> {
+        let jobId = nextId;
+        nextId += 1;
 
-    for (categoryName in defaultCategories.vals()) {
-        var categoryExists = false;
-        for (category in jobCategories.vals()) {
-            if (category.jobCategoryName == categoryName) {
-                categoryExists := true;
-                return;
-            };
-        };
+        let id = Int.toText(jobId);
+        let now = Time.now();
 
-        // If the category does not exist, add it
-        if (not categoryExists) {
-            let categoryId = Int.toText(nextCategoryId);
-            let newCategory : Job.JobCategory = {
-                id = categoryId;
-                jobCategoryName = categoryName;
-            };
-            jobCategories.put(categoryId, newCategory);
-            nextCategoryId += 1;
-        };
-    };
-};
-    
-
-    public func createJob (payload : Job.CreateJobPayload, job_transaction_canister: Text, job_canister: Text) : async Result.Result<Job.Job, Text> {
-        let jobTransactionActor = actor (job_transaction_canister) : actor {
-            createTransaction: (owner_id : Text, job_id : Text, job_canister: Text) -> async ()
-        };
-
-        let jobId = Int.toText(nextId);
-        let timestamp = Time.now();
-        
-        let newJob : Job.Job = {
-            id = jobId;
+        let job : Job.Job = {
+            id = id;
             jobName = payload.jobName;
             jobDescription = payload.jobDescription;
-            jobSalary = payload.jobSalary;
-            jobRating = 0.0;
             jobTags = payload.jobTags;
+            jobSalary = payload.jobSalary;
             jobSlots = payload.jobSlots;
-            jobStatus = "Start";
-            userId = payload.userId; 
-            createdAt = timestamp;
-            updatedAt = timestamp;
+            jobStatus = "Open";
+            userId = payload.userId;
+            createdAt = now;
+            updatedAt = now;
+            jobRating = 0;
             wallet = 0;
         };
 
-        jobs.put(jobId, newJob);
-        nextId += 1;
-        
-        await jobTransactionActor.createTransaction(payload.userId, jobId, job_canister);
-        #ok(newJob);
+        jobs.put(id, job);
+
+        // create transaction
+        try {
+            // Create the job transaction
+            let jobTransactionActor = actor (job_transaction_canister) : actor {
+                createTransaction : (Text, Text, Text) -> async ();
+            };
+            await jobTransactionActor.createTransaction(payload.userId, id, job_canister);
+            return #ok(job);
+        } catch (error) {
+            Debug.print("Error creating job: " # Error.message(error));
+            return #err("Failed to create job transaction");
+        };
     };
 
-    public func createJobCategory(categoryName : Text) : async Result.Result<Job.JobCategory, Text> {
-        let categoryId = Int.toText(nextCategoryId);
+    // Existing functions
+
+    // ----- HTTP Interface Implementation -----
+    
+    // Type definitions for HTTP handling
+    type HeaderField = (Text, Text);
+
+    type HttpRequest = {
+        method : Text;
+        url : Text;
+        headers : [HeaderField];
+        body : Blob;
+        certificate_version : ?Nat16;
+    };
+
+    type HttpResponse = {
+        status_code : Nat16;
+        headers : [HeaderField];
+        body : Blob;
+        streaming_strategy : ?StreamingStrategy;
+        upgrade : ?Bool;
+    };
+
+    type StreamingStrategy = {
+        #Callback : {
+            callback : StreamingCallback;
+            token : StreamingCallbackToken;
+        };
+    };
+
+    type StreamingCallback = query (StreamingCallbackToken) -> async (StreamingCallbackResponse);
+
+    type StreamingCallbackToken = {
+        key : Text;
+        sha256 : ?[Nat8];
+        index : Nat;
+        content_encoding : Text;
+    };
+
+    type StreamingCallbackResponse = {
+        body : Blob;
+        token : ?StreamingCallbackToken;
+    };
+
+    private func makeJsonResponse(statusCode : Nat16, jsonContent : Text) : HttpResponse {
+        {
+            status_code = statusCode;
+            headers = [
+                ("Content-Type", "application/json"),
+                ("Access-Control-Allow-Origin", "*"),
+                ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                ("Access-Control-Allow-Headers", "Content-Type")
+            ];
+            body = Text.encodeUtf8(jsonContent);
+            streaming_strategy = null;
+            upgrade = null;
+        };
+    };
+
+    // Job to JSON string
+    private func jobToJsonString(job : Job.Job) : Text {
+        // job.jobTags: [Job.JobCategory]
+        let tagItems = Array.map<Job.JobCategory, Text>(
+            job.jobTags,
+            func (tag : Job.JobCategory) : Text {
+                "{\"id\":\"" # tag.id # "\",\"jobCategoryName\":\"" # tag.jobCategoryName # "\"}"
+            }
+        );
+        let tagsJson = "[" # Text.join(",", Iter.fromArray(tagItems)) # "]";
+        // job.jobDescription: [Text]
+        let descItems = Array.map<Text, Text>(
+            job.jobDescription,
+            func (d : Text) : Text { "\"" # d # "\"" }
+        );
+        let descriptionJson = "[" # Text.join(",", Iter.fromArray(descItems)) # "]";
+
+        "{" #
+        "\"id\":\"" # job.id # "\"," #
+        "\"jobName\":\"" # job.jobName # "\"," #
+        "\"jobDescription\":" # descriptionJson # "," #
+        "\"jobTags\":" # tagsJson # "," #
+        "\"jobSalary\":" # Float.toText(job.jobSalary) # "," #
+        "\"jobSlots\":" # Int.toText(job.jobSlots) # "," #
+        "\"jobStatus\":\"" # job.jobStatus # "\"," #
+        "\"userId\":\"" # job.userId # "\"," #
+        "\"createdAt\":" # Int.toText(job.createdAt) # "," #
+        "\"updatedAt\":" # Int.toText(job.updatedAt) # "," #
+        "\"jobRating\":" # Float.toText(job.jobRating) # "," #
+        "\"wallet\":" # Float.toText(job.wallet) #
+        "}"
+    };
+
+    private func jobsToJsonArray(jobList : [Job.Job]) : Text {
+        let jobJsonArray = Array.map<Job.Job, Text>(
+            jobList,
+            func (job : Job.Job) : Text = jobToJsonString(job)
+        );
+        "[" # Text.join(",", Iter.fromArray(jobJsonArray)) # "]"
+    };
+
+    // HTTP request handler
+    public query func http_request(req : HttpRequest) : async HttpResponse {
+        let path = req.url;
+        let method = req.method;
+
+    if (method == "POST" and path == "/getAllJobs") {
+            return {
+                status_code = 200;
+                headers = [
+                    ("Access-Control-Allow-Origin", "*"),
+                    ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                    ("Access-Control-Allow-Headers", "Content-Type")
+                ];
+                body = Text.encodeUtf8("");
+                streaming_strategy = null;
+                upgrade = ?true;
+            };
+        };
+
+        // Handle routes
+        switch (method, path) {
+            case ("GET", "/getAllJobs") {
+                let allJobs = Iter.toArray(jobs.vals());
+                let jsonResponse = jobsToJsonArray(allJobs);
+                return makeJsonResponse(200, jsonResponse);
+            };
+            case ("OPTIONS", _) {
+                return {
+                    status_code = 200;
+                    headers = [
+                        ("Access-Control-Allow-Origin", "*"),
+                        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                        ("Access-Control-Allow-Headers", "Content-Type")
+                    ];
+                    body = Text.encodeUtf8("");
+                    streaming_strategy = null;
+                    upgrade = null;
+                };
+            };
+            case _ {
+                return makeJsonResponse(404, "{\"error\": \"Not Found\", \"path\": \"" # path # "\"}");
+            };
+        };
+    };
+
+    // HTTP update handler for routes that require update calls
+    public func http_request_update(req : HttpRequest) : async HttpResponse {
+        let path = req.url;
+        let method = req.method;
+
+    // Handle only specific paths that match our pattern
+    if (method == "POST" and path == "/getAllJobs") {
+            let allJobs = Iter.toArray(jobs.vals());
+            let jsonResponse = jobsToJsonArray(allJobs);
+            return makeJsonResponse(200, jsonResponse);
+        };
         
-        let newCategory : Job.JobCategory = {
-            id = categoryId;
+        // Handle OPTIONS requests for CORS
+        if (method == "OPTIONS") {
+            return {
+                status_code = 200;
+                headers = [
+                    ("Access-Control-Allow-Origin", "*"),
+                    ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                    ("Access-Control-Allow-Headers", "Content-Type")
+                ];
+                body = Text.encodeUtf8("");
+                streaming_strategy = null;
+                upgrade = null;
+            };
+        };
+
+        // Default response for unhandled routes
+        return makeJsonResponse(404, "{\"error\": \"Not Found\", \"path\": \"" # path # "\"}");
+    };
+
+    // Existing functions continue below...
+    public func createJobCategory(categoryName : Text) : async Result.Result<Job.JobCategory, Text> {
+        // Check if the category already exists
+        for ((_, category) in jobCategories.entries()) {
+            if (category.jobCategoryName == categoryName) {
+                return #err("Category already exists");
+            };
+        };
+
+        let categoryId = nextCategoryId;
+        nextCategoryId += 1;
+
+        let id = Int.toText(categoryId);
+
+        let category : Job.JobCategory = {
+            id = id;
             jobCategoryName = categoryName;
         };
 
-        jobCategories.put(categoryId, newCategory);
-        nextCategoryId += 1;
-        
-        #ok(newCategory);
+        jobCategories.put(id, category);
+
+        return #ok(category);
     };
 
-    public query func getJob (jobId : Text) : async Result.Result<Job.Job, Text> {
-        switch (jobs.get(jobId)) {
-            case (?job) { #ok(job) };
-            case null { #err("Job not found") };
-        }
-    };
+    public query func findJobCategoryByName(categoryName : Text) : async Result.Result<Job.JobCategory, Text> {
+        for ((_, category) in jobCategories.entries()) {
+            if (category.jobCategoryName == categoryName) {
+                return #ok(category);
+            };
+        };
 
-    public shared func putJob(job_id: Text, job: Job.Job) : async () {
-        jobs.put(job_id, job);
+        return #err("Category not found");
     };
 
     public query func getJobCategory(categoryId : Text) : async Result.Result<Job.JobCategory, Text> {
         switch (jobCategories.get(categoryId)) {
-            case (?category) { #ok(category) };
-            case null { #err("Category not found") };
-        }
-    };
-
-    public query func findJobCategoryByName(categoryName: Text) : async Result.Result<Job.JobCategory, Text> {
-        let filteredCategories = Iter.toArray(Iter.filter<Job.JobCategory>(
-            jobCategories.vals(), 
-            func(category) { category.jobCategoryName == categoryName }
-        ));
-
-        if (filteredCategories.size() > 0) {
-            #ok(filteredCategories[0])  
-        } else {
-            #err("Category not found")
-        }
-    };
-
-    //Delete Job
-     public func deleteJob (jobId : Text) : async Result.Result<(), Text> {
-        switch (jobs.get(jobId)) {
-        case (?_) { 
-            jobs.delete(jobId);
-            #ok(())
+            case (null) {
+                return #err("Category not found");
+            };
+            case (?category) {
+                return #ok(category);
+            };
         };
-        case null { #err("Job not found") };
-        }
-    };    
-
-    public query func getAllJobs() : async [Job.Job] {
-        Iter.toArray(jobs.vals());
     };
 
     public query func getAllJobCategories() : async [Job.JobCategory] {
-        Iter.toArray(jobCategories.vals());
+        return Iter.toArray(jobCategories.vals());
     };
 
-
-    public func updateJob (jobId : Text, payload : Job.UpdateJobPayload, jobStatus : Text) : async Result.Result<Job.Job, Text> {
+    public func updateJob(jobId : Text, payload : Job.UpdateJobPayload, jobStatus: Text) : async Result.Result<Job.Job, Text> {
         switch (jobs.get(jobId)) {
-            case (?existingJob) {
+            case (null) {
+                return #err("Job not found");
+            };
+            case (?job) {
                 let updatedJob : Job.Job = {
-                id = existingJob.id;
-                jobName = Option.get(payload.jobName, existingJob.jobName);
-                jobDescription = Option.get(payload.jobDescription, existingJob.jobDescription);
-                jobSalary = Option.get(payload.jobSalary, existingJob.jobSalary);
-                jobRating = existingJob.jobRating;
-                jobTags = Option.get(payload.jobTags, existingJob.jobTags);
-                jobSlots = Option.get(payload.jobSlots, existingJob.jobSlots);
-                jobStatus = jobStatus;
-                userId = Option.get(payload.userId, existingJob.userId);
-                createdAt = existingJob.createdAt;
-                updatedAt = Time.now();
-                wallet = existingJob.wallet;
+                    id = job.id;
+                    jobName = Option.get(payload.jobName, job.jobName);
+                    jobDescription = Option.get(payload.jobDescription, job.jobDescription);
+                    jobTags = Option.get(payload.jobTags, job.jobTags);
+                    jobSalary = Option.get(payload.jobSalary, job.jobSalary);
+                    jobSlots = Option.get(payload.jobSlots, job.jobSlots);
+                    jobStatus = jobStatus;
+                    userId = Option.get(payload.userId, job.userId);
+                    createdAt = job.createdAt;
+                    updatedAt = Time.now();
+                    jobRating = job.jobRating;
+                    wallet = job.wallet;
                 };
-                
+
                 jobs.put(jobId, updatedJob);
-                #ok(updatedJob)
+                return #ok(updatedJob);
             };
-            case null { #err("Job not found") };
-        }
-    };
-
-    public func getUserJob(owner_id : Text): async [Job.Job] {
-        let allJobs = Iter.toArray(jobs.vals());
-        let userJobs = Array.filter(allJobs, func(job : Job.Job) : Bool {
-            return job.userId == owner_id;
-        });
-        
-        userJobs
-    };
-
-    public func getUserJobByStatusFinished(owner_id : Text): async [Job.Job] {
-        let allJobs = Iter.toArray(jobs.vals());
-        let userJobs = Array.filter(allJobs, func(job : Job.Job) : Bool {
-            return job.userId == owner_id and job.jobStatus == "Finished";
-        });
-        
-        userJobs
-    };
-
-    public shared func startJob(user_id: Text, job_id: Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text): async Result.Result<Bool, Text> {
-        let jobTransactionActor = actor (job_transaction_canister) : actor {
-            getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
         };
-        let userActor = actor(user_canister) : actor {
-            transfer_icp_to_job:(user_id: Text, job_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
+    };
+
+    public query func getJob(jobId : Text) : async Result.Result<Job.Job, Text> {
+        switch (jobs.get(jobId)) {
+            case (null) {
+                return #err("Job not found");
+            };
+            case (?job) {
+                return #ok(job);
+            };
         };
+    };
 
-        switch (jobs.get(job_id)) {
-            case (?existingJob) {
-                if (existingJob.jobStatus == "Ongoing") {
-                    return #err("Job is already ongoing");
+    public query func getAllJobs() : async [Job.Job] {
+        return Iter.toArray(jobs.vals());
+    };
+
+    public func deleteJob(jobId : Text) : async Result.Result<(), Text> {
+        switch (jobs.get(jobId)) {
+            case (null) {
+                return #err("Job not found");
+            };
+            case (_) {
+                jobs.delete(jobId);
+                return #ok(());
+            };
+        };
+    };
+
+    public func getUserJob(owner_id : Text) : async [Job.Job] {
+        let userJobs = Array.filter<Job.Job>(
+            Iter.toArray(jobs.vals()),
+            func(job : Job.Job) : Bool {
+                return job.userId == owner_id;
+            }
+        );
+        
+        return userJobs;
+    };
+    
+    public func getUserJobByStatusFinished(owner_id : Text) : async [Job.Job] {
+        let userJobs = Array.filter<Job.Job>(
+            Iter.toArray(jobs.vals()),
+            func(job : Job.Job) : Bool {
+                return job.userId == owner_id and job.jobStatus == "Finished";
+            }
+        );
+        
+        return userJobs;
+    };
+
+    public func startJob(user_id : Text, job_id : Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text) : async Result.Result<Bool, Text> {
+        let jobResult = await getJob(job_id);
+        
+        switch(jobResult) {
+            case(#err(error)) {
+                return #err(error);
+            };
+            case(#ok(job)) {
+                if(job.jobStatus != "Open") {
+                    return #err("Job is not open for start");
                 };
-                // Validate if the current user is the owner of the job
-                if (user_id != existingJob.userId) {
-                    return #err("User is not the owner of the job");
-                };
-
-                // Get job transaction to determine how many freelancers have been accepted.
-                let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
-                switch (transactionResult) {
-                    case (#ok(transaction)) {
-                        // Count the number of accepted freelancers using a fold function.
-                        let numAccepted : Nat = List.foldRight<Text, Nat>(
-                            transaction.freelancers,
-                            0,
-                            func (_: Text, acc: Nat) { acc + 1 }
-                        );
-
-                        // Check if no freelancers have been accepted
-                        if (numAccepted == 0) {
-                            return #err("No freelancers have been accepted for this job");
-                        };
-
-                        // Calculate the required amount as jobSalary * number of accepted freelancers.
-                        let requiredAmount = existingJob.jobSalary * Float.fromInt(numAccepted);
                 
-                        // Call transfer_icp_to_job and check its result.
-                        let transferResult = await userActor.transfer_icp_to_job(user_id, job_id, requiredAmount, job_canister);
-                        switch (transferResult) {
-                            case (#ok(_msg)) { 
-                                return #ok(true); 
-                            };
-                            case (#err(errMsg)) { 
-                                return #err("Transfer failed: " # errMsg); 
-                            };
-                        }
-                    };
-                    case (#err(_err)) {
-                        // If there's no transaction record, assume no accepted freelancers.
-                        return #err("No transaction found for the job");
-                    };
-                }
-            };
-            case null { 
-                return #err("Job not found"); 
-            };
-        }
-    };
-
-    public shared func finishJob(
-        job_id: Text,
-        job_canister: Text,
-        job_transaction_canister: Text,
-        user_canister: Text,
-        rating_canister: Text
-    ): async Result.Result<Bool, Text> {
-        // Step 1: Retrieve the job from the jobs HashMap
-        switch (jobs.get(job_id)) {
-            case (?existingJob) {
-                // Step 2: Retrieve the job transaction
+                // Check if the user is one of the accepted freelancers for the job
                 let jobTransactionActor = actor (job_transaction_canister) : actor {
-                    getTransactionByJobId(job_id : Text) : async Result.Result<JobTransaction.JobTransaction, Text>;
+                    getAcceptedFreelancers : (Text, Text) -> async Result.Result<[{id: Text; name: Text; email: Text; principal: Text; sessionId: Text; role: Text}], Text>;
                 };
-
-                let transactionResult = await jobTransactionActor.getTransactionByJobId(job_id);
-                switch (transactionResult) {
-                    case (#ok(transaction)) {
-                        // Step 3: Calculate payment per freelancer
-                        let numFreelancers = Float.fromInt(List.size(transaction.freelancers));
-                        if (numFreelancers == 0) {
-                            return #err("No freelancers have been accepted for this job");
-                        };
-
-                        let paymentPerFreelancer = existingJob.wallet / numFreelancers;
-
-                        // Step 4: Transfer payments to freelancers
-                        var remainingWallet = existingJob.wallet; // Track remaining wallet balance
-                        for (freelancerId in Iter.fromList(transaction.freelancers)) {
-                            let userActor = actor(user_canister) : actor {
-                                transfer_icp_to_user: (from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) -> async Result.Result<Text, Text>;
-                            };
-
-                            let transferResult = await userActor.transfer_icp_to_user(
-                                job_id, // From: job owner
-                                freelancerId, // To: freelancer
-                                paymentPerFreelancer, // Amount
-                                job_canister
-                            );
-                            switch (transferResult) {
-                                case (#err(errMsg)) {
-                                    return #err("Failed to transfer payment to freelancer " # freelancerId # ": " # errMsg);
-                                };
-                                case (#ok(_)) {
-                                    remainingWallet -= paymentPerFreelancer; // Deduct payment from wallet
-                                };
-                            };
-                        };
-
-                        // Step 5: Update the job status and wallet balance
-                        let updatedJob : Job.Job = {
-                            id = existingJob.id;
-                            jobName = existingJob.jobName;
-                            jobDescription = existingJob.jobDescription;
-                            jobSalary = existingJob.jobSalary;
-                            jobRating = existingJob.jobRating;
-                            jobTags = existingJob.jobTags;
-                            jobSlots = existingJob.jobSlots;
-                            jobStatus = "Finished"; // Update status
-                            userId = existingJob.userId;
-                            createdAt = existingJob.createdAt;
-                            updatedAt = Time.now();
-                            wallet = remainingWallet; // Update wallet balance
-                        };
-                        jobs.put(job_id, updatedJob);
-
-                        // Step 6: Create ratings for freelancers
-let ratingActor = actor(rating_canister) : actor {
-    createRating: (job_id : Text, user_ids : List.List<Text>) -> async Result.Result<Text, Text>;
-};
-
-Debug.print("Calling createRating with rating_canister: " # rating_canister);
-
-let ratingResult = await ratingActor.createRating(job_id, transaction.freelancers);
-Debug.print("Rating result received");
+                
+                let acceptedFreelancersResult = await jobTransactionActor.getAcceptedFreelancers(job_id, user_canister);
+                
+                switch(acceptedFreelancersResult) {
+                    case(#err(error)) {
+                        return #err(error);
+                    };
+                    case(#ok(acceptedFreelancers)) {
+                        let isAccepted = Array.find<{id: Text; name: Text; email: Text; principal: Text; sessionId: Text; role: Text}>(
+                            acceptedFreelancers,
+                            func(user) {
+                                return user.id == user_id;
+                            }
+                        );
                         
-
-                        switch (ratingResult) {
-                            // Debug.print("Rating result: ", ratingResult);
-                            // Debug.print("Rating result: ", ratingResult);
-                            case (#err(errMsg)) {
-                                // D
-                                return #err("Failed to create ratings: " # errMsg);
+                        switch(isAccepted) {
+                            case(null) {
+                                return #err("User is not an accepted freelancer for this job");
                             };
-                            case (#ok(_)) {
-                                // Step 7: Return success
+                            case(_) {
+                                // Change job status to "In Progress"
+                                let updatedJob : Job.Job = {
+                                    id = job.id;
+                                    jobName = job.jobName;
+                                    jobDescription = job.jobDescription;
+                                    jobTags = job.jobTags;
+                                    jobSalary = job.jobSalary;
+                                    jobSlots = job.jobSlots;
+                                    jobStatus = "In Progress";
+                                    userId = job.userId;
+                                    createdAt = job.createdAt;
+                                    updatedAt = Time.now();
+                                    jobRating = job.jobRating;
+                                    wallet = job.wallet;
+                                };
+                                
+                                jobs.put(job_id, updatedJob);
                                 return #ok(true);
                             };
                         };
                     };
-                    case (#err(errMsg)) {
-                        return #err("Failed to fetch job transaction: " # errMsg);
-                    };
                 };
             };
-            case null {
-                return #err("Job not found");
+        };
+    };
+
+    public func finishJob(job_id : Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text, rating_canister: Text) : async Result.Result<Bool, Text> {
+        let jobResult = await getJob(job_id);
+        
+        switch(jobResult) {
+            case(#err(error)) {
+                return #err(error);
+            };
+            case(#ok(job)) {
+                if(job.jobStatus != "In Progress") {
+                    return #err("Job is not in progress");
+                };
+                
+                // Change job status to "Finished"
+                let updatedJob : Job.Job = {
+                    id = job.id;
+                    jobName = job.jobName;
+                    jobDescription = job.jobDescription;
+                    jobTags = job.jobTags;
+                    jobSalary = job.jobSalary;
+                    jobSlots = job.jobSlots;
+                    jobStatus = "Finished";
+                    userId = job.userId;
+                    createdAt = job.createdAt;
+                    updatedAt = Time.now();
+                    jobRating = job.jobRating;
+                    wallet = job.wallet;
+                };
+                
+                jobs.put(job_id, updatedJob);
+                return #ok(true);
             };
         };
+    };
+
+    public func putJob(job_id : Text, job : Job.Job) {
+        jobs.put(job_id, job);
     };
 }

@@ -37,7 +37,7 @@ try:
 except ImportError:
     print("⚠️  python-dotenv not installed, using hardcoded values")
 
-ASI1_API_KEY = "sk_fe44d0a20765479e8b337a7fb024c9c82005e45674204774b8c911e5f3a38a91"
+ASI1_API_KEY = ""
 ASI1_BASE_URL = "https://api.asi1.ai/v1"
 ASI1_HEADERS = {
     "Authorization": f"Bearer {ASI1_API_KEY}",

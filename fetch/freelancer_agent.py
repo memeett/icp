@@ -45,9 +45,9 @@ ASI1_HEADERS = {
 }
 
 # Your canister IDs from .env file or hardcoded fallback
-USER_CANISTER_ID = os.getenv("CANISTER_ID_USER", "vu5yx-eh777-77774-qaaga-cai")
+USER_CANISTER_ID = os.getenv("CANISTER_ID_USER", "uzt4z-lp777-77774-qaabq-cai")
 SESSION_CANISTER_ID = os.getenv("CANISTER_ID_SESSION", "vg3po-ix777-77774-qaafa-cai")
-JOB_CANISTER_ID = os.getenv("CANISTER_ID_JOB", "rdmx6-jaaaa-aaaah-qca2a-cai")  # Updated from .env
+JOB_CANISTER_ID = os.getenv("CANISTER_ID_JOB", "u6s2n-gx777-77774-qaaba-cai")  # Updated from .env
 AI_AGENT_CANISTER_ID = os.getenv("CANISTER_ID_AIAGENT", "rrkah-fqaaa-aaaah-qcuyq-cai")  # AI Agent canister
 APPLIER_CANISTER_ID = os.getenv("CANISTER_ID_APPLIER", "uxrrr-q7777-77774-qaaaq-cai")  # From your .env
 RATING_CANISTER_ID = os.getenv("CANISTER_ID_RATING", "vpyes-67777-77774-qaaeq-cai")  # From your .env

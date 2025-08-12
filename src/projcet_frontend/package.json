@@ -48,6 +48,7 @@
     "preview": "vite preview",
     "setup": "npm i && dfx canister create projcet_backend && dfx generate projcet_backend && dfx deploy",
     "start": "vite --port 3000",
+    "clean": "find src -name \"*.js\" -type f -delete",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit"

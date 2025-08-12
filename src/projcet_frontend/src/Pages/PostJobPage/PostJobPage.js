@@ -1,0 +1,120 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ModalProvider } from "../../contexts/modal-context.tsx";
+import { JobNameStep } from "./JobName.tsx";
+import { CategoriesStep } from "./CategoriesStep.tsx";
+import { JobSalaryStep } from "./JobSalary.tsx";
+import { JobSlotsStep } from "./JobSlot.tsx";
+import Navbar from "../../components/Navbar";
+import { createJob } from "../../controller/jobController.ts";
+import { PopUpModal } from "../../components/modals/PopUpModal.tsx";
+import { RequirementsStep } from "./Requirements.tsx";
+import { useNavigate } from "react-router-dom";
+import Footer from "../../components/Footer.tsx";
+import LoadingOverlay from "../../components/ui/loading-animation.tsx";
+const CreateJobPageContent = () => {
+    const [currentStep, setCurrentStep] = useState(1);
+    const [jobName, setJobName] = useState("");
+    const [selectedCategories, setSelectedCategories] = useState([]);
+    const [requirements, setRequirements] = useState([""]);
+    const [customCategory, setCustomCategory] = useState("");
+    const [jobSalary, setJobSalary] = useState(null);
+    const [jobSlots, setJobSlots] = useState(null);
+    const [errors, setErrors] = useState({});
+    const navigate = useNavigate();
+    const [modalMessage, setModalMessage] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const validateStep = (step) => {
+        const newErrors = {};
+        // Job Title Validation
+        if (step === 1) {
+            const trimmedName = jobName.trim();
+            if (!trimmedName) {
+                newErrors.jobName = "Job title is required";
+            }
+            else if (trimmedName.length < 3) {
+                newErrors.jobName = "Job title must be at least 3 characters";
+            }
+            else if (trimmedName.length > 100) {
+                newErrors.jobName = "Job title cannot exceed 100 characters";
+            }
+        }
+        // Categories Validation
+        if (step === 3) {
+            if (selectedCategories.length === 0) {
+                newErrors.categories = "Please select at least one category";
+            }
+            else if (selectedCategories.length > 3) {
+                newErrors.categories = "Maximum 3 categories allowed";
+            }
+        }
+        // Job Slots Validation
+        if (step === 4) {
+            if (jobSlots === null || jobSlots <= 0) {
+                newErrors.slots = "Please enter a valid number of applicants needed";
+            }
+            else if (!Number.isInteger(jobSlots)) {
+                newErrors.slots = "Must be a whole number";
+            }
+            else if (jobSlots > 1000) {
+                newErrors.slots = "Maximum 1000 applicants allowed";
+            }
+        }
+        // Salary Validation
+        if (step === 5) {
+            if (jobSalary === null || jobSalary <= 0) {
+                newErrors.salary = "Please enter a valid salary amount";
+            }
+            else if (jobSalary > 1000000) {
+                newErrors.salary = "Maximum salary allowed is $1,000,000";
+            }
+            else if (jobSalary < 1) {
+                newErrors.salary = "Salary must be at least $1";
+            }
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+    const handleSubmit = () => {
+        if (validateStep(5)) {
+            setLoading(true);
+            createJob(jobName.trim(), requirements, selectedCategories, jobSalary, // Now guaranteed by validation
+            jobSlots // Now guaranteed by validation
+            )
+                .then(setModalMessage)
+                .catch(setModalMessage)
+                .finally(() => {
+                setLoading(false);
+                navigate(-1);
+            });
+        }
+    };
+    const handleNext = () => {
+        if (!validateStep(currentStep))
+            return;
+        setCurrentStep((prev) => Math.min(prev + 1, 5));
+    };
+    return (_jsxs("div", { className: "flex-grow w-full", children: [_jsxs("div", { children: [loading && _jsx(LoadingOverlay, { message: "Creating your job.." }), _jsxs("div", { className: "flex flex-row max-w-5xl mx-auto px-8 pt-8 min-h-[80vh]", children: [_jsx(motion.div, { className: "min-h-[80vh] z-40 bg-white/80 backdrop-blur-lg py-4 rounded-4xl shadow-lg mr-[2vw] flex flex-col justify-center items-center", initial: { opacity: 0, y: -20 }, animate: { opacity: 1, y: 0 }, children: _jsx("div", { className: "gap-4 py-2 px-4", children: [
+                                        { step: 1, label: "Job Title" },
+                                        { step: 2, label: "Requirements" },
+                                        { step: 3, label: "Categories" },
+                                        { step: 4, label: "Applicants" },
+                                        { step: 5, label: "Salary" },
+                                    ].map(({ step, label }) => (_jsxs("div", { children: [_jsxs("div", { className: "flex flex-col items-center justify-center", children: [_jsx("div", { className: `w-12 h-12 rounded-full flex items-center justify-center 
+                        ${currentStep >= step
+                                                            ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg"
+                                                            : "bg-gray-100 text-gray-400"}`, children: step }), _jsx("span", { className: `text-sm w-24 text-center ${currentStep >= step
+                                                            ? "text-gray-700 font-medium"
+                                                            : "text-gray-400"}`, children: label })] }), step < 5 && (_jsx("div", { className: "flex justify-center", children: _jsx("div", { className: "h-8 w-1 bg-gray-200 rounded-full flex justify-center", children: _jsx("div", { className: `h-full transition-all duration-500 ${currentStep > step
+                                                            ? "bg-purple-500"
+                                                            : "bg-transparent"}`, style: { width: `${currentStep > step ? 100 : 0}%` } }) }) }))] }, step))) }) }), _jsxs(motion.div, { className: "bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 mx-auto w-full max-w-3xl flex flex-col relative", initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, children: [_jsxs("div", { className: "mb-8 space-y-4", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsxs("button", { onClick: () => navigate(-1), className: "flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors", children: [_jsx(ChevronLeft, { size: 24 }), _jsx("span", { className: "font-medium", children: "Back to Dashboard" })] }), _jsxs("span", { className: "text-sm text-gray-500", children: ["Step ", currentStep, " of 5"] })] }), _jsxs("div", { className: "space-y-2", children: [_jsx("h1", { className: "text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent", children: "Create New Job" }), _jsx("p", { className: "text-gray-600", children: "Fill in the details to create your perfect job posting" })] }), _jsx("div", { className: "w-full bg-gray-200 rounded-full h-2.5", children: _jsx("div", { className: "bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full transition-all duration-500", style: { width: `${(currentStep - 1) * 25}%` } }) })] }), _jsxs("div", { className: "flex-1 overflow-y-auto", children: [currentStep === 1 && (_jsx(JobNameStep, { jobName, setJobName, error: errors.jobName })), currentStep === 2 && (_jsx(RequirementsStep, { requirements: requirements, setRequirements: setRequirements })), currentStep === 3 && (_jsx(CategoriesStep, { selectedCategories,
+                                                setSelectedCategories,
+                                                customCategory,
+                                                setCustomCategory,
+                                                error: errors.categories })), currentStep === 4 && (_jsx(JobSlotsStep, { jobSlots, setJobSlots, error: errors.slots })), currentStep === 5 && (_jsx(JobSalaryStep, { jobSalary, setJobSalary, error: errors.salary }))] }), _jsx("div", { className: "mt-8 pt-6 border-t border-gray-100", children: _jsxs("div", { className: "flex justify-between", children: [_jsx("div", { className: "flex", children: _jsx("button", { type: "button", onClick: () => navigate(-1), className: "flex items-center gap-2 px-6 py-3 rounded-xl bg-red-200 hover:bg-red-300 disabled:opacity-50 transition-colors", children: "Cancel" }) }), _jsxs("div", { className: "flex flex-row gap-x-[2vh]", children: [_jsxs("button", { type: "button", onClick: () => setCurrentStep((prev) => Math.max(prev - 1, 1)), disabled: currentStep === 1, className: "flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 disabled:opacity-50 transition-colors", children: [_jsx(ChevronLeft, { size: 20 }), "Previous"] }), currentStep < 5 ? (_jsxs("button", { type: "button", onClick: handleNext, className: "px-8 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg transition-all", children: ["Continue", " ", _jsx(ChevronRight, { size: 20, className: "ml-2 inline" })] })) : (_jsx("button", { type: "button", onClick: handleSubmit, className: "px-12 py-3 rounded-xl bg-gradient-to-r from-green-500 to-teal-600 text-white hover:shadow-lg", children: "Post Job" }))] })] }) })] })] })] }), _jsx(PopUpModal, { res: modalMessage, loading: loading })] }));
+};
+export default function CreateJobPage() {
+    return (_jsx(ModalProvider, { children: _jsxs("div", { className: "relative  min-h-screen bg-[#F9F7F7] bg-gradient-to-br from-blue-100/50 to-purple-100/50 ", children: [_jsx(Navbar, {}), _jsx("main", { className: "relative mb-12", children: _jsx(CreateJobPageContent, {}) }), _jsx(Footer, {})] }) }));
+}

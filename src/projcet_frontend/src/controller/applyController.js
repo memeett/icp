@@ -1,0 +1,73 @@
+import { applier } from "../../../declarations/applier";
+import { agentService } from "../singleton/agentService";
+export const applyJob = async (userId, jobId) => {
+    const agent = await agentService.getAgent();
+    try {
+        const payload = { userId, jobId };
+        const result = await applier.applyJob(payload, process.env.CANISTER_ID_JOB);
+        if ("ok" in result) {
+            console.log("Applied for job:", result.ok);
+            return true;
+        }
+        else {
+            console.error("Error applying for job:", result.err);
+            return false;
+        }
+    }
+    catch (error) {
+        console.error("Failed to apply for job:", error);
+        return false;
+    }
+};
+export const acceptApplier = async (userId, jobId) => {
+    const agent = await agentService.getAgent();
+    const payload = { userId, jobId };
+    try {
+        const result = await applier.acceptApplier(payload, process.env.CANISTER_ID_JOB_TRANSACTION);
+        if ("ok" in result) {
+            return true; // Success: Applier was accepted
+        }
+        else {
+            console.error("Failed to accept applier:", result.err);
+            return false; // Failure: Handle the error
+        }
+    }
+    catch (error) {
+        console.error("Unexpected error while accepting applier:", error);
+        return false; // Failure: Handle unexpected errors
+    }
+};
+export const rejectApplier = async (userId, jobId) => {
+    const agent = await agentService.getAgent();
+    const payload = { userId, jobId };
+    try {
+        const result = await applier.rejectApplier(payload);
+        if ("ok" in result) {
+            return true; // Success: Applier was rejected
+        }
+        else {
+            console.error("Failed to reject applier:", result.err);
+            return false; // Failure: Handle the error
+        }
+    }
+    catch (error) {
+        console.error("Unexpected error while rejecting applier:", error);
+        return false; // Failure: Handle unexpected errors
+    }
+};
+export const getUserApply = async (userId) => {
+    const agent = await agentService.getAgent();
+    try {
+        const result = await applier.getUserApply(userId, process.env.CANISTER_ID_JOB);
+        console.log("User applied jobs:", result);
+        return result.map((job) => job.job);
+    }
+    catch (error) {
+        console.error("Failed to get user applied jobs:", error);
+        return null;
+    }
+};
+export const hasUserApplied = async (userId, jobId) => {
+    const result = await applier.hasUserApplied(userId, jobId);
+    return result;
+};

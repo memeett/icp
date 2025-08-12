@@ -11,6 +11,7 @@ import InviteModal from "../../components/modals/InviteModel";
 import { JobTransaction } from "../../../../declarations/job_transaction/job_transaction.did";
 import { getFreelancerHistory } from "../../controller/freelancerController";
 import PublicProfileJobHistoryCard from "../../components/cards/PublicProfileJobHistoryCard";
+import { formatDate } from "../../utils/dateUtils";
 
 const PublicProfile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -37,6 +38,7 @@ const PublicProfile: React.FC = () => {
 
           if (params.id) {
             const result = await getFreelancerHistory(params.id);
+            console.log("Fetched freelancer history:", result);
             if (result) {
               setHistoryJob(result);
             } else {
@@ -44,10 +46,7 @@ const PublicProfile: React.FC = () => {
             }
           }
           if (fetchedUser) {
-            const createdAt: bigint = fetchedUser.createdAt;
-            const dob: number = Number(createdAt / BigInt(1_000_000));
-            const date: Date = new Date(dob);
-            setUserJoin(date.toDateString());
+            setUserJoin(formatDate(fetchedUser.createdAt));
             setUser(fetchedUser);
           }
         }
@@ -59,9 +58,7 @@ const PublicProfile: React.FC = () => {
     fetchData();
   }, [current_user]);
 
-  const joinedAt = user?.createdAt
-    ? new Date(Number(user.createdAt)).toLocaleDateString()
-    : "Unknown";
+  const joinedAt = user?.createdAt ? formatDate(user.createdAt) : "Unknown";
 
   const stats = {
     jobsCompleted: 24,

@@ -40,17 +40,15 @@ import { ApplicantsModal } from "./ApplicationModal";
 import ManageJobDetailPage from "./SubmissionSection";
 import Modal from "./startModal";
 import { createInbox } from "../../controller/inboxController";
-
 import { ModalProvider } from "../../contexts/modal-context";
 import { NestedModalProvider } from "../../contexts/nested-modal-context";
-
-
 import ErrorModal from "../../components/modals/ErrorModal";
 import FinishJobModal from "./JobWarningModal";
 import { useBoolean } from "../../components/context/Context";
 import FinishedSection from "./RatingSection";
 import { getFreelancerForRating, JobRatingPayload } from "../../controller/ratingController";
 import RatingSection from "./RatingSection";
+import { formatDate } from "../../utils/dateUtils";
 
 const AcceptedUsersModal: React.FC<{
   users: User[];
@@ -94,9 +92,7 @@ const AcceptedUsersModal: React.FC<{
                   {user?.username}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {new Date(
-                    Number(user?.createdAt / 1_000_000n)
-                  ).toLocaleDateString()}
+                  {formatDate(user?.createdAt)}
                 </p>
               </div>
             </motion.div>
@@ -138,7 +134,7 @@ export default function JobDetailPage() {
     setIsModalOpen(false); // Close the modal
   };
 
-  const {setIsActive} = useBoolean()
+  const { setIsActive } = useBoolean()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -173,10 +169,11 @@ export default function JobDetailPage() {
 
           const isUserAcceptedOrApplied = await
             acceptedFreelancers.some((user) => user.id === userId) || hasApplied;
-
+            
           if (isUserAcceptedOrApplied) {
             setApplied(true);
             setIsActive(true)
+            
           }
         }
       } catch (error) {
@@ -192,7 +189,7 @@ export default function JobDetailPage() {
   useEffect(() => {
     setIsActive(true)
   }
-  , [applied])
+    , [applied])
 
 
   const fetchJob = useCallback(async () => {
@@ -246,7 +243,7 @@ export default function JobDetailPage() {
     return {
       salary: job.jobSalary.toLocaleString(),
       rating: job.jobRating.toFixed(1),
-      postedDate: new Date(Number(job.createdAt)).toLocaleDateString(),
+      postedDate: formatDate(job.createdAt),
     };
   }, [job]);
 
@@ -262,12 +259,18 @@ export default function JobDetailPage() {
     try {
       const parsedData = JSON.parse(userData);
       const result = await applyJob(parsedData.ok.id, jobId!);
-      await createInbox(
+      console.log(job)
+      const inbox = await createInbox(
         job!.userId,
+        jobId!,
         parsedData.ok.id,
         "application",
         "request"
       );
+      if (!inbox) {
+        console.error("Failed to create inbox message");
+      }
+      console.log("Inbox message created:", inbox);
       if (result) {
         setApplied(true);
       } else {
@@ -300,7 +303,13 @@ export default function JobDetailPage() {
     if (jobId) {
       const result = await acceptApplier(userid, jobId);
       if (result) {
-        await createInbox(userid, job!.userId, "application", "accepted");
+        await createInbox(
+          userid,
+          jobId,
+          job!.userId,
+          "application",
+          "accepted"
+        );
       }
       getJobApplier(jobId).then((users) => {
         setAppliers(users);
@@ -336,7 +345,12 @@ export default function JobDetailPage() {
     if (jobId) {
       const result = await rejectApplier(userid, jobId);
       if (result) {
-        await createInbox(userid, job!.userId, "application", "rejected");
+        await createInbox(
+          userid,
+          jobId,
+          job!.userId,
+          "application",
+          "rejected");
       }
       getJobApplier(jobId).then((users) => {
         setAppliers(users);
@@ -391,28 +405,33 @@ export default function JobDetailPage() {
       fetchJob()
       // Optionally, show a success toast/notification here
     } else {
+      console.log("cek")
       setError(result.message)
     }
     setLoading(false)
   };
 
   const handleFinish = async () => {
-    setShowFinishJobModal(false)
+    setShowFinishJobModal(true)
     setLoading(true)
     if (jobId) {
       const result = await finishJob(jobId)
       if (result.jobFinished) {
         fetchJob()
+        setShowFinishJobModal(false)
+
       } else {
         setError(result.message)
       }
     }
     fetchJob()
+    setShowFinishJobModal(false)
+
     setLoading(false)
 
   }
 
-  
+
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -505,14 +524,14 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        { (job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && !isOwner && (
+        {(job.jobStatus === "Ongoing") && !isOwner && applied && (
           <OngoingSection job={job} />
         )}
         {isOwner && job.jobStatus === "Finished" && (
           <RatingSection ratings={userR} onFinish={handleFinishRating} />
         )}
 
-        {isOwner && (job.jobStatus === "Ongoing" || job.jobStatus === "Finished") && (
+        {isOwner && job.jobStatus === "Ongoing" && (
           <ModalProvider>
             {/* <NestedModalProvider> */}
 
@@ -521,7 +540,7 @@ export default function JobDetailPage() {
           </ModalProvider>
         )}
 
-        
+
       </motion.div>
 
       <Footer />

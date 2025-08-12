@@ -3,6 +3,7 @@ import { Job } from "../../interface/job/Job";
 import { useNavigate } from "react-router-dom";
 import { getRatingByUserIdJobId } from "../../controller/ratingController";
 import { Star } from "lucide-react";
+import { formatDate } from "../../utils/dateUtils";
 
 export default function FreelancerJobHistoryCard({ jobId, isLoading }: { jobId: string; isLoading: () => void }) {
     const [job, setJob] = useState<Job | null>(null);
@@ -25,12 +26,10 @@ export default function FreelancerJobHistoryCard({ jobId, isLoading }: { jobId: 
 
                 const parsedData = JSON.parse(userData);
                 const freelancerId = parsedData.ok?.id;
-                const res = await getRatingByUserIdJobId(jobId, freelancerId);
+                const res = await getRatingByUserIdJobId(jobId!, freelancerId!);
                 if (typeof res !== "string") {
                     setJob(res.job);
-                    const createdAtMillis = Number(res.job.createdAt / 1_000_000n);
-                    const jobDate = new Date(createdAtMillis);
-                    setDate(jobDate.toLocaleDateString());
+                    setDate(formatDate(res.job.createdAt));
                     setRating(res.rating);
                     setIsEdit(res.isEdit)
                     console.log(res.isEdit)
@@ -110,7 +109,7 @@ export default function FreelancerJobHistoryCard({ jobId, isLoading }: { jobId: 
                 <div className="mt-3 flex items-center">
                     <span className="font-medium mr-2">Status:</span>
                     <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${job?.jobStatus === "Completed"
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${job?.jobStatus === "Finished"
                                 ? "bg-green-100 text-green-800"
                                 : job?.jobStatus === "In Progress"
                                     ? "bg-blue-100 text-blue-800"

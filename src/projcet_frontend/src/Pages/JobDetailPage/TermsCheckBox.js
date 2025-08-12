@@ -1,0 +1,2 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export const TermsCheckbox = ({ id, checked, onChange, label, }) => (_jsxs("div", { className: "flex items-start gap-3", children: [_jsx("input", { type: "checkbox", id: id, checked: checked, onChange: onChange, className: "mt-1 w-5 h-5 accent-indigo-500" }), _jsx("label", { htmlFor: id, className: "text-sm text-gray-700", children: label })] }));

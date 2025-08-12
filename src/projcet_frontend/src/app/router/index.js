@@ -1,0 +1,22 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { Spin } from 'antd';
+import { ErrorBoundary } from 'react-error-boundary';
+import { ErrorFallback } from '../../shared/components/ErrorFallback';
+import ProfileCompletionGuard from '../../shared/components/ProfileCompletionGuard';
+const LandingPage = lazy(() => import('../../pages/LandingPage'));
+const FindJobPage = lazy(() => import('../../pages/FindJobPage'));
+const PostJobPage = lazy(() => import('../../pages/PostJobPage'));
+const JobDetailPage = lazy(() => import('../../pages/JobDetailPage'));
+const ProfilePage = lazy(() => import('../../pages/ProfilePage'));
+const PublicProfilePage = lazy(() => import('../../pages/PublicProfilePage'));
+const ManageJobPage = lazy(() => import('../../pages/ManageJobPage'));
+const BrowseFreelancerPage = lazy(() => import('../../pages/BrowseFreelancerPage'));
+const CompleteProfilePage = lazy(() => import('../../pages/CompleteProfilePage'));
+const PageLoader = () => (_jsx("div", { className: "min-h-screen flex items-center justify-center", children: _jsx(Spin, { size: "large", tip: "Loading..." }) }));
+const RouteWrapper = ({ children }) => (_jsx(ErrorBoundary, { FallbackComponent: ErrorFallback, children: _jsx(Suspense, { fallback: _jsx(PageLoader, {}), children: children }) }));
+const ProtectedRoute = ({ children }) => (_jsx(ProfileCompletionGuard, { children: _jsx(RouteWrapper, { children: children }) }));
+export const AppRouter = () => {
+    return (_jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(RouteWrapper, { children: _jsx(LandingPage, {}) }) }), _jsx(Route, { path: "/complete-profile", element: _jsx(RouteWrapper, { children: _jsx(CompleteProfilePage, {}) }) }), _jsx(Route, { path: "/find", element: _jsx(ProtectedRoute, { children: _jsx(FindJobPage, {}) }) }), _jsx(Route, { path: "/post", element: _jsx(ProtectedRoute, { children: _jsx(PostJobPage, {}) }) }), _jsx(Route, { path: "/jobs/:jobId", element: _jsx(ProtectedRoute, { children: _jsx(JobDetailPage, {}) }) }), _jsx(Route, { path: "/profile", element: _jsx(ProtectedRoute, { children: _jsx(ProfilePage, {}) }) }), _jsx(Route, { path: "/profile/:id", element: _jsx(ProtectedRoute, { children: _jsx(PublicProfilePage, {}) }) }), _jsx(Route, { path: "/manage", element: _jsx(ProtectedRoute, { children: _jsx(ManageJobPage, {}) }) }), _jsx(Route, { path: "/browse", element: _jsx(ProtectedRoute, { children: _jsx(BrowseFreelancerPage, {}) }) }), _jsx(Route, { path: "*", element: _jsx(RouteWrapper, { children: _jsx("div", { className: "min-h-screen flex items-center justify-center", children: _jsxs("div", { className: "text-center", children: [_jsx("h1", { className: "text-4xl font-bold text-gray-800 dark:text-gray-200 mb-4", children: "404" }), _jsx("p", { className: "text-gray-600 dark:text-gray-400 mb-8", children: "Page not found" }), _jsx("a", { href: "/", className: "text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium", children: "Go back home" })] }) }) }) })] }));
+};

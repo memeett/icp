@@ -13,7 +13,6 @@ import { getUserClickedByUserId } from "../../controller/userClickedController";
 import { Job, JobCategory } from "../../interface/job/Job";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LoadingOverlay from "../../components/ui/loading-animation";
-
 const PRICE_RANGES = [
   { label: "< $50", value: "0-50" },
   { label: "$50 - $100", value: "50-100" },
@@ -37,7 +36,6 @@ export default function FindJobPage() {
   );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [recommendationStartIndex, setRecommendationStartIndex] = useState(0);
-
   // Show 3 cards per recommendation page
   const cardsPerPage = 3;
 
@@ -67,27 +65,38 @@ export default function FindJobPage() {
     );
   };
 
-const fetchData = async () => {
-  try {
-    const jobs = await viewAllJobs();
-    const categories = await viewAllJobCategories();
+  const fetchData = async () => {
+    try {
+      const [jobs, categories] = await Promise.all([
+        viewAllJobs(),
+        viewAllJobCategories(),
+      ])
 
-    const filteredJobs = jobs ? jobs.filter((job) => job.jobStatus !== "Finished") : [];
+      const filteredJobs = jobs
+        ? jobs.filter((job) => job.jobStatus !== "Finished")
+        : [];
 
-    if (filteredJobs.length > 0) setListJobs(filteredJobs);
-    if (categories) setJobTags(categories);
+      if (filteredJobs.length > 0) setListJobs(filteredJobs);
+      if (categories) setJobTags(categories);
 
-    await getRecommendationJoblList(filteredJobs);
-  } catch (err) {
-    console.error("Error fetching data:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+      // await getRecommendationJoblList(filteredJobs); // dijalankan setelah filteredJobs siap
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (jobTags.length > 0) {
+      getRecommendationJoblList(listJobs);
+    }
+  }, [jobTags]);
 
   const filteredJobs = listJobs.filter((job) => {
     const matchesSearch =
@@ -130,9 +139,10 @@ const fetchData = async () => {
   };
 
   const getRecommendationJoblList = async (jobs: Job[]) => {
+
     const userClickeds = await getUserClickedByUserId();
     if (userClickeds) setListUserClickeds(userClickeds);
-
+    
     if (userClickeds.length === 0) {
       const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);
       setRecommendationJobs(randomJobs);
@@ -145,11 +155,7 @@ const fetchData = async () => {
       listUserClickeds: convertBigIntToString(userClickeds),
     };
 
-    if (
-      data.jobTags.length === 0 ||
-      data.listJobs.length === 0 ||
-      data.listUserClickeds.length === 0
-    ) {
+    if ( data.jobTags.length === 0 || data.listJobs.length === 0 || data.listUserClickeds.length === 0 ) {
       const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);
       setRecommendationJobs(randomJobs);
       setLoading(false);
@@ -157,6 +163,7 @@ const fetchData = async () => {
     }
 
     try {
+      
       const response = await fetch("http://localhost:5001/getRecommendation", {
         method: "POST",
         headers: {
@@ -172,7 +179,9 @@ const fetchData = async () => {
         throw new Error("Network response was not ok");
       }
 
+      console.log("csxadas")
       const result = await response.json();
+      console.log(result.top_jobs)
       setRecommendationJobs(result.top_jobs);
     } catch (error) {
       const randomJobs = jobs.sort(() => 0.5 - Math.random()).slice(0, 5);

@@ -10,6 +10,7 @@ import Nat "mo:base/Nat";
 import Float "mo:base/Float";
 import User "../User/model";
 import Job "../Job/model";
+import Debug "mo:base/Debug";
 
 actor RatingModel{
     private stable var nextId : Nat = 0;

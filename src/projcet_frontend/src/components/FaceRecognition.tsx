@@ -1,9 +1,12 @@
 import React, { useRef, useState, useEffect } from "react";
 import Webcam from "react-webcam";
+import { Modal, Button, Progress, Typography, Space } from "antd";
+import { CameraOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { login } from "../controller/userController";
 import { useNavigate } from "react-router-dom";
-import { Camera, X, UserPlus } from "lucide-react";
+
+const { Title, Text } = Typography;
 
 interface FaceRecognitionProps {
   principalId: string;
@@ -134,214 +137,118 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop overlay */}
-          <motion.div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
+    <Modal
+      title={
+        <Title level={3} style={{ margin: 0 }}>
+          {currentMode === "register" ? "Face Registration" : "Face Verification"}
+        </Title>
+      }
+      open={isOpen}
+      onCancel={onClose}
+      footer={null}
+      width={500}
+      centered
+      destroyOnClose
+    >
+      <div className="text-center">
+        <Text type="secondary" className="block mb-6">
+          {currentMode === "register"
+            ? "Please capture your face 3 times to register."
+            : "Look at the camera to verify your identity."}
+        </Text>
 
-          {/* Modal */}
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center top-12"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          >
-            <div className="max-h-[80vh] max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
-              {/* Modal Header with aurora background */}
-              <div className="relative px-8 pt-4 pb-4">
-                {/* Aurora effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 opacity-70" />
-
-                {/* Close button */}
-                <button
-                  onClick={onClose}
-                  className="absolute top-4 right-4 p-2 rounded-full bg-white/80 text-gray-500 hover:bg-white hover:text-gray-700 transition-colors z-10"
+        <div className="relative inline-block mb-6">
+          <div className="w-64 h-64 rounded-full overflow-hidden border-4 border-gray-200 shadow-lg mx-auto">
+            <Webcam
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              mirrored={true}
+              className="w-full h-full object-cover"
+              videoConstraints={{ width: 400, height: 400, facingMode: "user" }}
+            />
+            
+            {/* Status Overlay */}
+            <AnimatePresence>
+              {registrationStatus === "processing" && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm"
                 >
-                  <X className="h-5 w-5" />
-                </button>
-
-                {/* Title */}
-                <div className="relative z-10 text-center">
-                  <h3 className="text-[2rem] font-bold text-gray-800">
-                    {currentMode === "register"
-                      ? "Face Registration"
-                      : "Face Verification"}
-                  </h3>
-                  <p className="mt-2 text-gray-600">
-                    Please look at the camera and{" "}
-                    {currentMode === "register"
-                      ? "capture your face to register"
-                      : "verify your identity"}
-                  </p>
-
-                  {currentMode === "register" && (
-                    <>
-                      <div className="mt-2 flex items-center justify-center">
-                        <div className="flex space-x-1">
-                          {[0, 1, 2].map((step) => (
-                            <div
-                              key={step}
-                              className={`w-3 h-3 rounded-full ${
-                                step < captureCount
-                                  ? "bg-green-500"
-                                  : step === captureCount
-                                  ? "bg-blue-500"
-                                  : "bg-gray-200"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="ml-2 text-sm text-gray-600">
-                          {captureCount}/3 captures
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Webcam container */}
-              <div className="px-8 py-4 flex justify-center">
-                  <Webcam
-                    ref={webcamRef}
-                    screenshotFormat="image/jpeg"
-                    mirrored={true}
-                    className="w-[20vw]"
-                  />
-
-                  {/* Face guide overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-[12rem] h-[12rem] border-2 border-white/40 rounded-full"></div>
+                  <div className="text-center text-white">
+                    <div className="animate-spin w-12 h-12 border-4 border-white border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <Text className="text-white">Processing...</Text>
                   </div>
-
-                  {/* Status overlay */}
-                  {registrationStatus === "processing" && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                      <div className="p-4 rounded-lg bg-white/90">
-                        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-                      </div>
-                    </div>
-                  )}
-
-                  {registrationStatus === "success" && (
-                    <motion.div
-                      className="absolute inset-0 flex items-center justify-center bg-black/20"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      <motion.div
-                        className="p-4 rounded-lg bg-white/90 text-green-500"
-                        initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
-                      >
-                        <svg
-                          className="w-16 h-16"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </motion.div>
-                    </motion.div>
-                  )}
-
-                  {registrationStatus === "error" && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                      <div className="p-4 rounded-lg bg-white/90 text-red-500">
-                        <svg
-                          className="w-16 h-16"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-
-              </div>
-
-              {/* Action buttons */}
-              <div className="p-8 pt-2 flex justify-center">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={capture}
-                  disabled={isCapturing || registrationStatus === "processing"}
-                  className={`
-                    relative w-1/2 flex items-center justify-center space-x-2 
-                    ${
-                      registrationStatus === "processing"
-                        ? "bg-gray-400"
-                        : registrationStatus === "success"
-                        ? "bg-green-500 hover:bg-green-600"
-                        : registrationStatus === "error"
-                        ? "bg-red-500 hover:bg-red-600"
-                        : currentMode === "register"
-                        ? "bg-indigo-600 hover:bg-indigo-700"
-                        : "bg-blue-600 hover:bg-blue-700"
-                    }
-                    text-white font-medium px-6 py-4 rounded-xl transition-all
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                  `}
+                </motion.div>
+              )}
+              {registrationStatus === "success" && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  className="absolute inset-0 flex items-center justify-center bg-green-500/20 backdrop-blur-sm"
                 >
-                  {registrationStatus === "processing" ? (
-                    <span>Processing...</span>
-                  ) : registrationStatus === "success" ? (
-                    <>
-                      <span>Captured Successfully!</span>
-                    </>
-                  ) : registrationStatus === "error" ? (
-                    <>
-                      <span>Try Again</span>
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="w-5 h-5" />
-                      <span>
-                        {currentMode === "register"
-                          ? `Capture Face ${captureCount + 1}/3`
-                          : "Verify Face"}
-                      </span>
-                    </>
-                  )}
-                </motion.button>
-              </div>
+                  <div className="text-center">
+                    <CheckCircleOutlined className="text-6xl text-green-500 mb-2" />
+                    <Text className="text-green-600 font-medium">Success!</Text>
+                  </div>
+                </motion.div>
+              )}
+              {registrationStatus === "error" && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  className="absolute inset-0 flex items-center justify-center bg-red-500/20 backdrop-blur-sm"
+                >
+                  <div className="text-center">
+                    <ExclamationCircleOutlined className="text-6xl text-red-500 mb-2" />
+                    <Text className="text-red-600 font-medium">Error</Text>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
 
-              {/* Modal Footer */}
-              <button
-                onClick={onClose}
-                className="relative bottom-0 w-full py-4 text-center font-medium border-t border-gray-100 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-              >
-                Cancel{" "}
-                {currentMode === "register" ? "Registration" : "Verification"}
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+        {currentMode === "register" && (
+          <div className="mb-6">
+            <Progress
+              percent={(captureCount / 3) * 100}
+              showInfo={false}
+              strokeColor="#1890ff"
+              className="mb-2"
+            />
+            <Text type="secondary">
+              {captureCount}/3 captures completed
+            </Text>
+          </div>
+        )}
+
+        <Space direction="vertical" size="middle" className="w-full">
+          <Button
+            type="primary"
+            size="large"
+            icon={<CameraOutlined />}
+            onClick={capture}
+            disabled={isCapturing || registrationStatus === "processing"}
+            loading={registrationStatus === "processing"}
+            className="w-full"
+          >
+            {registrationStatus === "processing"
+              ? "Processing..."
+              : registrationStatus === "success"
+              ? "Captured Successfully!"
+              : registrationStatus === "error"
+              ? "Try Again"
+              : currentMode === "register"
+              ? `Capture Face ${captureCount + 1}/3`
+              : "Verify Face"}
+          </Button>
+        </Space>
+      </div>
+    </Modal>
   );
 };
 

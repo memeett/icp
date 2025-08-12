@@ -14,6 +14,7 @@ const PublicProfilePage = lazy(() => import('../../pages/PublicProfilePage'));
 const ManageJobPage = lazy(() => import('../../pages/ManageJobPage'));
 const BrowseFreelancerPage = lazy(() => import('../../pages/BrowseFreelancerPage'));
 const CompleteProfilePage = lazy(() => import('../../pages/CompleteProfilePage'));
+const AccountPage = lazy(() => import('../../pages/AccountPage'));
 
 const PageLoader: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -115,12 +116,20 @@ export const AppRouter: React.FC = () => {
           <ProtectedRoute>
             <BrowseFreelancerPage />
           </ProtectedRoute>
-        } 
+        }
+      />
+      <Route
+        path="/account"
+        element={
+          <ProtectedRoute>
+            <AccountPage />
+          </ProtectedRoute>
+        }
       />
 
       {/* 404 Route */}
-      <Route 
-        path="*" 
+      <Route
+        path="*"
         element={
           <RouteWrapper>
             <div className="min-h-screen flex items-center justify-center">

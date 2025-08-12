@@ -8,7 +8,6 @@ import { CashFlowHistory } from "../../../declarations/user/user.did";
 import { agentService } from "../singleton/agentService";
 import { storage } from "../utils/storage";
 
-// Profile picture cache for efficiency
 interface ProfilePictureCache {
   [userId: string]: {
     url: string;
@@ -323,16 +322,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
 
 
-export const updateUserProfile = async (payload: UpdateUserPayload): Promise<void> => {
-    const agent = await agentService.getAgent();
-const getBlobMidSequence = async (blob: Blob): Promise<string> => {
-    if (!blob || blob.size === 0) return "";
-    const arrayBuffer = await blob.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    const midIndex = Math.floor(uint8Array.length / 2);
-    const sequence = uint8Array.slice(midIndex, midIndex + 20);
-    return Array.from(sequence).join(',');
-};
+
 
 export const updateUserProfile = async (payload: any): Promise<boolean> => {
     try {

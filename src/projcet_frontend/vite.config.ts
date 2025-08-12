@@ -14,7 +14,7 @@ export default defineConfig({
   build: {
     emptyOutDir: true,
     rollupOptions: {
-      external: [],
+      external: ["react", "react-dom"],
     },
   },
   optimizeDeps: {
@@ -51,10 +51,12 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      declarations: "../declarations",
-      "@": "/src",
+      declarations: fileURLToPath(
+        new URL("../declarations", import.meta.url)
+      ),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
-    dedupe: ["@dfinity/agent"],
+    dedupe: [],
     extensions: [".js", ".jsx", ".ts", ".tsx"],
   },
 });

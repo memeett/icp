@@ -3,11 +3,15 @@ import { motion } from "framer-motion";
 export const ApplyButton = ({
   applied,
   disabled,
+  Ongoing,
+  Finished,
   onClick,
   label
 }: {
   applied: boolean;
   disabled: boolean;
+  Ongoing?: boolean;
+  Finished?: boolean;
   onClick: () => void;
   label?: string;
 }) => (
@@ -21,6 +25,6 @@ export const ApplyButton = ({
     whileTap={!disabled ? { scale: 0.98 } : undefined}
     onClick={onClick}
   >
-    {label ? label : applied ? "Applied" : "Apply Now"}
+    {label ? label : Ongoing ? "Ongoing" : Finished ? "Finished" : applied ? "Applied" : "Apply Now"}
   </motion.button>
 );

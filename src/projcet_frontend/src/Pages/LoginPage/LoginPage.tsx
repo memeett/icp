@@ -21,6 +21,7 @@ import LoadingOverlay from "../../components/ui/loading-animation.tsx";
 import VantaRingsBackground from "../../components/ui/ring3d.tsx";
 import { Vortex } from "../../components/ui/vortex.tsx";
 import CallToAction from "../../components/buttons/DualAction.tsx";
+import { useAgent } from "../../singleton/AgentProvider";
 
 const BackgroundPattern = () => (
   <svg
@@ -84,6 +85,7 @@ function LoginPageContent() {
   const [freelancers, setFreelancers] = useState<User[]>([]);
   const { setOpen, openModal } = useModal();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { getAgent } = useAgent();
 
   useEffect(() => {
     const fetchFreelancers = async () => {

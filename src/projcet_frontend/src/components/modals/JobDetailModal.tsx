@@ -1,19 +1,9 @@
 import { X, Calendar, DollarSign, Users, Tag, Clock, MapPin, User } from "lucide-react";
 import { Job } from "../../../../declarations/job/job.did";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { formatDate } from "../../utils/dateUtils";
 
 export default function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void; }) {
-    const formatDate = (timestamp: bigint) => {
-        const date = new Date(Number(timestamp / 1_000_000n));
-        return date.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
 
     const modalVariants = {
         hidden: { opacity: 0 },

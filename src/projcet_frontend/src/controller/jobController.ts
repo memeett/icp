@@ -7,17 +7,12 @@ import { applier } from "../../../declarations/applier";
 import { job_transaction } from "../../../declarations/job_transaction";
 import { ApplierPayload } from "../interface/Applier";
 import { Wallet } from "lucide-react";
+import { agentService } from "../singleton/agentService";
 
 
 
 export const createJob = async (jobName:string, jobDescription:string[], jobTags:string[], jobSalary: number, jobSlots: number): Promise<string[]> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+   const agent = await agentService.getAgent();
     try {
 
 
@@ -80,13 +75,7 @@ export const updateJob = async (
     jobSlots: number,
     jobStatus: string
 ): Promise<string[]> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+   const agent = await agentService.getAgent();
 
     try {
         // Validation checks
@@ -144,13 +133,7 @@ export const updateJob = async (
 };
 
 export const viewAllJobs = async (): Promise<Job[] | null> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-  
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+   const agent = await agentService.getAgent();
     try {
         const result = await job.getAllJobs();
         return result;
@@ -160,13 +143,7 @@ export const viewAllJobs = async (): Promise<Job[] | null> => {
 }
 
 export const getJobDetail = async (jobId: string):Promise<Job | null> =>{
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+   const agent = await agentService.getAgent();
     
     const result = await job.getJob(jobId)
     if("ok" in result){
@@ -177,13 +154,8 @@ export const getJobDetail = async (jobId: string):Promise<Job | null> =>{
 
 
 export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
+    const agent = await agentService.getAgent();
 
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
     try {
         const result = await job.getAllJobCategories();
         // console.log("Jobs:", result);
@@ -194,13 +166,7 @@ export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
 }
 
 export const getJobById = async (jobId: string): Promise<Job|null> =>{
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+   const agent = await agentService.getAgent();
     try{
         const result = await job.getJob(jobId);
         if ("ok" in result) {
@@ -215,13 +181,7 @@ export const getJobById = async (jobId: string): Promise<Job|null> =>{
 
 
 export const getUserJobs = async (userId: string): Promise<Job[] | null> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+   const agent = await agentService.getAgent();
     try {
         const result = await job.getUserJob(userId);
         return result;
@@ -232,13 +192,7 @@ export const getUserJobs = async (userId: string): Promise<Job[] | null> => {
 
 
 export const deleteJob = async (jobId: string): Promise<string[]> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+   const agent = await agentService.getAgent();
     try {
         const result = await job.deleteJob(jobId);
         if ("ok" in result) {
@@ -252,13 +206,7 @@ export const deleteJob = async (jobId: string): Promise<string[]> => {
 }
 
 export const getJobApplier = async (jobId: string): Promise<ApplierPayload[]> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+   const agent = await agentService.getAgent();
     try {
         const result = await applier.getJobApplier(jobId, process.env.CANISTER_ID_USER!);
         if (!result || !("ok" in result)) {
@@ -300,14 +248,9 @@ export const getJobApplier = async (jobId: string): Promise<ApplierPayload[]> =>
 };
 
 export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
+    const agent = await agentService.getAgent();
 
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    console.log("Getting accepted freelancers for job:", jobId);
     try {
         const result = await job_transaction.getAcceptedFreelancers(jobId, process.env.CANISTER_ID_USER!)
         if (!result || !("ok" in result)) {
@@ -350,14 +293,7 @@ export const startJob = async (
   ): Promise<{ jobStarted: boolean; message: string }> => {
     try {
       // Authenticate the user
-      const authClient = await AuthClient.create();
-      const identity = authClient.getIdentity();
-      const agent = new HttpAgent({ identity });
-  
-      // Fetch the root key for local development
-      if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-      }
+    const agent = await agentService.getAgent();
   
       // Call the startJob method on the job actor
       const result = await job.startJob(
@@ -401,6 +337,7 @@ export const startJob = async (
           };
         }
       } else {
+        console.log("no money");
         return {
           jobStarted: false,
           message: "Failed to start job: " + JSON.stringify(result.err),
@@ -415,13 +352,7 @@ export const startJob = async (
   };
 
 export const getUserJobByStatusFinished = async (userId: string): Promise<Job[] | null> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+   const agent = await agentService.getAgent();
     try {
         const result = await job.getUserJobByStatusFinished(userId);
         return result;

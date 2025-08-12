@@ -5,7 +5,6 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from '../../shared/components/ErrorFallback';
 import ProfileCompletionGuard from '../../shared/components/ProfileCompletionGuard';
 
-// Lazy load pages for better performance
 const LandingPage = lazy(() => import('../../pages/LandingPage'));
 const FindJobPage = lazy(() => import('../../pages/FindJobPage'));
 const PostJobPage = lazy(() => import('../../pages/PostJobPage'));
@@ -17,14 +16,12 @@ const BrowseFreelancerPage = lazy(() => import('../../pages/BrowseFreelancerPage
 const CompleteProfilePage = lazy(() => import('../../pages/CompleteProfilePage'));
 const AccountPage = lazy(() => import('../../pages/AccountPage'));
 
-// Loading component for suspense fallback
 const PageLoader: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center">
     <Spin size="large" tip="Loading..." />
   </div>
 );
 
-// Route wrapper with error boundary
 const RouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <ErrorBoundary FallbackComponent={ErrorFallback}>
     <Suspense fallback={<PageLoader />}>
@@ -33,7 +30,6 @@ const RouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </ErrorBoundary>
 );
 
-// Protected route wrapper that checks for profile completion
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <ProfileCompletionGuard>
     <RouteWrapper>
@@ -69,9 +65,9 @@ export const AppRouter: React.FC = () => {
       <Route 
         path="/find" 
         element={
-          <ProtectedRoute>
+          // <ProtectedRoute>
             <FindJobPage />
-          </ProtectedRoute>
+          // </ProtectedRoute>
         } 
       />
       <Route 
@@ -80,7 +76,7 @@ export const AppRouter: React.FC = () => {
           <ProtectedRoute>
             <PostJobPage />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route 
         path="/jobs/:jobId" 

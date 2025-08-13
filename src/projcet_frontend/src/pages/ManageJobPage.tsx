@@ -41,6 +41,8 @@ import Navbar from '../ui/components/Navbar';
 import type { ColumnsType } from 'antd/es/table';
 import { useAuth, useManageJobs, useUserManagement } from '../shared/hooks';
 import { Job } from '../shared/types/Job';
+import { User } from '../interface/User';
+import { ApplierPayload } from '../interface/Applier';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -511,7 +513,7 @@ const ManageJobPage: React.FC = () => {
               </div>
             )}
           </div>
-        )} */}
+        )} 
       </Modal>
     </div>
   );

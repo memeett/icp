@@ -242,7 +242,7 @@ const PostJobPage: React.FC = () => {
 
     try {
       const values = await form.validateFields();
-      const allFormData = { ...formData, ...values };
+      const allFormData = { ...formData, ...values, skills };
       
       // Prepare job data for backend
       const jobName = allFormData.title;
@@ -252,7 +252,7 @@ const PostJobPage: React.FC = () => {
       const jobSlots = allFormData.maxApplicants;
 
       // Call backend createJob function
-      const result = await createJob(jobName, jobDescription, jobTags, jobSalary, jobSlots);
+      const result = await createJob(jobName, jobDescription, jobTags, jobSalary, jobSlots, skills, allFormData.experienceLevel, allFormData.startdate, allFormData.deadline);
       
       if (result[0] === 'Success') {
         message.success(`Job ${isDraft ? 'saved as draft' : 'published'} successfully!`);
@@ -433,6 +433,22 @@ const PostJobPage: React.FC = () => {
                 max={50}
                 style={{ width: '100%' }}
                 placeholder="Enter maximum number of applicants"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="startdate"
+              label="Project Start Date"
+              rules={[{ required: true, message: 'Please select project start date' }]}
+            >
+              <DatePicker
+                size="large"
+                style={{ width: '100%' }}
+                placeholder="Select start date"
+                disabledDate={(current) => current && current.valueOf() < Date.now()}
+                onChange={() => {
+                  form.validateFields(['deadline']);
+                }}
               />
             </Form.Item>
 

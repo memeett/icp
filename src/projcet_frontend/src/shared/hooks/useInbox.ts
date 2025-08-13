@@ -3,8 +3,8 @@ import { message } from 'antd';
 import {
   getAllInboxByUserId,
   markInboxAsRead,
-  acceptInbox,
-  rejectInbox
+  // acceptInbox,
+  // rejectInbox
 } from '../../controller/inboxController';
 import { InboxResponse } from '../../interface/Inbox';
 

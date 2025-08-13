@@ -1,7 +1,6 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-// import { Job, JobCategory, JobApplication, JobSubmission } from '../../shared/types/Job';
-import { Job, JobCategory} from '../../shared/types/Job';
+import { Job, JobCategory, JobApplication, JobSubmission } from '../../shared/types/Job';
 
 
 // Jobs data atoms
@@ -29,7 +28,7 @@ export const filteredJobsAtom = atom((get) => {
   const searchQuery = get(jobSearchQueryAtom);
   const filters = get(jobFiltersAtom);
 
-  let filtered = jobs.filter(job => job.status !== 'Finished');
+  let filtered = jobs.filter(job => job.jobStatus !== 'Finished');
 
   // Apply search filter
   if (searchQuery) {
@@ -68,52 +67,50 @@ export const filteredJobsAtom = atom((get) => {
   }
 
   // Apply job type filter
-  // if (filters.jobType.length > 0) {
-  //   filtered = filtered.filter(job =>
-  //     job.jobType && filters.jobType.includes(job.jobType)
-  //   );
-  // }
+  if (filters.jobType.length > 0) {
+    filtered = filtered.filter(job =>
+      job.jobType && filters.jobType.includes(job.jobType)
+    );
+  }
 
 //   // Apply sorting
-//   switch (filters.sortBy) {
-//     case 'newest':
-//       filtered.sort((a, b) => Number(b.createdAt - a.createdAt));
-//       break;
-//     case 'oldest':
-//       filtered.sort((a, b) => Number(a.createdAt - b.createdAt));
-//       break;
-//     case 'salary_high':
-//       filtered.sort((a, b) => b.jobSalary - a.jobSalary);
-//       break;
-//     case 'salary_low':
-//       filtered.sort((a, b) => a.jobSalary - b.jobSalary);
-//       break;
-//     case 'deadline':
-//       filtered.sort((a, b) => {
-//         if (!a.deadline && !b.deadline) return 0;
-//         if (!a.deadline) return 1;
-//         if (!b.deadline) return -1;
-//         return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-//       });
-//       break;
-//   }
+  switch (filters.sortBy) {
+    case 'newest':
+      filtered.sort((a, b) => Number(b.createdAt - a.createdAt));
+      break;
+    case 'oldest':
+      filtered.sort((a, b) => Number(a.createdAt - b.createdAt));
+      break;
+    case 'salary_high':
+      filtered.sort((a, b) => b.jobSalary - a.jobSalary);
+      break;
+    case 'salary_low':
+      filtered.sort((a, b) => a.jobSalary - b.jobSalary);
+      break;
+    case 'deadline':
+      filtered.sort((a, b) => {
+        if (!a.deadline && !b.deadline) return 0;
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      });
+      break;
+  }
 
-//   return filtered;
-// });
-
-// Paginated jobs atom
-// export const paginatedJobsAtom = atom((get) => {
-//   const filtered = get(filteredJobsAtom);
-//   const currentPage = get(jobsCurrentPageAtom);
-//   const perPage = get(jobsPerPageAtom);
-  
-//   const startIndex = (currentPage - 1) * perPage;
-//   const endIndex = startIndex + perPage;
-  
-//   return filtered.slice(startIndex, endIndex);
-// });
+  return filtered;
 });
 
+// Paginated jobs atom
+export const paginatedJobsAtom = atom((get) => {
+  const filtered = get(filteredJobsAtom);
+  const currentPage = get(jobsCurrentPageAtom);
+  const perPage = get(jobsPerPageAtom);
+  
+  const startIndex = (currentPage - 1) * perPage;
+  const endIndex = startIndex + perPage;
+  
+  return filtered.slice(startIndex, endIndex);
+});
 // Job statistics atoms
 export const jobStatsAtom = atom((get) => {
   const jobs = get(jobsAtom);

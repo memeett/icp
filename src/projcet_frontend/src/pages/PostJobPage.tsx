@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { 
-  Form, 
+import {
+  Form,
   Input,
   Button,
   Card,
@@ -19,9 +19,9 @@ import {
   App,
   Modal
 } from 'antd';
-import { 
-  PlusOutlined, 
-  InboxOutlined, 
+import {
+  PlusOutlined,
+  InboxOutlined,
   EyeOutlined,
   SaveOutlined,
   SendOutlined
@@ -35,21 +35,6 @@ import { useAuth } from '../shared/hooks/useAuth';
 import { storage } from '../utils/storage';
 import { ensureUserData } from '../utils/sessionUtils';
 
-interface Job {
-  id?: string;
-  title: string;
-  description: string;
-  category: string;
-  budget: number;
-  budgetType: 'fixed' | 'hourly';
-  deadline: string;
-  skills: string[];
-  experienceLevel: 'entry' | 'intermediate' | 'expert';
-  projectType: 'one-time' | 'ongoing';
-  status: 'draft' | 'active' | 'closed';
-  postedAt: string;
-  applicants: number;
-}
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -59,10 +44,10 @@ const { Dragger } = Upload;
 interface JobFormData {
   title: string;
   description: string;
-  category: string;
+  category: string[];
   budget: number;
-  budgetType: 'fixed' | 'hourly';
-  deadline: string;
+  startdate: Date;
+  deadline: Date;
   skills: string[];
   experienceLevel: 'entry' | 'intermediate' | 'expert';
   projectType: 'one-time' | 'ongoing';
@@ -85,14 +70,12 @@ const PostJobPage: React.FC = () => {
   console.log('Current step:', currentStep);
   console.log('User authenticated:', isAuthenticated);
 
-  // Debug user data
   useEffect(() => {
     const checkUserData = async () => {
       try {
         const userData = localStorage.getItem('current_user');
         console.log('current_user in localStorage:', userData);
-        
-        // Try to parse it
+
         if (userData) {
           const parsedUser = JSON.parse(userData);
           console.log('Parsed user data:', parsedUser);
@@ -101,15 +84,14 @@ const PostJobPage: React.FC = () => {
           const hasUserData = await ensureUserData();
           console.log('User data loaded from session:', hasUserData);
         }
-        
-        // Check storage utility
+
         const storageUser = storage.getUser();
         console.log('User from storage utility:', storageUser);
       } catch (error) {
         console.error('Error checking user data:', error);
       }
     };
-    
+
     checkUserData();
   }, [isAuthenticated]);
 
@@ -134,7 +116,7 @@ const PostJobPage: React.FC = () => {
         await ensureUserData();
       }
     };
-    
+
     checkAuth();
   }, [isAuthenticated, loginWithInternetIdentity, navigate]);
 
@@ -202,15 +184,14 @@ const PostJobPage: React.FC = () => {
   const fillTestData = useCallback(() => {
     console.log('🧪 Fill Test Data button clicked!');
     console.log('Filling test data...');
-    
+
     // Fill form fields
     form.setFieldsValue({
       title: 'Test Full Stack Developer Job',
-      category: 'Web Development',
+      category: ['Web Development'],
       projectType: 'one-time',
       description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
       experienceLevel: 'intermediate',
-      budgetType: 'fixed',
       budget: 5000,
       deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
     });
@@ -223,25 +204,25 @@ const PostJobPage: React.FC = () => {
     // Update formData
     setFormData({
       title: 'Test Full Stack Developer Job',
-      category: 'Web Development',
+      category: ['Web Development'],
       projectType: 'one-time',
       description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
       experienceLevel: 'intermediate',
-      budgetType: 'fixed',
       budget: 5000,
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      startdate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       skills: testSkills
     });
 
     // Go to final step
     setCurrentStep(3);
-    
+
     console.log('Test data filled and moved to final step');
   }, [form, setSkills, setFormData, setCurrentStep]);
 
   const handleSubmit = useCallback(async (isDraft = false) => {
     console.log('handleSubmit called with isDraft:', isDraft);
-    
+
     // Check if user is authenticated
     if (!isAuthenticated) {
       Modal.confirm({
@@ -258,7 +239,7 @@ const PostJobPage: React.FC = () => {
       });
       return;
     }
-    
+
     try {
       const values = await form.validateFields();
       const allFormData = { ...formData, ...values };
@@ -295,8 +276,8 @@ const PostJobPage: React.FC = () => {
             transition={{ duration: 0.3 }}
           >
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 onClick={fillTestData}
                 style={{ backgroundColor: '#1890ff', borderColor: '#1890ff' }}
                 block
@@ -311,8 +292,8 @@ const PostJobPage: React.FC = () => {
               label="Job Title"
               rules={[{ required: true, message: 'Please enter job title' }]}
             >
-              <Input 
-                size="large" 
+              <Input
+                size="large"
                 placeholder="e.g., Full Stack Developer for E-commerce Platform"
                 maxLength={100}
                 showCount
@@ -321,10 +302,22 @@ const PostJobPage: React.FC = () => {
 
             <Form.Item
               name="category"
-              label="Category"
-              rules={[{ required: true, message: 'Please select a category' }]}
+              label="Categories"
+              rules={[
+                { required: true, message: 'Please select at least one category' },
+                { type: 'array', min: 1, message: 'Please select at least one category' }
+              ]}
             >
-              <Select size="large" placeholder="Select job category">
+              <Select
+                mode="multiple" // Enable multiple selection
+                size="large"
+                placeholder="Select job categories"
+                maxTagCount="responsive"
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+                }
+              >
                 {categories.map(category => (
                   <Option key={category} value={category}>
                     {category}
@@ -403,22 +396,6 @@ const PostJobPage: React.FC = () => {
                 ))}
               </div>
             </Form.Item>
-
-            <Form.Item label="Attachments (Optional)">
-              <Dragger
-                multiple
-                beforeUpload={() => false}
-                className="upload-area"
-              >
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">Click or drag files to upload</p>
-                <p className="ant-upload-hint">
-                  Support for documents, images, and other relevant files
-                </p>
-              </Dragger>
-            </Form.Item>
           </motion.div>
         );
 
@@ -429,17 +406,6 @@ const PostJobPage: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Form.Item
-              name="budgetType"
-              label="Budget Type"
-              rules={[{ required: true, message: 'Please select budget type' }]}
-            >
-              <Select size="large" placeholder="Select budget type">
-                <Option value="fixed">Fixed Price</Option>
-                <Option value="hourly">Hourly Rate</Option>
-              </Select>
-            </Form.Item>
-
             <Form.Item
               name="budget"
               label="Budget Amount ($)"
@@ -453,6 +419,23 @@ const PostJobPage: React.FC = () => {
                 placeholder="Enter budget amount"
                 formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 parser={value => Number(value!.replace(/\$\s?|(,*)/g, '')) as any}
+              />
+            </Form.Item>
+
+
+            <Form.Item
+              name="startdate"
+              label="Project Start Date"
+              rules={[{ required: true, message: 'Please select project start date' }]}
+            >
+              <DatePicker
+                size="large"
+                style={{ width: '100%' }}
+                placeholder="Select start date"
+                disabledDate={(current) => current && current.valueOf() < Date.now()}
+                onChange={() => {
+                  form.validateFields(['deadline']);
+                }}
               />
             </Form.Item>
 
@@ -473,13 +456,54 @@ const PostJobPage: React.FC = () => {
             <Form.Item
               name="deadline"
               label="Project Deadline"
-              rules={[{ required: true, message: 'Please select deadline' }]}
+              rules={[
+                { required: true, message: 'Please select deadline' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value) {
+                      return Promise.resolve();
+                    }
+
+                    const startDate = getFieldValue('startdate');
+                    if (!startDate) {
+                      return Promise.reject(new Error('Please select start date first'));
+                    }
+
+                    const start = new Date(startDate);
+                    const deadline = new Date(value);
+
+                    // Check if deadline is the same as start date
+                    if (start.toDateString() === deadline.toDateString()) {
+                      return Promise.reject(new Error('Deadline cannot be the same as start date'));
+                    }
+
+                    // Check minimum 3 days gap
+                    const diffTime = deadline.getTime() - start.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays < 3) {
+                      return Promise.reject(new Error('Deadline must be at least 3 days after start date'));
+                    }
+
+                    return Promise.resolve();
+                  },
+                }),
+              ]}
+              dependencies={['startdate']} // Re-validate when start date changes
             >
               <DatePicker
                 size="large"
                 style={{ width: '100%' }}
                 placeholder="Select deadline"
-                disabledDate={(current) => current && current.valueOf() < Date.now()}
+                disabledDate={(current) => {
+                  const startDate = form.getFieldValue('startdate');
+                  if (startDate) {
+                    const start = new Date(startDate);
+                    const minDeadline = new Date(start.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days after start
+                    return current && current.valueOf() < minDeadline.valueOf();
+                  }
+                  return current && current.valueOf() < Date.now();
+                }}
               />
             </Form.Item>
           </motion.div>
@@ -495,34 +519,39 @@ const PostJobPage: React.FC = () => {
             <Card className="mb-4">
               <Title level={4}>Job Preview</Title>
               <Divider />
-              
+
               <Row gutter={[16, 16]}>
                 <Col span={24}>
                   <Title level={5}>{formData.title}</Title>
-                  <Text type="secondary">{formData.category} • {formData.projectType}</Text>
+                  <Text type="secondary">
+                    {Array.isArray(formData.category)
+                      ? formData.category.join(', ')
+                      : formData.category
+                    } • {formData.projectType}
+                  </Text>
                 </Col>
-                
+
                 <Col span={24}>
                   <Text strong>Description:</Text>
                   <div className="mt-2">
                     <Text>{formData.description}</Text>
                   </div>
                 </Col>
-                
+
                 <Col span={12}>
                   <Text strong>Budget:</Text>
                   <div>
-                    <Text>${formData.budget} ({formData.budgetType})</Text>
+                    <Text>${formData.budget} ({"Fixed"})</Text>
                   </div>
                 </Col>
-                
+
                 <Col span={12}>
                   <Text strong>Experience Level:</Text>
                   <div>
                     <Text className="capitalize">{formData.experienceLevel}</Text>
                   </div>
                 </Col>
-                
+
                 <Col span={24}>
                   <Text strong>Required Skills:</Text>
                   <div className="mt-2">
@@ -545,90 +574,90 @@ const PostJobPage: React.FC = () => {
     <>
       {contextHolder}
       <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <Title level={2}>Post a New Job</Title>
-              <Text type="secondary">
-                Create a detailed job posting to attract the best freelancers
-              </Text>
+        <Navbar />
+
+        <div className="container mx-auto px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <Title level={2}>Post a New Job</Title>
+                <Text type="secondary">
+                  Create a detailed job posting to attract the best freelancers
+                </Text>
+              </div>
+
+              <Card className="mb-6">
+                <Steps current={currentStep} items={steps} />
+              </Card>
+
+              <Card>
+                <Form
+                  form={form}
+                  layout="vertical"
+                  initialValues={formData}
+                  onValuesChange={(_, allValues) => setFormData(prev => ({ ...prev, ...allValues }))}
+                >
+                  {renderStepContent()}
+
+                  <Divider />
+
+                  <div className="flex justify-between">
+                    <Button
+                      onClick={handlePrev}
+                      disabled={currentStep === 0}
+                      size="large"
+                    >
+                      Previous
+                    </Button>
+
+                    <Space>
+                      {currentStep === steps.length - 1 && (
+                        <Button
+                          onClick={() => {
+                            console.log('Save as Draft button clicked!');
+                            handleSubmit(true);
+                          }}
+                          loading={isLoading}
+                          size="large"
+                          icon={<SaveOutlined />}
+                        >
+                          Save as Draft
+                        </Button>
+                      )}
+
+                      {currentStep < steps.length - 1 ? (
+                        <Button
+                          type="primary"
+                          onClick={handleNext}
+                          size="large"
+                        >
+                          Next
+                        </Button>
+                      ) : (
+                        <Button
+                          type="primary"
+                          onClick={() => {
+                            console.log('Publish Job button clicked!');
+                            handleSubmit(false);
+                          }}
+                          loading={isLoading}
+                          size="large"
+                          icon={<SendOutlined />}
+                        >
+                          Publish Job
+                        </Button>
+                      )}
+                    </Space>
+                  </div>
+                </Form>
+              </Card>
             </div>
-
-            <Card className="mb-6">
-              <Steps current={currentStep} items={steps} />
-            </Card>
-
-            <Card>
-              <Form
-                form={form}
-                layout="vertical"
-                initialValues={formData}
-                onValuesChange={(_, allValues) => setFormData(prev => ({ ...prev, ...allValues }))}
-              >
-                {renderStepContent()}
-
-                <Divider />
-
-                <div className="flex justify-between">
-                  <Button
-                    onClick={handlePrev}
-                    disabled={currentStep === 0}
-                    size="large"
-                  >
-                    Previous
-                  </Button>
-
-                  <Space>
-                    {currentStep === steps.length - 1 && (
-                      <Button
-                        onClick={() => {
-                          console.log('Save as Draft button clicked!');
-                          handleSubmit(true);
-                        }}
-                        loading={isLoading}
-                        size="large"
-                        icon={<SaveOutlined />}
-                      >
-                        Save as Draft
-                      </Button>
-                    )}
-                    
-                    {currentStep < steps.length - 1 ? (
-                      <Button
-                        type="primary"
-                        onClick={handleNext}
-                        size="large"
-                      >
-                        Next
-                      </Button>
-                    ) : (
-                      <Button
-                        type="primary"
-                        onClick={() => {
-                          console.log('Publish Job button clicked!');
-                          handleSubmit(false);
-                        }}
-                        loading={isLoading}
-                        size="large"
-                        icon={<SendOutlined />}
-                      >
-                        Publish Job
-                      </Button>
-                    )}
-                  </Space>
-                </div>
-              </Form>
-            </Card>
-          </div>
-        </motion.div>
-      </div>
+          </motion.div>
+        </div>
       </div>
     </>
   );

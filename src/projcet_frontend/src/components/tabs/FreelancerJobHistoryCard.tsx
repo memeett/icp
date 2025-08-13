@@ -111,7 +111,7 @@ export default function FreelancerJobHistoryCard({ jobId, isLoading }: { jobId: 
                     <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${job?.jobStatus === "Finished"
                                 ? "bg-green-100 text-green-800"
-                                : job?.jobStatus === "In Progress"
+                                : job?.jobStatus === "Ongoing"
                                     ? "bg-blue-100 text-blue-800"
                                     : "bg-yellow-100 text-yellow-800"
                             }`}

@@ -1,10 +1,10 @@
 import { atom } from 'jotai';
-import { User, UserProfile } from '../../shared/types/User';
+import { User, ProfilePictureCache } from '../../shared/types/User';
 
 
 // Users data atoms
 export const usersAtom = atom<User[]>([]);
-export const freelancersAtom = atom<UserProfile[]>([]);
+export const freelancersAtom = atom<User[]>([]);
 export const selectedUserAtom = atom<User | null>(null);
 
 // User search and filters
@@ -27,14 +27,12 @@ export const filteredFreelancersAtom = atom((get) => {
   let filtered = freelancers;
 
   // Apply search filter
-  if (searchQuery) {
-    filtered = filtered.filter(user =>
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.description && user.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }
-
-  // Apply skills filter
+  // if (searchQuery) {
+  //   filtered = filtered.filter(user =>
+  //     user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //     (user.description && user.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  //   );
+  // }
   if (filters.skills.length > 0) {
     filtered = filtered.filter((user: UserProfile) =>
       user.preference.some((pref: any) =>
@@ -44,34 +42,34 @@ export const filteredFreelancersAtom = atom((get) => {
   }
 
   // Apply rating filter
-  if (filters.rating > 0) {
-    filtered = filtered.filter(user =>
-      (user.rating || 0) >= filters.rating
-    );
-  }
+  // if (filters.rating > 0) {
+  //   filtered = filtered.filter(user =>
+  //     (user.rating || 0) >= filters.rating
+  //   );
+  // }
 
   return filtered;
 });
 
 // User statistics atoms
-export const userStatsAtom = atom((get) => {
-  const users = get(usersAtom);
-  const freelancers = get(freelancersAtom);
+// export const userStatsAtom = atom((get) => {
+//   const users = get(usersAtom);
+//   const freelancers = get(freelancersAtom);
   
-  return {
-    totalUsers: users.length,
-    totalFreelancers: freelancers.length,
-    activeFreelancers: freelancers.filter(f => f.rating && f.rating > 0).length,
-    topRatedFreelancers: freelancers.filter(f => (f.rating || 0) >= 4.5).length,
-  };
-});
+//   return {
+//     totalUsers: users.length,
+//     totalFreelancers: freelancers.length,
+//     activeFreelancers: freelancers.filter(f => f.rating && f.rating > 0).length,
+//     topRatedFreelancers: freelancers.filter(f => (f.rating || 0) >= 4.5).length,
+//   };
+// });
 
 // User actions atom
 export const userActionsAtom = atom(
   null,
   (get, set, action: 
     | { type: 'SET_USERS'; users: User[] }
-    | { type: 'SET_FREELANCERS'; freelancers: UserProfile[] }
+    | { type: 'SET_FREELANCERS'; freelancers: User[] }
     | { type: 'ADD_USER'; user: User }
     | { type: 'UPDATE_USER'; userId: string; updates: Partial<User> }
     | { type: 'DELETE_USER'; userId: string }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Button,
@@ -30,12 +30,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useAtom } from 'jotai';
 import { themeAtom } from '../../app/store/ui';
-import { getProfilePictureUrl } from '../../controller/userController';
+import { getProfilePictureUrl, getUserById } from '../../controller/userController';
 import { useTheme } from '../../app/providers/ThemeProvider';
 import FaceRecognition from '../../components/FaceRecognition';
 import { AuthenticationModal } from '../../components/modals/AuthenticationModal';
-import  ergasiaLogo from '../../assets/ergasia_logo.png'
+import ergasiaLogo from '../../assets/ergasia_logo.png'
 import ergasiaLogoWhite from '../../assets/ergasia_logo_white.png'
+import { InboxResponse } from '../../interface/Inbox';
+import { getAllInboxByUserId } from '../../controller/inboxController';
+import { Inbox } from '../../../../declarations/inbox/inbox.did';
 
 const { Text } = Typography;
 
@@ -54,6 +57,32 @@ const Navbar: React.FC = () => {
   } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [inboxes, setInboxes] = useState<InboxResponse[]>([]);
+
+  const fetchInbox = useCallback(async () => {
+    try {
+      console.log("Fetching inbox for user:", user?.id);
+      const inboxResult = await getAllInboxByUserId(user?.id || "");
+      console.log("mama" + inboxResult);
+      if (inboxResult) {
+        setInboxes(inboxResult);
+      }
+    } catch (error) {
+      console.error("Failed to fetch inbox:", error);
+    }
+  }, [user?.id]);
+
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [receiverInbox, setReceiverInbox] = useState<Inbox[]>([]);
+  const [senderInbox, setSenderInbox] = useState<Inbox[]>([]);
+  const [usernames, setUsernames] = useState<{ [key: string]: string }>({});
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchInbox();
+    }
+  }, [user?.id, fetchInbox]);
+
 
   const handleLogin = async () => {
     setIsModalOpen(true);
@@ -75,6 +104,73 @@ const Navbar: React.FC = () => {
       console.error('Logout failed:', error);
     }
   };
+
+  const getUsernameById = useCallback(
+    async (userId: string): Promise<string | null> => {
+      try {
+        const result = await getUserById(userId);
+        if (result) {
+          return result.username;
+        }
+        return null;
+      } catch (error) {
+        console.error("Failed to get user by id:", error);
+        return null;
+      }
+    },
+    []
+  );
+
+  const fetchUsernames = useCallback(async () => {
+    const uniqueUserIds = [
+      ...new Set([
+        ...receiverInbox.map((n) => n.senderId),
+        ...senderInbox.map((n) => n.receiverId),
+      ]),
+    ];
+    const newUserIds = uniqueUserIds.filter((id) => !usernames[id]);
+
+    if (newUserIds.length > 0) {
+      const usernameMap: { [key: string]: string } = {};
+      const usernamePromises = newUserIds.map(async (id) => {
+        const username = await getUsernameById(id);
+        if (username) {
+          usernameMap[id] = username;
+        }
+      });
+
+      await Promise.all(usernamePromises); // Wait for all requests to complete
+      setUsernames((prev) => ({ ...prev, ...usernameMap })); // Merge with existing usernames
+    }
+  }, [receiverInbox, senderInbox, usernames, getUsernameById]);
+
+
+   useEffect(() => {
+    if (receiverInbox.length > 0 || senderInbox.length > 0) {
+      fetchUsernames();
+    }
+  }, [receiverInbox, senderInbox, fetchUsernames]);
+
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    if (isNotificationOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isNotificationOpen]);
 
   const profilePictureUrl = user?.profilePicture
     ? getProfilePictureUrl(user.id, user.profilePicture)
@@ -157,43 +253,43 @@ const Navbar: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center space-x-2"
               >
-                <img src={ theme === 'dark' ? ergasiaLogoWhite : ergasiaLogo }
-                  alt="Ergasia Logo" className="h-8 w-auto"/>
+                <img src={theme === 'dark' ? ergasiaLogoWhite : ergasiaLogo}
+                  alt="Ergasia Logo" className="h-8 w-auto" />
               </motion.div>
             </Link>
 
             <nav className="hidden md:flex items-center space-x-1">
               {navigationItems.map((item) => (
                 <motion.div
-                    key={item.key}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  key={item.key}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                    <Button
-                        type={
-                            isActivePath(item.path)
-                                ? 'primary'
-                                : 'text'
-                        }
-                        onClick={() => navigate(item.path)}
-                        className="relative"
-                    >
-                        {item.label}
-                        {isActivePath(item.path) && (
-                            <motion.div
-                                layoutId="activeTab"
-                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                                initial={false}
-                                transition={{
-                                    type: 'spring',
-                                    stiffness: 500,
-                                    damping: 30,
-                                }}
-                            />
-                        )}
-                    </Button>
-                  </motion.div>
-                ))}
+                  <Button
+                    type={
+                      isActivePath(item.path)
+                        ? 'primary'
+                        : 'text'
+                    }
+                    onClick={() => navigate(item.path)}
+                    className="relative"
+                  >
+                    {item.label}
+                    {isActivePath(item.path) && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                        initial={false}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 500,
+                          damping: 30,
+                        }}
+                      />
+                    )}
+                  </Button>
+                </motion.div>
+              ))}
             </nav>
 
             {/* Right Side Actions */}

@@ -15,6 +15,7 @@ module{
         updatedAt: Int;
         isFaceRecognitionOn: Bool;
         isProfileCompleted: Bool;
+        subAccount: ?[Nat8];
     };
 
     public type UpdateUserPayload = {

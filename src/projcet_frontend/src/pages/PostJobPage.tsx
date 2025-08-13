@@ -35,21 +35,6 @@ import { useAuth } from '../shared/hooks/useAuth';
 import { storage } from '../utils/storage';
 import { ensureUserData } from '../utils/sessionUtils';
 
-interface Job {
-  id?: string;
-  title: string;
-  description: string;
-  category: string[];
-  budget: number;
-  startdate: Date;
-  deadline: Date;
-  skills: string[];
-  experienceLevel: 'entry' | 'intermediate' | 'expert';
-  projectType: 'one-time' | 'ongoing';
-  status: 'draft' | 'active' | 'closed';
-  postedAt: string;
-  applicants: number;
-}
 
 const { TextArea } = Input;
 const { Option } = Select;

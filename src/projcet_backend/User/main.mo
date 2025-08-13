@@ -7,6 +7,7 @@ import Time "mo:base/Time";
 import Option "mo:base/Option";
 import Float "mo:base/Float";
 import Array "mo:base/Array";
+import Blob "mo:base/Blob";
 import Job "../Job/model";
 
 actor UserModel {
@@ -44,8 +45,19 @@ actor UserModel {
         cashFlowHistories := Array.append(cashFlowHistories, [transaction]);
     };
 
+    func newSubaccount(userId: Text): [Nat8] {
+        let base = Blob.toArray(Text.encodeUtf8(userId));
+        var sub = Array.tabulate<Nat8>(32, func (i) {
+            if (i < base.size()) base[i] else 0
+        });
+        return sub;
+    };
+
+
+
     public func createUser(newid : Text, profilePic : Blob) : async User.User {
         let timestamp = Time.now();
+        let sub = newSubaccount(newid);
 
         let newUser : User.User = {
             id = newid;
@@ -60,6 +72,7 @@ actor UserModel {
             updatedAt = timestamp;
             isFaceRecognitionOn = false;
             isProfileCompleted = false;
+            subAccount = ?sub; // Initialize subAccount as null
         };
 
         users.put(newid, newUser);
@@ -117,6 +130,7 @@ actor UserModel {
                             updatedAt = timestamp;
                             isFaceRecognitionOn = currUser.isFaceRecognitionOn;
                             isProfileCompleted = Option.get(payload.isProfileCompleted, currUser.isProfileCompleted);
+                            subAccount = currUser.subAccount; // Keep subAccount unchanged
                         };
                         users.put(userId, updatedUser);
                         #ok(updatedUser);
@@ -194,6 +208,7 @@ actor UserModel {
                             updatedAt = Time.now();
                             isFaceRecognitionOn = toUser.isFaceRecognitionOn;
                             isProfileCompleted = toUser.isProfileCompleted;
+                            subAccount = toUser.subAccount; // Keep subAccount unchanged
                         };
                         users.put(to_user_id, updatedToUser);
 
@@ -276,6 +291,7 @@ actor UserModel {
                             updatedAt = Time.now();
                             isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
                             isProfileCompleted = fromUser.isProfileCompleted;
+                            subAccount = fromUser.subAccount; // Keep subAccount unchanged
                         };
                         users.put(user_id, updatedFromUser);
 
@@ -349,6 +365,7 @@ actor UserModel {
                     updatedAt = Time.now();
                     isFaceRecognitionOn = user.isFaceRecognitionOn;
                     isProfileCompleted = user.isProfileCompleted;
+                    subAccount = user.subAccount; // Keep subAccount unchanged
                 };
                 users.put(userId, updatedUser);
 
@@ -414,6 +431,7 @@ actor UserModel {
                     updatedAt = Time.now(); // Update the timestamp
                     isFaceRecognitionOn = user.isFaceRecognitionOn;
                     isProfileCompleted = user.isProfileCompleted;
+                    subAccount = user.subAccount; // Keep subAccount unchanged
                 };
 
                 // Step 3: Save the updated user back to the HashMap
@@ -429,4 +447,6 @@ actor UserModel {
         };
     };
 
+
+    
 };

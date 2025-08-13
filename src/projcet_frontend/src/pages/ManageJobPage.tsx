@@ -40,7 +40,9 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import type { ColumnsType } from 'antd/es/table';
 import { useAuth, useManageJobs, useUserManagement } from '../shared/hooks';
-import { Job } from '../shared/types/Job';
+
+import { Job, JobCategory } from '../shared/types/Job';
+import { formatDate } from '../utils/dateUtils';
 import { User } from '../interface/User';
 import { ApplierPayload } from '../interface/Applier';
 
@@ -64,17 +66,13 @@ const ManageJobPage: React.FC = () => {
     handleDeleteJob,
     refreshJobs
   } = useManageJobs();
-  
-  const { allUsers } = useUserManagement();
+
   
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isApplicationsModalVisible, setIsApplicationsModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [form] = Form.useForm();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [appliers, setAppliers] = useState<ApplierPayload[]>([]);
-  const [acceptedAppliers, setAccAppliers] = useState<User[]>([]);
 
 
   const getStatusColor = (status: string) => {
@@ -250,11 +248,11 @@ const ManageJobPage: React.FC = () => {
     return filteredJobs.filter(job => {
       switch (activeTab) {
         case 'open':
-          return job.jobStatus.toLowerCase() === 'start';
+          return job.jobStatus.toLowerCase() === 'open';
         case 'in_progress':
-          return job.jobStatus.toLowerCase() === 'ongoing';
+          return job.jobStatus.toLowerCase() === 'in progress';
         case 'completed':
-          return job.jobStatus.toLowerCase() === 'finished';
+          return job.jobStatus.toLowerCase() === 'completed';
         case 'cancelled':
           return job.jobStatus.toLowerCase() === 'cancelled';
         default:
@@ -267,9 +265,9 @@ const ManageJobPage: React.FC = () => {
 
   const stats = {
     total: jobs.length,
-    open: jobs.filter(job => job.jobStatus.toLowerCase() === 'start').length,
-    inProgress: jobs.filter(job => job.jobStatus.toLowerCase() === 'ongoing').length,
-    completed: jobs.filter(job => job.jobStatus.toLowerCase() === 'finished').length,
+    open: jobs.filter(job => job.jobStatus.toLowerCase() === 'open').length,
+    inProgress: jobs.filter(job => job.jobStatus.toLowerCase() === 'in_progress').length,
+    completed: jobs.filter(job => job.jobStatus.toLowerCase() === 'completed').length,
     totalSlots: jobs.reduce((sum, job) => sum + Number(job.jobSlots), 0)
   };
 
@@ -329,7 +327,7 @@ const ManageJobPage: React.FC = () => {
                 placeholder="Filter by status"
               >
                 <Option value="All">All Status</Option>
-                <Option value="Start">Open</Option>
+                <Option value="Open">Open</Option>
                 <Option value="Ongoing">In Progress</Option>
                 <Option value="Finished">Completed</Option>
                 <Option value="Cancelled">Cancelled</Option>
@@ -513,7 +511,9 @@ const ManageJobPage: React.FC = () => {
               </div>
             )}
           </div>
-        )} 
+
+        )}
+
       </Modal>
     </div>
   );

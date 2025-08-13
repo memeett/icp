@@ -254,6 +254,7 @@ const PostJobPage: React.FC = () => {
       // Call backend createJob function
       const result = await createJob(jobName, jobDescription, jobTags, jobSalary, jobSlots, skills, allFormData.experienceLevel, allFormData.startdate, allFormData.deadline);
       
+      console.log(result);
       if (result[0] === 'Success') {
         message.success(`Job ${isDraft ? 'saved as draft' : 'published'} successfully!`);
         navigate('/manage');

@@ -1,12 +1,13 @@
 import React, { memo, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Card,
-  Tag,
-  Button,
-  Avatar,
-  Space,
-  Tooltip,
+
+import { 
+  Card, 
+  Tag, 
+  Button, 
+  Avatar, 
+  Space, 
+  Tooltip, 
   Typography,
   Divider,
   Progress
@@ -60,6 +61,7 @@ const JobCard: React.FC<JobCardProps> = memo(({
   const handleSaveToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
 
+    
     if (!isAuthenticated) {
       navigate('/face-recognition/login');
       return;
@@ -80,8 +82,8 @@ const JobCard: React.FC<JobCardProps> = memo(({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Open': return 'green';
-      case 'In Progress': return 'blue';
-      case 'Completed': return 'purple';
+      case 'Ongoing': return 'orange';
+      case 'Finished': return 'purple';
       case 'Cancelled': return 'red';
       default: return 'default';
     }
@@ -113,7 +115,7 @@ const JobCard: React.FC<JobCardProps> = memo(({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{
+      whileHover={{ 
         y: -8,
         transition: { duration: 0.2, ease: 'easeOut' }
       }}
@@ -180,7 +182,7 @@ const JobCard: React.FC<JobCardProps> = memo(({
               )}
             </Space>
           </div>
-
+          
           <AnimatePresence>
             {isHovered && (
               <motion.div
@@ -227,9 +229,9 @@ const JobCard: React.FC<JobCardProps> = memo(({
                 {Math.floor(calculateProgress())}% filled
               </Text>
             </div>
-            <Progress
-              percent={calculateProgress()}
-              size="small"
+            <Progress 
+              percent={calculateProgress()} 
+              size="small" 
               showInfo={false}
               strokeColor={{
                 '0%': '#108ee9',
@@ -292,5 +294,6 @@ const JobCard: React.FC<JobCardProps> = memo(({
 });
 
 JobCard.displayName = 'JobCard';
+
 
 export default JobCard;

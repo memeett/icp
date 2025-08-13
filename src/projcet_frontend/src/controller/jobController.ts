@@ -1,11 +1,11 @@
 import { AuthClient, LocalStorage } from "@dfinity/auth-client";
 import { job } from "../../../declarations/job";
 import { Job, CreateJobPayload, UpdateJobPayload, JobCategory } from "../../../declarations/job/job.did";
-import { User } from "../interface/User";
+import { User } from "../shared/types/User";
 import { HttpAgent } from "@dfinity/agent";
 import { applier } from "../../../declarations/applier";
 import { job_transaction } from "../../../declarations/job_transaction";
-import { ApplierPayload } from "../interface/Applier";
+import { ApplierPayload } from "../shared/types/Applier";
 import { Wallet } from "lucide-react";
 
 
@@ -148,6 +148,7 @@ export const viewAllJobs = async (): Promise<Job[] | null> => {
     const identity = authClient.getIdentity();
     const agent = new HttpAgent({ identity });
   
+    //1
     if (process.env.DFX_NETWORK === "local") {
         await agent.fetchRootKey();
     }

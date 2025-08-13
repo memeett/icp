@@ -28,6 +28,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import { useJobs } from '../shared/hooks/useJobs';
+import { createJob } from '../controller/jobController';
 // Define Job type locally for now
 interface Job {
   id?: string;
@@ -60,6 +61,7 @@ interface JobFormData {
   skills: string[];
   experienceLevel: 'entry' | 'intermediate' | 'expert';
   projectType: 'one-time' | 'ongoing';
+  maxApplicants: number;
   attachments?: File[];
 }
 
@@ -136,19 +138,24 @@ const PostJobPage: React.FC = () => {
   const handleSubmit = useCallback(async (isDraft = false) => {
     try {
       const values = await form.validateFields();
-      const jobData: Partial<Job> = {
-        ...formData,
-        ...values,
-        skills,
-        status: isDraft ? 'draft' : 'active',
-        postedAt: new Date().toISOString(),
-        applicants: 0
-      };
+      const allFormData = { ...formData, ...values };
+      
+      // Prepare job data for backend
+      const jobName = allFormData.title;
+      const jobDescription = [allFormData.description];
+      const jobTags = skills;
+      const jobSalary = allFormData.budget;
+      const jobSlots = allFormData.maxApplicants;
 
-      // TODO: Implement createJob functionality
-      console.log('Creating job:', jobData);
-      message.success(`Job ${isDraft ? 'saved as draft' : 'published'} successfully!`);
-      navigate('/manage');
+      // Call backend createJob function
+      const result = await createJob(jobName, jobDescription, jobTags, jobSalary, jobSlots);
+      
+      if (result[0] === 'Success') {
+        message.success(`Job ${isDraft ? 'saved as draft' : 'published'} successfully!`);
+        navigate('/manage');
+      } else {
+        message.error(result[1] || 'Failed to create job. Please try again.');
+      }
     } catch (error) {
       console.error('Failed to create job:', error);
       message.error('Failed to create job. Please try again.');
@@ -311,6 +318,20 @@ const PostJobPage: React.FC = () => {
                 placeholder="Enter budget amount"
                 formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 parser={value => Number(value!.replace(/\$\s?|(,*)/g, '')) as any}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="maxApplicants"
+              label="Maximum Number of Applicants"
+              rules={[{ required: true, message: 'Please enter maximum applicants' }]}
+            >
+              <InputNumber
+                size="large"
+                min={1}
+                max={50}
+                style={{ width: '100%' }}
+                placeholder="Enter maximum number of applicants"
               />
             </Form.Item>
 

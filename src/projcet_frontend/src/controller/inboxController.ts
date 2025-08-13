@@ -2,7 +2,7 @@ import { AuthClient } from "@dfinity/auth-client";
 import { inbox } from "../../../declarations/inbox";
 import { Inbox } from "../../../declarations/inbox/inbox.did";
 import { HttpAgent } from "@dfinity/agent";
-import { InboxResponse } from "../interface/Inbox";
+import { InboxResponse } from "../shared/types/Inbox";
 import { user } from "../../../declarations/user";
 
 export const createInbox = async (

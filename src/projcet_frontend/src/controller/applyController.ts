@@ -3,7 +3,7 @@ import { applier } from "../../../declarations/applier";
 import { ApplyPayload, UserApplyJobPayload } from "../../../declarations/applier/applier.did";
 import { Job } from "../../../declarations/job/job.did";
 import { User } from "../../../declarations/user/user.did";
-import { ApplierPayload } from "../interface/Applier";
+import { ApplierPayload } from "../shared/types/Applier";
 import { HttpAgent } from "@dfinity/agent";
 
 

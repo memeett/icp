@@ -18,7 +18,9 @@ import {
   Popconfirm,
   Badge,
   Avatar,
-  Tooltip
+  Tooltip,
+  Skeleton,
+  Empty
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -37,210 +39,169 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import type { ColumnsType } from 'antd/es/table';
+import { useAuth, useManageJobs, useUserManagement } from '../shared/hooks';
+import { Job } from '../shared/types/Job';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
 
-// Mock job data
-const mockJobs = [
-  {
-    id: '1',
-    title: 'Full Stack Developer for E-commerce Platform',
-    status: 'active',
-    budget: 5000,
-    budgetType: 'fixed',
-    applicants: 12,
-    postedAt: '2024-01-15',
-    deadline: '2024-02-15',
-    category: 'Web Development',
-    applications: [
-      {
-        id: 'app1',
-        freelancer: {
-          name: 'John Doe',
-          avatar: '',
-          rating: 4.8,
-          proposedBudget: 4500,
-          timeline: '30 days',
-          coverLetter: 'I am excited to work on this project...'
-        },
-        appliedAt: '2024-01-16'
-      },
-      {
-        id: 'app2',
-        freelancer: {
-          name: 'Jane Smith',
-          avatar: '',
-          rating: 4.9,
-          proposedBudget: 5200,
-          timeline: '25 days',
-          coverLetter: 'With 5+ years of experience...'
-        },
-        appliedAt: '2024-01-17'
-      }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Mobile App UI/UX Design',
-    status: 'draft',
-    budget: 2500,
-    budgetType: 'fixed',
-    applicants: 0,
-    postedAt: '2024-01-20',
-    deadline: '2024-02-20',
-    category: 'UI/UX Design',
-    applications: []
-  },
-  {
-    id: '3',
-    title: 'React Native Developer',
-    status: 'closed',
-    budget: 75,
-    budgetType: 'hourly',
-    applicants: 8,
-    postedAt: '2024-01-10',
-    deadline: '2024-01-30',
-    category: 'Mobile Development',
-    applications: []
-  }
-];
-
 const ManageJobPage: React.FC = () => {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState(mockJobs);
-  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const { user } = useAuth();
+  
+  // Use the custom hooks
+  const {
+    jobs,
+    loading,
+    filteredJobs,
+    searchQuery,
+    selectedStatus,
+    setSearchQuery,
+    setSelectedStatus,
+    handleDeleteJob,
+    refreshJobs
+  } = useManageJobs();
+  
+  const { allUsers } = useUserManagement();
+  
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isApplicationsModalVisible, setIsApplicationsModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [form] = Form.useForm();
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'green';
-      case 'draft': return 'orange';
-      case 'closed': return 'red';
-      case 'paused': return 'blue';
+    switch (status.toLowerCase()) {
+      case 'start': 
+      case 'open': return 'green';
+      case 'ongoing': 
+      case 'in_progress': return 'blue';
+      case 'finished': 
+      case 'completed': return 'purple';
+      case 'cancelled': return 'red';
       default: return 'default';
     }
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <CheckCircleOutlined />;
-      case 'draft': return <EditOutlined />;
-      case 'closed': return <StopOutlined />;
-      case 'paused': return <PauseCircleOutlined />;
+    switch (status.toLowerCase()) {
+      case 'start': 
+      case 'open': return <CheckCircleOutlined />;
+      case 'ongoing': 
+      case 'in_progress': return <ClockCircleOutlined />;
+      case 'finished': 
+      case 'completed': return <CheckCircleOutlined />;
+      case 'cancelled': return <StopOutlined />;
       default: return null;
     }
   };
 
-  const handleEditJob = (job: any) => {
+  const getStatusText = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'start': return 'Open';
+      case 'ongoing': return 'In Progress';
+      case 'finished': return 'Completed';
+      case 'cancelled': return 'Cancelled';
+      default: return status;
+    }
+  };
+
+  const handleEditJob = (job: Job) => {
     setSelectedJob(job);
-    form.setFieldsValue(job);
+    form.setFieldsValue({
+      jobName: job.jobName,
+      jobStatus: job.jobStatus,
+      jobSalary: job.jobSalary,
+      jobDescription: job.jobDescription.join('\n')
+    });
     setIsEditModalVisible(true);
   };
 
-  const handleDeleteJob = async (jobId: string) => {
-    try {
-      setJobs(jobs.filter(job => job.id !== jobId));
-      message.success('Job deleted successfully');
-    } catch (error) {
-      message.error('Failed to delete job');
-    }
-  };
-
-  const handleUpdateJobStatus = async (jobId: string, newStatus: string) => {
-    try {
-      setJobs(jobs.map(job => 
-        job.id === jobId ? { ...job, status: newStatus } : job
-      ));
-      message.success(`Job ${newStatus} successfully`);
-    } catch (error) {
-      message.error('Failed to update job status');
-    }
-  };
-
-  const handleViewApplications = (job: any) => {
+  const handleViewApplications = (job: Job) => {
     setSelectedJob(job);
     setIsApplicationsModalVisible(true);
   };
 
   const handleSaveJob = async (values: any) => {
     try {
-      setJobs(jobs.map(job => 
-        job.id === selectedJob.id ? { ...job, ...values } : job
-      ));
+      // TODO: Implement job update functionality
       setIsEditModalVisible(false);
       message.success('Job updated successfully');
+      refreshJobs();
     } catch (error) {
       message.error('Failed to update job');
     }
   };
 
-  const columns: ColumnsType<any> = [
+  const handleDeleteJobConfirm = async (jobId: string) => {
+    await handleDeleteJob(jobId);
+  };
+
+  const columns: ColumnsType<Job> = [
     {
       title: 'Job Title',
-      dataIndex: 'title',
-      key: 'title',
-      render: (title, record) => (
+      dataIndex: 'jobName',
+      key: 'jobName',
+      render: (jobName, record) => (
         <div>
-          <Text strong className="block">{title}</Text>
-          <Text type="secondary" className="text-sm">{record.category}</Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
-          {status.toUpperCase()}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Budget',
-      dataIndex: 'budget',
-      key: 'budget',
-      render: (budget, record) => (
-        <div>
-          <Text strong>${budget.toLocaleString()}</Text>
-          <Text type="secondary" className="block text-sm capitalize">
-            {record.budgetType}
+          <Text strong className="block">{jobName}</Text>
+          <Text type="secondary" className="text-sm">
+            {record.jobTags?.[0]?.jobCategoryName || 'General'}
           </Text>
         </div>
       ),
     },
     {
-      title: 'Applicants',
-      dataIndex: 'applicants',
-      key: 'applicants',
-      render: (applicants, record) => (
-        <Button
-          type="link"
-          onClick={() => handleViewApplications(record)}
-          disabled={applicants === 0}
-        >
-          <Badge count={applicants} showZero>
-            <UserOutlined />
-          </Badge>
-        </Button>
+      title: 'Status',
+      dataIndex: 'jobStatus',
+      key: 'jobStatus',
+      render: (status) => (
+        <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
+          {getStatusText(status)}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Budget',
+      dataIndex: 'jobSalary',
+      key: 'jobSalary',
+      render: (salary) => (
+        <div>
+          <Text strong>${salary?.toLocaleString() || 0}</Text>
+          <Text type="secondary" className="block text-sm">
+            Fixed Price
+          </Text>
+        </div>
+      ),
+    },
+    {
+      title: 'Slots',
+      dataIndex: 'jobSlots',
+      key: 'jobSlots',
+      render: (slots) => (
+        <Badge count={Number(slots)} showZero>
+          <UserOutlined />
+        </Badge>
       ),
     },
     {
       title: 'Posted',
-      dataIndex: 'postedAt',
-      key: 'postedAt',
-      render: (date) => new Date(date).toLocaleDateString(),
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (createdAt) => {
+        const date = new Date(Number(createdAt) / 1000000); // Convert from nanoseconds
+        return date.toLocaleDateString();
+      },
     },
     {
-      title: 'Deadline',
-      dataIndex: 'deadline',
-      key: 'deadline',
-      render: (date) => new Date(date).toLocaleDateString(),
+      title: 'Updated',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
+      render: (updatedAt) => {
+        const date = new Date(Number(updatedAt) / 1000000); // Convert from nanoseconds
+        return date.toLocaleDateString();
+      },
     },
     {
       title: 'Actions',
@@ -259,25 +220,9 @@ const ManageJobPage: React.FC = () => {
               onClick={() => handleEditJob(record)}
             />
           </Tooltip>
-          {record.status === 'active' && (
-            <Tooltip title="Pause Job">
-              <Button
-                icon={<PauseCircleOutlined />}
-                onClick={() => handleUpdateJobStatus(record.id, 'paused')}
-              />
-            </Tooltip>
-          )}
-          {record.status === 'paused' && (
-            <Tooltip title="Activate Job">
-              <Button
-                icon={<CheckCircleOutlined />}
-                onClick={() => handleUpdateJobStatus(record.id, 'active')}
-              />
-            </Tooltip>
-          )}
           <Popconfirm
             title="Are you sure you want to delete this job?"
-            onConfirm={() => handleDeleteJob(record.id)}
+            onConfirm={() => handleDeleteJobConfirm(record.id)}
             okText="Yes"
             cancelText="No"
           >
@@ -293,72 +238,45 @@ const ManageJobPage: React.FC = () => {
     },
   ];
 
-  const applicationColumns: ColumnsType<any> = [
-    {
-      title: 'Freelancer',
-      key: 'freelancer',
-      render: (_, record) => (
-        <div className="flex items-center space-x-3">
-          <Avatar src={record.freelancer.avatar} icon={<UserOutlined />} />
-          <div>
-            <Text strong>{record.freelancer.name}</Text>
-            <div className="flex items-center space-x-1">
-              <Text type="secondary" className="text-sm">Rating: </Text>
-              <Text className="text-sm">{record.freelancer.rating}</Text>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Proposed Budget',
-      key: 'budget',
-      render: (_, record) => (
-        <Text strong>${record.freelancer.proposedBudget.toLocaleString()}</Text>
-      ),
-    },
-    {
-      title: 'Timeline',
-      key: 'timeline',
-      render: (_, record) => record.freelancer.timeline,
-    },
-    {
-      title: 'Applied',
-      dataIndex: 'appliedAt',
-      key: 'appliedAt',
-      render: (date) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Button type="primary" size="small">
-            Accept
-          </Button>
-          <Button size="small">
-            Message
-          </Button>
-          <Button size="small" danger>
-            Decline
-          </Button>
-        </Space>
-      ),
-    },
-  ];
+  // Filter jobs based on active tab
+  const getFilteredJobsByTab = () => {
+    if (activeTab === 'all') return filteredJobs;
+    return filteredJobs.filter(job => {
+      switch (activeTab) {
+        case 'open':
+          return job.jobStatus.toLowerCase() === 'start';
+        case 'in_progress':
+          return job.jobStatus.toLowerCase() === 'ongoing';
+        case 'completed':
+          return job.jobStatus.toLowerCase() === 'finished';
+        case 'cancelled':
+          return job.jobStatus.toLowerCase() === 'cancelled';
+        default:
+          return true;
+      }
+    });
+  };
 
-  const filteredJobs = jobs.filter(job => {
-    if (activeTab === 'all') return true;
-    return job.status === activeTab;
-  });
+  const tabFilteredJobs = getFilteredJobsByTab();
 
   const stats = {
     total: jobs.length,
-    active: jobs.filter(job => job.status === 'active').length,
-    draft: jobs.filter(job => job.status === 'draft').length,
-    closed: jobs.filter(job => job.status === 'closed').length,
-    totalApplicants: jobs.reduce((sum, job) => sum + job.applicants, 0)
+    open: jobs.filter(job => job.jobStatus.toLowerCase() === 'start').length,
+    inProgress: jobs.filter(job => job.jobStatus.toLowerCase() === 'ongoing').length,
+    completed: jobs.filter(job => job.jobStatus.toLowerCase() === 'finished').length,
+    totalSlots: jobs.reduce((sum, job) => sum + Number(job.jobSlots), 0)
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <Skeleton active />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -387,6 +305,32 @@ const ManageJobPage: React.FC = () => {
             </Button>
           </div>
 
+          {/* Search and Filter */}
+          <Row gutter={[16, 16]} className="mb-6">
+            <Col xs={24} sm={12}>
+              <Input.Search
+                placeholder="Search jobs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                allowClear
+              />
+            </Col>
+            <Col xs={24} sm={12}>
+              <Select
+                value={selectedStatus}
+                onChange={setSelectedStatus}
+                style={{ width: '100%' }}
+                placeholder="Filter by status"
+              >
+                <Option value="All">All Status</Option>
+                <Option value="Start">Open</Option>
+                <Option value="Ongoing">In Progress</Option>
+                <Option value="Finished">Completed</Option>
+                <Option value="Cancelled">Cancelled</Option>
+              </Select>
+            </Col>
+          </Row>
+
           {/* Statistics */}
           <Row gutter={[16, 16]} className="mb-6">
             <Col xs={12} sm={6}>
@@ -401,8 +345,8 @@ const ManageJobPage: React.FC = () => {
             <Col xs={12} sm={6}>
               <Card>
                 <Statistic
-                  title="Active Jobs"
-                  value={stats.active}
+                  title="Open Jobs"
+                  value={stats.open}
                   prefix={<CheckCircleOutlined />}
                   valueStyle={{ color: '#52c41a' }}
                 />
@@ -411,20 +355,20 @@ const ManageJobPage: React.FC = () => {
             <Col xs={12} sm={6}>
               <Card>
                 <Statistic
-                  title="Draft Jobs"
-                  value={stats.draft}
-                  prefix={<EditOutlined />}
-                  valueStyle={{ color: '#faad14' }}
+                  title="In Progress"
+                  value={stats.inProgress}
+                  prefix={<ClockCircleOutlined />}
+                  valueStyle={{ color: '#1890ff' }}
                 />
               </Card>
             </Col>
             <Col xs={12} sm={6}>
               <Card>
                 <Statistic
-                  title="Total Applicants"
-                  value={stats.totalApplicants}
+                  title="Total Slots"
+                  value={stats.totalSlots}
                   prefix={<UserOutlined />}
-                  valueStyle={{ color: '#1890ff' }}
+                  valueStyle={{ color: '#722ed1' }}
                 />
               </Card>
             </Col>
@@ -434,21 +378,29 @@ const ManageJobPage: React.FC = () => {
           <Card>
             <Tabs activeKey={activeTab} onChange={setActiveTab}>
               <TabPane tab={`All Jobs (${stats.total})`} key="all" />
-              <TabPane tab={`Active (${stats.active})`} key="active" />
-              <TabPane tab={`Draft (${stats.draft})`} key="draft" />
-              <TabPane tab={`Closed (${stats.closed})`} key="closed" />
+              <TabPane tab={`Open (${stats.open})`} key="open" />
+              <TabPane tab={`In Progress (${stats.inProgress})`} key="in_progress" />
+              <TabPane tab={`Completed (${stats.completed})`} key="completed" />
             </Tabs>
             
-            <Table
-              columns={columns}
-              dataSource={filteredJobs}
-              rowKey="id"
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showQuickJumper: true,
-              }}
-            />
+            {tabFilteredJobs.length === 0 ? (
+              <Empty
+                description="No jobs found"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                className="py-8"
+              />
+            ) : (
+              <Table
+                columns={columns}
+                dataSource={tabFilteredJobs}
+                rowKey="id"
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                }}
+              />
+            )}
           </Card>
         </motion.div>
       </div>
@@ -467,7 +419,7 @@ const ManageJobPage: React.FC = () => {
           onFinish={handleSaveJob}
         >
           <Form.Item
-            name="title"
+            name="jobName"
             label="Job Title"
             rules={[{ required: true, message: 'Please enter job title' }]}
           >
@@ -475,41 +427,33 @@ const ManageJobPage: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            name="status"
+            name="jobStatus"
             label="Status"
             rules={[{ required: true, message: 'Please select status' }]}
           >
             <Select>
-              <Option value="active">Active</Option>
-              <Option value="draft">Draft</Option>
-              <Option value="paused">Paused</Option>
-              <Option value="closed">Closed</Option>
+              <Option value="Start">Open</Option>
+              <Option value="Ongoing">In Progress</Option>
+              <Option value="Finished">Completed</Option>
+              <Option value="Cancelled">Cancelled</Option>
             </Select>
           </Form.Item>
 
-          <Row gutter={[16, 16]}>
-            <Col span={12}>
-              <Form.Item
-                name="budget"
-                label="Budget"
-                rules={[{ required: true, message: 'Please enter budget' }]}
-              >
-                <Input type="number" prefix="$" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="budgetType"
-                label="Budget Type"
-                rules={[{ required: true, message: 'Please select budget type' }]}
-              >
-                <Select>
-                  <Option value="fixed">Fixed Price</Option>
-                  <Option value="hourly">Hourly Rate</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
+          <Form.Item
+            name="jobSalary"
+            label="Budget"
+            rules={[{ required: true, message: 'Please enter budget' }]}
+          >
+            <Input type="number" prefix="$" />
+          </Form.Item>
+
+          <Form.Item
+            name="jobDescription"
+            label="Description"
+            rules={[{ required: true, message: 'Please enter job description' }]}
+          >
+            <Input.TextArea rows={4} />
+          </Form.Item>
 
           <div className="flex justify-end space-x-2">
             <Button onClick={() => setIsEditModalVisible(false)}>
@@ -524,22 +468,44 @@ const ManageJobPage: React.FC = () => {
 
       {/* Applications Modal */}
       <Modal
-        title={`Applications for "${selectedJob?.title}"`}
+        title={`Job Details: "${selectedJob?.jobName}"`}
         open={isApplicationsModalVisible}
         onCancel={() => setIsApplicationsModalVisible(false)}
         footer={null}
         width={800}
       >
-        {selectedJob?.applications?.length > 0 ? (
-          <Table
-            columns={applicationColumns}
-            dataSource={selectedJob.applications}
-            rowKey="id"
-            pagination={false}
-          />
-        ) : (
-          <div className="text-center py-8">
-            <Text type="secondary">No applications yet</Text>
+        {selectedJob && (
+          <div className="space-y-4">
+            <div>
+              <Text strong>Description:</Text>
+              <div className="mt-2 p-3 bg-gray-50 rounded">
+                {selectedJob.jobDescription.map((desc, index) => (
+                  <p key={index}>{desc}</p>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Text strong>Budget:</Text> ${selectedJob.jobSalary?.toLocaleString()}
+            </div>
+            <div>
+              <Text strong>Available Slots:</Text> {Number(selectedJob.jobSlots)}
+            </div>
+            <div>
+              <Text strong>Status:</Text> 
+              <Tag color={getStatusColor(selectedJob.jobStatus)} className="ml-2">
+                {getStatusText(selectedJob.jobStatus)}
+              </Tag>
+            </div>
+            {selectedJob.jobTags && selectedJob.jobTags.length > 0 && (
+              <div>
+                <Text strong>Categories:</Text>
+                <div className="mt-2">
+                  {selectedJob.jobTags.map((tag, index) => (
+                    <Tag key={index} color="blue">{tag.jobCategoryName}</Tag>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>

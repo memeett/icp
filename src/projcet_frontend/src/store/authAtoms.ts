@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import { User } from '../interface/User'; // Assuming your User type is here
+import { User } from '../shared/types/User';
 
 // This type defines the possible states of our authentication process.
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';

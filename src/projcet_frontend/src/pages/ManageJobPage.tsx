@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { 
-  Card, 
-  Table, 
-  Button, 
-  Tag, 
-  Space, 
-  Typography, 
-  Tabs, 
-  Statistic, 
-  Row, 
-  Col, 
-  Modal, 
-  Form, 
-  Input, 
+import React, { useEffect, useState } from 'react';
+import {
+  Card,
+  Table,
+  Button,
+  Tag,
+  Space,
+  Typography,
+  Tabs,
+  Statistic,
+  Row,
+  Col,
+  Modal,
+  Form,
+  Input,
   Select,
   message,
   Popconfirm,
@@ -20,10 +20,10 @@ import {
   Avatar,
   Tooltip
 } from 'antd';
-import { 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
   EyeOutlined,
   UserOutlined,
   DollarOutlined,
@@ -37,101 +37,46 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import type { ColumnsType } from 'antd/es/table';
+import { F, J } from 'vitest/dist/chunks/reporters.66aFHiyX';
+import { getAcceptedFreelancer, getJobApplier, getUserJobs } from '../controller/jobController';
+import { User } from '../interface/User';
+import { fetchUserBySession } from '../controller/userController';
+import { Job, JobCategory } from '../interface/job/Job';
+import { ApplierPayload } from '../interface/Applier';
+import { hasUserApplied } from '../controller/applyController';
+import { formatDate } from '../utils/dateUtils';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
 
-// Mock job data
-const mockJobs = [
-  {
-    id: '1',
-    title: 'Full Stack Developer for E-commerce Platform',
-    status: 'active',
-    budget: 5000,
-    budgetType: 'fixed',
-    applicants: 12,
-    postedAt: '2024-01-15',
-    deadline: '2024-02-15',
-    category: 'Web Development',
-    applications: [
-      {
-        id: 'app1',
-        freelancer: {
-          name: 'John Doe',
-          avatar: '',
-          rating: 4.8,
-          proposedBudget: 4500,
-          timeline: '30 days',
-          coverLetter: 'I am excited to work on this project...'
-        },
-        appliedAt: '2024-01-16'
-      },
-      {
-        id: 'app2',
-        freelancer: {
-          name: 'Jane Smith',
-          avatar: '',
-          rating: 4.9,
-          proposedBudget: 5200,
-          timeline: '25 days',
-          coverLetter: 'With 5+ years of experience...'
-        },
-        appliedAt: '2024-01-17'
-      }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Mobile App UI/UX Design',
-    status: 'draft',
-    budget: 2500,
-    budgetType: 'fixed',
-    applicants: 0,
-    postedAt: '2024-01-20',
-    deadline: '2024-02-20',
-    category: 'UI/UX Design',
-    applications: []
-  },
-  {
-    id: '3',
-    title: 'React Native Developer',
-    status: 'closed',
-    budget: 75,
-    budgetType: 'hourly',
-    applicants: 8,
-    postedAt: '2024-01-10',
-    deadline: '2024-01-30',
-    category: 'Mobile Development',
-    applications: []
-  }
-];
-
 const ManageJobPage: React.FC = () => {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState(mockJobs);
+  const [jobs, setJobs] = useState<Job[]>([]); // Assuming Job is a type/interface for your job data
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isApplicationsModalVisible, setIsApplicationsModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [form] = Form.useForm();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [appliers, setAppliers] = useState<ApplierPayload[]>([]);
+  const [acceptedAppliers, setAccAppliers] = useState<User[]>([]);
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'green';
-      case 'draft': return 'orange';
-      case 'closed': return 'red';
-      case 'paused': return 'blue';
+      case 'Completed': return 'purple';
+      case 'Ongoing': return 'orange';
+      case 'Open': return 'green';
       default: return 'default';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active': return <CheckCircleOutlined />;
-      case 'draft': return <EditOutlined />;
-      case 'closed': return <StopOutlined />;
-      case 'paused': return <PauseCircleOutlined />;
+      case 'Completed': return <CheckCircleOutlined />;
+      case 'Ongoing': return <EditOutlined />;
+      case 'Open': return <PlusOutlined />;
       default: return null;
     }
   };
@@ -153,7 +98,7 @@ const ManageJobPage: React.FC = () => {
 
   const handleUpdateJobStatus = async (jobId: string, newStatus: string) => {
     try {
-      setJobs(jobs.map(job => 
+      setJobs(jobs.map(job =>
         job.id === jobId ? { ...job, status: newStatus } : job
       ));
       message.success(`Job ${newStatus} successfully`);
@@ -162,14 +107,55 @@ const ManageJobPage: React.FC = () => {
     }
   };
 
-  const handleViewApplications = (job: any) => {
+  const fetchData = async () => {
+    try {
+      const jobs = await getUserJobs(currentUser?.id || "");
+      if (jobs) {
+        const convertedJobs = jobs.map((job) => ({
+          ...job,
+          createdAt: BigInt(job.createdAt),
+          updatedAt: BigInt(job.updatedAt),
+        }));
+        console.log("Converted Jobs:", convertedJobs);
+        let formattedJobs = formatJobData(convertedJobs);
+        setJobs(formattedJobs);
+        console.log("Fetched Jobs:", formattedJobs);
+      }
+    } catch (err) {
+      console.error("Error fetching jobs:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchData();
+    }
+  }, [currentUser]);
+
+  const handleViewApplications = async (job: any) => {
+    // Fetch applications for the selected job
+    console.log("Selected Job:", job);
+    const [acceptedFreelancers, jobAppliers] = await Promise.all([
+      getAcceptedFreelancer(job.id),
+      getJobApplier(job.id),
+    ]);
+
+
+
+    setAccAppliers(acceptedFreelancers);
+    setAppliers(jobAppliers);
+
+    const hasApplied = await hasUserApplied(currentUser?.id || "", job.id);
+
+    const isUserAcceptedOrApplied = await
+      acceptedFreelancers.some((user) => user.id === currentUser?.id) || hasApplied;
     setSelectedJob(job);
     setIsApplicationsModalVisible(true);
   };
 
   const handleSaveJob = async (values: any) => {
     try {
-      setJobs(jobs.map(job => 
+      setJobs(jobs.map(job =>
         job.id === selectedJob.id ? { ...job, ...values } : job
       ));
       setIsEditModalVisible(false);
@@ -179,191 +165,147 @@ const ManageJobPage: React.FC = () => {
     }
   };
 
-  const columns: ColumnsType<any> = [
-    {
-      title: 'Job Title',
-      dataIndex: 'title',
-      key: 'title',
-      render: (title, record) => (
-        <div>
-          <Text strong className="block">{title}</Text>
-          <Text type="secondary" className="text-sm">{record.category}</Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
-          {status.toUpperCase()}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Budget',
-      dataIndex: 'budget',
-      key: 'budget',
-      render: (budget, record) => (
-        <div>
-          <Text strong>${budget.toLocaleString()}</Text>
-          <Text type="secondary" className="block text-sm capitalize">
-            {record.budgetType}
-          </Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Applicants',
-      dataIndex: 'applicants',
-      key: 'applicants',
-      render: (applicants, record) => (
-        <Button
-          type="link"
-          onClick={() => handleViewApplications(record)}
-          disabled={applicants === 0}
-        >
-          <Badge count={applicants} showZero>
-            <UserOutlined />
-          </Badge>
-        </Button>
-      ),
-    },
-    {
-      title: 'Posted',
-      dataIndex: 'postedAt',
-      key: 'postedAt',
-      render: (date) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Deadline',
-      dataIndex: 'deadline',
-      key: 'deadline',
-      render: (date) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="View Job">
-            <Button
-              icon={<EyeOutlined />}
-              onClick={() => navigate(`/jobs/${record.id}`)}
-            />
-          </Tooltip>
-          <Tooltip title="Edit Job">
-            <Button
-              icon={<EditOutlined />}
-              onClick={() => handleEditJob(record)}
-            />
-          </Tooltip>
-          {record.status === 'active' && (
-            <Tooltip title="Pause Job">
-              <Button
-                icon={<PauseCircleOutlined />}
-                onClick={() => handleUpdateJobStatus(record.id, 'paused')}
-              />
-            </Tooltip>
-          )}
-          {record.status === 'paused' && (
-            <Tooltip title="Activate Job">
-              <Button
-                icon={<CheckCircleOutlined />}
-                onClick={() => handleUpdateJobStatus(record.id, 'active')}
-              />
-            </Tooltip>
-          )}
-          <Popconfirm
-            title="Are you sure you want to delete this job?"
-            onConfirm={() => handleDeleteJob(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Tooltip title="Delete Job">
-              <Button
-                icon={<DeleteOutlined />}
-                danger
-              />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  useEffect(() => {
+    const fetchUser = async () => {
+      const user = await fetchUserBySession();
+      if (user) setCurrentUser(user);
+    };
 
-  const applicationColumns: ColumnsType<any> = [
-    {
-      title: 'Freelancer',
-      key: 'freelancer',
-      render: (_, record) => (
-        <div className="flex items-center space-x-3">
-          <Avatar src={record.freelancer.avatar} icon={<UserOutlined />} />
-          <div>
-            <Text strong>{record.freelancer.name}</Text>
-            <div className="flex items-center space-x-1">
-              <Text type="secondary" className="text-sm">Rating: </Text>
-              <Text className="text-sm">{record.freelancer.rating}</Text>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Proposed Budget',
-      key: 'budget',
-      render: (_, record) => (
-        <Text strong>${record.freelancer.proposedBudget.toLocaleString()}</Text>
-      ),
-    },
-    {
-      title: 'Timeline',
-      key: 'timeline',
-      render: (_, record) => record.freelancer.timeline,
-    },
-    {
-      title: 'Applied',
-      dataIndex: 'appliedAt',
-      key: 'appliedAt',
-      render: (date) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Button type="primary" size="small">
-            Accept
-          </Button>
-          <Button size="small">
-            Message
-          </Button>
-          <Button size="small" danger>
-            Decline
-          </Button>
-        </Space>
-      ),
-    },
-  ];
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+
+  }, [currentUser]);
+
+  const columns: ColumnsType<any> = [
+  {
+    title: 'Job Title',
+    dataIndex: 'name', // changed from jobName
+    key: 'name',
+    render: (name, record) => (
+      <div>
+        <Text strong className="block">{name}</Text>
+        <Text type="secondary" className="text-sm">
+          {record.tags || "Uncategorized"} 
+        </Text>
+      </div>
+    ),
+  },
+  {
+    title: 'Status',
+    dataIndex: 'status', // changed from jobStatus
+    key: 'status',
+    render: (status) => (
+      <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
+        {status}
+      </Tag>
+    ),
+  },
+  {
+    title: 'Budget',
+    dataIndex: 'salary', // changed from jobSalary
+    key: 'salary',
+    render: (salary) => (
+      <div>
+        <Text strong>${salary}</Text>
+      </div>
+    ),
+  },
+  {
+    title: 'Applicants',
+    dataIndex: 'applicants',
+    key: 'applicants',
+    render: (applicants, record) => (
+      <Button
+        type="link"
+        onClick={() => handleViewApplications(record)}
+        disabled={applicants === 0}
+      >
+        <Badge count={applicants} showZero>
+          <UserOutlined />
+        </Badge>
+      </Button>
+    ),
+  },
+  {
+    title: 'Posted',
+    dataIndex: 'createdAt', // already matches formatJobData
+    key: 'createdAt',
+  },
+  {
+    title: 'Deadline',
+    dataIndex: 'deadline',
+    key: 'deadline',
+  },
+  {
+    title: 'Actions',
+    key: 'actions',
+    render: (_, record) => (
+      <Space>
+        <Tooltip title="View Job">
+          <Button
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/jobs/${record.id}`)}
+          />
+        </Tooltip>
+        <Tooltip title="Edit Job">
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => handleEditJob(record)}
+          />
+        </Tooltip>
+        <Popconfirm
+          title="Are you sure you want to delete this job?"
+          onConfirm={() => handleDeleteJob(record.id)}
+          okText="Yes"
+          cancelText="No"
+        >
+          <Tooltip title="Delete Job">
+            <Button icon={<DeleteOutlined />} danger />
+          </Tooltip>
+        </Popconfirm>
+      </Space>
+    ),
+  },
+];
+
 
   const filteredJobs = jobs.filter(job => {
     if (activeTab === 'all') return true;
-    return job.status === activeTab;
+    return job.jobStatus === activeTab;
   });
+
+  function formatJobData(rawJobs: any[]): any[] {
+    return rawJobs.map(job => ({
+      id: job.id,
+      name: job.jobName,
+      description: Array.isArray(job.jobDescription)
+        ? job.jobDescription.join(' ')
+        : job.jobDescription,
+      salary: Number(job.jobSalary).toLocaleString(), 
+      slots: Number(job.jobSlots),
+      rating: job.jobRating,
+      status: job.jobStatus,
+      tags: job.jobTags.map((tag: JobCategory) => tag.jobCategoryName).join(', '),
+      createdAt: formatDate(job.createdAt),
+      updatedAt: formatDate(job.updatedAt),
+      wallet: job.wallet
+    }));
+  }
 
   const stats = {
     total: jobs.length,
-    active: jobs.filter(job => job.status === 'active').length,
-    draft: jobs.filter(job => job.status === 'draft').length,
-    closed: jobs.filter(job => job.status === 'closed').length,
-    totalApplicants: jobs.reduce((sum, job) => sum + job.applicants, 0)
+    Finished: jobs.filter(job => job.jobStatus === 'Finished').length,
+    Ongoing: jobs.filter(job => job.jobStatus === 'Ongoing').length,
+    Open: jobs.filter(job => job.jobStatus === 'Open').length,
+    totalApplicants: appliers.filter(applier => applier.user === selectedJob?.id).length,
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -401,8 +343,8 @@ const ManageJobPage: React.FC = () => {
             <Col xs={12} sm={6}>
               <Card>
                 <Statistic
-                  title="Active Jobs"
-                  value={stats.active}
+                  title="Finished Jobs"
+                  value={stats.Finished}
                   prefix={<CheckCircleOutlined />}
                   valueStyle={{ color: '#52c41a' }}
                 />
@@ -411,8 +353,8 @@ const ManageJobPage: React.FC = () => {
             <Col xs={12} sm={6}>
               <Card>
                 <Statistic
-                  title="Draft Jobs"
-                  value={stats.draft}
+                  title="Ongoing Jobs"
+                  value={stats.Ongoing}
                   prefix={<EditOutlined />}
                   valueStyle={{ color: '#faad14' }}
                 />
@@ -434,11 +376,11 @@ const ManageJobPage: React.FC = () => {
           <Card>
             <Tabs activeKey={activeTab} onChange={setActiveTab}>
               <TabPane tab={`All Jobs (${stats.total})`} key="all" />
-              <TabPane tab={`Active (${stats.active})`} key="active" />
-              <TabPane tab={`Draft (${stats.draft})`} key="draft" />
-              <TabPane tab={`Closed (${stats.closed})`} key="closed" />
+              <TabPane tab={`Finished (${stats.Finished})`} key="finished" />
+              <TabPane tab={`Ongoing (${stats.Ongoing})`} key="ongoing" />
+              <TabPane tab={`Open (${stats.Open})`} key="open" />
             </Tabs>
-            
+
             <Table
               columns={columns}
               dataSource={filteredJobs}
@@ -475,19 +417,15 @@ const ManageJobPage: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: 'Please select status' }]}
+            name="deadline"
+            label="Deadline"
+            rules={[{ required: true, message: 'Please select deadline' }]}
           >
-            <Select>
-              <Option value="active">Active</Option>
-              <Option value="draft">Draft</Option>
-              <Option value="paused">Paused</Option>
-              <Option value="closed">Closed</Option>
-            </Select>
+            <Input type="date" />
           </Form.Item>
 
           <Row gutter={[16, 16]}>
+
             <Col span={12}>
               <Form.Item
                 name="budget"
@@ -495,18 +433,6 @@ const ManageJobPage: React.FC = () => {
                 rules={[{ required: true, message: 'Please enter budget' }]}
               >
                 <Input type="number" prefix="$" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="budgetType"
-                label="Budget Type"
-                rules={[{ required: true, message: 'Please select budget type' }]}
-              >
-                <Select>
-                  <Option value="fixed">Fixed Price</Option>
-                  <Option value="hourly">Hourly Rate</Option>
-                </Select>
               </Form.Item>
             </Col>
           </Row>
@@ -530,9 +456,9 @@ const ManageJobPage: React.FC = () => {
         footer={null}
         width={800}
       >
-        {selectedJob?.applications?.length > 0 ? (
+        {/* {selectedJob?.applications?.length > 0 ? (
           <Table
-            columns={applicationColumns}
+            columns={columns}
             dataSource={selectedJob.applications}
             rowKey="id"
             pagination={false}
@@ -541,7 +467,7 @@ const ManageJobPage: React.FC = () => {
           <div className="text-center py-8">
             <Text type="secondary">No applications yet</Text>
           </div>
-        )}
+        )} */}
       </Modal>
     </div>
   );

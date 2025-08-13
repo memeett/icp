@@ -41,8 +41,8 @@ interface Job {
   description: string;
   category: string;
   budget: number;
-  budgetType: 'fixed' | 'hourly';
-  deadline: string;
+  startdate: Date;
+  deadline: Date;
   skills: string[];
   experienceLevel: 'entry' | 'intermediate' | 'expert';
   projectType: 'one-time' | 'ongoing';
@@ -61,12 +61,11 @@ interface JobFormData {
   description: string;
   category: string;
   budget: number;
-  budgetType: 'fixed' | 'hourly';
-  deadline: string;
+  startdate: Date;
+  deadline: Date;
   skills: string[];
   experienceLevel: 'entry' | 'intermediate' | 'expert';
   projectType: 'one-time' | 'ongoing';
-  attachments?: File[];
 }
 
 const PostJobPage: React.FC = () => {
@@ -209,7 +208,6 @@ const PostJobPage: React.FC = () => {
       projectType: 'one-time',
       description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
       experienceLevel: 'intermediate',
-      budgetType: 'fixed',
       budget: 5000,
       deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
     });
@@ -226,9 +224,9 @@ const PostJobPage: React.FC = () => {
       projectType: 'one-time',
       description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
       experienceLevel: 'intermediate',
-      budgetType: 'fixed',
       budget: 5000,
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      startdate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       skills: testSkills
     });
 
@@ -279,9 +277,13 @@ const PostJobPage: React.FC = () => {
       const result = await createJob(
         finalData.title!,
         [finalData.description!],
-        skills,
+        [finalData.category],
         finalData.budget!,
-        jobSlots
+        jobSlots,
+        skills,
+        finalData.experienceLevel,
+        finalData.startdate,
+        finalData.deadline
       );
 
       console.log('createJob result:', result);
@@ -417,22 +419,6 @@ const PostJobPage: React.FC = () => {
                 ))}
               </div>
             </Form.Item>
-
-            <Form.Item label="Attachments (Optional)">
-              <Dragger
-                multiple
-                beforeUpload={() => false}
-                className="upload-area"
-              >
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">Click or drag files to upload</p>
-                <p className="ant-upload-hint">
-                  Support for documents, images, and other relevant files
-                </p>
-              </Dragger>
-            </Form.Item>
           </motion.div>
         );
 
@@ -443,17 +429,6 @@ const PostJobPage: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Form.Item
-              name="budgetType"
-              label="Budget Type"
-              rules={[{ required: true, message: 'Please select budget type' }]}
-            >
-              <Select size="large" placeholder="Select budget type">
-                <Option value="fixed">Fixed Price</Option>
-                <Option value="hourly">Hourly Rate</Option>
-              </Select>
-            </Form.Item>
-
             <Form.Item
               name="budget"
               label="Budget Amount ($)"
@@ -467,6 +442,20 @@ const PostJobPage: React.FC = () => {
                 placeholder="Enter budget amount"
                 formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 parser={value => Number(value!.replace(/\$\s?|(,*)/g, '')) as any}
+              />
+            </Form.Item>
+
+
+            <Form.Item
+              name="startdate"
+              label="Project Start Date"
+              rules={[{ required: true, message: 'Please select project start date' }]}
+            >
+              <DatePicker
+                size="large"
+                style={{ width: '100%' }}
+                placeholder="Select start date"
+                disabledDate={(current) => current && current.valueOf() < Date.now()}
               />
             </Form.Item>
 
@@ -512,7 +501,7 @@ const PostJobPage: React.FC = () => {
                 <Col span={12}>
                   <Text strong>Budget:</Text>
                   <div>
-                    <Text>${formData.budget} ({formData.budgetType})</Text>
+                    <Text>${formData.budget} ({"Fixed"})</Text>
                   </div>
                 </Col>
                 

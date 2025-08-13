@@ -12,10 +12,9 @@ import { storage } from "../utils/storage";
 import { ensureUserData } from "../utils/sessionUtils";
 import { debugUserData } from "../utils/debugUtils";
 import { fixUserData } from "../utils/userDataFixer";
+import { dateToBigInt } from "../utils/dateUtils";
 
-
-
-export const createJob = async (jobName:string, jobDescription:string[], jobTags:string[], jobSalary: number, jobSlots: number): Promise<string[]> => {
+export const createJob = async (jobName:string, jobDescription:string[], jobTags:string[], jobSalary: number, jobSlots: number, jobRequirementSkills: string[], jobExperimentLevel: string, jobStartDate: Date, jobDeadline: Date): Promise<string[]> => {
    const agent = await agentService.getAgent();
     try {
         if (!jobName.trim()) return ["Failed", "Job name is required"];
@@ -53,7 +52,9 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
         const newJobTags: JobCategory[] = [];
 
         for (const tag of jobTags) {
+            console.log(tag)
             let existingCategory = await job.findJobCategoryByName(tag); 
+            console.log(existingCategory)
 
             if (!("ok" in existingCategory)) {
                 existingCategory = await job.createJobCategory(tag); 
@@ -77,12 +78,16 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
             
             // Safely create the payload
             const payload : CreateJobPayload = {
-                jobName,
-                jobDescription,
+                jobRequirementSkills: jobRequirementSkills,
+                jobName: jobName,
                 jobTags: newJobTags, 
-                jobSalary,
+                userId: userId,
+                jobDescription: jobDescription,
+                jobStartDate: dateToBigInt(jobStartDate),
+                jobSalary: jobSalary,
+                jobExperimentLevel: jobExperimentLevel,
+                jobDeadline: dateToBigInt(jobDeadline),
                 jobSlots: BigInt(jobSlots),
-                userId: userId
             };
             
             console.log('Job payload being sent:', {

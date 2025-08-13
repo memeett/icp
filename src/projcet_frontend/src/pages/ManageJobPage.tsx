@@ -40,10 +40,12 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import type { ColumnsType } from 'antd/es/table';
 import { useAuth, useManageJobs, useUserManagement } from '../shared/hooks';
+
 import { Job, JobCategory } from '../shared/types/Job';
 import { formatDate } from '../utils/dateUtils';
 import { User } from '../interface/User';
 import { ApplierPayload } from '../interface/Applier';
+
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -127,7 +129,7 @@ const ManageJobPage: React.FC = () => {
 
   const handleSaveJob = async (values: any) => {
     try {
-      // TODO Set JOB
+      // TODO: Implement job update functionality
       setIsEditModalVisible(false);
       message.success('Job updated successfully');
       refreshJobs();
@@ -135,6 +137,7 @@ const ManageJobPage: React.FC = () => {
       message.error('Failed to update job');
     }
   };
+
   const handleDeleteJobConfirm = async (jobId: string) => {
     await handleDeleteJob(jobId);
   };
@@ -259,24 +262,6 @@ const ManageJobPage: React.FC = () => {
   };
 
   const tabFilteredJobs = getFilteredJobsByTab();
-
-  function formatJobData(rawJobs: any[]): any[] {
-    return rawJobs.map(job => ({
-      id: job.id,
-      name: job.jobName,
-      description: Array.isArray(job.jobDescription)
-        ? job.jobDescription.join(' ')
-        : job.jobDescription,
-      salary: Number(job.jobSalary).toLocaleString(), 
-      slots: Number(job.jobSlots),
-      rating: job.jobRating,
-      status: job.jobStatus,
-      tags: job.jobTags.map((tag: JobCategory) => tag.jobCategoryName).join(', '),
-      createdAt: formatDate(job.createdAt),
-      updatedAt: formatDate(job.updatedAt),
-      wallet: job.wallet
-    }));
-  }
 
   const stats = {
     total: jobs.length,
@@ -526,7 +511,9 @@ const ManageJobPage: React.FC = () => {
               </div>
             )}
           </div>
+
         )}
+
       </Modal>
     </div>
   );

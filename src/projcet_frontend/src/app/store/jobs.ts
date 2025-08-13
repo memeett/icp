@@ -1,13 +1,16 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 import { Job, JobCategory, JobApplication, JobSubmission } from '../../shared/types/Job';
+
 // import { Job, JobCategory} from '../../shared/types/Job';
+
 
 
 // Jobs data atoms
 export const jobsAtom = atom<Job[]>([]);
 export const jobCategoriesAtom = atom<JobCategory[]>([]);
 export const selectedJobAtom = atom<Job | null>(null);
+
 // Job filters atoms
 export const jobFiltersAtom = atom({
   categories: [] as string[],
@@ -29,6 +32,7 @@ export const filteredJobsAtom = atom((get) => {
   const filters = get(jobFiltersAtom);
 
   let filtered = jobs.filter(job => job.status !== 'completed');
+
 
   // Apply search filter
   if (searchQuery) {
@@ -73,7 +77,7 @@ export const filteredJobsAtom = atom((get) => {
     );
   }
 
-  // Apply sorting
+
   switch (filters.sortBy) {
     case 'newest':
       filtered.sort((a, b) => Number(b.createdAt - a.createdAt));
@@ -111,7 +115,6 @@ export const paginatedJobsAtom = atom((get) => {
   
   return filtered.slice(startIndex, endIndex);
 });
-
 // Job statistics atoms
 export const jobStatsAtom = atom((get) => {
   const jobs = get(jobsAtom);

@@ -80,8 +80,8 @@ const JobCard: React.FC<JobCardProps> = memo(({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Open': return 'green';
-      case 'In Progress': return 'blue';
-      case 'Completed': return 'purple';
+      case 'Ongoing': return 'orange';
+      case 'Finished': return 'purple';
       case 'Cancelled': return 'red';
       default: return 'default';
     }

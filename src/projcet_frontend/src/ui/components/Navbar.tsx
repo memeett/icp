@@ -400,7 +400,7 @@ const Navbar: React.FC = () => {
         footer={null}
         width={500}
         centered
-        destroyOnClose
+        destroyOnHidden
       >
         <Tabs
           activeKey={activeTab}

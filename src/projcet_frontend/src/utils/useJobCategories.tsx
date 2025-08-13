@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { JobCategory } from "../interface/job/Job";
+import { JobCategory } from "../shared/types/Job";
 import { viewAllJobCategories } from "../controller/jobController";
 
 export const useJobCategories = () => {

@@ -62,16 +62,6 @@
     "clientagent":{
       "main": "src/projcet_backend/ClientAgent/main.mo",
       "type": "motoko"
-    },
-    "projcet_frontend": {
-      "dependencies": [
-        "projcet_backend"
-      ],
-      "source": [
-        "src/projcet_frontend/dist"
-      ],
-      "type": "assets",
-      "workspace": "projcet_frontend"
     }
   },
   "defaults": {

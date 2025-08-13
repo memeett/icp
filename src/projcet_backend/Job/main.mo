@@ -102,7 +102,7 @@ actor JobModel{
     };
 
     // Existing functions
-
+    
     // ----- HTTP Interface Implementation -----
     
     // Type definitions for HTTP handling
@@ -302,7 +302,7 @@ actor JobModel{
     };
 
     public query func findJobCategoryByName(categoryName : Text) : async Result.Result<Job.JobCategory, Text> {
-        Debug.print(categoryName)
+        Debug.print(categoryName);
         for ((_, category) in jobCategories.entries()) {
             if (category.jobCategoryName == categoryName) {
                 return #ok(category);

@@ -12,7 +12,6 @@ import { storage } from "../utils/storage";
 import { ensureUserData } from "../utils/sessionUtils";
 import { debugUserData } from "../utils/debugUtils";
 import { fixUserData } from "../utils/userDataFixer";
-import { dateToBigInt } from "../utils/dateUtils";
 
 export const createJob = async (jobName:string, jobDescription:string[], jobTags:string[], jobSalary: number, jobSlots: number, jobRequirementSkills: string[], jobExperimentLevel: string, jobStartDate: Date, jobDeadline: Date): Promise<string[]> => {
    const agent = await agentService.getAgent();
@@ -76,6 +75,9 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
             const userId = String(currentUser.id);
             console.log('User ID as string:', userId);
             
+            const startDate = new Date(jobStartDate); // Convert string to Date
+            const deadlineDate = new Date(jobDeadline);
+
             // Safely create the payload
             const payload : CreateJobPayload = {
                 jobRequirementSkills: jobRequirementSkills,
@@ -83,10 +85,10 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
                 jobTags: newJobTags, 
                 userId: userId,
                 jobDescription: jobDescription,
-                jobStartDate: dateToBigInt(jobStartDate),
+                jobStartDate: (BigInt(startDate.getTime())*1_000_000n),
                 jobSalary: jobSalary,
                 jobExperimentLevel: jobExperimentLevel,
-                jobDeadline: dateToBigInt(jobDeadline),
+                jobDeadline: (BigInt(deadlineDate.getTime())*1_000_000n),
                 jobSlots: BigInt(jobSlots),
             };
             

@@ -15,6 +15,8 @@ const ManageJobPage = lazy(() => import('../../pages/ManageJobPage'));
 const BrowseFreelancerPage = lazy(() => import('../../pages/BrowseFreelancerPage'));
 const CompleteProfilePage = lazy(() => import('../../pages/CompleteProfilePage'));
 const AccountPage = lazy(() => import('../../pages/AccountPage'));
+const AdminPage = lazy(() => import('../../pages/AdminPage'));
+const DummyPage = lazy(() => import('../../pages/DummyPage'));
 
 const PageLoader: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -124,6 +126,26 @@ export const AppRouter: React.FC = () => {
           <ProtectedRoute>
             <AccountPage />
           </ProtectedRoute>
+        }
+      />
+      
+      {/* Admin Route */}
+      <Route
+        path="/admin"
+        element={
+          <RouteWrapper>
+            <AdminPage />
+          </RouteWrapper>
+        }
+      />
+      
+      {/* Dummy Data Generator Route */}
+      <Route
+        path="/dummy"
+        element={
+          <RouteWrapper>
+            <DummyPage />
+          </RouteWrapper>
         }
       />
 

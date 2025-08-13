@@ -74,6 +74,10 @@ actor JobModel{
             jobSalary = payload.jobSalary;
             jobSlots = payload.jobSlots;
             jobStatus = "Open";
+            jobExperimentLevel = payload.jobExperimentLevel;
+            jobRequirementSkills = payload.jobRequirementSkills;
+            jobStartDate = payload.jobStartDate;
+            jobDeadline = payload.jobDeadline;
             userId = payload.userId;
             createdAt = now;
             updatedAt = now;
@@ -98,7 +102,7 @@ actor JobModel{
     };
 
     // Existing functions
-
+    
     // ----- HTTP Interface Implementation -----
     
     // Type definitions for HTTP handling
@@ -298,6 +302,7 @@ actor JobModel{
     };
 
     public query func findJobCategoryByName(categoryName : Text) : async Result.Result<Job.JobCategory, Text> {
+        Debug.print(categoryName);
         for ((_, category) in jobCategories.entries()) {
             if (category.jobCategoryName == categoryName) {
                 return #ok(category);
@@ -336,6 +341,10 @@ actor JobModel{
                     jobSalary = Option.get(payload.jobSalary, job.jobSalary);
                     jobSlots = Option.get(payload.jobSlots, job.jobSlots);
                     jobStatus = jobStatus;
+                    jobExperimentLevel = job.jobExperimentLevel;
+                    jobRequirementSkills = job.jobRequirementSkills;
+                    jobStartDate = job.jobStartDate;
+                    jobDeadline = job.jobDeadline;
                     userId = Option.get(payload.userId, job.userId);
                     createdAt = job.createdAt;
                     updatedAt = Time.now();
@@ -443,6 +452,10 @@ actor JobModel{
                                     jobSalary = job.jobSalary;
                                     jobSlots = job.jobSlots;
                                     jobStatus = "In Progress";
+                                    jobExperimentLevel = job.jobExperimentLevel;
+                                    jobRequirementSkills = job.jobRequirementSkills;
+                                    jobStartDate = job.jobStartDate;
+                                    jobDeadline = job.jobDeadline;
                                     userId = job.userId;
                                     createdAt = job.createdAt;
                                     updatedAt = Time.now();
@@ -481,6 +494,10 @@ actor JobModel{
                     jobSalary = job.jobSalary;
                     jobSlots = job.jobSlots;
                     jobStatus = "Finished";
+                    jobExperimentLevel = job.jobExperimentLevel;
+                    jobRequirementSkills = job.jobRequirementSkills;
+                    jobStartDate = job.jobStartDate;
+                    jobDeadline = job.jobDeadline;
                     userId = job.userId;
                     createdAt = job.createdAt;
                     updatedAt = Time.now();

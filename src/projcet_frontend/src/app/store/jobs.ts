@@ -1,18 +1,20 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-import { Job, JobCategory, JobApplication, JobSubmission } from '../../shared/types/Job';
+// import { Job, JobCategory, JobApplication, JobSubmission } from '../../shared/types/Job';
+import { Job, JobCategory} from '../../shared/types/Job';
+
 
 // Jobs data atoms
 export const jobsAtom = atom<Job[]>([]);
 export const jobCategoriesAtom = atom<JobCategory[]>([]);
 export const selectedJobAtom = atom<Job | null>(null);
 
-// Job applications atoms
-export const jobApplicationsAtom = atom<JobApplication[]>([]);
-export const userApplicationsAtom = atom<JobApplication[]>([]);
+// // Job applications atoms
+// export const jobApplicationsAtom = atom<JobApplication[]>([]);
+// export const userApplicationsAtom = atom<JobApplication[]>([]);
 
 // Job submissions atoms
-export const jobSubmissionsAtom = atom<JobSubmission[]>([]);
+// export const jobSubmissionsAtom = atom<JobSubmission[]>([]);
 
 // Job filters atoms
 export const jobFiltersAtom = atom({

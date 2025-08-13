@@ -172,6 +172,10 @@ actor UserModel {
                             jobTags = jobData.jobTags;
                             jobSlots = jobData.jobSlots;
                             jobStatus = jobData.jobStatus;
+                            jobExperimentLevel = jobData.jobExperimentLevel;
+                            jobRequirementSkills = jobData.jobRequirementSkills;
+                            jobStartDate = jobData.jobStartDate;
+                            jobDeadline = jobData.jobDeadline;
                             userId = jobData.userId;
                             createdAt = jobData.createdAt;
                             updatedAt = Time.now();
@@ -255,6 +259,10 @@ actor UserModel {
                             jobTags = jobData.jobTags;
                             jobSlots = jobData.jobSlots;
                             jobStatus = "Ongoing";
+                            jobExperimentLevel = jobData.jobExperimentLevel;
+                            jobRequirementSkills = jobData.jobRequirementSkills;
+                            jobStartDate = jobData.jobStartDate;
+                            jobDeadline = jobData.jobDeadline;
                             userId = jobData.userId;
                             createdAt = jobData.createdAt;
                             updatedAt = Time.now();

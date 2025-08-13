@@ -15,6 +15,16 @@ export interface User {
   isProfileCompleted: boolean;
 }
 
+export interface UserProfile extends User {
+  // Additional profile-specific fields
+  skills?: string[];
+  experienceLevel?: string;
+  availability?: string;
+  location?: string;
+  hourlyRate?: number;
+  completedJobs?: number;
+}
+
 export interface UpdateUserPayload {
   username?: string;
   profilePicture?: Uint8Array | number[];

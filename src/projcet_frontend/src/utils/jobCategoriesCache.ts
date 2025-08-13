@@ -1,4 +1,4 @@
-import { JobCategory } from "../interface/job/Job";
+import { JobCategory } from "../shared/types/Job";
 
 
 type CacheState = {

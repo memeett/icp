@@ -7,6 +7,7 @@ import Result "mo:base/Result";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Time "mo:base/Time";
+import Job "canister:job";
 
 actor InboxModule {
     private stable var nextId : Nat = 0;
@@ -34,14 +35,23 @@ actor InboxModule {
         inboxEntries := [];
     };
 
-    public func createInbox(receiverId : Text, senderId : Text, submission_type : Text, status : Text) : async Result.Result<Inbox.Inbox, Text> {
-        let inboxId = Int.toText(nextId);
+    public func createInbox(receiverId : Text, jobId: Text, senderId : Text, inbox_type : Text, message: Text) : async Result.Result<Inbox.Inbox, Text> {
+        let inboxId = Int.toText(nextId);   
+        let jobResult = await Job.getJob(jobId);
+        let jobName = switch (jobResult) {
+            case (#err(_)) { "Unknown Job" };
+            case (#ok(job)) { job.jobName }; 
+        };
+        
+
+        let formattedMessage = "You have received a new " # inbox_type # " for " # jobName # "! \n" # message;
         let newInbox : Inbox.Inbox = {
             id = inboxId;
+            jobId = jobId;
             receiverId = receiverId;
             senderId = senderId;
-            submission_type = submission_type;
-            status = status;
+            inbox_type = inbox_type; //  submission/application/invitation
+            message = formattedMessage;
             read = false;
             createdAt = Time.now();
         };
@@ -83,26 +93,27 @@ actor InboxModule {
         userInbox;
     };
 
-    public func updateInboxStatus(inboxId : Text, status : Text) : async Result.Result<Inbox.Inbox, Text> {
-        switch (inboxes.get(inboxId)) {
-            case (null) {
-                #err("Inbox not found")
-            };
-            case (?inbox) {
-                let updatedInbox : Inbox.Inbox = {
-                    id = inbox.id;
-                    receiverId = inbox.receiverId;
-                    senderId = inbox.senderId;
-                    submission_type = inbox.submission_type;
-                    status = status;
-                    read = inbox.read;
-                    createdAt = inbox.createdAt;
-                };
-                inboxes.put(inboxId, updatedInbox);
-                #ok(updatedInbox);
-            };
-        };
-    };
+    // public func updateInboxStatus(inboxId : Text, status : Text) : async Result.Result<Inbox.Inbox, Text> {
+    //     switch (inboxes.get(inboxId)) {
+    //         case (null) {
+    //             #err("Inbox not found")
+    //         };
+    //         case (?inbox) {
+    //             let updatedInbox : Inbox.Inbox = {
+    //                 id = inbox.id;
+    //                 jobId = inbox.jobId;
+    //                 receiverId = inbox.receiverId;
+    //                 senderId = inbox.senderId;
+    //                 inbox_type = inbox.inbox_type;
+    //                 message = inbox.message;
+    //                 read = inbox.read;
+    //                 createdAt = inbox.createdAt;
+    //             };
+    //             inboxes.put(inboxId, updatedInbox);
+    //             #ok(updatedInbox);
+    //         };
+    //     };
+    // };
 
     public func getAllInboxByUserId(userId : Text) : async [Inbox.Inbox] {
         let allInbox = Iter.toArray(inboxes.vals());
@@ -115,65 +126,23 @@ actor InboxModule {
         userInbox;
     };
 
-    public func acceptInbox(inboxId : Text) : async Result.Result<Inbox.Inbox, Text> {
-        switch (inboxes.get(inboxId)) {
-            case (null) {
-                #err("Inbox not found")
-            };
-            case (?inbox) {
-                let updatedInbox : Inbox.Inbox = {
-                    id = inbox.id;
-                    receiverId = inbox.receiverId;
-                    senderId = inbox.senderId;
-                    submission_type = inbox.submission_type;
-                    status = "Accepted";
-                    read = inbox.read;
-                    createdAt = inbox.createdAt;
-                };
-                inboxes.put(inboxId, updatedInbox);
-                #ok(updatedInbox);
-            };
-        };
-    };
+    // public func getAllInboxByStatus(status : Text) : async [Inbox.Inbox] {
+    //     let allInbox = Iter.toArray(inboxes.vals());
+    //     let userInbox = Array.filter(
+    //         allInbox,
+    //         func(inbox : Inbox.Inbox) : Bool {
+    //             inbox.status == status;
+    //         },
+    //     );
+    //     userInbox;
+    // };
 
-    public func rejectInbox(inboxId : Text) : async Result.Result<Inbox.Inbox, Text> {
-        switch (inboxes.get(inboxId)) {
-            case (null) {
-                #err("Inbox not found")
-            };
-            case (?inbox) {
-                let updatedInbox : Inbox.Inbox = {
-                    id = inbox.id;
-                    receiverId = inbox.receiverId;
-                    senderId = inbox.senderId;
-                    submission_type = inbox.submission_type;
-                    status = "Rejected";
-                    read = inbox.read;
-                    createdAt = inbox.createdAt;
-                };
-                inboxes.put(inboxId, updatedInbox);
-                #ok(updatedInbox);
-            };
-        };
-    };
-
-    public func getAllInboxByStatus(status : Text) : async [Inbox.Inbox] {
+    public func getAllInboxBySubmissionType(inbox_type : Text) : async [Inbox.Inbox] {
         let allInbox = Iter.toArray(inboxes.vals());
         let userInbox = Array.filter(
             allInbox,
             func(inbox : Inbox.Inbox) : Bool {
-                inbox.status == status;
-            },
-        );
-        userInbox;
-    };
-
-    public func getAllInboxBySubmissionType(submission_type : Text) : async [Inbox.Inbox] {
-        let allInbox = Iter.toArray(inboxes.vals());
-        let userInbox = Array.filter(
-            allInbox,
-            func(inbox : Inbox.Inbox) : Bool {
-                inbox.submission_type == submission_type;
+                inbox.inbox_type == inbox_type;
             },
         );
         userInbox;
@@ -187,12 +156,13 @@ actor InboxModule {
             case (?inbox) {
                 let updatedInbox : Inbox.Inbox = {
                     id = inbox.id;
+                    jobId = inbox.jobId;
                     receiverId = inbox.receiverId;
                     senderId = inbox.senderId;
-                    submission_type = inbox.submission_type;
-                    status = inbox.status;
+                    inbox_type = inbox.inbox_type;
                     read = true;
                     createdAt = inbox.createdAt;
+                    message = inbox.message;
                 };
                 inboxes.put(inboxId, updatedInbox);
                 #ok(updatedInbox);

@@ -24,6 +24,7 @@ import {
   isAuthenticated as controllerIsAuthenticated,
 } from '../../controller/userController';
 import { storage } from '../../utils/storage';
+import { ensureUserData } from '../../utils/sessionUtils';
 
 export interface UseAuthReturn {
   user: User | null;

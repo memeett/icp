@@ -3,6 +3,7 @@ import { rating } from "../../../declarations/rating";
 import { HistoryRatingPayload, RequestRatingPayload } from "../../../declarations/rating/rating.did";
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent } from "@dfinity/agent";
+import { agentService } from "../singleton/agentService";
 
 export interface JobRatingPayload {
     rating_id: number;
@@ -14,14 +15,7 @@ export interface JobRatingPayload {
 export const getFreelancerForRating = async (job_id: string): Promise<JobRatingPayload[]> => {
     // Step 1: Retrieve the current user's ID from local storage
 
-        const authClient = await AuthClient.create();
-        const identity = authClient.getIdentity();
-        const agent = new HttpAgent({ identity });
-
-
-        if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-        }
+       const agent = await agentService.getAgent();
 
     const userData = localStorage.getItem("current_user");
     const parsedData = userData ? JSON.parse(userData) : null;
@@ -99,7 +93,7 @@ export const ratingUser = async (rating_id: string , ratingValue: number): Promi
             rating_id: rating_id,
             rating: Number(ratingValue)
         };
-
+        console.log("Payload for rating:", payload);
         // Step 2: Call the `ratingUser` method on the rating actor with an array of payloads
         const result = await rating.ratingUser([payload], process.env.CANISTER_ID_USER!);
 
@@ -121,7 +115,8 @@ export const ratingUser = async (rating_id: string , ratingValue: number): Promi
 
 
 export const getRatingByUserIdJobId = async (jobId: string, userId : string): Promise<HistoryRatingPayload | string> => {
-
+    const agent = await agentService.getAgent();
+    console.log("Fetching rating for jobId:", jobId, "and userId:", userId);
     const result = await rating.getRatingByUserIdJobId(jobId, userId, process.env.CANISTER_ID_USER!, process.env.CANISTER_ID_JOB!)
     if ("ok" in result) {
             // Success case: Return the success message

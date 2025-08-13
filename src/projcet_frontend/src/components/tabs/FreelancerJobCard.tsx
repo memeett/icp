@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Job } from "../../interface/job/Job";
 import { getJobById } from "../../controller/jobController";
 import { useNavigate } from "react-router-dom";
+import { formatDate } from "../../utils/dateUtils";
 
 export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string; isLoading : () => void }) {
     const [job, setJob] = useState<Job | null>(null);
@@ -15,9 +16,7 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
                 const res = await getJobById(jobId);
                 if (res) {
                     setJob(res);
-                    const createdAtMillis = Number(res.createdAt / 1_000_000n);
-                    const jobDate = new Date(createdAtMillis);
-                    setDate(jobDate.toLocaleDateString()); 
+                    setDate(formatDate(res.createdAt));
                 } else {
                     setError("Job not found");
                 }

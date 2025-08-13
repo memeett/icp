@@ -5,9 +5,9 @@ import { session } from "../../../declarations/session";
 import { HttpAgent } from "@dfinity/agent";
 import { JobCategory } from "../shared/types/Job";
 import { CashFlowHistory } from "../../../declarations/user/user.did";
+import { agentService } from "../singleton/agentService";
 import { storage } from "../utils/storage";
 
-// Profile picture cache for efficiency
 interface ProfilePictureCache {
   [userId: string]: {
     url: string;
@@ -196,13 +196,7 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
 
 
 export const validateCookie = async (): Promise<boolean> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const agent = await agentService.getAgent();
     try {
         const cookie = getCookie("cookie");
         if (!cookie) {
@@ -269,6 +263,7 @@ let userCache: { user: User | null, timestamp: number } = { user: null, timestam
 const USER_CACHE_DURATION = 60 * 1000; // 1 minute
 
 export const fetchUserBySession = async (): Promise<User | null> => {
+    const agent = await agentService.getAgent();
     const now = Date.now();
     if (userCache.user && now - userCache.timestamp < USER_CACHE_DURATION) {
         console.log('Returning cached user data');
@@ -277,7 +272,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
     const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
+    // const agent = new HttpAgent({ identity });
 
     if (process.env.DFX_NETWORK === "local") {
         await agent.fetchRootKey();
@@ -327,14 +322,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
 
 
 
-const getBlobMidSequence = async (blob: Blob): Promise<string> => {
-    if (!blob || blob.size === 0) return "";
-    const arrayBuffer = await blob.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    const midIndex = Math.floor(uint8Array.length / 2);
-    const sequence = uint8Array.slice(midIndex, midIndex + 20);
-    return Array.from(sequence).join(',');
-};
+
 
 export const updateUserProfile = async (payload: any): Promise<boolean> => {
     try {
@@ -397,7 +385,7 @@ export const updateUserProfile = async (payload: any): Promise<boolean> => {
 
 export const getAllUsers = async (): Promise<User[] | null> => {
     try {
-        const result = await user.getAllUser();
+        const result = await user.getAllUsers();
 
         if (!result || !Array.isArray(result)) {
             console.error("Invalid response format:", result);

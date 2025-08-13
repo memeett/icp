@@ -60,7 +60,7 @@ actor ApplierModel {
                 let userAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
                     return applier.userId == payload.userId and applier.jobId == payload.jobId;
                 });
-                if (userAppliers.size() > 0) {
+                if (userAppliers.size() > 0 and userAppliers[0].status != "Rejected") {
                     return #err("You have already applied to this job");
                 };  
 
@@ -216,19 +216,19 @@ actor ApplierModel {
     public func hasUserApplied(userId: Text, jobId: Text): async Bool {
         let allAppliers = Iter.toArray(appliers.vals());
         let userAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
-            return applier.userId == userId and applier.jobId == jobId;
+            return applier.userId == userId and applier.jobId == jobId and applier.status != "Rejected";
         });
         
         userAppliers.size() > 0
     };
 
-    public func getAcceptedAppliers(jobId: Text): async [Applier.Applier] {
-        let allAppliers = Iter.toArray(appliers.vals());
-        let acceptedAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
-            return applier.jobId == jobId and applier.status == "Accepted";
-        });
+    // public func getAcceptedAppliers(jobId: Text): async [Applier.Applier] {
+    //     let allAppliers = Iter.toArray(appliers.vals());
+    //     let acceptedAppliers = Array.filter(allAppliers, func(applier : Applier.Applier) : Bool {
+    //         return applier.jobId == jobId and applier.status == "Accepted";
+    //     });
         
-        acceptedAppliers
-    };
+    //     acceptedAppliers
+    // };
 
 }

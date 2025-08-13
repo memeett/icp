@@ -5,8 +5,9 @@ module{
         id: Text;
         receiverId: Text;
         senderId: Text;
-        submission_type: Text;
-        status: Text;
+        jobId: Text;
+        inbox_type: Text;
+        message: Text;
         read: Bool;
         createdAt: Time.Time;
     };

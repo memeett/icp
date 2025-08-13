@@ -21,6 +21,10 @@ node_modules/
 dist/
 .svelte-kit/
 
+# Compiled JavaScript files
+src/**/*.js
+src/**/*.jsx
+
 # environment variables
 .env
 .venv

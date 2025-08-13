@@ -1,27 +1,19 @@
 import { motion } from "framer-motion";
 import { Job } from "../../interface/job/Job";
+import { formatDate } from "../../utils/dateUtils";
+import { formatCurrency } from "../../utils/currecncyUtils";
+import { addIncrementUserClicked } from "../../controller/userClickedController";
+import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 
-export default function ClientHistoryCard({job} : {job : Job}){
+export default function ClientHistoryCard({ job }: { job: Job }) {
 
+      const nav = useNavigate();
+    const viewDetails = useCallback(() => {
+        addIncrementUserClicked(job.id);
+        nav("/jobs/" + job.id);
+    }, [nav, job.id]);
 
-
-
-    const formatDate = (timestamp: bigint) => {
-        const date = new Date(Number(timestamp / 1_000_000n));
-        return date.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-        });
-    };
-
-    // Format salary with currency symbol
-    const formatSalary = (salary: number) => {
-        return new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: "USD",
-        }).format(salary);
-    };
 
     return (
         <motion.div
@@ -47,11 +39,11 @@ export default function ClientHistoryCard({job} : {job : Job}){
                     </div>
                     <div className="flex flex-col items-end">
                         <span
-                            className={`px-3 py-1 text-sm font-medium rounded-full ${job.jobStatus === "FINISHED"
-                                    ? "bg-green-100 text-green-800"
-                                    : job.jobStatus === "ONGOING"
-                                        ? "bg-blue-100 text-blue-800"
-                                        : "bg-gray-100 text-gray-800"
+                            className={`px-3 py-1 text-sm font-medium rounded-full ${job.jobStatus === "Finished"
+                                ? "bg-green-100 text-green-800"
+                                : job.jobStatus === "Ongoing"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-gray-100 text-gray-800"
                                 }`}
                         >
                             {job.jobStatus}
@@ -65,7 +57,7 @@ export default function ClientHistoryCard({job} : {job : Job}){
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div className="bg-gray-50 p-3 rounded-lg">
                         <p className="text-gray-500 text-sm">Salary</p>
-                        <p className="font-bold text-gray-900">{formatSalary(job.jobSalary)}</p>
+                        <p className="font-bold text-gray-900">{formatCurrency(job.jobSalary)}</p>
                     </div>
                     <div className="bg-gray-50 p-3 rounded-lg">
                         <p className="text-gray-500 text-sm">Slots</p>
@@ -73,12 +65,12 @@ export default function ClientHistoryCard({job} : {job : Job}){
                     </div>
                     <div className="bg-gray-50 p-3 rounded-lg">
                         <p className="text-gray-500 text-sm">Wallet</p>
-                        <p className="font-bold text-gray-900">{formatSalary(job.wallet)}</p>
+                        <p className="font-bold text-gray-900">{formatCurrency(job.wallet)}</p>
                     </div>
                 </div>
 
                 <div className="mt-6 flex justify-end">
-                    <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-all duration-300">
+                    <button onClick={viewDetails} className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-all duration-300">
                         View Details
                     </button>
                 </div>

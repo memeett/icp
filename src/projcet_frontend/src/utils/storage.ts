@@ -24,12 +24,39 @@ export const storage = {
     try {
       const userString = localStorage.getItem(CURRENT_USER_KEY);
       if (!userString) return null;
+      
+      console.log('Raw user string from localStorage:', userString);
+      
       const parsed = JSON.parse(userString);
+      console.log('Parsed user data:', parsed);
+      
+      // Handle different possible structures
       const userData = parsed.ok || parsed;
+      console.log('User data after ok check:', userData);
+      
+      // Ensure the id field exists
+      if (!userData.id) {
+        console.error('User data is missing id field:', userData);
+        
+        // Try to get the ID from another field or path
+        if (userData.userId) {
+          userData.id = userData.userId;
+        } else if (userData.principal) {
+          userData.id = userData.principal;
+        } else if (userData.user && userData.user.id) {
+          userData.id = userData.user.id;
+        }
+        
+        if (!userData.id) {
+          return null;
+        }
+      }
+      
       return {
         ...userData,
-        createdAt: BigInt(userData.createdAt),
-        updatedAt: BigInt(userData.updatedAt),
+        id: String(userData.id), // Ensure ID is a string
+        createdAt: BigInt(userData.createdAt || '0'),
+        updatedAt: BigInt(userData.updatedAt || '0'),
         profilePicture: null,
       };
     } catch (error) {

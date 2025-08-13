@@ -473,7 +473,7 @@ actor JobModel{
         };
     };
 
-    public func finishJob(job_id : Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text, rating_canister: Text) : async Result.Result<Bool, Text> {
+    public func finishJob(job_id : Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text, _: Text) : async Result.Result<Bool, Text> {
         let jobResult = await getJob(job_id);
         
         switch(jobResult) {

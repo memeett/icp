@@ -342,13 +342,14 @@ export const startJob = async (
     const agent = await agentService.getAgent();
   
       // Call the startJob method on the job actor
-      const result = await job.startJob(
+    const result = await job.startJob(
         user_id,
         job_id,
         process.env.CANISTER_ID_JOB!,
         process.env.CANISTER_ID_JOB_TRANSACTION!,
         process.env.CANISTER_ID_USER!
-      );
+    );
+      console.log("Start Job Result:", result);
   
       // Check if the result is successful
       if ("ok" in result) {

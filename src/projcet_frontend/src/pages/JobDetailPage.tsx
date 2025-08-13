@@ -262,7 +262,7 @@ const JobDetailPage: React.FC = () => {
 
           {isJobOwner && (
             <div className="text-center space-x-4">
-              {job!.jobStatus === 'open' && acceptedFreelancers.length > 0 && (
+              {job!.jobStatus.toLowerCase() === 'open' && acceptedFreelancers.length > 0 && (
                 <Button
                   type="primary"
                   size="large"
@@ -272,7 +272,7 @@ const JobDetailPage: React.FC = () => {
                   Start Job
                 </Button>
               )}
-              {job!.jobStatus === 'in_progress' && (
+              {job!.jobStatus.toLowerCase() === 'in_progress' && (
                 <Button
                   type="primary"
                   size="large"

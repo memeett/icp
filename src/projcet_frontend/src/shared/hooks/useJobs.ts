@@ -5,7 +5,7 @@ import {
   jobCategoriesAtom,
   selectedJobAtom,
   filteredJobsAtom,
-  paginatedJobsAtom,
+
   jobFiltersAtom,
   jobSearchQueryAtom,
   jobsCurrentPageAtom,
@@ -13,7 +13,8 @@ import {
   recommendedJobsAtom,
   savedJobsAtom,
   isSavedJobAtom,
-  jobStatsAtom
+  jobStatsAtom,
+  paginatedJobsAtom
 } from '../../app/store/jobs';
 import { notificationActionsAtom } from '../../app/store/ui';
 import { Job, JobCategory } from '../types/Job';

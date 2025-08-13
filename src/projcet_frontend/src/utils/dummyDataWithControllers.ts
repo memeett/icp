@@ -135,7 +135,11 @@ export const seedDummyDataWithControllers = async (
           jobDescription,
           jobTags,
           jobSalary,
-          jobSlots
+          jobSlots,
+          ['Miaw'],
+          'Intermediate',
+          new Date(),
+          new Date(),
         );
         
         if (result[0] === "Success") {

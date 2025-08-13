@@ -21,7 +21,7 @@ export const createInbox = async (
       jobId,
       senderId,
       inbox_type,
-      // message,
+      message,
     );
     if ("ok" in result) {
       return result.ok;

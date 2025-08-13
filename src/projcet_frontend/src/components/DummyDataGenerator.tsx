@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { seedDummyData } from '../utils/dummyDataGenerator';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { idlFactory as userFactory } from "../../../declarations/user";
 import { idlFactory as jobFactory } from "../../../declarations/job";
@@ -9,6 +8,7 @@ import { _SERVICE as UserService } from "../../../declarations/user/user.did";
 import { _SERVICE as JobService } from "../../../declarations/job/job.did";
 import { _SERVICE as SubmissionService } from "../../../declarations/submission/submission.did";
 import { _SERVICE as RatingService } from "../../../declarations/rating/rating.did";
+import { seedDummyData } from '../utils/dummyDataGenerator';
 
 // Styles
 const styles = {

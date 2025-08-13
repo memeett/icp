@@ -30,7 +30,7 @@ export default function FreelancerCard({ user }: { user: User }) {
           className="flex justify-center"
         >
           <img
-            src={URL.createObjectURL(user.profilePicture) || "/pic.jpeg"}
+            src={user.profilePicture ? URL.createObjectURL(user.profilePicture) : "/pic.jpeg"}
             alt="Profile"
             className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover"
           />

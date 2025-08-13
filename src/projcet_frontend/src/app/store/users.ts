@@ -1,6 +1,7 @@
 import { atom } from 'jotai';
 import { User, ProfilePictureCache } from '../../shared/types/User';
 
+
 // Users data atoms
 export const usersAtom = atom<User[]>([]);
 export const freelancersAtom = atom<User[]>([]);
@@ -32,15 +33,13 @@ export const filteredFreelancersAtom = atom((get) => {
   //     (user.description && user.description.toLowerCase().includes(searchQuery.toLowerCase()))
   //   );
   // }
-
-  // Apply skills filter
-  // if (filters.skills.length > 0) {
-  //   filtered = filtered.filter(user =>
-  //     user.preference.some(pref => 
-  //       filters.skills.includes(pref.jobCategoryName)
-  //     )
-  //   );
-  // }
+  if (filters.skills.length > 0) {
+    filtered = filtered.filter((user: UserProfile) =>
+      user.preference.some((pref: any) =>
+        filters.skills.includes(pref.jobCategoryName)
+      )
+    );
+  }
 
   // Apply rating filter
   // if (filters.rating > 0) {
@@ -136,8 +135,8 @@ export const userActivityAtom = atom({
   averageSessionDuration: 0,
 });
 
-// User preferences atom
-export const userPreferencesAtom = atom({
+// User preferences atom (renamed to avoid conflict with auth store)
+export const userDisplayPreferencesAtom = atom({
   notifications: {
     email: true,
     push: true,

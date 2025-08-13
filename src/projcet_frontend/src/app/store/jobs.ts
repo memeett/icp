@@ -8,14 +8,6 @@ import { Job, JobCategory} from '../../shared/types/Job';
 export const jobsAtom = atom<Job[]>([]);
 export const jobCategoriesAtom = atom<JobCategory[]>([]);
 export const selectedJobAtom = atom<Job | null>(null);
-
-// // Job applications atoms
-// export const jobApplicationsAtom = atom<JobApplication[]>([]);
-// export const userApplicationsAtom = atom<JobApplication[]>([]);
-
-// Job submissions atoms
-// export const jobSubmissionsAtom = atom<JobSubmission[]>([]);
-
 // Job filters atoms
 export const jobFiltersAtom = atom({
   categories: [] as string[],
@@ -41,29 +33,31 @@ export const filteredJobsAtom = atom((get) => {
   // Apply search filter
   if (searchQuery) {
     filtered = filtered.filter(job =>
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchQuery.toLowerCase()) 
+      job.jobName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.jobDescription.some((desc: string) =>
+        desc.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     );
   }
 
   // Apply category filter
   if (filters.categories.length > 0) {
     filtered = filtered.filter(job =>
-      job.category.jobCategoryName && filters.categories.includes(job.category.jobCategoryName)
+      job.jobTags.some((tag: JobCategory) => filters.categories.includes(tag.jobCategoryName))
     );
   }
 
-  // // Apply price range filter
-  // if (filters.priceRanges.length > 0) {
-  //   filtered = filtered.filter(job => {
-  //     return filters.priceRanges.some(range => {
-  //       const [min, max] = range === '2000+' 
-  //         ? [2000, Infinity] 
-  //         : range.split('-').map(Number);
-  //       return job.salary >= min && job.salary < max;
-  //     });
-  //   });
-  // }
+  // Apply price range filter
+  if (filters.priceRanges.length > 0) {
+    filtered = filtered.filter(job => {
+      return filters.priceRanges.some(range => {
+        const [min, max] = range === '2000+'
+          ? [2000, Infinity]
+          : range.split('-').map(Number);
+        return job.jobSalary >= min && job.jobSalary < max;
+      });
+    });
+  }
 
   // Apply experience level filter
   if (filters.experienceLevel.length > 0) {
@@ -125,10 +119,10 @@ export const jobStatsAtom = atom((get) => {
   
   return {
     total: jobs.length,
-    open: jobs.filter(job => job.status === 'Open').length,
-    inProgress: jobs.filter(job => job.status === 'In Progress').length,
-    completed: jobs.filter(job => job.status === 'Completed').length,
-    totalValue: jobs.reduce((sum, job) => sum + job.budget, 0),
+    open: jobs.filter(job => job.jobStatus === 'open').length,
+    inProgress: jobs.filter(job => job.jobStatus === 'in_progress').length,
+    completed: jobs.filter(job => job.jobStatus === 'completed').length,
+    totalValue: jobs.reduce((sum, job) => sum + job.jobSalary, 0),
   };
 });
 
@@ -147,7 +141,7 @@ export const jobActionsAtom = atom(
     | { type: 'SET_CATEGORIES'; categories: JobCategory[] }
     | { type: 'SET_SELECTED_JOB'; job: Job | null }
     | { type: 'SET_RECOMMENDATIONS'; jobs: Job[] }
-    | { type: 'UPDATE_FILTERS'; filters: Partial<typeof jobFiltersAtom> }
+    | { type: 'UPDATE_FILTERS'; filters: Partial<{ categories: string[]; priceRanges: string[]; experienceLevel: string[]; jobType: string[]; sortBy: 'newest' | 'oldest' | 'salary_high' | 'salary_low' | 'deadline'; }> }
   ) => {
     switch (action.type) {
       case 'SET_JOBS':

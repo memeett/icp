@@ -1,21 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Form, 
-  Input, 
-  Button, 
-  Card, 
-  Steps, 
-  Select, 
-  InputNumber, 
-  DatePicker, 
-  Upload, 
-  Tag, 
+  Input,
+  Button,
+  Card,
+  Steps,
+  Select,
+  InputNumber,
+  DatePicker,
+  Upload,
+  Tag,
   Space,
   Typography,
   Row,
   Col,
   Divider,
-  message
+  message,
+  App,
+  Modal
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -29,7 +31,10 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import { useJobs } from '../shared/hooks/useJobs';
 import { createJob } from '../controller/jobController';
-// Define Job type locally for now
+import { useAuth } from '../shared/hooks/useAuth';
+import { storage } from '../utils/storage';
+import { ensureUserData } from '../utils/sessionUtils';
+
 interface Job {
   id?: string;
   title: string;
@@ -66,17 +71,76 @@ interface JobFormData {
 }
 
 const PostJobPage: React.FC = () => {
+  console.log('PostJobPage component is rendering');
   const navigate = useNavigate();
   const { isLoading } = useJobs();
+  const { isAuthenticated, loginWithInternetIdentity } = useAuth();
   const [form] = Form.useForm<JobFormData>();
+  const [messageApi, contextHolder] = message.useMessage();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Partial<JobFormData>>({});
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
 
+  console.log('Current step:', currentStep);
+  console.log('User authenticated:', isAuthenticated);
+
+  // Debug user data
+  useEffect(() => {
+    const checkUserData = async () => {
+      try {
+        const userData = localStorage.getItem('current_user');
+        console.log('current_user in localStorage:', userData);
+        
+        // Try to parse it
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          console.log('Parsed user data:', parsedUser);
+        } else {
+          console.log('No user data in localStorage, attempting to load from session...');
+          const hasUserData = await ensureUserData();
+          console.log('User data loaded from session:', hasUserData);
+        }
+        
+        // Check storage utility
+        const storageUser = storage.getUser();
+        console.log('User from storage utility:', storageUser);
+      } catch (error) {
+        console.error('Error checking user data:', error);
+      }
+    };
+    
+    checkUserData();
+  }, [isAuthenticated]);
+
+  // Check authentication status when component mounts
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!isAuthenticated) {
+        Modal.confirm({
+          title: 'Authentication Required',
+          content: 'You need to be logged in to post a job. Would you like to login now?',
+          okText: 'Login',
+          cancelText: 'Cancel',
+          onOk: () => {
+            loginWithInternetIdentity();
+          },
+          onCancel: () => {
+            navigate('/');
+          }
+        });
+      } else {
+        // If authenticated, ensure user data is available
+        await ensureUserData();
+      }
+    };
+    
+    checkAuth();
+  }, [isAuthenticated, loginWithInternetIdentity, navigate]);
+
   const steps = [
     {
-      title: 'Basic Info',
+      title: 'Info',
       description: 'Job title and category'
     },
     {
@@ -135,7 +199,66 @@ const PostJobPage: React.FC = () => {
     form.setFieldValue('skills', newSkills);
   }, [skills, form]);
 
+  const fillTestData = useCallback(() => {
+    console.log('🧪 Fill Test Data button clicked!');
+    console.log('Filling test data...');
+    
+    // Fill form fields
+    form.setFieldsValue({
+      title: 'Test Full Stack Developer Job',
+      category: 'Web Development',
+      projectType: 'one-time',
+      description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
+      experienceLevel: 'intermediate',
+      budgetType: 'fixed',
+      budget: 5000,
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+    });
+
+    // Fill skills
+    const testSkills = ['React', 'Node.js', 'TypeScript', 'MongoDB'];
+    setSkills(testSkills);
+    form.setFieldValue('skills', testSkills);
+
+    // Update formData
+    setFormData({
+      title: 'Test Full Stack Developer Job',
+      category: 'Web Development',
+      projectType: 'one-time',
+      description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
+      experienceLevel: 'intermediate',
+      budgetType: 'fixed',
+      budget: 5000,
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      skills: testSkills
+    });
+
+    // Go to final step
+    setCurrentStep(3);
+    
+    console.log('Test data filled and moved to final step');
+  }, [form, setSkills, setFormData, setCurrentStep]);
+
   const handleSubmit = useCallback(async (isDraft = false) => {
+    console.log('handleSubmit called with isDraft:', isDraft);
+    
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      Modal.confirm({
+        title: 'Authentication Required',
+        content: 'You need to be logged in to post a job. Would you like to login now?',
+        okText: 'Login',
+        cancelText: 'Cancel',
+        onOk: () => {
+          loginWithInternetIdentity();
+        },
+        onCancel: () => {
+          // Stay on the same page
+        }
+      });
+      return;
+    }
+    
     try {
       const values = await form.validateFields();
       const allFormData = { ...formData, ...values };
@@ -157,10 +280,10 @@ const PostJobPage: React.FC = () => {
         message.error(result[1] || 'Failed to create job. Please try again.');
       }
     } catch (error) {
-      console.error('Failed to create job:', error);
-      message.error('Failed to create job. Please try again.');
+      console.error('Error in handleSubmit:', error);
+      messageApi.error('Please fill out all required fields before submitting.');
     }
-  }, [form, formData, skills, navigate]);
+  }, [form, formData, skills, navigate, messageApi, isAuthenticated, loginWithInternetIdentity]);
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -171,6 +294,18 @@ const PostJobPage: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+              <Button 
+                type="primary" 
+                onClick={fillTestData}
+                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff' }}
+                block
+                size="large"
+              >
+                🧪 FILL TEST DATA & GO TO FINAL STEP
+              </Button>
+            </div>
+
             <Form.Item
               name="title"
               label="Job Title"
@@ -407,7 +542,9 @@ const PostJobPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      {contextHolder}
+      <div className="min-h-screen bg-background">
       <Navbar />
       
       <div className="container mx-auto px-4 py-8">
@@ -451,7 +588,10 @@ const PostJobPage: React.FC = () => {
                   <Space>
                     {currentStep === steps.length - 1 && (
                       <Button
-                        onClick={() => handleSubmit(true)}
+                        onClick={() => {
+                          console.log('Save as Draft button clicked!');
+                          handleSubmit(true);
+                        }}
                         loading={isLoading}
                         size="large"
                         icon={<SaveOutlined />}
@@ -471,7 +611,10 @@ const PostJobPage: React.FC = () => {
                     ) : (
                       <Button
                         type="primary"
-                        onClick={() => handleSubmit(false)}
+                        onClick={() => {
+                          console.log('Publish Job button clicked!');
+                          handleSubmit(false);
+                        }}
                         loading={isLoading}
                         size="large"
                         icon={<SendOutlined />}
@@ -486,7 +629,8 @@ const PostJobPage: React.FC = () => {
           </div>
         </motion.div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

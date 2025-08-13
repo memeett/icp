@@ -11,8 +11,6 @@ import Job "../Job/model";
 
 actor UserModel {
 
-    
-
     private stable var usersEntries : [(Text, User.User)] = [];
 
     private var users = HashMap.fromIter<Text, User.User>(
@@ -68,7 +66,7 @@ actor UserModel {
         newUser;
     };
 
-    public func getAllUser() : async [User.User] {
+    public query func getAllUsers() : async [User.User] {
         Iter.toArray(users.vals());
     };
 

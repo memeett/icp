@@ -5,19 +5,15 @@ import { Job } from "../../../declarations/job/job.did";
 import { User } from "../../../declarations/user/user.did";
 import { ApplierPayload } from "../shared/types/Applier";
 import { HttpAgent } from "@dfinity/agent";
+import { agentService } from "../singleton/agentService";
 
 
 export const applyJob = async (userId: string, jobId : string): Promise<boolean> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const agent = await agentService.getAgent();
     try {
         const payload: ApplyPayload = { userId, jobId };
         const result = await applier.applyJob(payload, process.env.CANISTER_ID_JOB!);
+        
         if ("ok" in result) {
             console.log("Applied for job:", result.ok);
             return true;
@@ -32,13 +28,7 @@ export const applyJob = async (userId: string, jobId : string): Promise<boolean>
 };
 
 export const acceptApplier = async (userId: string, jobId: string): Promise<boolean> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const agent = await agentService.getAgent();
     const payload: ApplyPayload = { userId, jobId };
     try {
         const result = await applier.acceptApplier(payload, process.env.CANISTER_ID_JOB_TRANSACTION!);
@@ -55,13 +45,7 @@ export const acceptApplier = async (userId: string, jobId: string): Promise<bool
 };
 
 export const rejectApplier = async (userId: string, jobId: string): Promise<boolean> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const agent = await agentService.getAgent();
     
     const payload: ApplyPayload = { userId, jobId };
     try {
@@ -79,13 +63,7 @@ export const rejectApplier = async (userId: string, jobId: string): Promise<bool
 };
 
 export const getUserApply = async (userId: string): Promise<Job[] | null> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const agent = await agentService.getAgent();
     try {
         const result = await applier.getUserApply(userId, process.env.CANISTER_ID_JOB!);
         console.log("User applied jobs:", result);
@@ -98,14 +76,6 @@ export const getUserApply = async (userId: string): Promise<Job[] | null> => {
 
 
 export const hasUserApplied = async (userId: string, jobId: string): Promise<boolean> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
-    
     const result = await applier.hasUserApplied(userId, jobId);
     return result;
 }

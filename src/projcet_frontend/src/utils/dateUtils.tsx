@@ -9,12 +9,3 @@ export const formatDate = (timestamp: bigint) => {
     });
 };
 
-export function dateToBigInt(date: Date | string): bigint {
-    const d = typeof date === "string" ? new Date(date) : date;
-
-    if (isNaN(d.getTime())) {
-        throw new Error("Invalid date provided");
-    }
-
-    return BigInt(d.getTime()) * 1_000_000n;
-}

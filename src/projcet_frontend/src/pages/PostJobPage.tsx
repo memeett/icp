@@ -39,7 +39,7 @@ interface Job {
   id?: string;
   title: string;
   description: string;
-  category: string;
+  category: string[];
   budget: number;
   startdate: Date;
   deadline: Date;
@@ -59,7 +59,7 @@ const { Dragger } = Upload;
 interface JobFormData {
   title: string;
   description: string;
-  category: string;
+  category: string[];
   budget: number;
   startdate: Date;
   deadline: Date;
@@ -204,7 +204,7 @@ const PostJobPage: React.FC = () => {
     // Fill form fields
     form.setFieldsValue({
       title: 'Test Full Stack Developer Job',
-      category: 'Web Development',
+      category: ['Web Development'],
       projectType: 'one-time',
       description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
       experienceLevel: 'intermediate',
@@ -220,7 +220,7 @@ const PostJobPage: React.FC = () => {
     // Update formData
     setFormData({
       title: 'Test Full Stack Developer Job',
-      category: 'Web Development',
+      category: ['Web Development'],
       projectType: 'one-time',
       description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
       experienceLevel: 'intermediate',
@@ -277,7 +277,7 @@ const PostJobPage: React.FC = () => {
       const result = await createJob(
         finalData.title!,
         [finalData.description!],
-        [finalData.category],
+        finalData.category,
         finalData.budget!,
         jobSlots,
         skills,
@@ -337,10 +337,22 @@ const PostJobPage: React.FC = () => {
 
             <Form.Item
               name="category"
-              label="Category"
-              rules={[{ required: true, message: 'Please select a category' }]}
+              label="Categories"
+              rules={[
+                { required: true, message: 'Please select at least one category' },
+                { type: 'array', min: 1, message: 'Please select at least one category' }
+              ]}
             >
-              <Select size="large" placeholder="Select job category">
+              <Select
+                mode="multiple" // Enable multiple selection
+                size="large"
+                placeholder="Select job categories"
+                maxTagCount="responsive"
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+                }
+              >
                 {categories.map(category => (
                   <Option key={category} value={category}>
                     {category}
@@ -348,7 +360,7 @@ const PostJobPage: React.FC = () => {
                 ))}
               </Select>
             </Form.Item>
-
+            
             <Form.Item
               name="projectType"
               label="Project Type"
@@ -456,19 +468,63 @@ const PostJobPage: React.FC = () => {
                 style={{ width: '100%' }}
                 placeholder="Select start date"
                 disabledDate={(current) => current && current.valueOf() < Date.now()}
+                onChange={() => {
+                  form.validateFields(['deadline']);
+                }}
               />
             </Form.Item>
 
             <Form.Item
               name="deadline"
               label="Project Deadline"
-              rules={[{ required: true, message: 'Please select deadline' }]}
+              rules={[
+                { required: true, message: 'Please select deadline' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value) {
+                      return Promise.resolve();
+                    }
+
+                    const startDate = getFieldValue('startdate');
+                    if (!startDate) {
+                      return Promise.reject(new Error('Please select start date first'));
+                    }
+
+                    const start = new Date(startDate);
+                    const deadline = new Date(value);
+
+                    // Check if deadline is the same as start date
+                    if (start.toDateString() === deadline.toDateString()) {
+                      return Promise.reject(new Error('Deadline cannot be the same as start date'));
+                    }
+
+                    // Check minimum 3 days gap
+                    const diffTime = deadline.getTime() - start.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays < 3) {
+                      return Promise.reject(new Error('Deadline must be at least 3 days after start date'));
+                    }
+
+                    return Promise.resolve();
+                  },
+                }),
+              ]}
+              dependencies={['startdate']} // Re-validate when start date changes
             >
               <DatePicker
                 size="large"
                 style={{ width: '100%' }}
                 placeholder="Select deadline"
-                disabledDate={(current) => current && current.valueOf() < Date.now()}
+                disabledDate={(current) => {
+                  const startDate = form.getFieldValue('startdate');
+                  if (startDate) {
+                    const start = new Date(startDate);
+                    const minDeadline = new Date(start.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days after start
+                    return current && current.valueOf() < minDeadline.valueOf();
+                  }
+                  return current && current.valueOf() < Date.now();
+                }}
               />
             </Form.Item>
           </motion.div>
@@ -488,7 +544,12 @@ const PostJobPage: React.FC = () => {
               <Row gutter={[16, 16]}>
                 <Col span={24}>
                   <Title level={5}>{formData.title}</Title>
-                  <Text type="secondary">{formData.category} • {formData.projectType}</Text>
+                  <Text type="secondary">
+                    {Array.isArray(formData.category)
+                      ? formData.category.join(', ')
+                      : formData.category
+                    } • {formData.projectType}
+                  </Text>
                 </Col>
                 
                 <Col span={24}>

@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { 
-  Card, 
-  Table, 
-  Button, 
-  Tag, 
-  Space, 
-  Typography, 
-  Tabs, 
-  Statistic, 
-  Row, 
-  Col, 
-  Modal, 
-  Form, 
-  Input, 
+import React, { useEffect, useState } from 'react';
+import {
+  Card,
+  Table,
+  Button,
+  Tag,
+  Space,
+  Typography,
+  Tabs,
+  Statistic,
+  Row,
+  Col,
+  Modal,
+  Form,
+  Input,
   Select,
   message,
   Popconfirm,
@@ -22,10 +22,10 @@ import {
   Skeleton,
   Empty
 } from 'antd';
-import { 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
   EyeOutlined,
   UserOutlined,
   DollarOutlined,
@@ -41,7 +41,6 @@ import Navbar from '../ui/components/Navbar';
 import type { ColumnsType } from 'antd/es/table';
 import { useAuth, useManageJobs, useUserManagement } from '../shared/hooks';
 import { Job } from '../shared/types/Job';
-
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -70,6 +69,10 @@ const ManageJobPage: React.FC = () => {
   const [isApplicationsModalVisible, setIsApplicationsModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [form] = Form.useForm();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [appliers, setAppliers] = useState<ApplierPayload[]>([]);
+  const [acceptedAppliers, setAccAppliers] = useState<User[]>([]);
+
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -125,7 +128,7 @@ const ManageJobPage: React.FC = () => {
 
   const handleSaveJob = async (values: any) => {
     try {
-      // TODO: Implement job update functionality
+      // TODO Set JOB
       setIsEditModalVisible(false);
       message.success('Job updated successfully');
       refreshJobs();
@@ -133,7 +136,6 @@ const ManageJobPage: React.FC = () => {
       message.error('Failed to update job');
     }
   };
-
   const handleDeleteJobConfirm = async (jobId: string) => {
     await handleDeleteJob(jobId);
   };
@@ -259,6 +261,24 @@ const ManageJobPage: React.FC = () => {
 
   const tabFilteredJobs = getFilteredJobsByTab();
 
+  function formatJobData(rawJobs: any[]): any[] {
+    return rawJobs.map(job => ({
+      id: job.id,
+      name: job.jobName,
+      description: Array.isArray(job.jobDescription)
+        ? job.jobDescription.join(' ')
+        : job.jobDescription,
+      salary: Number(job.jobSalary).toLocaleString(), 
+      slots: Number(job.jobSlots),
+      rating: job.jobRating,
+      status: job.jobStatus,
+      tags: job.jobTags.map((tag: JobCategory) => tag.jobCategoryName).join(', '),
+      createdAt: formatDate(job.createdAt),
+      updatedAt: formatDate(job.updatedAt),
+      wallet: job.wallet
+    }));
+  }
+
   const stats = {
     total: jobs.length,
     open: jobs.filter(job => job.jobStatus.toLowerCase() === 'start').length,
@@ -281,7 +301,7 @@ const ManageJobPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -507,7 +527,7 @@ const ManageJobPage: React.FC = () => {
               </div>
             )}
           </div>
-        )}
+        )} */}
       </Modal>
     </div>
   );

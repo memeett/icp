@@ -8,7 +8,7 @@ export const ProfileCard = (user: User) => {
     <GlareCard>
       <div className="w-full h-[50%] overflow-hidden rounded-t-xl">
         <img
-          src={URL.createObjectURL(user.profilePicture)}
+          src={user.profilePicture ? URL.createObjectURL(user.profilePicture) : "/pic.jpeg"}
           alt={"../../assets/pic.jpeg"}
           className="w-full h-full object-cover"
         />

@@ -1,4 +1,4 @@
-import { User } from '../interface/User';
+import { User } from '../shared/types/User';
 
 const CURRENT_USER_KEY = 'current_user';
 const SESSION_KEY = 'session';

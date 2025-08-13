@@ -1,9 +1,9 @@
 import { AuthClient } from "@dfinity/auth-client";
-import { UpdateUserPayload, User } from "../interface/User";
+import { UpdateUserPayload, User } from "../shared/types/User";
 import { user } from "../../../declarations/user";
 import { session } from "../../../declarations/session";
 import { HttpAgent } from "@dfinity/agent";
-import { JobCategory } from "../interface/job/Job";
+import { JobCategory } from "../shared/types/Job";
 import { CashFlowHistory } from "../../../declarations/user/user.did";
 import { storage } from "../utils/storage";
 

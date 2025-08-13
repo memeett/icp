@@ -1,4 +1,4 @@
-import { User } from "../interface/User";
+import { User } from "../shared/types/User";
 import { rating } from "../../../declarations/rating";
 import { HistoryRatingPayload, RequestRatingPayload } from "../../../declarations/rating/rating.did";
 import { AuthClient } from "@dfinity/auth-client";

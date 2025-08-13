@@ -8,3 +8,4 @@ export const formatDate = (timestamp: bigint) => {
         // minute: "2-digit",
     });
 };
+

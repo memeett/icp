@@ -9,10 +9,16 @@ export interface Job {
   description: string;
   category: JobCategory;
   budget: number;
-  deadline: string;
-  status: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  startdate: bigint;
+  deadline: bigint;
+  status: string;
   clientId: string;
-  freelancerId?: string;
+  freelancerId: string;
+  skills: string[];
+  experienceLevel: string;
+  projectType: string;
+  postedAt: string;
+  applicants: number;
   createdAt: bigint;
   updatedAt: bigint;
 }

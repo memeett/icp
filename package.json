@@ -45,6 +45,7 @@
   "devDependencies": {
     "@dfinity/auth-client": "^2.3.0",
     "@dfinity/identity": "^2.3.0",
+    "@faker-js/faker": "^9.9.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/date-fns": "^2.6.3",
     "@types/dotenv": "^8.2.3",
@@ -59,4 +60,3 @@
     "@rollup/rollup-linux-x64-gnu": "^4.34.8"
   }
 }
-

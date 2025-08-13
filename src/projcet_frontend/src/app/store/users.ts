@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import { User, ProfilePictureCache } from '../../shared/types/User';
+import { User, ProfilePictureCache, UserProfile } from '../../shared/types/User';
 
 
 // Users data atoms

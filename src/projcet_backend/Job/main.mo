@@ -102,7 +102,7 @@ actor JobModel{
     };
 
     // Existing functions
-
+    
     // ----- HTTP Interface Implementation -----
     
     // Type definitions for HTTP handling

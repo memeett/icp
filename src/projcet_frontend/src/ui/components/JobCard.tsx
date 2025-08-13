@@ -98,7 +98,7 @@ const JobCard: React.FC<JobCardProps> = memo(({
 
   const calculateProgress = () => {
     // Mock progress calculation based on job slots
-    const totalSlots = Number(job.jobSlots);
+    const totalSlots = Number(job.applicants);
     const filledSlots = Math.floor(totalSlots * 0.3); // 30% filled for demo
     return totalSlots > 0 ? (filledSlots / totalSlots) * 100 : 0;
   };

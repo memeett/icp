@@ -67,9 +67,9 @@ export const AppRouter: React.FC = () => {
       <Route 
         path="/find" 
         element={
-          // <ProtectedRoute>
+          <ProtectedRoute>
             <FindJobPage />
-          // </ProtectedRoute>
+          </ProtectedRoute>
         } 
       />
       <Route 

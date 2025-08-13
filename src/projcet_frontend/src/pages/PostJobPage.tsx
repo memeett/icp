@@ -242,7 +242,7 @@ const PostJobPage: React.FC = () => {
 
     try {
       const values = await form.validateFields();
-      const allFormData = { ...formData, ...values };
+      const allFormData = { ...formData, ...values, skills };
       
       // Prepare job data for backend
       const jobName = allFormData.title;
@@ -423,6 +423,19 @@ const PostJobPage: React.FC = () => {
               />
             </Form.Item>
 
+            <Form.Item
+              name="maxApplicants"
+              label="Maximum Number of Applicants"
+              rules={[{ required: true, message: 'Please enter maximum applicants' }]}
+            >
+              <InputNumber
+                size="large"
+                min={1}
+                max={50}
+                style={{ width: '100%' }}
+                placeholder="Enter maximum number of applicants"
+              />
+            </Form.Item>
 
             <Form.Item
               name="startdate"
@@ -437,20 +450,6 @@ const PostJobPage: React.FC = () => {
                 onChange={() => {
                   form.validateFields(['deadline']);
                 }}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="maxApplicants"
-              label="Maximum Number of Applicants"
-              rules={[{ required: true, message: 'Please enter maximum applicants' }]}
-            >
-              <InputNumber
-                size="large"
-                min={1}
-                max={50}
-                style={{ width: '100%' }}
-                placeholder="Enter maximum number of applicants"
               />
             </Form.Item>
 

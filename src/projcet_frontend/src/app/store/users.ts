@@ -33,13 +33,15 @@ export const filteredFreelancersAtom = atom((get) => {
   //     (user.description && user.description.toLowerCase().includes(searchQuery.toLowerCase()))
   //   );
   // }
-  if (filters.skills.length > 0) {
-    filtered = filtered.filter((user: UserProfile) =>
-      user.preference.some((pref: any) =>
-        filters.skills.includes(pref.jobCategoryName)
-      )
-    );
-  }
+
+  // Apply skills filter
+  // if (filters.skills.length > 0) {
+  //   filtered = filtered.filter((user: UserProfile) =>
+  //     user.preference.some((pref: any) =>
+  //       filters.skills.includes(pref.jobCategoryName)
+  //     )
+  //   );
+  // }
 
   // Apply rating filter
   // if (filters.rating > 0) {

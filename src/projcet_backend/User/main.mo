@@ -8,6 +8,8 @@ import Option "mo:base/Option";
 import Float "mo:base/Float";
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
+import Principal "mo:base/Principal";
+import Debug "mo:base/Debug";
 import Job "../Job/model";
 
 actor UserModel {
@@ -52,6 +54,125 @@ actor UserModel {
         });
         return sub;
     };
+
+    public func getBalance(userId: Text, ledger_canister: Text) : async Result.Result<Nat, Text> {
+        switch (await getUserById(userId)) {
+            case (#err(errMsg)) {
+                return #err("Failed to get user: " # errMsg);
+            };
+            case (#ok(user)) {
+                let ledger = actor (ledger_canister) : actor {
+                    icrc1_balance_of : ({ owner : Principal; subaccount : ?[Nat8] }) -> async Nat;
+                    icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
+                };
+
+                let mintingAccountOpt = await ledger.icrc1_minting_account();
+
+                // Unwrap optional minting account
+                if (mintingAccountOpt == null) {
+                    return #err("No minting account set");
+                };
+
+                let mintingAccount = switch (mintingAccountOpt) {
+                    case (?acc) { acc }; // unwrap here
+                };
+
+                // Use user's subaccount if it exists, otherwise null
+                let subAcc : ?[Nat8] = switch (user.subAccount) {
+                    case null { null };
+                    case (?v) { ?v };
+                };
+
+                let balance = await ledger.icrc1_balance_of({
+                    owner = mintingAccount.owner;
+                    subaccount = subAcc;
+                });
+
+                return #ok(balance);
+            };
+        };
+    };
+
+    // public func addBalance(userId: Text, amount: Nat, ledger_canister: Text) : async Result.Result<Text, Text> {
+    //     switch (await getUserById(userId)) {
+    //         case (#err(errMsg)) {
+    //             return #err("Failed to get user: " # errMsg);
+    //         };
+    //         case (#ok(user)) {
+    //             let ledger = actor (ledger_canister) : actor {
+    //                 icrc1_transfer : ({ to: { owner : Principal; subaccount : ?[Nat8] };fee: ?Nat; memo: ?[Nat8]; from_subaccount: ?[Nat8]; created_at_time: ?Nat64 ;amount: Nat }) -> async Result.Result<Text, Text>;
+    //                 icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
+    //             };
+
+    //             let subAcc : ?[Nat8] = user.subAccount;
+
+    //             let mintingAccountOpt = await ledger.icrc1_minting_account();
+
+    //             // Unwrap optional minting account
+    //             if (mintingAccountOpt == null) {
+    //                 return #err("No minting account set");
+    //             };
+
+    //             let mintingAccount = switch (mintingAccountOpt) {
+    //                 case (?acc) { acc }; // unwrap here
+    //             };
+
+    //             Debug.print("Minting account owner: " # Principal.toText(mintingAccount.owner));
+
+
+    //             let transferResult = await ledger.icrc1_transfer({
+    //                 to = {
+    //                     owner = mintingAccount.owner;
+    //                     subaccount = subAcc;
+    //                 };
+    //                 amount = amount;
+    //                 fee = null; // Assuming no fee for this operation
+    //                 memo = null; // No memo for this operation
+    //                 from_subaccount = null; // Use user's subaccount if it exists
+    //                 created_at_time = null; // No specific time for this operation  
+    //             });
+
+    //             return #ok("Balance added successfully. Transaction ID: ");
+
+    //             // switch (transferResult) {
+    //             //     case (#ok(txId)) {
+    //             //         // Update user's wallet balance
+    //             //         let updatedUser : User.User = {
+    //             //             id = user.id;
+    //             //             profilePicture = user.profilePicture;
+    //             //             username = user.username;
+    //             //             dob = user.dob;
+    //             //             preference = user.preference;
+    //             //             description = user.description;
+    //             //             wallet = user.wallet;
+    //             //             rating = user.rating;
+    //             //             createdAt = user.createdAt;
+    //             //             updatedAt = Time.now();
+    //             //             isFaceRecognitionOn = user.isFaceRecognitionOn;
+    //             //             isProfileCompleted = user.isProfileCompleted;
+    //             //             subAccount = user.subAccount; 
+    //             //         };
+    //             //         users.put(userId, updatedUser);
+
+    //             //         // Record the transaction
+    //             //         addTransaction({
+    //             //             fromId = user.id;
+    //             //             transactionAt = Time.now();
+    //             //             amount = Float.fromInt(amount);
+    //             //             transactionType = #topUp; // Assuming this is a top-up
+    //             //             toId = null; // No recipient for top-ups
+    //             //         });
+
+    //             //         return #ok("Balance added successfully. Transaction ID: " # txId);
+    //             //     };
+    //             //     case (#err(errMsg)) {
+    //             //         return #err("Transfer failed: " # errMsg);
+    //             //     };
+    //             // };
+    //         };
+    //     };
+    // };
+
 
 
 

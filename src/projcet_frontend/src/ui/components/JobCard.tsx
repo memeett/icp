@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
 import { 
   Card, 
   Tag, 
@@ -59,6 +60,7 @@ const JobCard: React.FC<JobCardProps> = memo(({
 
   const handleSaveToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+
     
     if (!isAuthenticated) {
       navigate('/face-recognition/login');
@@ -292,5 +294,6 @@ const JobCard: React.FC<JobCardProps> = memo(({
 });
 
 JobCard.displayName = 'JobCard';
+
 
 export default JobCard;

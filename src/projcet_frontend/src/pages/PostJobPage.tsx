@@ -51,6 +51,8 @@ interface JobFormData {
   skills: string[];
   experienceLevel: 'entry' | 'intermediate' | 'expert';
   projectType: 'one-time' | 'ongoing';
+  maxApplicants: number;
+  attachments?: File[];
 }
 
 const PostJobPage: React.FC = () => {
@@ -240,42 +242,23 @@ const PostJobPage: React.FC = () => {
 
     try {
       const values = await form.validateFields();
-      console.log('Form values:', values);
-      const finalData = { ...formData, ...values, skills };
-      console.log('Final data:', finalData);
+      const allFormData = { ...formData, ...values };
+      
+      // Prepare job data for backend
+      const jobName = allFormData.title;
+      const jobDescription = [allFormData.description];
+      const jobTags = skills;
+      const jobSalary = allFormData.budget;
+      const jobSlots = allFormData.maxApplicants;
 
-      // Set jobSlots (default to 1)
-      const jobSlots = 1;
-
-      // Call createJob with correct arguments
-      console.log('Calling createJob with:', {
-        title: finalData.title,
-        description: [finalData.description],
-        skills,
-        budget: finalData.budget,
-        jobSlots
-      });
-
-      const result = await createJob(
-        finalData.title!,
-        [finalData.description!],
-        finalData.category,
-        finalData.budget!,
-        jobSlots,
-        skills,
-        finalData.experienceLevel,
-        finalData.startdate,
-        finalData.deadline
-      );
-
-      console.log('createJob result:', result);
-
-      if (Array.isArray(result) && result[0] === "Success") {
-        messageApi.success(`Job ${isDraft ? 'saved as draft' : 'published'} successfully!`);
+      // Call backend createJob function
+      const result = await createJob(jobName, jobDescription, jobTags, jobSalary, jobSlots);
+      
+      if (result[0] === 'Success') {
+        message.success(`Job ${isDraft ? 'saved as draft' : 'published'} successfully!`);
         navigate('/manage');
       } else {
-        console.log('Error creating job:', result);
-        messageApi.error((result && result[1]) || 'Failed to create job. Please try again.');
+        message.error(result[1] || 'Failed to create job. Please try again.');
       }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
@@ -439,20 +422,17 @@ const PostJobPage: React.FC = () => {
               />
             </Form.Item>
 
-
             <Form.Item
-              name="startdate"
-              label="Project Start Date"
-              rules={[{ required: true, message: 'Please select project start date' }]}
+              name="maxApplicants"
+              label="Maximum Number of Applicants"
+              rules={[{ required: true, message: 'Please enter maximum applicants' }]}
             >
-              <DatePicker
+              <InputNumber
                 size="large"
+                min={1}
+                max={50}
                 style={{ width: '100%' }}
-                placeholder="Select start date"
-                disabledDate={(current) => current && current.valueOf() < Date.now()}
-                onChange={() => {
-                  form.validateFields(['deadline']);
-                }}
+                placeholder="Enter maximum number of applicants"
               />
             </Form.Item>
 

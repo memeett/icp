@@ -28,7 +28,7 @@ import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import { getUserById, getProfilePictureUrl } from '../controller/userController';
-import { User } from '../interface/User';
+import { User } from '../shared/types/User';
 import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;

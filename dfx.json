@@ -55,14 +55,7 @@
       "main": "src/projcet_backend/Rating/main.mo",
       "type": "motoko"
     },
-    "aiagent":{
-      "main": "src/projcet_backend/AiAgent/main.mo",
-      "type": "motoko"
-    },
-    "clientagent":{
-      "main": "src/projcet_backend/ClientAgent/main.mo",
-      "type": "motoko"
-    },
+
     "projcet_frontend": {
       "dependencies": [
         "projcet_backend"

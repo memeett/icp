@@ -36,9 +36,9 @@
 //   return paragraphs;
 // };
 
-// /**
-//  * Seeds dummy data using direct canister access with simplified payload
-//  */
+/**
+ * Seeds dummy data using direct canister access with simplified payload
+ */
 // export const seedDummyDataAlternative = async (
 //   counts: { jobs: number; }
 // ): Promise<{ success: boolean; message: string; data?: any }> => {

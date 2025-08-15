@@ -1,39 +1,30 @@
 // import { faker } from '@faker-js/faker';
 // import { Actor } from '@dfinity/agent';
 
-// import { _SERVICE as UserService } from "../../../declarations/user/user.did";
-// import { _SERVICE as JobService } from "../../../declarations/job/job.did";
-// import { _SERVICE as SubmissionService } from "../../../declarations/submission/submission.did";
-// import { _SERVICE as RatingService } from "../../../declarations/rating/rating.did";
+import { _SERVICE as UserService } from "../../../declarations/user/user.did";
+import { CreateJobPayload, _SERVICE as JobService } from "../../../declarations/job/job.did";
+import { _SERVICE as SubmissionService } from "../../../declarations/submission/submission.did";
+import { _SERVICE as RatingService } from "../../../declarations/rating/rating.did";
 
 // interface JobCategory {
 //   id: string;
 //   jobCategoryName: string;
 // }
 
-// interface User {
-//   id: string;
-//   dob: string;
-//   username: string;
-//   isFaceRecognitionOn: boolean;
-//   createdAt: bigint;
-//   isProfileCompleted: boolean;
-//   description: string;
-//   preference: JobCategory[];
-//   updatedAt: bigint;
-//   wallet: number;
-//   rating: number;
-//   profilePicture: Uint8Array | number[];
-// }
-
-// interface CreateJobPayload {
-//   jobName: string;
-//   jobTags: JobCategory[];
-//   userId: string;
-//   jobDescription: string[];
-//   jobSalary: number;
-//   jobSlots: bigint;
-// }
+interface User {
+  id: string;
+  dob: string;
+  username: string;
+  isFaceRecognitionOn: boolean;
+  createdAt: bigint;
+  isProfileCompleted: boolean;
+  description: string;
+  preference: JobCategory[];
+  updatedAt: bigint;
+  wallet: number;
+  rating: number;
+  profilePicture: Uint8Array | number[];
+}
 
 // interface Job {
 //   id: string;
@@ -163,18 +154,22 @@
 //           randomCategories.push(jobCategories[randomCatIndex]);
 //         }
         
-//         const jobPayload: CreateJobPayload = {
-//           jobName: faker.company.catchPhrase(),
-//           jobTags: randomCategories,
-//           userId: clientId,
-//           jobDescription: [
-//             faker.lorem.paragraph(3),
-//             faker.lorem.paragraph(2),
-//             faker.lorem.paragraph(1)
-//           ],
-//           jobSalary: parseFloat(faker.finance.amount(100, 10000, 2)),
-//           jobSlots: BigInt(Math.floor(Math.random() * 5) + 1) // 1-5 slots
-//         };
+        const jobPayload: CreateJobPayload = {
+            jobName: faker.company.catchPhrase(),
+            jobTags: randomCategories,
+            userId: clientId,
+            jobDescription: [
+                faker.lorem.paragraph(3),
+                faker.lorem.paragraph(2),
+                faker.lorem.paragraph(1),
+            ],
+            jobSalary: parseFloat(faker.finance.amount(100, 10000, 2)),
+            jobSlots: BigInt(Math.floor(Math.random() * 5) + 1),
+            jobRequirementSkills: [''],
+            jobExperimentLevel: 'Intermediate',
+            jobDeadline: BigInt(Date.now()),
+            jobStartDate: BigInt(Date.now()),
+        };
         
 //         // Create job - needs payload, user ID, and an authorization token (empty for testing)
 //         const result = await jobActor.createJob(jobPayload, clientId, "");

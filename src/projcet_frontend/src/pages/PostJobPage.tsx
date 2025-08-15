@@ -246,7 +246,7 @@ const PostJobPage: React.FC = () => {
       
       const startDate = new Date(allFormData.startdate)
       const deadline = new Date(allFormData.deadline)
-      // Create payload
+
       const payload : JobPayload = {
         jobName: allFormData.title,
         jobDescription: [allFormData.description],
@@ -259,7 +259,6 @@ const PostJobPage: React.FC = () => {
         jobStartDate: BigInt(startDate.getTime()) * 1_000_000n,
         jobDeadline: BigInt(deadline.getTime()) * 1_000_000n
       }
-      // Call backend createJob function
       const result = await createJob(payload);
       
       console.log(result);

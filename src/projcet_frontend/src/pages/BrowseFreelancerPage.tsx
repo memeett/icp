@@ -1,29 +1,29 @@
-import React, { useState, useCallback } from 'react';
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Input, 
-  Select, 
-  Button, 
-  Avatar, 
-  Rate, 
-  Tag, 
-  Space, 
-  Typography, 
-  Slider, 
-  Checkbox, 
+import React, { useState, useCallback, useMemo } from 'react';
+import {
+  Card,
+  Row,
+  Col,
+  Input,
+  Select,
+  Button,
+  Avatar,
+  Rate,
+  Tag,
+  Space,
+  Typography,
+  Slider,
+  Checkbox,
   Divider,
   Empty,
   Spin,
   Pagination
 } from 'antd';
-import { 
-  SearchOutlined, 
-  FilterOutlined, 
-  UserOutlined, 
-  DollarOutlined, 
-  StarOutlined, 
+import {
+  SearchOutlined,
+  FilterOutlined,
+  UserOutlined,
+  DollarOutlined,
+  StarOutlined,
   EnvironmentOutlined,
   ClockCircleOutlined,
   MessageOutlined,
@@ -34,118 +34,73 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import { useDebounce } from '../shared/hooks/useDebounce';
-
+import { useUserManagement } from '../shared/hooks';
+import { User } from '../shared/types/User';
+import { JobCategory } from '../shared/types/Job';
+import { useJobCategories } from '../utils/useJobCategories';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// Mock freelancer data
-const mockFreelancers = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    title: 'Full Stack Developer',
-    avatar: '',
-    rating: 4.9,
-    reviewsCount: 47,
-    hourlyRate: 85,
-    location: 'New York, USA',
-    skills: ['React', 'Node.js', 'TypeScript', 'AWS'],
-    completedJobs: 32,
-    responseTime: '1 hour',
-    availability: 'Available',
-    bio: 'Experienced full-stack developer specializing in modern web applications with React and Node.js.',
-    languages: ['English', 'Spanish'],
-    lastActive: '2 hours ago'
-  },
-  {
-    id: '2',
-    name: 'Michael Chen',
-    title: 'UI/UX Designer',
-    avatar: '',
-    rating: 4.8,
-    reviewsCount: 23,
-    hourlyRate: 65,
-    location: 'San Francisco, USA',
-    skills: ['Figma', 'Adobe XD', 'Sketch', 'Prototyping'],
-    completedJobs: 18,
-    responseTime: '30 minutes',
-    availability: 'Available',
-    bio: 'Creative UI/UX designer with a passion for creating intuitive and beautiful user experiences.',
-    languages: ['English', 'Mandarin'],
-    lastActive: '1 hour ago'
-  },
-  {
-    id: '3',
-    name: 'Emily Rodriguez',
-    title: 'Mobile App Developer',
-    avatar: '',
-    rating: 4.7,
-    reviewsCount: 31,
-    hourlyRate: 75,
-    location: 'Austin, USA',
-    skills: ['React Native', 'Flutter', 'iOS', 'Android'],
-    completedJobs: 25,
-    responseTime: '2 hours',
-    availability: 'Busy',
-    bio: 'Mobile app developer with expertise in cross-platform development using React Native and Flutter.',
-    languages: ['English', 'Spanish'],
-    lastActive: '4 hours ago'
-  }
-];
 
 const BrowseFreelancerPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [availability, setAvailability] = useState('');
   const [sortBy, setSortBy] = useState('rating');
   const [currentPage, setCurrentPage] = useState(1);
-  const [savedFreelancers, setSavedFreelancers] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
+  const [minRating, setMinRating] = useState(0);
+  const { allUsers } = useUserManagement();
+  const { data } = useJobCategories()
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const categories = [
-    'Web Development',
-    'Mobile Development',
-    'UI/UX Design',
-    'Data Science',
-    'Digital Marketing',
-    'Content Writing',
-    'Graphic Design',
-    'Video Editing'
-  ];
+  console.log(data)
 
-  const skills = [
-    'React', 'Node.js', 'TypeScript', 'Python', 'Java', 'PHP',
-    'Figma', 'Adobe XD', 'Sketch', 'Photoshop', 'Illustrator',
-    'React Native', 'Flutter', 'iOS', 'Android', 'Swift', 'Kotlin'
-  ];
 
-  const handleSearch = useCallback(() => {
-    setIsLoading(true);
-    // TODO: Implement actual search
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  }, [debouncedSearchTerm, selectedCategory, priceRange, selectedSkills, availability, sortBy]);
+  const filterFreelancers = useCallback((users: User[]) => {
+    return users.filter(user => {
+      const searchMatch = !debouncedSearchTerm ||
+        user.username.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        user.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
-  const handleSaveFreelancer = useCallback((freelancerId: string) => {
-    setSavedFreelancers(prev => 
-      prev.includes(freelancerId) 
-        ? prev.filter(id => id !== freelancerId)
-        : [...prev, freelancerId]
-    );
+      const categoryMatch = !selectedCategory ||
+        user.preference.some(pref => pref.jobCategoryName === selectedCategory);
+
+      const ratingMatch = user.rating >= minRating;
+
+      
+
+      return searchMatch && categoryMatch && ratingMatch;
+    });
+  }, [debouncedSearchTerm, selectedCategory, minRating]);
+
+  const sortFreelancers = useCallback((users: User[]) => {
+    return [...users].sort((a, b) => {
+      switch (sortBy) {
+        case 'rating':
+          return b.rating - a.rating;
+        case 'recent':
+          return Number(b.createdAt - a.createdAt);
+        case 'username':
+          return a.username.localeCompare(b.username);
+        default:
+          return 0;
+      }
+    });
+  }, [sortBy]);
+
+  const filteredAndSortedFreelancers = useMemo(() => {
+    const filtered = filterFreelancers(allUsers);
+    return sortFreelancers(filtered);
+  }, [allUsers, filterFreelancers, sortFreelancers]);
+
+  const clearAllFilters = useCallback(() => {
+    setSelectedCategory('');
+    setMinRating(0);
+    setSearchTerm('');
   }, []);
 
-  const handleContactFreelancer = useCallback((freelancerId: string) => {
-    // TODO: Implement contact functionality
-    console.log('Contacting freelancer:', freelancerId);
-  }, []);
 
-  const FreelancerCard = ({ freelancer }: { freelancer: any }) => (
+  const FreelancerCard = ({ freelancer }: { freelancer: User }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -155,23 +110,7 @@ const BrowseFreelancerPage: React.FC = () => {
         hoverable
         className="h-full"
         actions={[
-          <Button
-            key="save"
-            type="text"
-            icon={savedFreelancers.includes(freelancer.id) ? <HeartFilled /> : <HeartOutlined />}
-            onClick={() => handleSaveFreelancer(freelancer.id)}
-            className={savedFreelancers.includes(freelancer.id) ? 'text-red-500' : ''}
-          >
-            Save
-          </Button>,
-          <Button
-            key="contact"
-            type="text"
-            icon={<MessageOutlined />}
-            onClick={() => handleContactFreelancer(freelancer.id)}
-          >
-            Contact
-          </Button>,
+
           <Button
             key="view"
             type="text"
@@ -182,70 +121,41 @@ const BrowseFreelancerPage: React.FC = () => {
         ]}
       >
         <div className="text-center mb-4">
-          <Avatar size={64} src={freelancer.avatar} icon={<UserOutlined />} />
+          <Avatar
+            size={64}
+            src={freelancer.profilePicture ? URL.createObjectURL(freelancer.profilePicture) : <UserOutlined />}
+            icon={<UserOutlined />}
+          />
+
           <div className="mt-2">
-            <Title level={4} className="mb-1">{freelancer.name}</Title>
-            <Text type="secondary">{freelancer.title}</Text>
+            <Title level={4} className="mb-1">{freelancer.username}</Title>
           </div>
         </div>
 
         <div className="mb-4">
           <Space className="w-full justify-center">
             <Rate disabled defaultValue={freelancer.rating} allowHalf />
-            <Text>({freelancer.reviewsCount})</Text>
           </Space>
         </div>
 
-        <div className="space-y-2 mb-4">
-          <div className="flex justify-between">
-            <Text type="secondary">Hourly Rate:</Text>
-            <Text strong>${freelancer.hourlyRate}/hr</Text>
-          </div>
-          <div className="flex justify-between">
-            <Text type="secondary">Jobs Completed:</Text>
-            <Text>{freelancer.completedJobs}</Text>
-          </div>
-          <div className="flex justify-between">
-            <Text type="secondary">Response Time:</Text>
-            <Text>{freelancer.responseTime}</Text>
-          </div>
-        </div>
 
-        <div className="mb-4">
-          <Space>
-            <EnvironmentOutlined />
-            <Text type="secondary">{freelancer.location}</Text>
-          </Space>
-        </div>
 
         <div className="mb-4">
           <Text type="secondary" className="block mb-2">Skills:</Text>
           <Space wrap>
-            {freelancer.skills.slice(0, 4).map((skill: string) => (
-              <Tag key={skill} color="blue">{skill}</Tag>
+            {freelancer.preference.slice(0, 4).map((p: JobCategory) => (
+              <Tag key={p.jobCategoryName} color="blue">{p.jobCategoryName}</Tag>
             ))}
-            {freelancer.skills.length > 4 && (
-              <Tag>+{freelancer.skills.length - 4} more</Tag>
+            {freelancer.preference.length > 4 && (
+              <Tag>+{freelancer.preference.length - 4} more</Tag>
             )}
           </Space>
         </div>
 
         <div className="mb-4">
-          <Text type="secondary" className="text-sm">{freelancer.bio}</Text>
+          <Text type="secondary" className="text-sm">{freelancer.description}</Text>
         </div>
 
-        <div className="flex justify-between items-center">
-          <Space>
-            <div className={`w-2 h-2 rounded-full ${
-              freelancer.availability === 'Available' ? 'bg-green-500' : 'bg-yellow-500'
-            }`} />
-            <Text type="secondary" className="text-sm">{freelancer.availability}</Text>
-          </Space>
-          <Text type="secondary" className="text-sm">
-            <ClockCircleOutlined className="mr-1" />
-            {freelancer.lastActive}
-          </Text>
-        </div>
       </Card>
     </motion.div>
   );
@@ -253,6 +163,7 @@ const BrowseFreelancerPage: React.FC = () => {
   const FilterSidebar = () => (
     <Card title="Filters" className="mb-6">
       <div className="space-y-6">
+        {/* Category Filter */}
         <div>
           <Text strong className="block mb-2">Category</Text>
           <Select
@@ -262,74 +173,49 @@ const BrowseFreelancerPage: React.FC = () => {
             onChange={setSelectedCategory}
             allowClear
           >
-            {categories.map(category => (
-              <Option key={category} value={category}>{category}</Option>
+            {data?.map(category => (
+              <Option key={category.jobCategoryName} value={category.jobCategoryName}>
+                {category.jobCategoryName}
+              </Option>
             ))}
           </Select>
         </div>
 
+        {/* Rating Filter */}
         <div>
-          <Text strong className="block mb-2">Hourly Rate ($)</Text>
+          <Text strong className="block mb-2">Minimum Rating</Text>
           <Slider
-            range
             min={0}
-            max={200}
-            value={priceRange}
-            onChange={(value) => setPriceRange(value as [number, number])}
+            max={5}
+            step={0.5}
+            value={minRating}
+            onChange={setMinRating}
             marks={{
-              0: '$0',
-              50: '$50',
-              100: '$100',
-              150: '$150',
-              200: '$200+'
+              0: '0',
+              2.5: '2.5',
+              5: '5★'
             }}
           />
           <div className="text-center mt-2">
-            <Text type="secondary">
-              ${priceRange[0]} - ${priceRange[1]}/hr
-            </Text>
+            <Text type="secondary">{minRating}+ stars</Text>
           </div>
         </div>
 
-        <div>
-          <Text strong className="block mb-2">Skills</Text>
-          <Select
-            mode="multiple"
-            placeholder="Select skills"
-            style={{ width: '100%' }}
-            value={selectedSkills}
-            onChange={setSelectedSkills}
-            maxTagCount={3}
-          >
-            {skills.map(skill => (
-              <Option key={skill} value={skill}>{skill}</Option>
-            ))}
-          </Select>
-        </div>
-
-        <div>
-          <Text strong className="block mb-2">Availability</Text>
-          <Select
-            placeholder="Select availability"
-            style={{ width: '100%' }}
-            value={availability}
-            onChange={setAvailability}
-            allowClear
-          >
-            <Option value="Available">Available</Option>
-            <Option value="Busy">Busy</Option>
-          </Select>
-        </div>
-
+        {/* Clear Filters */}
         <Button
-          type="primary"
           block
-          icon={<SearchOutlined />}
-          onClick={handleSearch}
-          loading={isLoading}
+          onClick={clearAllFilters}
+          disabled={!selectedCategory && minRating === 0 && !searchTerm}
         >
-          Apply Filters
+          Clear All Filters
         </Button>
+
+        {/* Filter Results Info */}
+        <div className="text-center p-3 bg-gray-50 rounded">
+          <Text type="secondary" className="text-sm">
+            {filteredAndSortedFreelancers.length} of {allUsers.length} freelancers
+          </Text>
+        </div>
       </div>
     </Card>
   );
@@ -337,7 +223,7 @@ const BrowseFreelancerPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -380,7 +266,7 @@ const BrowseFreelancerPage: React.FC = () => {
               <Col xs={24} sm={24} md={10}>
                 <div className="flex justify-end">
                   <Text type="secondary">
-                    Showing {mockFreelancers.length} freelancers
+                    Showing {filteredAndSortedFreelancers.length} of {allUsers.length} freelancers
                   </Text>
                 </div>
               </Col>
@@ -395,36 +281,45 @@ const BrowseFreelancerPage: React.FC = () => {
 
             {/* Freelancers Grid */}
             <Col xs={24} lg={18}>
-              {isLoading ? (
-                <div className="text-center py-12">
-                  <Spin size="large" />
-                </div>
-              ) : mockFreelancers.length > 0 ? (
+              {filteredAndSortedFreelancers.length > 0 ? (
                 <>
                   <Row gutter={[16, 16]}>
-                    {mockFreelancers.map(freelancer => (
+                    {filteredAndSortedFreelancers.map(freelancer => (
                       <Col xs={24} sm={12} lg={8} key={freelancer.id}>
                         <FreelancerCard freelancer={freelancer} />
                       </Col>
                     ))}
                   </Row>
-                  
+
                   <div className="text-center mt-8">
                     <Pagination
                       current={currentPage}
-                      total={50}
+                      total={filteredAndSortedFreelancers.length}
                       pageSize={9}
                       onChange={setCurrentPage}
                       showSizeChanger={false}
+                      showTotal={(total, range) =>
+                        `${range[0]}-${range[1]} of ${total} freelancers`
+                      }
                     />
                   </div>
                 </>
               ) : (
                 <Card>
                   <Empty
-                    description="No freelancers found"
+                    description={
+                      allUsers.length === 0
+                        ? "No freelancers available"
+                        : "No freelancers match your filters"
+                    }
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  />
+                  >
+                    {allUsers.length > 0 && (
+                      <Button type="primary" onClick={clearAllFilters}>
+                        Clear Filters
+                      </Button>
+                    )}
+                  </Empty>
                 </Card>
               )}
             </Col>

@@ -164,10 +164,6 @@ const ProfilePage: React.FC = () => {
                     <MailOutlined />
                     <Text>{user.id}</Text>
                   </Space>
-                  <Space>
-                    <CalendarOutlined />
-                    <Text>Member since {dayjs(Number(user.createdAt)).format('MMMM YYYY')}</Text>
-                  </Space>
                 </Space>
               </Col>
               <Col xs={24} sm={6} className="text-center">

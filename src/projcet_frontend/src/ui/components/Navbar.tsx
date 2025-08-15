@@ -39,6 +39,8 @@ import ergasiaLogoWhite from '../../assets/ergasia_logo_white.png'
 import { InboxResponse } from '../../interface/Inbox';
 import { getAllInboxByUserId } from '../../controller/inboxController';
 import { Inbox } from '../../../../declarations/inbox/inbox.did';
+import { getBalanceController } from '../../controller/tokenController';
+import { Token } from '../../interface/Token';
 
 const { Text } = Typography;
 
@@ -76,6 +78,22 @@ const Navbar: React.FC = () => {
   const [receiverInbox, setReceiverInbox] = useState<Inbox[]>([]);
   const [senderInbox, setSenderInbox] = useState<Inbox[]>([]);
   const [usernames, setUsernames] = useState<{ [key: string]: string }>({});
+  const [userWallet, setUserWallet] = useState<Token>();
+
+  useEffect(() =>{
+    const fetchUserWallet = async () => {
+      if (user?.id) {
+        try {
+          const balance = await getBalanceController(user.id);
+          setUserWallet(balance);
+        } catch (error) {
+          console.error("Failed to fetch user wallet:", error);
+        }
+      }
+    };
+
+    fetchUserWallet();
+  }, [user])
 
   useEffect(() => {
     if (user?.id) {
@@ -120,6 +138,7 @@ const Navbar: React.FC = () => {
     },
     []
   );
+
 
   const fetchUsernames = useCallback(async () => {
     const uniqueUserIds = [
@@ -190,7 +209,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between items-center">
           <span>Wallet</span>
           <Text strong className="text-green-600">
-            ${user?.wallet?.toFixed(2) || '0.00'}
+            {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
           </Text>
         </div>
       ),
@@ -353,7 +372,7 @@ const Navbar: React.FC = () => {
                             {user.username || 'User'}
                           </Text>
                           <Text className="block text-xs text-muted-foreground">
-                            ${user.wallet?.toFixed(2) || '0.00'}
+                            {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
                           </Text>
                         </div>
                       </div>
@@ -413,7 +432,7 @@ const Navbar: React.FC = () => {
               <div>
                 <Text className="block font-medium">{user.username || 'User'}</Text>
                 <Text className="block text-sm text-muted-foreground">
-                  ${user.wallet?.toFixed(2) || '0.00'}
+                  {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
                 </Text>
               </div>
             </div>

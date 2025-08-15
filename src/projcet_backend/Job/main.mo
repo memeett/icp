@@ -14,21 +14,21 @@ import Nat16 "mo:base/Nat16";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
 
-actor JobModel{
+persistent actor JobModel{ // Declared as persistent
     private stable var nextId : Nat = 0;
     private stable var nextCategoryId : Nat = 0;
 
     private stable var jobsEntries : [(Text, Job.Job)] = [];
     private stable var jobCategoriesEntries : [(Text, Job.JobCategory)] = [];
 
-    private var jobs = HashMap.fromIter<Text, Job.Job>(
+    private transient var jobs = HashMap.fromIter<Text, Job.Job>( // Marked as transient
         jobsEntries.vals(),
         0,
         Text.equal,
         Text.hash
     );
 
-    private var jobCategories = HashMap.fromIter<Text, Job.JobCategory>(
+    private transient var jobCategories = HashMap.fromIter<Text, Job.JobCategory>( // Marked as transient
         jobCategoriesEntries.vals(),
         0,
         Text.equal,
@@ -160,7 +160,6 @@ actor JobModel{
         };
     };
 
-    // Job to JSON string
     private func jobToJsonString(job : Job.Job) : Text {
         // job.jobTags: [Job.JobCategory]
         let tagItems = Array.map<Job.JobCategory, Text>(

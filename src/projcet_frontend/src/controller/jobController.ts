@@ -323,69 +323,69 @@ export const startJob = async (
   job_id: string,
   amount: number
 ): Promise<{ jobStarted: boolean; message: string }> => {
-  try {
+  // try {
     // Authenticate the user
     const agent = await agentService.getAgent();
+    console.log(user_id, job_id, process.env.CANISTER_ID_JOB!, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_USER!);
 
-    // Call the startJob method on the job actor
     const result = await job.startJob(
       user_id,
       job_id,
-      process.env.CANISTER_ID_JOB!,
-      process.env.CANISTER_ID_JOB_TRANSACTION!,
-      process.env.CANISTER_ID_USER!
     );
     console.log("Start Job Result:", result);
-
-    // Check if the result is successful
-    if ("ok" in result) {
-      // Update the user's wallet balance in local storage
-      const userStr = localStorage.getItem("current_user");
-      if (userStr) {
-        const parsedData = JSON.parse(userStr);
-        if (
-          parsedData &&
-          typeof parsedData === "object" &&
-          "ok" in parsedData
-        ) {
-          const updatedUser = {
-            ...parsedData.ok,
-            wallet: parsedData.ok.wallet - amount,
-          };
-
-          localStorage.setItem(
-            "current_user",
-            JSON.stringify({ ok: updatedUser })
-          );
-          return {
-            jobStarted: true,
-            message: "Job started and wallet updated successfully",
-          };
-        } else {
-          return {
-            jobStarted: true,
-            message: "Job started but user data in local storage is invalid",
-          };
-        }
-      } else {
-        return {
+ return {
           jobStarted: true,
           message: "Job started but user not found in local storage",
         };
-      }
-    } else {
-      console.log("no money");
-      return {
-        jobStarted: false,
-        message: "Failed to start job: " + JSON.stringify(result.err),
-      };
-    }
-  } catch (error) {
-    return {
-      jobStarted: false,
-      message: "Error: " + String(error),
-    };
-  }
+    // Check if the result is successful
+    // if ("ok" in result) {
+    //   // Update the user's wallet balance in local storage
+    //   const userStr = localStorage.getItem("current_user");
+    //   if (userStr) {
+    //     const parsedData = JSON.parse(userStr);
+    //     if (
+    //       parsedData &&
+    //       typeof parsedData === "object" &&
+    //       "ok" in parsedData
+    //     ) {
+    //       const updatedUser = {
+    //         ...parsedData.ok,
+    //         wallet: parsedData.ok.wallet - amount,
+    //       };
+
+    //       localStorage.setItem(
+    //         "current_user",
+    //         JSON.stringify({ ok: updatedUser })
+    //       );
+    //       return {
+    //         jobStarted: true,
+    //         message: "Job started and wallet updated successfully",
+    //       };
+    //     } else {
+    //       return {
+    //         jobStarted: true,
+    //         message: "Job started but user data in local storage is invalid",
+    //       };
+    //     }
+    //   } else {
+    //     return {
+    //       jobStarted: true,
+    //       message: "Job started but user not found in local storage",
+    //     };
+    //   }
+    // } else {
+    //   console.log("no money");
+    //   return {
+    //     jobStarted: false,
+    //     message: "Failed to start job: " + JSON.stringify(result.err),
+    //   };
+    // }
+  // } catch (error) {
+  //   return {
+  //     jobStarted: false,
+  //     message: "Error: " + String(error),
+  //   };
+  // }
 };
 
 export const getUserJobByStatusFinished = async (

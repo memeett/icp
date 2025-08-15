@@ -328,7 +328,7 @@ actor JobModel{
         return Iter.toArray(jobCategories.vals());
     };
 
-    public func updateJob(jobId : Text, payload : Job.UpdateJobPayload, jobStatus: Text) : async Result.Result<Job.Job, Text> {
+    public func updateJob(jobId : Text, payload : Job.UpdateJobPayload) : async Result.Result<Job.Job, Text> {
         switch (jobs.get(jobId)) {
             case (null) {
                 return #err("Job not found");
@@ -336,18 +336,18 @@ actor JobModel{
             case (?job) {
                 let updatedJob : Job.Job = {
                     id = job.id;
-                    jobName = Option.get(payload.jobName, job.jobName);
-                    jobDescription = Option.get(payload.jobDescription, job.jobDescription);
-                    jobTags = Option.get(payload.jobTags, job.jobTags);
+                    jobName = payload.jobName;
+                    jobDescription = payload.jobDescription;
+                    jobTags = job.jobTags;
                     jobProjectType = job.jobProjectType;
-                    jobSalary = Option.get(payload.jobSalary, job.jobSalary);
-                    jobSlots = Option.get(payload.jobSlots, job.jobSlots);
-                    jobStatus = jobStatus;
+                    jobSalary = job.jobSalary;
+                    jobSlots = job.jobSlots;
+                    jobStatus = job.jobStatus;
                     jobExperimentLevel = job.jobExperimentLevel;
                     jobRequirementSkills = job.jobRequirementSkills;
-                    jobStartDate = job.jobStartDate;
-                    jobDeadline = job.jobDeadline;
-                    userId = Option.get(payload.userId, job.userId);
+                    jobStartDate = payload.jobStartDate;
+                    jobDeadline = payload.jobDeadline;
+                    userId = job.userId;
                     createdAt = job.createdAt;
                     updatedAt = Time.now();
                     jobRating = job.jobRating;

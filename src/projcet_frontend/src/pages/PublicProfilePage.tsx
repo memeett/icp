@@ -157,22 +157,22 @@ const PublicProfilePage: React.FC = () => {
                   </Col>
                   <Col xs={24} lg={8}>
                     <Card title="Details">
-                        <List>
-                            <List.Item>
-                                <List.Item.Meta
-                                    avatar={<StarOutlined />}
-                                    title="Rating"
-                                    description={`${user.rating.toFixed(1)} / 5.0`}
-                                />
-                            </List.Item>
-                            <List.Item>
-                                <List.Item.Meta
-                                    avatar={<ProjectOutlined />}
-                                    title="Jobs Completed"
-                                    description="0"
-                                />
-                            </List.Item>
-                        </List>
+                      <List>
+                        <List.Item>
+                          <List.Item.Meta
+                            avatar={<StarOutlined />}
+                            title="Rating"
+                            description={`${user.rating.toFixed(1)} / 5.0`}
+                          />
+                        </List.Item>
+                        <List.Item>
+                          <List.Item.Meta
+                            avatar={<ProjectOutlined />}
+                            title="Jobs Completed"
+                            description="0"
+                          />
+                        </List.Item>
+                      </List>
                     </Card>
                   </Col>
                 </Row>

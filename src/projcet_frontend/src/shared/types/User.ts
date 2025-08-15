@@ -16,7 +16,6 @@ export interface User {
 }
 
 export interface UserProfile extends User {
-  // Additional profile-specific fields
   skills?: string[];
   experienceLevel?: string;
   availability?: string;
@@ -26,13 +25,12 @@ export interface UserProfile extends User {
 }
 
 export interface UpdateUserPayload {
-  username?: string;
-  profilePicture?: Uint8Array | number[];
-  description?: string;
-  dob?: string;
-  isFaceRecognitionOn?: boolean;
-  preference?: JobCategory[];
-  isProfileCompleted?: boolean;
+  username?: [] | [string];
+  profilePicture?: [] | [Uint8Array | number[]];
+  description?: [] | [string];
+  dob?: [] | [string];
+  preference?: [] | [JobCategory[]];
+  isProfileCompleted?: [] | [boolean];
 }
 
 // For efficient profile picture handling

@@ -71,6 +71,7 @@ actor JobModel{
             jobName = payload.jobName;
             jobDescription = payload.jobDescription;
             jobTags = payload.jobTags;
+            jobProjectType = payload.jobProjectType;
             jobSalary = payload.jobSalary;
             jobSlots = payload.jobSlots;
             jobStatus = "Open";
@@ -338,6 +339,7 @@ actor JobModel{
                     jobName = Option.get(payload.jobName, job.jobName);
                     jobDescription = Option.get(payload.jobDescription, job.jobDescription);
                     jobTags = Option.get(payload.jobTags, job.jobTags);
+                    jobProjectType = job.jobProjectType;
                     jobSalary = Option.get(payload.jobSalary, job.jobSalary);
                     jobSlots = Option.get(payload.jobSlots, job.jobSlots);
                     jobStatus = jobStatus;
@@ -449,6 +451,7 @@ actor JobModel{
                                     jobName = job.jobName;
                                     jobDescription = job.jobDescription;
                                     jobTags = job.jobTags;
+                                    jobProjectType = job.jobProjectType;
                                     jobSalary = job.jobSalary;
                                     jobSlots = job.jobSlots;
                                     jobStatus = "Ongoing";
@@ -491,6 +494,7 @@ actor JobModel{
                     jobName = job.jobName;
                     jobDescription = job.jobDescription;
                     jobTags = job.jobTags;
+                    jobProjectType = job.jobProjectType;
                     jobSalary = job.jobSalary;
                     jobSlots = job.jobSlots;
                     jobStatus = "Finished";

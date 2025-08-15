@@ -14,6 +14,7 @@ export interface User {
   updatedAt: bigint;
   isFaceRecognitionOn: boolean;
   isProfileCompleted: boolean;
+  subAccount: [Uint8Array];
 }
 export interface UpdateUserPayload {
   username: [] | [string];

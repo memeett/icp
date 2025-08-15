@@ -50,7 +50,6 @@ export const useManageJobs = (): UseManageJobsReturn => {
   }, [fetchJobs, refreshKey]);
 
   const handleDeleteJob = async (jobId: string) => {
-    if (window.confirm('Are you sure you want to delete this job?')) {
       try {
         await deleteJob(jobId);
         message.success('Job deleted successfully.');
@@ -59,7 +58,6 @@ export const useManageJobs = (): UseManageJobsReturn => {
         console.error('Error deleting job:', err);
         message.error('Failed to delete job.');
       }
-    }
   };
 
   const refreshJobs = () => {

@@ -13,7 +13,7 @@ export interface User {
   updatedAt: bigint;
   isFaceRecognitionOn: boolean;
   isProfileCompleted: boolean;
-  subAccount: [Uint8Array]; // Changed from Uint8Array[] to [Uint8Array] for consistency
+  subAccount:Uint8Array[]; // Changed from Uint8Array[] to [Uint8Array] for consistency
 }
 
 export interface UserProfile extends User {

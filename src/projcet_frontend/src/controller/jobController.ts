@@ -308,6 +308,7 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
             ...pref,
             id: pref.id.toString(),
           })),
+          subAccount:  [new Uint8Array()],
         };
       })
     );
@@ -319,29 +320,29 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
 };
 
 export const startJob = async (
-  user_id: string,
-  job_id: string,
-  amount: number
+  job_id: string
 ): Promise<{ jobStarted: boolean; message: string }> => {
   // try {
     // Authenticate the user
     const agent = await agentService.getAgent();
-    console.log(user_id, job_id, process.env.CANISTER_ID_JOB!, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_USER!);
 
-    const result = await job.startJob(
-      user_id,
-      job_id,
-    );
-    console.log("Start Job Result:", result);
- return {
-          jobStarted: true,
-          message: "Job started but user not found in local storage",
-        };
-    // Check if the result is successful
-    // if ("ok" in result) {
-    //   // Update the user's wallet balance in local storage
-    //   const userStr = localStorage.getItem("current_user");
-    //   if (userStr) {
+    const result = await job.startJob(job_id);
+    if (result) {
+      return {
+        jobStarted: true,
+        message: "Job started successfully.",
+      };
+    }else{
+      return {
+        jobStarted: false,
+        message: "Failed to start job: " + JSON.stringify(result),
+      };
+    }
+      // Check if the result is successful
+      // if ("ok" in result) {
+      //   // Update the user's wallet balance in local storage
+      //   const userStr = localStorage.getItem("current_user");
+        //   if (userStr) {
     //     const parsedData = JSON.parse(userStr);
     //     if (
     //       parsedData &&
@@ -412,13 +413,7 @@ export const finishJob = async (
       await agent.fetchRootKey();
     }
 
-    const result = await job.finishJob(
-      job_id,
-      process.env.CANISTER_ID_JOB!,
-      process.env.CANISTER_ID_JOB_TRANSACTION!,
-      process.env.CANISTER_ID_USER!,
-      process.env.CANISTER_ID_RATING!
-    );
+    const result = await job.finishJob(job_id);
 
     if ("ok" in result) {
       return { jobFinished: true, message: "Job finished successfully." };

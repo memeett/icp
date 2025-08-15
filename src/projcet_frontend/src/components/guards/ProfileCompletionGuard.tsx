@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { authStatusAtom, userAtom } from '../../store/authAtoms';
 import { getUserById } from '../../controller/userController';
-import { User } from '../../interface/User';
+import { User } from '../../shared/types/User';
 
 interface ProfileCompletionGuardProps {
     children: React.ReactNode;

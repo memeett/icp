@@ -14,8 +14,8 @@ import {
   rejectApplier
 } from '../../controller/applyController';
 import { createInbox } from '../../controller/inboxController';
-import { Job } from '../../interface/job/Job';
-import { User } from '../../interface/User';
+import { User } from '../types/User';
+import { Job } from '../types/Job';
 
 interface ApplicantData {
   user: User;
@@ -199,10 +199,10 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
 
   // Handle job start
   const handleStartJob = useCallback(async (): Promise<boolean> => {
-    if (!job || !user) return false;
+    if (!job || !user || !isJobOwner) return false;
     
     try {
-      const result = await startJob(user.id, job.id, job.jobSalary);
+      const result = await startJob(job.id);
       if (result.jobStarted) {
         message.success('Job started successfully!');
         await fetchJobDetails();
@@ -212,7 +212,6 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
         return false;
       }
     } catch (error) {
-      console.error('Error starting job:', error);
       message.error('Failed to start job.');
       return false;
     }

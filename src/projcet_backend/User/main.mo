@@ -7,16 +7,18 @@ import Time "mo:base/Time";
 import Option "mo:base/Option";
 import Float "mo:base/Float";
 import Array "mo:base/Array";
+import Int "mo:base/Int";
 import Blob "mo:base/Blob";
 import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
 import Job "../Job/model";
+import Bool "mo:base/Bool";
 
-actor UserModel {
+persistent actor UserModel {
 
     private stable var usersEntries : [(Text, User.User)] = [];
 
-    private var users = HashMap.fromIter<Text, User.User>(
+    private transient var users = HashMap.fromIter<Text, User.User>( // Marked as transient
         usersEntries.vals(),
         0,
         Text.equal,
@@ -101,85 +103,188 @@ actor UserModel {
         };
     };
 
-    // public func addBalance(userId: Text, amount: Nat, ledger_canister: Text) : async Result.Result<Text, Text> {
-    //     switch (await getUserById(userId)) {
-    //         case (#err(errMsg)) {
-    //             return #err("Failed to get user: " # errMsg);
-    //         };
-    //         case (#ok(user)) {
-    //             let ledger = actor (ledger_canister) : actor {
-    //                 icrc1_transfer : ({ to: { owner : Principal; subaccount : ?[Nat8] };fee: ?Nat; memo: ?[Nat8]; from_subaccount: ?[Nat8]; created_at_time: ?Nat64 ;amount: Nat }) -> async Result.Result<Text, Text>;
-    //                 icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
-    //             };
+    public func topupBalance(
+        userId: Text,
+        amount: Nat,
+        ledger_canister: Text
+    ) : async Result.Result<Text, Text> {
 
-    //             let subAcc : ?[Nat8] = user.subAccount;
+        switch (await getUserById(userId)) {
+            case (#err(errMsg)) {
+                return #err("Failed to get user: " # errMsg);
+            };
+            case (#ok(user)) {
+                type Account = {
+                    owner : Principal;
+                    subaccount : ?[Nat8];
+                };
 
-    //             let mintingAccountOpt = await ledger.icrc1_minting_account();
+                type TransferArgs = {
+                    to : Account;
+                    fee : ?Nat;
+                    memo : ?[Nat8];
+                    from_subaccount : ?[Nat8];
+                    created_at_time : ?Nat64;
+                    amount : Nat;
+                };
 
-    //             // Unwrap optional minting account
-    //             if (mintingAccountOpt == null) {
-    //                 return #err("No minting account set");
-    //             };
+                type TransferError = {
+                    #GenericError : { message : Text; error_code : Nat };
+                    #BadBurn : { min_burn_amount : Nat };
+                    #Duplicate : { duplicate_of : Nat };
+                    #BadFee : { expected_fee : Nat };
+                    #CreatedInFuture : { ledger_time : Nat64 };
+                    #InsufficientFunds : { balance : Nat };
+                };
 
-    //             let mintingAccount = switch (mintingAccountOpt) {
-    //                 case (?acc) { acc }; // unwrap here
-    //             };
+                type TransferResult = {
+                    #Ok : Nat;
+                    #Err : TransferError;
+                };
 
-    //             Debug.print("Minting account owner: " # Principal.toText(mintingAccount.owner));
+                let ledger = actor (ledger_canister) : actor {
+                    icrc1_transfer : (TransferArgs) -> async TransferResult;
+                    icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
+                };
+
+                let mintingAccountOpt = await ledger.icrc1_minting_account();
+
+                // Unwrap optional minting account
+                if (mintingAccountOpt == null) {
+                    return #err("No minting account set");
+                };
+
+                let mintingAccount = switch (mintingAccountOpt) {
+                    case (?acc) { acc }; // unwrap here
+                };
+
+                // Use user's subaccount if it exists, otherwise null
+                let subAcc : ?[Nat8] = switch (user.subAccount) {
+                    case null { null };
+                    case (?v) { ?v };
+                };
+
+                let transferArgs = {
+                    to = {
+                        owner = mintingAccount.owner;
+                        subaccount = subAcc; // or null if no subaccount
+                    };
+                    amount = amount;
+                    fee = null;
+                    memo = null;
+                    from_subaccount = null;
+                    created_at_time = null;
+                };
+
+                let transferResult = await ledger.icrc1_transfer(transferArgs);
+
+                switch (transferResult) {
+                    case (#Ok(blockIndex)) {
+                        return #ok("Transfer succeeded. Block index: ");
+                    };
+                    case (#Err(#GenericError e)) {
+                        return #err("Generic error ("  );
+                    };
+                    case (#Err(#BadBurn e)) {
+                        return #err("Bad burn. Minimum burn amount: " );
+                    };
+                    case (#Err(#Duplicate e)) {
+                        return #err("Duplicate transaction. Original block index: " );
+                    };
+                    case (#Err(#BadFee e)) {
+                        return #err("Bad fee. Expected: " );
+                    };
+                    case (#Err(#CreatedInFuture e)) {
+                        return #err("Created in future. Ledger time: ");
+                    };
+                    case (#Err(#InsufficientFunds e)) {
+                        return #err("Insufficient funds. Balance: ");
+                    };
+                };
+            };
+        };
+    };
+    
+
+    public func addBalance(userId: Text, amount: Nat, ledger_canister: Text) : async Result.Result<Text, Text> {
+        switch (await getUserById(userId)) {
+            case (#err(errMsg)) {
+                return #err("Failed to get user: " # errMsg);
+            };
+            case (#ok(user)) {
+                let ledger = actor (ledger_canister) : actor {
+                    icrc1_transfer : ({ to: { owner : Principal; subaccount : ?[Nat8] };fee: ?Nat; memo: ?[Nat8]; from_subaccount: ?[Nat8]; created_at_time: ?Nat64 ;amount: Nat }) -> async Result.Result<Text, Text>;
+                    icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
+                };
+
+                let subAcc : ?[Nat8] = user.subAccount;
+
+                let mintingAccountOpt = await ledger.icrc1_minting_account();
+
+                // Unwrap optional minting account
+                if (mintingAccountOpt == null) {
+                    return #err("No minting account set");
+                };
+
+                let mintingAccount = switch (mintingAccountOpt) {
+                    case (?acc) { acc }; // unwrap here
+                };
+
+                Debug.print("Minting account owner: " # Principal.toText(mintingAccount.owner));
 
 
-    //             let transferResult = await ledger.icrc1_transfer({
-    //                 to = {
-    //                     owner = mintingAccount.owner;
-    //                     subaccount = subAcc;
-    //                 };
-    //                 amount = amount;
-    //                 fee = null; // Assuming no fee for this operation
-    //                 memo = null; // No memo for this operation
-    //                 from_subaccount = null; // Use user's subaccount if it exists
-    //                 created_at_time = null; // No specific time for this operation  
-    //             });
+                let transferResult = await ledger.icrc1_transfer({
+                    to = {
+                        owner = mintingAccount.owner;
+                        subaccount = subAcc;
+                    };
+                    amount = amount;
+                    fee = null; // Assuming no fee for this operation
+                    memo = null; // No memo for this operation
+                    from_subaccount = null; // Use user's subaccount if it exists
+                    created_at_time = null; // No specific time for this operation  
+                });
 
-    //             return #ok("Balance added successfully. Transaction ID: ");
+                return #ok("Balance added successfully. Transaction ID: ");
 
-    //             // switch (transferResult) {
-    //             //     case (#ok(txId)) {
-    //             //         // Update user's wallet balance
-    //             //         let updatedUser : User.User = {
-    //             //             id = user.id;
-    //             //             profilePicture = user.profilePicture;
-    //             //             username = user.username;
-    //             //             dob = user.dob;
-    //             //             preference = user.preference;
-    //             //             description = user.description;
-    //             //             wallet = user.wallet;
-    //             //             rating = user.rating;
-    //             //             createdAt = user.createdAt;
-    //             //             updatedAt = Time.now();
-    //             //             isFaceRecognitionOn = user.isFaceRecognitionOn;
-    //             //             isProfileCompleted = user.isProfileCompleted;
-    //             //             subAccount = user.subAccount; 
-    //             //         };
-    //             //         users.put(userId, updatedUser);
+                // switch (transferResult) {
+                //     case (#ok(txId)) {
+                //         // Update user's wallet balance
+                //         let updatedUser : User.User = {
+                //             id = user.id;
+                //             profilePicture = user.profilePicture;
+                //             username = user.username;
+                //             dob = user.dob;
+                //             preference = user.preference;
+                //             description = user.description;
+                //             wallet = user.wallet;
+                //             rating = user.rating;
+                //             createdAt = user.createdAt;
+                //             updatedAt = Time.now();
+                //             isFaceRecognitionOn = user.isFaceRecognitionOn;
+                //             isProfileCompleted = user.isProfileCompleted;
+                //             subAccount = user.subAccount; 
+                //         };
+                //         users.put(userId, updatedUser);
 
-    //             //         // Record the transaction
-    //             //         addTransaction({
-    //             //             fromId = user.id;
-    //             //             transactionAt = Time.now();
-    //             //             amount = Float.fromInt(amount);
-    //             //             transactionType = #topUp; // Assuming this is a top-up
-    //             //             toId = null; // No recipient for top-ups
-    //             //         });
+                //         // Record the transaction
+                //         addTransaction({
+                //             fromId = user.id;
+                //             transactionAt = Time.now();
+                //             amount = Float.fromInt(amount);
+                //             transactionType = #topUp; // Assuming this is a top-up
+                //             toId = null; // No recipient for top-ups
+                //         });
 
-    //             //         return #ok("Balance added successfully. Transaction ID: " # txId);
-    //             //     };
-    //             //     case (#err(errMsg)) {
-    //             //         return #err("Transfer failed: " # errMsg);
-    //             //     };
-    //             // };
-    //         };
-    //     };
-    // };
+                //         return #ok("Balance added successfully. Transaction ID: " # txId);
+                //     };
+                //     case (#err(errMsg)) {
+                //         return #err("Transfer failed: " # errMsg);
+                //     };
+                // };
+            };
+        };
+    };
 
 
 
@@ -209,7 +314,7 @@ actor UserModel {
     };
 
     public query func getAllUsers() : async [User.User] {
-        Iter.toArray(users.vals());
+        return Iter.toArray(users.vals());
     };
 
     public func getUserById(userId : Text) : async Result.Result<User.User, Text> {
@@ -346,7 +451,6 @@ actor UserModel {
                         };
                         users.put(to_user_id, updatedToUser);
 
-                        // Step 6: Record the transaction
                         addTransaction({
                             fromId = from_job_id; // Job ID as the sender
                             transactionAt = Time.now();
@@ -371,7 +475,6 @@ actor UserModel {
     };
 
     public shared func transfer_icp_to_job(user_id: Text, job_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
-        // Dynamically create the job actor
         let jobActor = actor(job_canister) : actor {
             getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
             putJob: (job_id: Text, job: Job.Job) -> async ();
@@ -551,6 +654,193 @@ actor UserModel {
             };
         };
     };
+
+        // ----- HTTP Interface Implementation -----
+
+    // Tipe data standar untuk HTTP request & response
+    type HeaderField = (Text, Text);
+    
+    type HttpRequest = {
+        method : Text;
+        url : Text;
+        headers : [HeaderField];
+        body : Blob;
+        certificate_version : ?Nat16;
+    };
+
+    type HttpResponse = {
+        status_code : Nat16;
+        headers : [HeaderField];
+        body : Blob;
+        streaming_strategy : ?StreamingCallbackStrategy;
+        upgrade: ?Bool;
+    };
+
+    type StreamingCallback = query (StreamingCallbackToken) -> async StreamingCallbackResponse;
+    
+    type StreamingCallbackToken = {
+        key: Text;
+        content_encoding: Text;
+        index: Nat;
+        sha256: ?[Nat8];
+    };
+    
+    type StreamingCallbackResponse = {
+        body: Blob;
+        token: ?StreamingCallbackToken;
+    };
+
+    type StreamingCallbackStrategy = {
+        #Callback: {
+            token: StreamingCallbackToken;
+            callback: StreamingCallback;
+        };
+    };
+
+    // Fungsi pembantu untuk membuat respons JSON
+    private func makeJsonResponse(statusCode : Nat16, jsonContent : Text) : HttpResponse {
+        {
+            status_code = statusCode;
+            headers = [
+                ("Content-Type", "application/json"),
+                ("Access-Control-Allow-Origin", "*"),
+                ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                ("Access-Control-Allow-Headers", "Content-Type")
+            ];
+            body = Text.encodeUtf8(jsonContent);
+            streaming_strategy = null;
+            upgrade = null;
+        };
+    };
+
+    // Fungsi untuk mengubah satu objek User menjadi string JSON
+    private func userToJsonString(user : User.User) : Text {
+
+        let prefItems = Array.map<Job.JobCategory, Text>(
+            user.preference,
+            func (p : Job.JobCategory) : Text {
+                "{\"id\":\"" # p.id # "\",\"jobCategoryName\":\"" # p.jobCategoryName # "\"}"
+            }
+        );
+        let preferenceJson = "[" # Text.join(",", Iter.fromArray(prefItems)) # "]";
+
+        "{" #
+        "\"id\":\"" # user.id # "\"," #
+        "\"username\":\"" # user.username # "\"," #
+        "\"dob\":\"" # user.dob # "\"," #
+        "\"preference\":" # preferenceJson # "," #
+        "\"description\":\"" # user.description # "\"," #
+        "\"wallet\":" # Float.toText(user.wallet) # "," #
+        "\"rating\":" # Float.toText(user.rating) # "," #
+        "\"createdAt\":" # Int.toText(user.createdAt) # "," #
+        "\"updatedAt\":" # Int.toText(user.updatedAt) # "," #
+        "\"isFaceRecognitionOn\":" # Bool.toText(user.isFaceRecognitionOn) # "," #
+        "\"isProfileCompleted\":" # Bool.toText(user.isProfileCompleted) #
+        "}"
+    };
+
+    // Fungsi untuk mengubah array User menjadi array JSON
+    private func usersToJsonArray(userList : [User.User]) : Text {
+        let userJsonArray = Array.map<User.User, Text>(
+            userList,
+            func (user : User.User) : Text = userToJsonString(user)
+        );
+        "[" # Text.join(",", Iter.fromArray(userJsonArray)) # "]"
+    };
+
+    // Handler utama untuk HTTP query (read-only)
+    public query func http_request(req : HttpRequest) : async HttpResponse {
+        let path = req.url;
+        let method = req.method;
+
+        // Routing berdasarkan method dan path
+        Debug.print("http_request called for User canister. Method: " # method # ", Path: " # path);
+        
+        if (method == "POST" and path == "/getAllUsers") {
+            return {
+                status_code = 200;
+                headers = [
+                    ("Access-Control-Allow-Origin", "*"),
+                    ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                    ("Access-Control-Allow-Headers", "Content-Type")
+                ];
+                body = Text.encodeUtf8("");
+                streaming_strategy = null;
+                upgrade = ?true;
+            };
+        };
+
+        switch (method, path) {
+            case ("GET", "/getAllUsers") {
+                Debug.print("Handling GET /getAllUsers in User canister.");
+                // 1. Panggil fungsi yang sudah ada
+                let allUsers = Iter.toArray(users.vals());
+                // 2. Ubah hasilnya menjadi JSON
+                let jsonResponse = usersToJsonArray(allUsers);
+                // 3. Buat dan kembalikan HttpResponse
+                return makeJsonResponse(200, jsonResponse);
+            };
+            case ("OPTIONS", _) {
+                Debug.print("Handling OPTIONS request in User canister.");
+                // Menangani CORS preflight request dari browser
+                return {
+                    status_code = 200;
+                    headers = [
+                        ("Access-Control-Allow-Origin", "*"),
+                        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                        ("Access-Control-Allow-Headers", "Content-Type")
+                    ];
+                    body = Text.encodeUtf8("");
+                    streaming_strategy = null;
+                    upgrade = null;
+                };
+            };
+            case _ {
+                Debug.print("Unhandled HTTP GET/OPTIONS request in User canister. Path: " # path);
+                // Jika path tidak ditemukan
+                return makeJsonResponse(404, "{\"error\": \"Not Found\"}");
+            };
+        };
+    };
+
+    // Handler untuk HTTP update (jika diperlukan untuk request yang mengubah data)
+    public func http_request_update(req : HttpRequest) : async HttpResponse {
+        let path = req.url;
+        let method = req.method;
+        Debug.print("http_request_update called for User canister. Method: " # method # ", Path: " # path);
+
+        // Handle only specific paths that match our pattern
+        if (method == "POST" and path == "/getAllUsers") {
+            Debug.print("Handling POST /getAllUsers in User canister.");
+            let allUsers = Iter.toArray(users.vals());
+            let jsonResponse = usersToJsonArray(allUsers);
+            return makeJsonResponse(200, jsonResponse);
+        };
+
+        switch(method, path) {
+            case ("OPTIONS", _) {
+                Debug.print("Handling OPTIONS request in User canister (update call).");
+                 // Menangani CORS preflight request dari browser
+                return {
+                    status_code = 200;
+                    headers = [
+                        ("Access-Control-Allow-Origin", "*"),
+                        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                        ("Access-Control-Allow-Headers", "Content-Type")
+                    ];
+                    body = Text.encodeUtf8("");
+                    streaming_strategy = null;
+                    upgrade = null;
+                };
+            };
+            case _ {
+                Debug.print("Unhandled HTTP POST/OPTIONS request in User canister (update call). Path: " # path);
+                 // Jika path tidak ditemukan
+                return makeJsonResponse(404, "{\"error\": \"Not Found in update call\"}");
+            }
+        }
+    };
+
 
     public func updateUserRating(userId: Text, newRating: Float) : async Result.Result<Text, Text> {
     // Step 1: Retrieve the user by userId

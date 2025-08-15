@@ -55,7 +55,7 @@ actor UserModel {
         return sub;
     };
 
-    public func getBalance(userId: Text, ledger_canister: Text) : async Result.Result<Nat, Text> {
+    public func getBalance(userId: Text, ledger_canister: Text) : async Result.Result<User.Token, Text> {
         switch (await getUserById(userId)) {
             case (#err(errMsg)) {
                 return #err("Failed to get user: " # errMsg);
@@ -63,6 +63,8 @@ actor UserModel {
             case (#ok(user)) {
                 let ledger = actor (ledger_canister) : actor {
                     icrc1_balance_of : ({ owner : Principal; subaccount : ?[Nat8] }) -> async Nat;
+                    icrc1_name: () -> async Text;
+                    icrc1_symbol: () -> async Text;
                     icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
                 };
 
@@ -87,8 +89,14 @@ actor UserModel {
                     owner = mintingAccount.owner;
                     subaccount = subAcc;
                 });
+                let token_name = await ledger.icrc1_name();
+                let token_symbol = await ledger.icrc1_symbol();
 
-                return #ok(balance);
+                return #ok({
+                    token_name = token_name;
+                    token_symbol = token_symbol;
+                    token_value = balance;
+                });
             };
         };
     };

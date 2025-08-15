@@ -12,7 +12,7 @@ from uagents_core.contrib.protocols.chat import (
     TextContent,
     StartSessionContent,
 )
-from uagents import Agent, Context, Protocol
+from uagents import Agent, Context, Protocol, Model
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -27,8 +27,8 @@ ASI1_HEADERS = {
 
 # ICP HTTP routing
 JOB_CANISTER_ID = "ufxgi-4p777-77774-qaadq-cai"
-USER_CANISTER_ID = "v27v7-7x777-77774-qaaha-cai"
-RATING_CANISTER_ID = "vb2j2-fp777-77774-qaafq-cai"
+USER_CANISTER_ID = "vt46d-j7777-77774-qaagq-cai"
+RATING_CANISTER_ID = "vg3po-ix777-77774-qaafa-cai"
 
 BASE_URL = "http://127.0.0.1:4943"
 HEADERS = {
@@ -41,9 +41,33 @@ def with_host(headers: dict, canister_id: str) -> dict:
 
 # Cache ringan untuk jobs agar beberapa tools tidak memanggil canister berulang dalam satu sesi
 _JOBS_CACHE: Dict[str, Any] = {"data": None, "ts": 0.0}
+# BAGIAN 1: Cache untuk users, polanya sama seperti _JOBS_CACHE
 _USERS_CACHE: Dict[str, Any] = {"data": None, "ts": 0.0}
 _RATINGS_CACHE: Dict[str, Any] = {"data": None, "ts": 0.0}
 _CACHE_TTL = 60.0  # detik
+
+# --------------------------
+# REST API Models
+# --------------------------
+class ChatRequest(Model):
+    message: str
+
+class ChatResponse(Model):
+    response: str
+    timestamp: str
+    status: str
+
+class HealthResponse(Model):
+    status: str
+    agent_name: str
+    agent_address: str
+    port: int
+
+class JobsResponse(Model):
+    jobs: List[Dict[str, Any]]
+    count: int
+    timestamp: str
+    status: str
 
 # --------------------------
 # Tools (function calling)
@@ -95,57 +119,82 @@ tools = [
             "strict": True,
         },
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "getAllUsers",
-            "description": "Ambil semua user dari platform (via ICP HTTP).",
-            "parameters": {"type": "object", "properties": {}, "required": []},
-            "strict": True,
-        },
+{
+    "type": "function",
+    "function": {
+        "name": "getAllUsers",
+        "description": "Mengambil dan menampilkan daftar lengkap semua pengguna (users) yang terdaftar di platform. Gunakan fungsi ini jika diminta untuk 'list semua user', 'tampilkan pengguna', 'berikan data user', atau permintaan sejenisnya.",
+        
+        "parameters": {"type": "object", "properties": {}, "required": []},
+        "strict": True,
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "proposal_template",
-            "description": "Hasilkan template proposal personal berbasis detail job dan profil opsional.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "job_id": {"type": "string"},
-                    "profile": {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string"},
-                            "skills": {"type": "array", "items": {"type": "string"}},
-                            "achievements": {"type": "array", "items": {"type": "string"}},
-                        },
-                        "additionalProperties": False,
+},
+{
+    "type": "function",
+    "function": {
+        "name": "jobRecommendation",
+        "description": "Memberikan rekomendasi pekerjaan kepada user sesuai dengan user preferences",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "strict": True
+    }
+},
+
+
+{
+    "type": "function",
+    "function": {
+        "name": "find_talent",
+        "description": "Rekomendasikan freelancer terbaik berdasarkan kategori pekerjaan (job tags). Gunakan fungsi ini jika user meminta untuk 'mencari talenta', 'menemukan freelancer', atau 'merekomendasikan kandidat' untuk bidang tertentu seperti 'Web Development' atau 'UI/UX Design'.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "job_tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Daftar kategori (tags) pekerjaan untuk menemukan talenta yang cocok."
+                },
+                "top_n": {
+                    "type": "integer",
+                    "default": 3,
+                    "minimum": 1,
+                    "maximum": 10
+                },
+            },
+            "required": ["job_tags"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+},
+{
+    "type": "function",
+    "function": {
+        "name": "proposal_template",
+        "description": "Membuat template proposal yang dipersonalisasi untuk sebuah pekerjaan (job).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "job_id": {"type": "string", "description": "ID dari pekerjaan yang akan dibuatkan proposal."},
+                "profile": {
+                    "type": "object",
+                    "description": "Profil singkat freelancer (nama, skills, pencapaian).",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "skills": {"type": "array", "items": {"type": "string"}},
+                        "achievements": {"type": "array", "items": {"type": "string"}},
                     },
                 },
-                "required": ["job_id"],
-                "additionalProperties": False,
             },
-            "strict": True,
+            "required": ["job_id", "profile"],
         },
+        "strict": True,
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "find_talent",
-            "description": "Rekomendasikan freelancer terbaik untuk job tertentu berdasarkan skill dan rating.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "job_id": {"type": "string", "description": "ID dari job yang membutuhkan talent."},
-                    "top_n": {"type": "integer", "default": 3, "minimum": 1, "maximum": 10},
-                },
-                "required": ["job_id"],
-                "additionalProperties": False,
-            },
-            "strict": True,
-        },
-    },
+}
+
 ]
 
 # --------------------------
@@ -161,86 +210,70 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
     headers_with_host = with_host(HEADERS, canister_id)
     url = f"{BASE_URL}/{endpoint}"
 
+    # Explicitly log headers to ensure visibility
+    ctx.logger.error(f"DEBUG_HEADERS: Attempting to fetch from {endpoint} at URL: {url} with headers: {headers_with_host}")
+
     # Coba POST dulu karena beberapa query butuh body
     try:
+        ctx.logger.debug(f"Trying POST request to {url}")
         resp = requests.post(url, headers=headers_with_host, json={}, timeout=15)
         resp.raise_for_status()
+        
+        # Log the raw response content for debugging
+        ctx.logger.debug(f"Raw response from POST to {endpoint}: {resp.text}")
+        
         data = resp.json()
         if isinstance(data, list):
+            ctx.logger.debug(f"Successfully fetched data via POST from {endpoint}. Data length: {len(data)}")
             cache["data"] = data
             cache["ts"] = time.time()
             return data
+    except requests.exceptions.RequestException as e:
+        errors.append(f"POST to {endpoint} failed: {e}")
+        ctx.logger.warning(f"POST request to {url} failed: {e}")
+    except json.JSONDecodeError as e:
+        errors.append(f"Failed to decode JSON from POST to {endpoint}: {e}")
+        ctx.logger.error(f"Failed to decode JSON from POST to {url}. Response text: {resp.text}", exc_info=True)
     except Exception as e:
         errors.append(f"POST to {endpoint} failed: {e}")
+        ctx.logger.error(f"Unexpected error during POST to {url}: {e}", exc_info=True)
 
     # Fallback ke GET
     try:
+        ctx.logger.debug(f"Trying GET request to {url}")
         resp = requests.get(url, headers=headers_with_host, timeout=10)
         resp.raise_for_status()
+        
+        # Log the raw response content for debugging
+        ctx.logger.debug(f"Raw response from GET to {endpoint}: {resp.text}")
+        
         data = resp.json()
         if isinstance(data, list):
             cache["data"] = data
             cache["ts"] = time.time()
             return data
+    except requests.exceptions.RequestException as e:
+        errors.append(f"GET to {endpoint} failed: {e}")
+        ctx.logger.warning(f"GET request to {url} failed: {e}")
+    except json.JSONDecodeError as e:
+        errors.append(f"Failed to decode JSON from GET to {endpoint}: {e}")
+        ctx.logger.error(f"Failed to decode JSON from GET to {url}. Response text: {resp.text}", exc_info=True)
     except Exception as e:
         errors.append(f"GET to {endpoint} failed: {e}")
+        ctx.logger.error(f"Unexpected error during GET to {url}: {e}", exc_info=True)
 
     raise RuntimeError(f"Failed to fetch from {endpoint}: " + " | ".join(errors))
 
 async def fetch_jobs(ctx: Context) -> List[Dict[str, Any]]:
     return await _fetch_canister_data(ctx, _JOBS_CACHE, "getAllJobs", JOB_CANISTER_ID)
 
+# BAGIAN 3: Fungsi fetch untuk users, sama seperti fetch_jobs
 async def fetch_users(ctx: Context) -> List[Dict[str, Any]]:
     # Asumsi canister User punya endpoint /getAllUsers
     return await _fetch_canister_data(ctx, _USERS_CACHE, "getAllUsers", USER_CANISTER_ID)
 
-async def fetch_ratings(ctx: Context) -> List[Dict[str, Any]]:
-    # Asumsi canister Rating punya endpoint /getAllRating
-    return await _fetch_canister_data(ctx, _RATINGS_CACHE, "getAllRating", RATING_CANISTER_ID)
-
 # --------------------------
-# Simple TF-IDF + cosine (tanpa dependency eksternal)
-# --------------------------
-
-_token_re = re.compile(r"[A-Za-z0-9]+")
-
-def tokenize(text: str) -> List[str]:
-    return [t.lower() for t in _token_re.findall(text or "")]
-
-def build_doc(job: Dict[str, Any]) -> str:
-    name = job.get("jobName", "")
-    desc_list = job.get("jobDescription", []) or []
-    desc = " ".join([d for d in desc_list if isinstance(d, str)])
-    tags = " ".join([t.get("jobCategoryName", "") for t in job.get("jobTags", []) or []])
-    return f"{name} {tags} {desc}"
-
-def tf(tokens: List[str]) -> Dict[str, float]:
-    c = Counter(tokens)
-    total = float(sum(c.values())) or 1.0
-    return {k: v / total for k, v in c.items()}
-
-def compute_idf(docs_tokens: List[List[str]]) -> Dict[str, float]:
-    df = defaultdict(int)
-    N = len(docs_tokens)
-    for toks in docs_tokens:
-        for term in set(toks):
-            df[term] += 1
-    return {term: math.log((N + 1) / (df_cnt + 1)) + 1.0 for term, df_cnt in df.items()}
-
-def vec(tf_map: Dict[str, float], idf_map: Dict[str, float]) -> Dict[str, float]:
-    return {term: tfv * idf_map.get(term, 0.0) for term, tfv in tf_map.items()}
-
-def cosine(a: Dict[str, float], b: Dict[str, float]) -> float:
-    # dot
-    dot = 0.0
-    for k, av in a.items():
-        dot += av * b.get(k, 0.0)
-    # norms
-    na = math.sqrt(sum(v * v for v in a.values()))
-    nb = math.sqrt(sum(v * v for v in b.values()))
-    if na == 0.0 or nb == 0.0:
-        return 0.0
-    return dot / (na * nb)
+# TF-IDF logic has been removed as requested.
 
 # --------------------------
 # Tool handlers (local compute)
@@ -250,6 +283,7 @@ async def tool_getAllJobs(ctx: Context, args: Dict[str, Any]):
     jobs = await fetch_jobs(ctx)
     return jobs
 
+# BAGIAN 4: Handler untuk tool 'getAllUsers', sama seperti 'tool_getAllJobs'
 async def tool_getAllUsers(ctx: Context, args: Dict[str, Any]):
     users = await fetch_users(ctx)
     return users
@@ -274,7 +308,7 @@ async def tool_recommend_jobs_by_skills(ctx: Context, args: Dict[str, Any]):
         score = cosine(q_vec, v)
         scored.append({"job": j, "score": round(float(score), 4)})
 
-    scored.sort(key=lambda x: x["score"], reverse=True)
+    scored.sort(key=lambda x: x["scores"]["final"], reverse=True)
     return scored[:top_n]
 
 async def tool_budget_advice(ctx: Context, args: Dict[str, Any]):
@@ -318,7 +352,7 @@ async def tool_budget_advice(ctx: Context, args: Dict[str, Any]):
         factor *= 1.2
     if scope_tokens & light:
         factor *= 0.9
-
+    
     # slots adjustment (linear)
     if isinstance(slots, int) and slots > 0:
         avg_slots = sum(int(j.get("jobSlots", 1)) for j in comps if isinstance(j.get("jobSlots", None), (int, float)))
@@ -376,89 +410,45 @@ async def tool_proposal_template(ctx: Context, args: Dict[str, Any]):
     return template
 
 async def tool_find_talent(ctx: Context, args: Dict[str, Any]):
-    job_id: str = args.get("job_id")
-    top_n: int = int(args.get("top_n", 3))
-    ctx.logger.info(f"Starting talent search for job_id='{job_id}' with top_n={top_n}")
+    job_tags: List[str] = args.get("job_tags", [])
+    ctx.logger.info(f"Fetching data for talent search for job_tags='{job_tags}'")
 
-    # 1. Fetch all data
-    jobs = await fetch_jobs(ctx)
+    # 1. Fetch all necessary data
     users = await fetch_users(ctx)
-    ratings = await fetch_ratings(ctx)
-    ctx.logger.info(f"Fetched {len(jobs)} jobs, {len(users)} users, and {len(ratings)} ratings.")
+    ctx.logger.info(f"Fetched {len(users)} users.")
 
-    # 2. Find target job
-    target_job = next((j for j in jobs if j.get("id") == job_id), None)
-    if not target_job:
-        ctx.logger.error(f"Job with id {job_id} not found in fetched data.")
-        return {"error": f"Job {job_id} not found"}
-    ctx.logger.info(f"Found target job: {target_job.get('jobName')}")
-
-    # 3. Pre-calculate average ratings for all users
-    user_ratings = defaultdict(lambda: {"sum": 0.0, "count": 0})
-    for r in ratings:
-        user_id = r.get("user_id")
-        rating_val = r.get("rating")
-        if user_id and isinstance(rating_val, (int, float)):
-            user_ratings[user_id]["sum"] += float(rating_val)
-            user_ratings[user_id]["count"] += 1
+    # 2. Create a virtual target job from the provided tags
+    # Ini memungkinkan LLM untuk memproses permintaan tanpa memerlukan job_id yang ada
+    target_job = {
+        "jobName": f"Pekerjaan dengan kategori: {', '.join(job_tags)}",
+        "jobTags": [{"jobCategoryName": tag} for tag in job_tags],
+        "jobDescription": [f"Mencari talenta yang ahli dalam bidang {', '.join(job_tags)}."],
+        # Tambahkan field lain jika diperlukan untuk pemrosesan LLM
+    }
     
-    avg_ratings = {
-        uid: data["sum"] / data["count"]
-        for uid, data in user_ratings.items() if data["count"] > 0
+    # 3. Filter users who have completed their profile
+    active_users = [u for u in users if u.get("isProfileCompleted")]
+    ctx.logger.info(f"Found {len(active_users)} active users with completed profiles.")
+
+    # 4. Return the raw data for the LLM to process
+    # LLM akan menerima pekerjaan target "virtual" dan daftar kandidat potensial
+    return {
+        "target_job": target_job,
+        "potential_candidates": active_users
     }
 
-    # 4. Calculate skill scores for all users against the target job
-    job_doc = build_doc(target_job)
-    job_tokens = tokenize(job_doc)
-    
-    all_user_skills = [" ".join(u.get("preference", []) or []) for u in users]
-    all_docs = [job_doc] + all_user_skills
-    all_tokens = [tokenize(d) for d in all_docs]
-    
-    idf_map = compute_idf(all_tokens)
-    job_vec = vec(tf(job_tokens), idf_map)
-
-    scored_users = []
-    for user in users:
-        user_skills = " ".join(user.get("preference", []) or [])
-        user_tokens = tokenize(user_skills)
-        user_vec = vec(tf(user_tokens), idf_map)
-        
-        skill_score = cosine(job_vec, user_vec)
-        
-        # 5. Combine scores (e.g., 60% skill, 40% rating)
-        rating_score = avg_ratings.get(user.get("id"), 2.5) / 5.0  # Normalize 0-5 scale to 0-1, default 2.5
-        final_score = 0.6 * skill_score + 0.4 * rating_score
-        
-        scored_users.append({
-            "user": {
-                "id": user.get("id"),
-                "username": user.get("username"),
-                "skills": user.get("preference", []),
-            },
-            "scores": {
-                "final": round(final_score, 4),
-                "skill_match": round(skill_score, 4),
-                "avg_rating": round(avg_ratings.get(user.get("id"), 0), 2),
-            }
-        })
-
-    # 6. Sort and return top N
-    scored_users.sort(key=lambda x: x["scores"]["final"], reverse=True)
-    
-    ctx.logger.info(f"Top {top_n} recommendations: {[u['user']['username'] for u in scored_users[:top_n]]}")
-    for u in scored_users[:top_n]:
-        ctx.logger.info(f"  - {u['user']['username']}: Final={u['scores']['final']}, Skill={u['scores']['skill_match']}, Rating={u['scores']['avg_rating']}")
-
-    return scored_users[:top_n]
 
 # --------------------------
 # Dispatcher untuk tool calls dari ASI1
 # --------------------------
 
 async def execute_tool(func_name: str, arguments: dict, ctx: Context):
+    # Log eksekusi tool
+    ctx.logger.info(f"Executing tool '{func_name}' with arguments: {arguments}")
+    
     if func_name == "getAllJobs":
         return await tool_getAllJobs(ctx, arguments)
+    # BAGIAN 5: Dispatcher untuk 'getAllUsers', sama seperti 'getAllJobs'
     if func_name == "getAllUsers":
         return await tool_getAllUsers(ctx, arguments)
     if func_name == "recommend_jobs_by_skills":
@@ -469,6 +459,8 @@ async def execute_tool(func_name: str, arguments: dict, ctx: Context):
         return await tool_proposal_template(ctx, arguments)
     if func_name == "find_talent":
         return await tool_find_talent(ctx, arguments)
+    
+    ctx.logger.error(f"Unsupported function call: {func_name}")
     raise ValueError(f"Unsupported function call: {func_name}")
 
 # --------------------------
@@ -476,33 +468,49 @@ async def execute_tool(func_name: str, arguments: dict, ctx: Context):
 # --------------------------
 
 async def process_query(query: str, ctx: Context) -> str:
+    ctx.logger.info(f"--- Starting new query processing for: '{query}' ---")
     try:
+        system_message = {
+            "role": "system",
+            "content": "Anda adalah asisten yang membantu pengguna menemukan talenta dan informasi pekerjaan. Selalu prioritaskan penggunaan 'tools' yang tersedia untuk menjawab pertanyaan secara akurat. Jika permintaan pengguna cocok dengan deskripsi sebuah tool, panggil tool tersebut."
+        }
         initial_message = {"role": "user", "content": query}
         payload = {
             "model": "asi1-mini",
-            "messages": [initial_message],
+            "messages": [system_message, initial_message],
             "tools": tools,
             "temperature": 0.5,
             "max_tokens": 1024,
         }
+        
+        ctx.logger.info("-> Step 1: Sending query to LLM to determine tool calls...")
         r = requests.post(f"{ASI1_BASE_URL}/chat/completions", headers=ASI1_HEADERS, json=payload)
         r.raise_for_status()
         resp = r.json()
+        ctx.logger.debug(f"LLM initial response: {resp}")
+
 
         tool_calls = resp["choices"][0]["message"].get("tool_calls", [])
-        history = [initial_message, resp["choices"][0]["message"]]
-        if not tool_calls:
-            return "Tidak ada fungsi yang perlu dijalankan. Tolong jelaskan kebutuhan Anda (skills, scope, atau ID job)."
+        history = [system_message, initial_message, resp["choices"][0]["message"]]
 
+        if not tool_calls:
+            ctx.logger.warning("LLM did not request any tool calls. Returning direct response or a default message.")
+            direct_response = resp["choices"][0]["message"].get("content")
+            return direct_response or "Tidak ada fungsi yang perlu dijalankan. Tolong jelaskan kebutuhan Anda (skills, scope, atau ID job)."
+        
+        ctx.logger.info(f"-> Step 2: LLM requested {len(tool_calls)} tool call(s). Executing them...")
         for call in tool_calls:
             func_name = call["function"]["name"]
             arguments = json.loads(call["function"]["arguments"]) if call["function"].get("arguments") else {}
             call_id = call["id"]
 
             try:
+                # 'execute_tool' sudah memiliki logging di dalamnya
                 result = await execute_tool(func_name, arguments, ctx)
                 content = json.dumps(result)
+                ctx.logger.debug(f"Result for tool '{func_name}' (truncated): {content[:250]}...")
             except Exception as e:
+                ctx.logger.error(f"Tool execution for '{func_name}' failed: {e}")
                 content = json.dumps({"error": f"Tool execution failed: {e}"})
 
             history.append({"role": "tool", "tool_call_id": call_id, "content": content})
@@ -513,19 +521,26 @@ async def process_query(query: str, ctx: Context) -> str:
             "temperature": 0.6,
             "max_tokens": 1024,
         }
+        
+        ctx.logger.info("-> Step 3: Sending tool results back to LLM for final answer...")
         rf = requests.post(f"{ASI1_BASE_URL}/chat/completions", headers=ASI1_HEADERS, json=final_payload)
         rf.raise_for_status()
         final = rf.json()
-        return final["choices"][0]["message"]["content"]
+        
+        final_answer = final["choices"][0]["message"]["content"]
+        ctx.logger.info(f"-> Step 4: Final answer received from LLM.")
+        ctx.logger.debug(f" {final_answer}")
+        return final_answer
+        
     except Exception as e:
-        ctx.logger.error(f"process_query error: {e}")
+        ctx.logger.error(f"An error occurred during process_query: {e}", exc_info=True)
         return f"Terjadi kesalahan: {e}"
 
 # --------------------------
 # uAgents bootstrap
 # --------------------------
 
-agent = Agent(name='advisor-agent', port=8002, mailbox=True)
+agent = Agent(name='advisor-agent', port=8002, mailbox=True,endpoint=["http://localhost:8002/submit"])
 chat_proto = Protocol(spec=chat_protocol_spec)
 
 @chat_proto.on_message(model=ChatMessage)
@@ -539,14 +554,14 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 ctx.logger.info(f"Start session from {sender}")
                 continue
             elif isinstance(item, TextContent):
-                ctx.logger.info(f"Msg from {sender}: {item.text}")
+                ctx.logger.info(f"Received message from {sender}: {item.text}")
                 reply = await process_query(item.text, ctx)
                 response = ChatMessage(timestamp=datetime.now(timezone.utc), msg_id=uuid4(), content=[TextContent(type="text", text=reply)])
                 await ctx.send(sender, response)
             else:
                 ctx.logger.info(f"Unexpected content from {sender}")
     except Exception as e:
-        ctx.logger.error(f"handle_chat_message error: {e}")
+        ctx.logger.error(f"handle_chat_message error: {e}", exc_info=True)
         err = ChatMessage(timestamp=datetime.now(timezone.utc), msg_id=uuid4(), content=[TextContent(type="text", text=f"Error: {e}")])
         await ctx.send(sender, err)
 
@@ -554,7 +569,80 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 async def handle_chat_ack(ctx: Context, sender: str, msg: ChatAcknowledgement):
     ctx.logger.info(f"Ack from {sender} for {msg.acknowledged_msg_id}")
 
+@agent.on_rest_post("/api/chat", ChatRequest, ChatResponse)
+async def handle_chat_rest(ctx: Context, req: ChatRequest) -> ChatResponse:
+    """
+    REST endpoint untuk menerima chat dari frontend
+    POST http://localhost:8002/api/chat
+    Body: {"message": "your message here"}
+    """
+    try:
+        ctx.logger.info(f"Received REST chat request: {req.message}")
+        
+        # Gunakan fungsi process_query yang sudah ada
+        response = await process_query(req.message, ctx)
+        
+        return ChatResponse(
+            response=response,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            status="success"
+        )
+    except Exception as e:
+        ctx.logger.error(f"Error processing REST chat request: {e}")
+        return ChatResponse(
+            response=f"Terjadi kesalahan: {str(e)}",
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            status="error"
+        )
+
+@agent.on_rest_get("/api/health", HealthResponse)
+async def handle_health_check(ctx: Context) -> Dict[str, Any]:
+    """
+    Health check endpoint
+    GET http://localhost:8002/api/health
+    """
+    return {
+        "status": "healthy",
+        "agent_name": agent.name,
+        "agent_address": ctx.agent.address,
+        "port": 8002
+    }
+
+@agent.on_rest_get("/api/jobs", JobsResponse)
+async def handle_get_jobs(ctx: Context) -> JobsResponse:
+    """
+    REST endpoint untuk mendapatkan semua jobs
+    GET http://localhost:8002/api/jobs
+    """
+    try:
+        jobs = await fetch_jobs(ctx)
+        return JobsResponse(
+            jobs=jobs,
+            count=len(jobs),
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            status="success"
+        )
+    except Exception as e:
+        return JobsResponse(
+            jobs=[],
+            count=0,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            status=f"error: {str(e)}"
+        )
+
+# Tambahkan CORS headers jika diperlukan (optional)
+async def setup_cors(ctx: Context):
+    """Setup CORS jika diperlukan untuk frontend"""
+    ctx.logger.info("Agent started with REST endpoints:")
+    ctx.logger.info("  POST /api/chat - Chat dengan agent")
+    ctx.logger.info("  GET /api/health - Health check")
+    ctx.logger.info("  GET /api/jobs - Dapatkan semua jobs")
+    ctx.logger.info(f"  Server running on http://localhost:8002")
+
+
+
 agent.include(chat_proto)
+agent._on_startup.append(setup_cors)
 
 if __name__ == "__main__":
     agent.run()

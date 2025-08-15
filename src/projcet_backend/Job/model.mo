@@ -41,11 +41,9 @@ module{
     };
 
     public type UpdateJobPayload = {
-        jobName: ?Text;
-        jobDescription: ?[Text];
-        jobSalary: ?Float;
-        jobTags: ?[JobCategory];
-        jobSlots: ?Int;
-        userId: ?Text;
+        jobName: Text;
+        jobDescription: [Text];
+        jobStartDate: Int;
+        jobDeadline: Int;
     };
 }

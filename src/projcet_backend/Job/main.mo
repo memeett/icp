@@ -14,21 +14,21 @@ import Nat16 "mo:base/Nat16";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
 
-actor JobModel{
+persistent actor JobModel{ // Declared as persistent
     private stable var nextId : Nat = 0;
     private stable var nextCategoryId : Nat = 0;
 
     private stable var jobsEntries : [(Text, Job.Job)] = [];
     private stable var jobCategoriesEntries : [(Text, Job.JobCategory)] = [];
 
-    private var jobs = HashMap.fromIter<Text, Job.Job>(
+    private transient var jobs = HashMap.fromIter<Text, Job.Job>( // Marked as transient
         jobsEntries.vals(),
         0,
         Text.equal,
         Text.hash
     );
 
-    private var jobCategories = HashMap.fromIter<Text, Job.JobCategory>(
+    private transient var jobCategories = HashMap.fromIter<Text, Job.JobCategory>( // Marked as transient
         jobCategoriesEntries.vals(),
         0,
         Text.equal,
@@ -161,7 +161,6 @@ actor JobModel{
         };
     };
 
-    // Job to JSON string
     private func jobToJsonString(job : Job.Job) : Text {
         // job.jobTags: [Job.JobCategory]
         let tagItems = Array.map<Job.JobCategory, Text>(
@@ -328,7 +327,7 @@ actor JobModel{
         return Iter.toArray(jobCategories.vals());
     };
 
-    public func updateJob(jobId : Text, payload : Job.UpdateJobPayload, jobStatus: Text) : async Result.Result<Job.Job, Text> {
+    public func updateJob(jobId : Text, payload : Job.UpdateJobPayload) : async Result.Result<Job.Job, Text> {
         switch (jobs.get(jobId)) {
             case (null) {
                 return #err("Job not found");
@@ -336,18 +335,18 @@ actor JobModel{
             case (?job) {
                 let updatedJob : Job.Job = {
                     id = job.id;
-                    jobName = Option.get(payload.jobName, job.jobName);
-                    jobDescription = Option.get(payload.jobDescription, job.jobDescription);
-                    jobTags = Option.get(payload.jobTags, job.jobTags);
+                    jobName = payload.jobName;
+                    jobDescription = payload.jobDescription;
+                    jobTags = job.jobTags;
                     jobProjectType = job.jobProjectType;
-                    jobSalary = Option.get(payload.jobSalary, job.jobSalary);
-                    jobSlots = Option.get(payload.jobSlots, job.jobSlots);
-                    jobStatus = jobStatus;
+                    jobSalary = job.jobSalary;
+                    jobSlots = job.jobSlots;
+                    jobStatus = job.jobStatus;
                     jobExperimentLevel = job.jobExperimentLevel;
                     jobRequirementSkills = job.jobRequirementSkills;
-                    jobStartDate = job.jobStartDate;
-                    jobDeadline = job.jobDeadline;
-                    userId = Option.get(payload.userId, job.userId);
+                    jobStartDate = payload.jobStartDate;
+                    jobDeadline = payload.jobDeadline;
+                    userId = job.userId;
                     createdAt = job.createdAt;
                     updatedAt = Time.now();
                     jobRating = job.jobRating;

@@ -1,5 +1,5 @@
 import React from 'react';
-import DummyDataGenerator from '../components/DummyDataGenerator';
+// import DummyDataGenerator from '../components/DummyDataGenerator';
 import { Typography, Card, Divider } from 'antd';
 
 const { Title, Paragraph } = Typography;
@@ -22,7 +22,7 @@ const AdminPage = () => {
           You can specify the number of items to create for each data type.
         </Paragraph>
         
-        <DummyDataGenerator />
+        {/* <DummyDataGenerator /> */}
       </Card>
     </div>
   );

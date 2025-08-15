@@ -184,6 +184,7 @@ actor UserModel {
                             jobSalary = jobData.jobSalary;
                             jobRating = jobData.jobRating;
                             jobTags = jobData.jobTags;
+                            jobProjectType = jobData.jobProjectType;
                             jobSlots = jobData.jobSlots;
                             jobStatus = jobData.jobStatus;
                             jobExperimentLevel = jobData.jobExperimentLevel;
@@ -272,6 +273,7 @@ actor UserModel {
                             jobSalary = jobData.jobSalary;
                             jobRating = jobData.jobRating;
                             jobTags = jobData.jobTags;
+                            jobProjectType = jobData.jobProjectType;
                             jobSlots = jobData.jobSlots;
                             jobStatus = "Ongoing";
                             jobExperimentLevel = jobData.jobExperimentLevel;

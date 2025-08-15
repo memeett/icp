@@ -119,7 +119,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
       const success = await applyJob(user.id, jobId);
       if (success) {
         // Create inbox notification for job owner
-        await createInbox(job.userId, user.id, 'application', 'request');
+        await createInbox(job.userId, user.id, 'application', 'request', "miaw");
         
         message.success('Application submitted successfully!');
         setHasApplied(true);
@@ -151,7 +151,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
       const success = await acceptApplier(userId, jobId);
       if (success) {
         // Create inbox notification for applicant
-        await createInbox(userId, user.id, 'application', 'accepted');
+        await createInbox(userId, user.id, 'application', 'accepted', "miaw");
         
         message.success('Applicant accepted successfully!');
         await fetchJobDetails(); // Refresh data
@@ -175,7 +175,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
       const success = await rejectApplier(userId, jobId);
       if (success) {
         // Create inbox notification for applicant
-        await createInbox(userId, user.id, 'application', 'rejected');
+        await createInbox(userId, user.id, 'application', 'rejected', "miaw");
         
         message.success('Applicant rejected.');
         await fetchJobDetails(); // Refresh data

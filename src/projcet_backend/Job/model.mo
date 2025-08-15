@@ -8,6 +8,7 @@ module{
         jobSalary: Float;
         jobRating: Float;
         jobTags: [JobCategory];
+        jobProjectType: Text;
         jobSlots: Int;
         jobStatus: Text;
         jobExperimentLevel: Text;
@@ -30,6 +31,7 @@ module{
         jobDescription: [Text];
         jobSalary: Float;
         jobTags: [JobCategory];
+        jobProjectType: Text;
         jobSlots: Int;
         userId: Text;
         jobRequirementSkills: [Text];

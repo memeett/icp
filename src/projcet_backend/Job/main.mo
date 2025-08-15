@@ -15,26 +15,26 @@ import Nat "mo:base/Nat";
 import Error "mo:base/Error";
 import User "../User/model";
 
-actor JobModel {
-  private stable var nextId : Nat = 0;
-  private stable var nextCategoryId : Nat = 0;
+persistent actor JobModel{ // Declared as persistent
+    private stable var nextId : Nat = 0;
+    private stable var nextCategoryId : Nat = 0;
 
   private stable var jobsEntries : [(Text, Job.Job)] = [];
   private stable var jobCategoriesEntries : [(Text, Job.JobCategory)] = [];
 
-  private var jobs = HashMap.fromIter<Text, Job.Job>(
-    jobsEntries.vals(),
-    0,
-    Text.equal,
-    Text.hash,
-  );
+    private transient var jobs = HashMap.fromIter<Text, Job.Job>( // Marked as transient
+        jobsEntries.vals(),
+        0,
+        Text.equal,
+        Text.hash
+    );
 
-  private var jobCategories = HashMap.fromIter<Text, Job.JobCategory>(
-    jobCategoriesEntries.vals(),
-    0,
-    Text.equal,
-    Text.hash,
-  );
+    private transient var jobCategories = HashMap.fromIter<Text, Job.JobCategory>( // Marked as transient
+        jobCategoriesEntries.vals(),
+        0,
+        Text.equal,
+        Text.hash
+    );
 
   // Save state before upgrade
   system func preupgrade() {
@@ -162,22 +162,21 @@ actor JobModel {
     };
   };
 
-  // Job to JSON string
-  private func jobToJsonString(job : Job.Job) : Text {
-    // job.jobTags: [Job.JobCategory]
-    let tagItems = Array.map<Job.JobCategory, Text>(
-      job.jobTags,
-      func(tag : Job.JobCategory) : Text {
-        "{\"id\":\"" # tag.id # "\",\"jobCategoryName\":\"" # tag.jobCategoryName # "\"}";
-      },
-    );
-    let tagsJson = "[" # Text.join(",", Iter.fromArray(tagItems)) # "]";
-    // job.jobDescription: [Text]
-    let descItems = Array.map<Text, Text>(
-      job.jobDescription,
-      func(d : Text) : Text { "\"" # d # "\"" },
-    );
-    let descriptionJson = "[" # Text.join(",", Iter.fromArray(descItems)) # "]";
+    private func jobToJsonString(job : Job.Job) : Text {
+        // job.jobTags: [Job.JobCategory]
+        let tagItems = Array.map<Job.JobCategory, Text>(
+            job.jobTags,
+            func (tag : Job.JobCategory) : Text {
+                "{\"id\":\"" # tag.id # "\",\"jobCategoryName\":\"" # tag.jobCategoryName # "\"}"
+            }
+        );
+        let tagsJson = "[" # Text.join(",", Iter.fromArray(tagItems)) # "]";
+        // job.jobDescription: [Text]
+        let descItems = Array.map<Text, Text>(
+            job.jobDescription,
+            func (d : Text) : Text { "\"" # d # "\"" }
+        );
+        let descriptionJson = "[" # Text.join(",", Iter.fromArray(descItems)) # "]";
 
     "{" #
     "\"id\":\"" # job.id # "\"," #

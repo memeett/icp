@@ -65,7 +65,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
   ): Promise<boolean> => {
     try {
       // Create inbox notification for invited user
-      await createInbox(userId, currentUserId, 'invitation', 'request', "MIAW");
+      await createInbox(userId, currentUserId, 'invitation', 'request', 'Miaw');
       
       message.success('Invitation sent successfully!');
       return true;

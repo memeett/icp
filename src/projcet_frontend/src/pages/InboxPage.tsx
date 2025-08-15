@@ -41,8 +41,6 @@ const InboxPage: React.FC = () => {
     loading,
     activeTab,
     handleMarkAsRead,
-    handleAccept,
-    handleReject,
     setActiveTab
   } = useInbox(user?.id);
   
@@ -62,18 +60,18 @@ const InboxPage: React.FC = () => {
 
   // Handle accept with modal close
   const handleAcceptWithClose = async (messageId: string) => {
-    const success = await handleAccept(messageId);
-    if (success) {
-      setIsDetailModalVisible(false);
-    }
+    setIsDetailModalVisible(false);
+    // const success = await handleAccept(messageId);
+    // if (success) {
+    // }
   };
 
   // Handle reject with modal close
   const handleRejectWithClose = async (messageId: string) => {
-    const success = await handleReject(messageId);
-    if (success) {
-      setIsDetailModalVisible(false);
-    }
+    setIsDetailModalVisible(false);
+    // const success = await handleReject(messageId);
+    // if (success) {
+    // }
   };
 
   // Get message type color

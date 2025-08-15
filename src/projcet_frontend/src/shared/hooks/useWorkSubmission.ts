@@ -92,7 +92,7 @@ export const useWorkSubmission = (
 
       if (success) {
         // Create inbox notification for job owner
-        await createInbox(job.userId, user.id, 'submission', 'request', "miaw");
+        await createInbox(job.userId, user.id, 'submission', 'request', 'Miaw');
         
         message.success('Work submitted successfully!');
         await fetchJobAndSubmissions(); // Refresh submissions

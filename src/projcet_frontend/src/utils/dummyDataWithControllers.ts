@@ -130,13 +130,17 @@
 //         console.log(`Tags: ${jobTags.join(', ')}`);
 //         console.log(`Salary: ${jobSalary}, Slots: ${jobSlots}`);
 
-//         const result = await createJob(
-//           jobName,
-//           jobDescription,
-//           jobTags,
-//           jobSalary,
-//           jobSlots
-//         );
+        const result = await createJob(
+          jobName,
+          jobDescription,
+          jobTags,
+          jobSalary,
+          jobSlots,
+          ['Miaw'],
+          'Intermediate',
+          new Date(),
+          new Date(),
+        );
         
 //         if (result[0] === "Success") {
 //           console.log(`Created job: ${jobName}`);

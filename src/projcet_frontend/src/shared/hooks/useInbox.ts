@@ -3,8 +3,6 @@ import { message } from 'antd';
 import {
   getAllInboxByUserId,
   markInboxAsRead,
-  // acceptInbox,
-  // rejectInbox
 } from '../../controller/inboxController';
 import { InboxResponse } from '../../interface/Inbox';
 
@@ -21,8 +19,8 @@ interface UseInboxReturn {
   // Actions
   fetchMessages: () => Promise<void>;
   handleMarkAsRead: (messageId: string) => Promise<boolean>;
-  handleAccept: (messageId: string) => Promise<boolean>;
-  handleReject: (messageId: string) => Promise<boolean>;
+  // handleAccept: (messageId: string) => Promise<boolean>;
+  // handleReject: (messageId: string) => Promise<boolean>;
   setActiveTab: (tab: string) => void;
   refreshMessages: () => Promise<void>;
 }
@@ -68,45 +66,43 @@ export const useInbox = (userId: string | undefined): UseInboxReturn => {
     }
   }, []);
 
-  // Handle accept invitation/application
-  const handleAccept = useCallback(async (messageId: string): Promise<boolean> => {
-    try {
-      // const success = await acceptInbox(messageId);
-      const success = true;
-      if (success) {
-        message.success('Accepted successfully!');
-        await fetchMessages(); // Refresh messages
-        return true;
-      } else {
-        message.error('Failed to accept.');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error accepting:', error);
-      message.error('Failed to accept.');
-      return false;
-    }
-  }, [fetchMessages]);
+  // // Handle accept invitation/application
+  // const handleAccept = useCallback(async (messageId: string): Promise<boolean> => {
+  //   try {
+  //     const success = await acceptInbox(messageId);
+  //     if (success) {
+  //       message.success('Accepted successfully!');
+  //       await fetchMessages(); // Refresh messages
+  //       return true;
+  //     } else {
+  //       message.error('Failed to accept.');
+  //       return false;
+  //     }
+  //   } catch (error) {
+  //     console.error('Error accepting:', error);
+  //     message.error('Failed to accept.');
+  //     return false;
+  //   }
+  // }, [fetchMessages]);
 
-  // Handle reject invitation/application
-  const handleReject = useCallback(async (messageId: string): Promise<boolean> => {
-    try {
-      // const success = await rejectInbox(messageId);
-      const success = true;
-      if (success) {
-        message.success('Rejected successfully!');
-        await fetchMessages(); // Refresh messages
-        return true;
-      } else {
-        message.error('Failed to reject.');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error rejecting:', error);
-      message.error('Failed to reject.');
-      return false;
-    }
-  }, [fetchMessages]);
+  // // Handle reject invitation/application
+  // const handleReject = useCallback(async (messageId: string): Promise<boolean> => {
+  //   try {
+  //     const success = await rejectInbox(messageId);
+  //     if (success) {
+  //       message.success('Rejected successfully!');
+  //       await fetchMessages(); // Refresh messages
+  //       return true;
+  //     } else {
+  //       message.error('Failed to reject.');
+  //       return false;
+  //     }
+  //   } catch (error) {
+  //     console.error('Error rejecting:', error);
+  //     message.error('Failed to reject.');
+  //     return false;
+  //   }
+  // }, [fetchMessages]);
 
   // Refresh messages manually
   const refreshMessages = useCallback(async () => {
@@ -144,8 +140,8 @@ export const useInbox = (userId: string | undefined): UseInboxReturn => {
     // Actions
     fetchMessages,
     handleMarkAsRead,
-    handleAccept,
-    handleReject,
+    // handleAccept,
+    // handleReject,
     setActiveTab,
     refreshMessages,
   };

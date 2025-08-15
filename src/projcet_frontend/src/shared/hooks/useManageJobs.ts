@@ -22,7 +22,7 @@ export const useManageJobs = (): UseManageJobsReturn => {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('open');
+  const [selectedStatus, setSelectedStatus] = useState('All');
 
   const fetchJobs = useCallback(async () => {
     if (!user) return;
@@ -72,7 +72,7 @@ export const useManageJobs = (): UseManageJobsReturn => {
       .includes(searchQuery.toLowerCase());
       console.log(selectedStatus, job.jobStatus)
     const matchesStatus =
-      selectedStatus === 'All' || job.jobStatus.toLowerCase() === selectedStatus;
+      selectedStatus === 'All' || job.jobStatus === selectedStatus;
     return matchesSearch && matchesStatus;
   });
   return {

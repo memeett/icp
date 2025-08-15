@@ -181,8 +181,7 @@ const PostJobPage: React.FC = () => {
     form.setFieldValue('skills', newSkills);
   }, [skills, form]);
 
-  const handleSubmit = useCallback(async (isDraft = false) => {
-    console.log('handleSubmit called with isDraft:', isDraft);
+  const handleSubmit = useCallback(async () => {
 
     // Check if user is authenticated
     if (!isAuthenticated) {
@@ -224,7 +223,7 @@ const PostJobPage: React.FC = () => {
       
       console.log(result);
       if (result[0] === 'Success') {
-        message.success(`Job ${isDraft ? 'saved as draft' : 'published'} successfully!`);
+        message.success(`Job published successfully!`);
         navigate('/manage');
       } else {
         message.error(result[1] || 'Failed to create job. Please try again.');
@@ -572,19 +571,6 @@ const PostJobPage: React.FC = () => {
                     </Button>
 
                     <Space>
-                      {currentStep === steps.length - 1 && (
-                        <Button
-                          onClick={() => {
-                            console.log('Save as Draft button clicked!');
-                            handleSubmit(true);
-                          }}
-                          loading={isLoading}
-                          size="large"
-                          icon={<SaveOutlined />}
-                        >
-                          Save as Draft
-                        </Button>
-                      )}
 
                       {currentStep < steps.length - 1 ? (
                         <Button
@@ -599,7 +585,7 @@ const PostJobPage: React.FC = () => {
                           type="primary"
                           onClick={() => {
                             console.log('Publish Job button clicked!');
-                            handleSubmit(false);
+                            handleSubmit();
                           }}
                           loading={isLoading}
                           size="large"

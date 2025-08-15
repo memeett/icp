@@ -15,21 +15,21 @@ import Nat "mo:base/Nat";
 import Error "mo:base/Error";
 import User "../User/model";
 
-persistent actor JobModel{ // Declared as persistent
+ actor JobModel{ // Declared as persistent
     private stable var nextId : Nat = 0;
     private stable var nextCategoryId : Nat = 0;
 
   private stable var jobsEntries : [(Text, Job.Job)] = [];
   private stable var jobCategoriesEntries : [(Text, Job.JobCategory)] = [];
 
-    private transient var jobs = HashMap.fromIter<Text, Job.Job>( // Marked as transient
+    private  var jobs = HashMap.fromIter<Text, Job.Job>( // Marked as 
         jobsEntries.vals(),
         0,
         Text.equal,
         Text.hash
     );
 
-    private transient var jobCategories = HashMap.fromIter<Text, Job.JobCategory>( // Marked as transient
+    private  var jobCategories = HashMap.fromIter<Text, Job.JobCategory>( // Marked as 
         jobCategoriesEntries.vals(),
         0,
         Text.equal,
@@ -448,7 +448,7 @@ persistent actor JobModel{ // Declared as persistent
     };
   };
 
-  public func finishJob(job_id : Text, job_canister : Text, job_transaction_canister : Text, user_canister : Text, _ : Text) : async Result.Result<Bool, Text> {
+  public func finishJob(job_id : Text) : async Result.Result<Bool, Text> {
     let jobResult = await getJob(job_id);
 
     switch (jobResult) {
@@ -460,7 +460,6 @@ persistent actor JobModel{ // Declared as persistent
           return #err("Job is not ongoing");
         };
 
-        // Change job status to "Finished"
         let updatedJob : Job.Job = {
           id = job.id;
           jobName = job.jobName;

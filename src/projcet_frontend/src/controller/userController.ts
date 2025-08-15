@@ -169,6 +169,7 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
                     updatedAt: BigInt(userData.updatedAt),
                     isFaceRecognitionOn: userData.isFaceRecognitionOn,
                     isProfileCompleted: (userData as any).isProfileCompleted || false,
+                    subAccount: [new Uint8Array()] // Ensure subAccount is set to an array of Uint8Array
                 };
 
                 document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
@@ -304,6 +305,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
                     createdAt: BigInt(userData.createdAt),
                     updatedAt: BigInt(userData.updatedAt),
                     isProfileCompleted: (userData as any).isProfileCompleted || false,
+                    subAccount: [new Uint8Array()] // Ensure subAccount is set to an array of Uint8Array
                 };
                 
                 userCache = { user: convertedUser, timestamp: now };
@@ -439,10 +441,11 @@ export const getAllUsers = async (): Promise<User[] | null> => {
                 createdAt: BigInt(userData.createdAt),
                 updatedAt: BigInt(userData.updatedAt),
                 isProfileCompleted: (userData as any).isProfileCompleted || false,
-                preference: userData.preference.map((pref:  JobCategory) => ({
+                preference: userData.preference.map((pref: JobCategory) => ({
                     ...pref,
                     id: pref.id.toString()
-                }))
+                })),
+                subAccount: [new Uint8Array()]
             };
         }));
 
@@ -486,6 +489,7 @@ export const getUserById = async (userId: string): Promise<User | null> => {
                 createdAt: BigInt(userData.createdAt),
                 updatedAt: BigInt(userData.updatedAt),
                 isProfileCompleted: (userData as any).isProfileCompleted || false,
+                subAccount: [new Uint8Array()]
             };
 
             return convertedUser;
@@ -521,6 +525,7 @@ export const getUserByName = async (username: string): Promise<User | null> => {
           createdAt: BigInt(userData.createdAt),
           updatedAt: BigInt(userData.updatedAt),
           isProfileCompleted: (userData as any).isProfileCompleted || false,
+          subAccount: [new Uint8Array()]
         };
 
   

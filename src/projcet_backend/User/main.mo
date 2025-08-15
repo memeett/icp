@@ -14,11 +14,11 @@ import Debug "mo:base/Debug";
 import Job "../Job/model";
 import Bool "mo:base/Bool";
 
-persistent actor UserModel {
+ actor UserModel {
 
     private stable var usersEntries : [(Text, User.User)] = [];
 
-    private transient var users = HashMap.fromIter<Text, User.User>( // Marked as transient
+    private  var users = HashMap.fromIter<Text, User.User>( // Marked as transient
         usersEntries.vals(),
         0,
         Text.equal,

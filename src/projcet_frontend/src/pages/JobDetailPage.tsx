@@ -42,6 +42,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import { useAuth, useJobDetails, useUserManagement } from '../shared/hooks';
 import { User } from '../shared/types/User';
+import { formatDate } from '../utils/dateUtils';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -121,14 +122,6 @@ const JobDetailPage: React.FC = () => {
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     message.success('Job link copied to clipboard');
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
   };
 
   const getTimeAgo = (dateString: string) => {
@@ -238,7 +231,7 @@ const JobDetailPage: React.FC = () => {
             </Space>
           </div>
 
-          {user && !isJobOwner  && Number(job!.jobSlots) - acceptedFreelancers.length !== 0 && (
+          {user && job!.jobStatus=== 'Open' && !isJobOwner  && Number(job!.jobSlots) - acceptedFreelancers.length !== 0 && (
 
             <div className="text-center">
               {hasApplied ? (
@@ -346,7 +339,7 @@ const JobDetailPage: React.FC = () => {
         title: 'Applied',
         dataIndex: 'appliedAt',
         key: 'appliedAt',
-        render: (date: string) => formatDate(date),
+        render: (date: bigint) => formatDate(date),
       },
       {
         title: 'Actions',
@@ -520,7 +513,6 @@ const JobDetailPage: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Apply Modal */}
       <Modal
         title="Apply for this Job"
         open={isApplyModalVisible}

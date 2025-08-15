@@ -36,11 +36,11 @@ import FaceRecognition from '../../components/FaceRecognition';
 import { AuthenticationModal } from '../../components/modals/AuthenticationModal';
 import ergasiaLogo from '../../assets/ergasia_logo.png'
 import ergasiaLogoWhite from '../../assets/ergasia_logo_white.png'
-import { InboxResponse } from '../../interface/Inbox';
 import { getAllInboxByUserId } from '../../controller/inboxController';
 import { Inbox } from '../../../../declarations/inbox/inbox.did';
 import { getBalanceController, topUpWalletController } from '../../controller/tokenController';
 import { Token } from '../../interface/Token';
+import { InboxResponse } from '../../shared/types/Inbox';
 
 const { Text } = Typography;
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Job } from "../../interface/job/Job";
 import { getJobById } from "../../controller/jobController";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/dateUtils";
+import { Job } from "../../shared/types/Job";
 
 export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string; isLoading : () => void }) {
     const [job, setJob] = useState<Job | null>(null);

@@ -1,9 +1,11 @@
 import { AuthClient } from "@dfinity/auth-client";
-import { UpdateUserPayload, User } from "../interface/User";
+import { job } from "../../../declarations/job";
+import { User } from "../shared/types/User";
+import { UpdateUserPayload } from "../../../declarations/user/user.did";
 import { user } from "../../../declarations/user";
 import { session } from "../../../declarations/session";
 import { HttpAgent } from "@dfinity/agent";
-import { JobCategory } from "../interface/job/Job";
+import { JobCategory } from "../shared/types/Job";
 import { CashFlowHistory } from "../../../declarations/user/user.did";
 import { agentService } from "../singleton/agentService";
 import { storage } from "../utils/storage";
@@ -320,11 +322,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
     }
 };
 
-
-
-
-
-export const updateUserProfile = async (payload: any): Promise<boolean> => {
+export const updateUserProfile = async (payload: Partial<User>): Promise<boolean> => {
     try {
         const authClient = await AuthClient.create();
         const identity = authClient.getIdentity();
@@ -339,14 +337,24 @@ export const updateUserProfile = async (payload: any): Promise<boolean> => {
             throw new Error('No active session');
         }
 
-        const backendPayload: any = {};
+        const backendPayload: UpdateUserPayload = {
+            dob: [],
+            username: [],
+            isProfileCompleted: [],
+            description: [],
+            preference: [],
+            profilePicture: []
+        };
+        
         if (payload.username !== undefined) backendPayload.username = [payload.username];
         if (payload.description !== undefined) backendPayload.description = [payload.description];
         if (payload.dob !== undefined) {
-            const dobString = typeof payload.dob === 'string' ? payload.dob : payload.dob.format('YYYY-MM-DD');
-            backendPayload.dob = [dobString];
+            if (typeof payload.dob === 'string') {
+                backendPayload.dob = [payload.dob];
+            } else {
+                backendPayload.dob = [(payload.dob as any).format('YYYY-MM-DD')];
+            }
         }
-        if (payload.isFaceRecognitionOn !== undefined) backendPayload.isFaceRecognitionOn = [payload.isFaceRecognitionOn];
         if (payload.isProfileCompleted !== undefined) backendPayload.isProfileCompleted = [payload.isProfileCompleted];
         if (payload.preference !== undefined) backendPayload.preference = [payload.preference];
         
@@ -355,17 +363,29 @@ export const updateUserProfile = async (payload: any): Promise<boolean> => {
             backendPayload.profilePicture = [new Uint8Array(arrayBuffer)];
         }
 
+        if(payload.preference && payload.preference.length > 0){
+            for (const tag of payload.preference) {
+                console.log(tag.jobCategoryName)
+                let existingCategory = await job.findJobCategoryByName(tag.jobCategoryName as string );
+                console.log(existingCategory)
+                if (!("ok" in existingCategory)) {
+                    existingCategory = await job.createJobCategory(tag.jobCategoryName as string);
+                    
+                }
+                
+            }
+                    
+        }
+
         if (process.env.CANISTER_ID_SESSION) {
             await user.updateUser(cleanSession, backendPayload, process.env.CANISTER_ID_SESSION);
         } else {
             throw new Error('CANISTER_ID_SESSION not found');
         }
 
-        // Invalidate user cache and refetch
         userCache = { user: null, timestamp: 0 };
         const updatedUser = await fetchUserBySession();
         
-        // Reset session and current user value
         if (updatedUser) {
             const sessionString = storage.getSession();
             storage.clear();

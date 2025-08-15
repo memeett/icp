@@ -28,7 +28,7 @@ import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import { getUserById, getProfilePictureUrl } from '../controller/userController';
-import { User } from '../interface/User';
+import { User } from '../shared/types/User';
 import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
@@ -157,22 +157,22 @@ const PublicProfilePage: React.FC = () => {
                   </Col>
                   <Col xs={24} lg={8}>
                     <Card title="Details">
-                        <List>
-                            <List.Item>
-                                <List.Item.Meta
-                                    avatar={<StarOutlined />}
-                                    title="Rating"
-                                    description={`${user.rating.toFixed(1)} / 5.0`}
-                                />
-                            </List.Item>
-                            <List.Item>
-                                <List.Item.Meta
-                                    avatar={<ProjectOutlined />}
-                                    title="Jobs Completed"
-                                    description="0"
-                                />
-                            </List.Item>
-                        </List>
+                      <List>
+                        <List.Item>
+                          <List.Item.Meta
+                            avatar={<StarOutlined />}
+                            title="Rating"
+                            description={`${user.rating.toFixed(1)} / 5.0`}
+                          />
+                        </List.Item>
+                        <List.Item>
+                          <List.Item.Meta
+                            avatar={<ProjectOutlined />}
+                            title="Jobs Completed"
+                            description="0"
+                          />
+                        </List.Item>
+                      </List>
                     </Card>
                   </Col>
                 </Row>

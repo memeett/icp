@@ -5,37 +5,69 @@ export interface JobCategory {
 
 export interface Job {
   id: string;
-  title: string;
-  description: string;
-  category: JobCategory;
-  budget: number;
-  startdate: bigint;
-  deadline: bigint;
-  status: string;
-  clientId: string;
-  freelancerId: string;
-  skills: string[];
-  experienceLevel: string;
-  projectType: string;
-  postedAt: string;
-  applicants: number;
+  jobName: string;
+  jobDescription: string[];
+  jobTags: JobCategory[];
+  jobSalary: number;
+  jobSlots: bigint;
+  jobStatus: string;
+  jobRating: number;
+  userId: string;
+  wallet: number;
   createdAt: bigint;
   updatedAt: bigint;
-}
-
-export interface CreateJobPayload {
-  title: string;
-  description: string;
-  categoryId: string;
-  budget: number;
-  deadline: string;
-}
-
-export interface UpdateJobPayload {
+  
+  // Legacy properties for compatibility
   title?: string;
   description?: string;
-  categoryId?: string;
+  category?: JobCategory;
   budget?: number;
   deadline?: string;
   status?: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  clientId?: string;
+  freelancerId?: string;
+  experienceLevel?: string;
+  jobType?: string;
+}
+
+export interface JobPayload {
+  jobName: string;
+  jobDescription: string[];
+  jobTags: string[];
+  jobSalary: number;
+  jobSlots: number;
+  jobSkills: string[];
+  jobExprienceLevel: string;
+  jobProjectType: string;
+  jobStartDate: bigint;
+  jobDeadline: bigint;
+}
+
+export interface UpdateJobPayload {
+  jobName: string;
+  jobDescription: string[];
+  jobStartDate: bigint;
+  jobDeadline: bigint;
+}
+
+export interface JobApplication {
+  id: string;
+  jobId: string;
+  userId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  appliedAt: string;
+  coverLetter?: string;
+  proposedBudget?: number;
+}
+
+export interface JobSubmission {
+  id: string;
+  jobId: string;
+  userId: string;
+  title: string;
+  description: string;
+  link?: string;
+  files?: File[];
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
 }

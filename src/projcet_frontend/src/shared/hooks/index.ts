@@ -1,10 +1,13 @@
-// Custom hooks barrel exports
 export { useAuth } from './useAuth';
+export { useDebounce } from './useDebounce';
 export { useJobs } from './useJobs';
 export { useLocalStorage } from './useLocalStorage';
-export { useDebounce, useDebouncedCallback, useDebouncedSearch } from './useDebounce';
-export { useModal, useAuthModal, useJobModal, useConfirmModal } from './useModal';
-export { useNotifications, useToast } from './useNotifications';
+export { useModal } from './useModal';
+export { useNotifications } from './useNotifications';
 
-// Re-export the existing hooks from the old location for backward compatibility
-export { useOutsideClick } from '../../utils/useTapOutside';
+// New optimized hooks
+export { useJobDetails } from './useJobDetails';
+export { useUserManagement } from './useUserManagement';
+export { useInbox } from './useInbox';
+export { useWorkSubmission } from './useWorkSubmission';
+export { useManageJobs } from './useManageJobs';

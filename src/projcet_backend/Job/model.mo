@@ -8,6 +8,7 @@ module{
         jobSalary: Float;
         jobRating: Float;
         jobTags: [JobCategory];
+        jobProjectType: Text;
         jobSlots: Int;
         jobStatus: Text;
         jobExperimentLevel: Text;
@@ -30,6 +31,7 @@ module{
         jobDescription: [Text];
         jobSalary: Float;
         jobTags: [JobCategory];
+        jobProjectType: Text;
         jobSlots: Int;
         userId: Text;
         jobRequirementSkills: [Text];
@@ -39,11 +41,9 @@ module{
     };
 
     public type UpdateJobPayload = {
-        jobName: ?Text;
-        jobDescription: ?[Text];
-        jobSalary: ?Float;
-        jobTags: ?[JobCategory];
-        jobSlots: ?Int;
-        userId: ?Text;
+        jobName: Text;
+        jobDescription: [Text];
+        jobStartDate: Int;
+        jobDeadline: Int;
     };
 }

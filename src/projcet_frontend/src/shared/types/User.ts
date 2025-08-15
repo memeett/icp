@@ -15,14 +15,22 @@ export interface User {
   isProfileCompleted: boolean;
 }
 
+export interface UserProfile extends User {
+  skills?: string[];
+  experienceLevel?: string;
+  availability?: string;
+  location?: string;
+  hourlyRate?: number;
+  completedJobs?: number;
+}
+
 export interface UpdateUserPayload {
-  username?: string;
-  profilePicture?: Uint8Array | number[];
-  description?: string;
-  dob?: string;
-  isFaceRecognitionOn?: boolean;
-  preference?: JobCategory[];
-  isProfileCompleted?: boolean;
+  username?: [] | [string];
+  profilePicture?: [] | [Uint8Array | number[]];
+  description?: [] | [string];
+  dob?: [] | [string];
+  preference?: [] | [JobCategory[]];
+  isProfileCompleted?: [] | [boolean];
 }
 
 // For efficient profile picture handling

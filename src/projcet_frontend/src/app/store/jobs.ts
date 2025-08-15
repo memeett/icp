@@ -1,20 +1,15 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-// import { Job, JobCategory, JobApplication, JobSubmission } from '../../shared/types/Job';
-import { Job, JobCategory} from '../../shared/types/Job';
+import { Job, JobCategory, JobApplication, JobSubmission } from '../../shared/types/Job';
+
+// import { Job, JobCategory} from '../../shared/types/Job';
+
 
 
 // Jobs data atoms
 export const jobsAtom = atom<Job[]>([]);
 export const jobCategoriesAtom = atom<JobCategory[]>([]);
 export const selectedJobAtom = atom<Job | null>(null);
-
-// // Job applications atoms
-// export const jobApplicationsAtom = atom<JobApplication[]>([]);
-// export const userApplicationsAtom = atom<JobApplication[]>([]);
-
-// Job submissions atoms
-// export const jobSubmissionsAtom = atom<JobSubmission[]>([]);
 
 // Job filters atoms
 export const jobFiltersAtom = atom({
@@ -36,13 +31,14 @@ export const filteredJobsAtom = atom((get) => {
   const searchQuery = get(jobSearchQueryAtom);
   const filters = get(jobFiltersAtom);
 
-  let filtered = jobs.filter(job => job.jobStatus !== 'Finished');
+  let filtered = jobs.filter(job => job.status !== 'completed');
+
 
   // Apply search filter
   if (searchQuery) {
     filtered = filtered.filter(job =>
       job.jobName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.jobDescription.some(desc => 
+      job.jobDescription.some((desc: string) =>
         desc.toLowerCase().includes(searchQuery.toLowerCase())
       )
     );
@@ -51,7 +47,7 @@ export const filteredJobsAtom = atom((get) => {
   // Apply category filter
   if (filters.categories.length > 0) {
     filtered = filtered.filter(job =>
-      job.jobTags.some(tag => filters.categories.includes(tag.jobCategoryName))
+      job.jobTags.some((tag: JobCategory) => filters.categories.includes(tag.jobCategoryName))
     );
   }
 
@@ -59,8 +55,8 @@ export const filteredJobsAtom = atom((get) => {
   if (filters.priceRanges.length > 0) {
     filtered = filtered.filter(job => {
       return filters.priceRanges.some(range => {
-        const [min, max] = range === '2000+' 
-          ? [2000, Infinity] 
+        const [min, max] = range === '2000+'
+          ? [2000, Infinity]
           : range.split('-').map(Number);
         return job.jobSalary >= min && job.jobSalary < max;
       });
@@ -81,7 +77,7 @@ export const filteredJobsAtom = atom((get) => {
     );
   }
 
-  // Apply sorting
+
   switch (filters.sortBy) {
     case 'newest':
       filtered.sort((a, b) => Number(b.createdAt - a.createdAt));
@@ -108,7 +104,7 @@ export const filteredJobsAtom = atom((get) => {
   return filtered;
 });
 
-// Paginated jobs atom
+
 export const paginatedJobsAtom = atom((get) => {
   const filtered = get(filteredJobsAtom);
   const currentPage = get(jobsCurrentPageAtom);
@@ -119,16 +115,15 @@ export const paginatedJobsAtom = atom((get) => {
   
   return filtered.slice(startIndex, endIndex);
 });
-
 // Job statistics atoms
 export const jobStatsAtom = atom((get) => {
   const jobs = get(jobsAtom);
   
   return {
     total: jobs.length,
-    open: jobs.filter(job => job.jobStatus === 'Open').length,
-    inProgress: jobs.filter(job => job.jobStatus === 'In Progress').length,
-    completed: jobs.filter(job => job.jobStatus === 'Completed').length,
+    open: jobs.filter(job => job.jobStatus === 'open').length,
+    inProgress: jobs.filter(job => job.jobStatus === 'in_progress').length,
+    completed: jobs.filter(job => job.jobStatus === 'completed').length,
     totalValue: jobs.reduce((sum, job) => sum + job.jobSalary, 0),
   };
 });
@@ -148,7 +143,7 @@ export const jobActionsAtom = atom(
     | { type: 'SET_CATEGORIES'; categories: JobCategory[] }
     | { type: 'SET_SELECTED_JOB'; job: Job | null }
     | { type: 'SET_RECOMMENDATIONS'; jobs: Job[] }
-    | { type: 'UPDATE_FILTERS'; filters: Partial<typeof jobFiltersAtom> }
+    | { type: 'UPDATE_FILTERS'; filters: Partial<{ categories: string[]; priceRanges: string[]; experienceLevel: string[]; jobType: string[]; sortBy: 'newest' | 'oldest' | 'salary_high' | 'salary_low' | 'deadline'; }> }
   ) => {
     switch (action.type) {
       case 'SET_JOBS':
@@ -183,7 +178,7 @@ export const jobActionsAtom = atom(
   }
 );
 
-// Saved jobs atom (for bookmarking)
+// // Saved jobs atom (for bookmarking)
 export const savedJobsAtom = atomWithStorage<string[]>('savedJobs', []);
 export const isSavedJobAtom = atom(
   (get) => (jobId: string) => get(savedJobsAtom).includes(jobId),

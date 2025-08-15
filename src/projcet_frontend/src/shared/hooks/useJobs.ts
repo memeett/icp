@@ -5,7 +5,7 @@ import {
   jobCategoriesAtom,
   selectedJobAtom,
   filteredJobsAtom,
-  paginatedJobsAtom,
+
   jobFiltersAtom,
   jobSearchQueryAtom,
   jobsCurrentPageAtom,
@@ -13,7 +13,8 @@ import {
   recommendedJobsAtom,
   savedJobsAtom,
   isSavedJobAtom,
-  jobStatsAtom
+  jobStatsAtom,
+  paginatedJobsAtom
 } from '../../app/store/jobs';
 import { notificationActionsAtom } from '../../app/store/ui';
 import { Job, JobCategory } from '../types/Job';
@@ -70,12 +71,43 @@ export const useJobs = (): UseJobsReturn => {
   const [, jobActions] = useAtom(jobActionsAtom);
   const [, notificationActions] = useAtom(notificationActionsAtom);
 
+  // Helper function to convert backend status to frontend status
+  const convertJobStatus = (backendStatus: string): 'open' | 'in_progress' | 'completed' | 'cancelled' => {
+    switch (backendStatus.toLowerCase()) {
+      case 'start':
+      case 'open':
+        return 'open';
+      case 'ongoing':
+      case 'in_progress':
+        return 'in_progress';
+      case 'finished':
+      case 'completed':
+        return 'completed';
+      case 'cancelled':
+        return 'cancelled';
+      default:
+        return 'open';
+    }
+  };
+
   // Fetch all jobs
   const fetchJobs = useCallback(async () => {
     try {
       const jobsData = await viewAllJobs();
       if (jobsData) {
-        jobActions({ type: 'SET_JOBS', jobs: jobsData });
+        // Convert backend job format to frontend format
+        const convertedJobs = jobsData.map((backendJob: any) => ({
+          ...backendJob,
+          // Map backend properties to frontend properties
+          title: backendJob.jobName,
+          description: backendJob.jobDescription.join(' '),
+          budget: backendJob.jobSalary,
+          status: convertJobStatus(backendJob.jobStatus),
+          clientId: backendJob.userId,
+          category: backendJob.jobTags[0] || { id: '', jobCategoryName: 'General' },
+          deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Default 30 days
+        }));
+        jobActions({ type: 'SET_JOBS', jobs: convertedJobs });
       }
     } catch (error) {
       console.error('Failed to fetch jobs:', error);
@@ -120,7 +152,18 @@ export const useJobs = (): UseJobsReturn => {
         // If not in current jobs list, fetch from API
         const jobData = await getJobById(jobId);
         if (jobData) {
-          jobActions({ type: 'SET_SELECTED_JOB', job: jobData });
+          // Convert backend job format to frontend format
+          const convertedJob = {
+            ...jobData,
+            title: jobData.jobName,
+            description: jobData.jobDescription.join(' '),
+            budget: jobData.jobSalary,
+            status: convertJobStatus(jobData.jobStatus),
+            clientId: jobData.userId,
+            category: jobData.jobTags[0] || { id: '', jobCategoryName: 'General' },
+            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          };
+          jobActions({ type: 'SET_SELECTED_JOB', job: convertedJob });
         }
       }
     } catch (error) {
@@ -195,7 +238,7 @@ export const useJobs = (): UseJobsReturn => {
         priceRanges: [],
         experienceLevel: [],
         jobType: [],
-        sortBy: 'newest'
+        sortBy: 'newest' as const
       }
     });
     setSearchQueryAtom('');

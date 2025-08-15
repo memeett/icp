@@ -123,16 +123,7 @@ const EditJobForm = ({ job, onSave, onCancel, refreshData, modalIndex }: EditJob
     if (formData.jobName && formData.jobDescription && formData.jobSalary !== undefined && formData.jobSlots !== undefined) {
       try {
         if (job?.id) {
-          const updatedJobData = await updateJob(
-            job.id,
-            formData.jobName,
-            formData.jobDescription,
-            formData.jobTags?.map(tag => tag.jobCategoryName) || [],
-            formData.jobSalary,
-            formData.jobSlots,
-            jobStatus
-          );
-
+   
     
         }
         

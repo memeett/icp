@@ -71,6 +71,7 @@ persistent actor JobModel{ // Declared as persistent
             jobName = payload.jobName;
             jobDescription = payload.jobDescription;
             jobTags = payload.jobTags;
+            jobProjectType = payload.jobProjectType;
             jobSalary = payload.jobSalary;
             jobSlots = payload.jobSlots;
             jobStatus = "Open";
@@ -326,7 +327,7 @@ persistent actor JobModel{ // Declared as persistent
         return Iter.toArray(jobCategories.vals());
     };
 
-    public func updateJob(jobId : Text, payload : Job.UpdateJobPayload, jobStatus: Text) : async Result.Result<Job.Job, Text> {
+    public func updateJob(jobId : Text, payload : Job.UpdateJobPayload) : async Result.Result<Job.Job, Text> {
         switch (jobs.get(jobId)) {
             case (null) {
                 return #err("Job not found");
@@ -334,17 +335,18 @@ persistent actor JobModel{ // Declared as persistent
             case (?job) {
                 let updatedJob : Job.Job = {
                     id = job.id;
-                    jobName = Option.get(payload.jobName, job.jobName);
-                    jobDescription = Option.get(payload.jobDescription, job.jobDescription);
-                    jobTags = Option.get(payload.jobTags, job.jobTags);
-                    jobSalary = Option.get(payload.jobSalary, job.jobSalary);
-                    jobSlots = Option.get(payload.jobSlots, job.jobSlots);
-                    jobStatus = jobStatus;
+                    jobName = payload.jobName;
+                    jobDescription = payload.jobDescription;
+                    jobTags = job.jobTags;
+                    jobProjectType = job.jobProjectType;
+                    jobSalary = job.jobSalary;
+                    jobSlots = job.jobSlots;
+                    jobStatus = job.jobStatus;
                     jobExperimentLevel = job.jobExperimentLevel;
                     jobRequirementSkills = job.jobRequirementSkills;
-                    jobStartDate = job.jobStartDate;
-                    jobDeadline = job.jobDeadline;
-                    userId = Option.get(payload.userId, job.userId);
+                    jobStartDate = payload.jobStartDate;
+                    jobDeadline = payload.jobDeadline;
+                    userId = job.userId;
                     createdAt = job.createdAt;
                     updatedAt = Time.now();
                     jobRating = job.jobRating;
@@ -448,9 +450,10 @@ persistent actor JobModel{ // Declared as persistent
                                     jobName = job.jobName;
                                     jobDescription = job.jobDescription;
                                     jobTags = job.jobTags;
+                                    jobProjectType = job.jobProjectType;
                                     jobSalary = job.jobSalary;
                                     jobSlots = job.jobSlots;
-                                    jobStatus = "In Progress";
+                                    jobStatus = "Ongoing";
                                     jobExperimentLevel = job.jobExperimentLevel;
                                     jobRequirementSkills = job.jobRequirementSkills;
                                     jobStartDate = job.jobStartDate;
@@ -472,7 +475,7 @@ persistent actor JobModel{ // Declared as persistent
         };
     };
 
-    public func finishJob(job_id : Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text, rating_canister: Text) : async Result.Result<Bool, Text> {
+    public func finishJob(job_id : Text, job_canister: Text, job_transaction_canister: Text, user_canister: Text, _: Text) : async Result.Result<Bool, Text> {
         let jobResult = await getJob(job_id);
         
         switch(jobResult) {
@@ -480,8 +483,8 @@ persistent actor JobModel{ // Declared as persistent
                 return #err(error);
             };
             case(#ok(job)) {
-                if(job.jobStatus != "In Progress") {
-                    return #err("Job is not in progress");
+                if(job.jobStatus != "Ongoing") {
+                    return #err("Job is not ongoing");
                 };
                 
                 // Change job status to "Finished"
@@ -490,6 +493,7 @@ persistent actor JobModel{ // Declared as persistent
                     jobName = job.jobName;
                     jobDescription = job.jobDescription;
                     jobTags = job.jobTags;
+                    jobProjectType = job.jobProjectType;
                     jobSalary = job.jobSalary;
                     jobSlots = job.jobSlots;
                     jobStatus = "Finished";

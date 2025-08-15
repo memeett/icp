@@ -44,12 +44,10 @@ export interface JobPayload {
 }
 
 export interface UpdateJobPayload {
-  title?: string;
-  description?: string;
-  categoryId?: string;
-  budget?: number;
-  deadline?: string;
-  status?: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  jobName: string;
+  jobDescription: string[];
+  jobStartDate: bigint;
+  jobDeadline: bigint;
 }
 
 export interface JobApplication {

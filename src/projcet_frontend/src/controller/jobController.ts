@@ -12,15 +12,16 @@ import { storage } from "../utils/storage";
 import { ensureUserData } from "../utils/sessionUtils";
 import { debugUserData } from "../utils/debugUtils";
 import { fixUserData } from "../utils/userDataFixer";
+import { JobPayload } from "../shared/types/Job";
 
-export const createJob = async (jobName:string, jobDescription:string[], jobTags:string[], jobSalary: number, jobSlots: number, jobRequirementSkills: string[], jobExperimentLevel: string, jobStartDate: Date, jobDeadline: Date): Promise<string[]> => {
+export const createJob = async (payload: JobPayload): Promise<string[]> => {
    const agent = await agentService.getAgent();
     try {
-        if (!jobName.trim()) return ["Failed", "Job name is required"];
-        if (jobDescription.length === 0) return ["Failed", "Job description is required"];
-        if (jobTags.length === 0) return ["Failed", "At least one job tag is required"];
-        if (jobSalary < 1) return ["Failed", "Job salary must be at least 1"];
-        if (jobSlots < 1) return ["Failed", "Job slots must be at least 1"];
+        if (!payload.jobName.trim()) return ["Failed", "Job name is required"];
+        if (payload.jobDescription.length === 0) return ["Failed", "Job description is required"];
+        if (payload.jobTags.length === 0) return ["Failed", "At least one job tag is required"];
+        if (payload.jobSalary < 1) return ["Failed", "Job salary must be at least 1"];
+        if (payload.jobSlots < 1) return ["Failed", "Job slots must be at least 1"];
         
         // First, ensure we have user data if there's a session
         const hasUserData = await ensureUserData();
@@ -50,10 +51,8 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
 
         const newJobTags: JobCategory[] = [];
 
-        for (const tag of jobTags) {
-            console.log(tag)
+        for (const tag of payload.jobTags) {
             let existingCategory = await job.findJobCategoryByName(tag); 
-            console.log(existingCategory)
 
             if (!("ok" in existingCategory)) {
                 existingCategory = await job.createJobCategory(tag); 
@@ -75,30 +74,29 @@ export const createJob = async (jobName:string, jobDescription:string[], jobTags
             const userId = String(currentUser.id);
             console.log('User ID as string:', userId);
             
-            const startDate = new Date(jobStartDate); // Convert string to Date
-            const deadlineDate = new Date(jobDeadline);
 
             // Safely create the payload
-            const payload : CreateJobPayload = {
-                jobRequirementSkills: jobRequirementSkills,
-                jobName: jobName,
+            const createJobPayload : CreateJobPayload = {
+                jobProjectType: payload.jobProjectType,
+                jobRequirementSkills: payload.jobSkills,
+                jobName: payload.jobName,
                 jobTags: newJobTags, 
                 userId: userId,
-                jobDescription: jobDescription,
-                jobStartDate: (BigInt(startDate.getTime())*1_000_000n),
-                jobSalary: jobSalary,
-                jobExperimentLevel: jobExperimentLevel,
-                jobDeadline: (BigInt(deadlineDate.getTime())*1_000_000n),
-                jobSlots: BigInt(jobSlots),
+                jobDescription: payload.jobDescription,
+                jobStartDate: payload.jobStartDate,
+                jobSalary: payload.jobSalary,
+                jobExperimentLevel: payload.jobExprienceLevel,
+                jobDeadline: payload.jobDeadline,
+                jobSlots: BigInt(payload.jobSlots),
             };
             
             console.log('Job payload being sent:', {
-                ...payload,
-                jobSlots: payload.jobSlots.toString(),
-                userId: payload.userId
+                ...createJobPayload,
+                jobSlots: createJobPayload.jobSlots.toString(),
+                userId: createJobPayload.userId
             });
             
-            const result = await job.createJob(payload, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_JOB!);
+            const result = await job.createJob(createJobPayload, process.env.CANISTER_ID_JOB_TRANSACTION!, process.env.CANISTER_ID_JOB!);
             if ("ok" in result) {
                 return ["Success", "Success post a job"];
             } else {

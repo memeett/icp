@@ -34,7 +34,7 @@ import { createJob } from '../controller/jobController';
 import { useAuth } from '../shared/hooks/useAuth';
 import { storage } from '../utils/storage';
 import { ensureUserData } from '../utils/sessionUtils';
-
+import { JobPayload } from '../shared/types/Job';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -244,15 +244,23 @@ const PostJobPage: React.FC = () => {
       const values = await form.validateFields();
       const allFormData = { ...formData, ...values, skills };
       
-      // Prepare job data for backend
-      const jobName = allFormData.title;
-      const jobDescription = [allFormData.description];
-      const jobTags = skills;
-      const jobSalary = allFormData.budget;
-      const jobSlots = allFormData.maxApplicants;
-
+      const startDate = new Date(allFormData.startdate)
+      const deadline = new Date(allFormData.deadline)
+      // Create payload
+      const payload : JobPayload = {
+        jobName: allFormData.title,
+        jobDescription: [allFormData.description],
+        jobTags: allFormData.category,
+        jobSalary: allFormData.budget,
+        jobSlots: allFormData.maxApplicants,
+        jobSkills: skills,
+        jobExprienceLevel: allFormData.experienceLevel,
+        jobProjectType: allFormData.projectType,
+        jobStartDate: BigInt(startDate.getTime()) * 1_000_000n,
+        jobDeadline: BigInt(deadline.getTime()) * 1_000_000n
+      }
       // Call backend createJob function
-      const result = await createJob(jobName, jobDescription, jobTags, jobSalary, jobSlots, skills, allFormData.experienceLevel, allFormData.startdate, allFormData.deadline);
+      const result = await createJob(payload);
       
       if (result[0] === 'Success') {
         message.success(`Job ${isDraft ? 'saved as draft' : 'published'} successfully!`);

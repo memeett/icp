@@ -157,8 +157,8 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
       const success = await acceptApplier(userId, jobId);
       if (success) {
         // Create inbox notification for applicant
-        await createInbox(userId, user.id, 'application', 'accepted', 'Miaw');
-        
+        await createInbox(userId, jobId, user.id, 'application', 'accepted');
+
         message.success('Applicant accepted successfully!');
         await fetchJobDetails(); // Refresh data
         return true;
@@ -181,7 +181,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
       const success = await rejectApplier(userId, jobId);
       if (success) {
         // Create inbox notification for applicant
-        await createInbox(userId, user.id, 'application', 'rejected', 'Miaw');
+        await createInbox(userId,jobId, user.id, 'application', 'rejected');
         
         message.success('Applicant rejected.');
         await fetchJobDetails(); // Refresh data

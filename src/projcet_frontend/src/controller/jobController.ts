@@ -348,7 +348,10 @@ export const startJob = async (
     // Authenticate the user
     const agent = await agentService.getAgent();
 
-    const result = await job.startJob(job_id);
+    const result = await job.startJob(
+      job_id
+    );
+
     if (result) {
       return {
         jobStarted: true,
@@ -435,7 +438,9 @@ export const finishJob = async (
       await agent.fetchRootKey();
     }
 
-    const result = await job.finishJob(job_id);
+    const result = await job.finishJob(
+      job_id
+    );
 
     if ("ok" in result) {
       return { jobFinished: true, message: "Job finished successfully." };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   Typography,
@@ -43,6 +43,8 @@ import Navbar from '../ui/components/Navbar';
 import { useAuth, useJobDetails, useUserManagement } from '../shared/hooks';
 import { User } from '../shared/types/User';
 import { formatDate } from '../utils/dateUtils';
+import { get } from 'http';
+import { getUserById, getUserByName } from '../controller/userController';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -67,11 +69,15 @@ const JobDetailPage: React.FC = () => {
     isJobOwner,
     loading,
     isApplying,
+    isAccepting,
+    isRejecting,
+    inbox,
     handleApply,
     handleAcceptApplicant,
     handleRejectApplicant,
     handleStartJob,
-    handleFinishJob
+    handleFinishJob,
+    handleCoverLetter
   } = useJobDetails(jobId, user);
 
   const {
@@ -83,12 +89,17 @@ const JobDetailPage: React.FC = () => {
 
   const [isApplyModalVisible, setIsApplyModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
+  const [isAcceptModalVisible, setIsAcceptModalVisible] = useState(false);
+  const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
+  const [isCoverModalVisible, setIsCoverModalVisible] = useState(false);
+
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
 
   const [form] = Form.useForm();
   const [inviteForm] = Form.useForm();
 
+  const [coverLetter, setCoverLetter] = useState<string>("");
   // Handle user invitation
   const handleInviteUser = async (values: any) => {
     if (!user || !jobId || !values.userId) return;
@@ -137,7 +148,29 @@ const JobDetailPage: React.FC = () => {
     }
   };
 
-  console.log("Job details:", acceptedFreelancers);
+
+  // Inside ApplicantsContent
+  const getLatestCoverLetter = async (applicantId: string) => {
+    setIsCoverModalVisible(true)
+    if (!jobId || !user) return null;
+
+    await handleCoverLetter(jobId, user.id);
+    const applicant = await getUserById(applicantId)
+    const applicantMessages = inbox.filter(
+      (msg: any) =>
+        msg.senderName = applicant?.id
+    );
+
+    if (applicantMessages.length === 0) return null;
+
+    const sorted = applicantMessages.sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const message = sorted[0].message.split("\n")[1];
+    setCoverLetter(message); // Return the most recent cover letter message
+  };
 
   // Component for job details content
   const JobDetailsContent = () => {
@@ -360,10 +393,22 @@ const JobDetailPage: React.FC = () => {
         render: (_: any, record: ApplicantData) => (
           <Space>
             <Button
+              size="small"
+              onClick={() => navigate(`/profile/${record.user.id}`)}
+            >
+              View Profile
+            </Button>
+            <Button
+              size="small"
+              onClick={() => getLatestCoverLetter(record.user.id)}
+            >
+              View Cover Letter
+            </Button>
+            <Button
               type="primary"
               size="small"
               icon={<CheckOutlined />}
-              onClick={() => handleAcceptApplicant(record.user.id)}
+              onClick={() => setIsAcceptModalVisible(true)}
             >
               Accept
             </Button>
@@ -371,10 +416,111 @@ const JobDetailPage: React.FC = () => {
               size="small"
               danger
               icon={<CloseOutlined />}
-              onClick={() => handleRejectApplicant(record.user.id)}
+              onClick={() => setIsRejectModalVisible(true)}
             >
               Reject
             </Button>
+
+            <Modal
+              title="Cover Letter"
+              open={isCoverModalVisible}
+              onCancel={() => setIsCoverModalVisible(false)}
+              footer={[
+                <Button key="close" onClick={() => setIsCoverModalVisible(false)}>
+                  Close
+                </Button>,
+              ]}
+              width={600}
+            >
+              <Paragraph style={{ whiteSpace: "pre-line" }}>
+                {coverLetter ?? "Loading..."}
+              </Paragraph>
+            </Modal>
+
+            <Modal
+              title="Accept Applicant"
+              open={isAcceptModalVisible}
+              onCancel={() => setIsAcceptModalVisible(false)}
+              footer={null}
+              width={600}
+            >
+              <Form
+                form={form}
+                layout="vertical"
+                onFinish={() => handleAcceptApplicant(record.user.id, form.getFieldsValue())}
+              >
+                <Form.Item
+                  name="acceptancereason"
+                  label="Acceptance Reason"
+                  rules={[{ required: true, message: 'Please write an acceptance reason' }]}
+                >
+                  <TextArea
+                    rows={6}
+                    placeholder="Explain why this applicant is fit for this job..."
+                    maxLength={1000}
+                    showCount
+                  />
+                </Form.Item>
+
+                <div className="flex justify-end space-x-2">
+                  <Button onClick={() => setIsAcceptModalVisible(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isAccepting}
+                    icon={<SendOutlined />}
+
+                  >
+                    Accept Applicant
+                  </Button>
+                </div>
+              </Form>
+            </Modal>
+
+            <Modal
+              title="Reject Applicant"
+              open={isRejectModalVisible}
+              onCancel={() => setIsRejectModalVisible(false)}
+              footer={null}
+              width={600}
+            >
+              <Form
+                form={form}
+                layout="vertical"
+                onFinish={() => handleRejectApplicant(record.user.id, form.getFieldsValue())}
+              >
+                <Form.Item
+                  name="rejectionreason"
+                  label="Rejection Reason"
+                  rules={[{ required: true, message: 'Please write a rejection reason' }]}
+                >
+                  <TextArea
+                    rows={6}
+                    placeholder="Explain why this applicant isn't fit for this job..."
+                    maxLength={1000}
+                    showCount
+                  />
+                </Form.Item>
+
+                <div className="flex justify-end space-x-2">
+                  <Button onClick={() => setIsRejectModalVisible(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isRejecting}
+                    icon={<CloseOutlined />}
+
+                  >
+                    Reject Applicant
+                  </Button>
+                </div>
+              </Form>
+            </Modal>
+
           </Space>
         ),
       },
@@ -421,12 +567,6 @@ const JobDetailPage: React.FC = () => {
               onClick={() => navigate(`/profile/${record.id}`)}
             >
               View Profile
-            </Button>
-            <Button
-              danger
-              onClick={() => handleRejectApplicant(record.id)}
-            >
-              Remove
             </Button>
           </Space>
         ),

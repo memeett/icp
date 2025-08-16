@@ -152,6 +152,17 @@ actor InboxModule {
         userInbox;
     };
 
+    public func getInboxMessagesFromAppliers(jobId : Text, userId:Text) : async [Inbox.Inbox] {
+        let allInbox = Iter.toArray(inboxes.vals());
+        let userInbox = Array.filter(
+            allInbox,
+            func(inbox : Inbox.Inbox) : Bool {
+                inbox.jobId == jobId and inbox.receiverId == userId and inbox.inbox_type == "application";
+            },
+        );
+        userInbox;
+    };
+
     public func markAsRead(inboxId : Text) : async Result.Result<Inbox.Inbox, Text> {
         switch (inboxes.get(inboxId)) {
             case (null) {

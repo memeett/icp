@@ -85,6 +85,7 @@ export async function topUpWalletController(curr_user: User, amount: number) {
 
   // console.log("Transfer args:", transferArgs);
   console.log("Current user subAccount:", curr_user.subAccount);
+  console.log("Current user principal:", identity.getPrincipal().toText());
 
    const result = await icrc1_ledger_canister.icrc1_transfer({
     to: {
@@ -141,17 +142,14 @@ export async function transferToJobController(curr_user: User, curr_job: Job, am
   console.log("Amount to transfer:", BigInt(amount)); 
    const obj = curr_user.subAccount[0]!;
 
+
   // Convert values into Uint8Array
   const uint8 = new Uint8Array(Object.values(obj));
+  console.log("Uint8Array representation of subaccount:", uint8);
+  console.log("Current user subAccount:", curr_user.subAccount);
+  console.log("Current user principal:", identity.getPrincipal().toText());
+  console.log("Current job subAccount:", curr_job.subAccount);
 
-  const balance = await icrc1_ledger_canister.icrc1_balance_of({
-    
-      owner: identity.getPrincipal(), // recipient principal
-      subaccount: [uint8], // subaccount as Uint8Array
-    },
-  );
-
-  console.log("Balance:", balance);
    const result = await icrc1_ledger_canister.icrc1_transfer({
     to: {
       owner: identity.getPrincipal(), // recipient principal

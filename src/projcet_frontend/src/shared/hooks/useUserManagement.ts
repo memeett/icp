@@ -63,8 +63,8 @@ export const useUserManagement = (): UseUserManagementReturn => {
     jobId?: string
   ): Promise<boolean> => {
     try {
-      await createInbox(userId, currentUserId, 'invitation', 'request', 'Miaw');
-      if(jobId){
+      await createInbox(userId, jobId ? jobId : '', currentUserId, 'invitation', 'request');
+      if (jobId) {
 
         const result = await createInvitation(jobId, userId, currentUserId)
         

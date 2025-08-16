@@ -41,6 +41,7 @@ import { Inbox } from '../../../../declarations/inbox/inbox.did';
 import { getBalanceController, topUpWalletController } from '../../controller/tokenController';
 import { Token } from '../../interface/Token';
 import { InboxResponse } from '../../shared/types/Inbox';
+import { InboxDropdown } from './InboxDropdown';
 
 const { Text } = Typography;
 
@@ -63,12 +64,11 @@ const Navbar: React.FC = () => {
 
   const fetchInbox = useCallback(async () => {
     try {
-      console.log("Fetching inbox for user:", user?.id);
       const inboxResult = await getAllInboxByUserId(user?.id || "");
-      console.log("mama" + inboxResult);
       if (inboxResult) {
         setInboxes(inboxResult);
       }
+      console.log(inboxes)
     } catch (error) {
       console.error("Failed to fetch inbox:", error);
     }
@@ -323,19 +323,25 @@ const Navbar: React.FC = () => {
                   className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50"
                 />
               </motion.div>
-
-              {/* Notifications */}
+              
               {isAuthenticated && (
                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <Badge count={3} size="small">
-                    <Button
-                      type="text"
-                      icon={<BellOutlined />}
-                      className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50"
-                    />
-                  </Badge>
+                  <Dropdown
+                    overlay={<InboxDropdown inboxes={inboxes} />}
+                    placement="bottomRight"
+                    trigger={["click"]}
+                  >
+                    <Badge count={inboxes.filter((m) => !m.read).length} size="small">
+                      <Button
+                        type="text"
+                        icon={<BellOutlined />}
+                        className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50"
+                      />
+                    </Badge>
+                  </Dropdown>
                 </motion.div>
               )}
+
 
               {/* Authentication Section */}
               <AnimatePresence mode="wait">

@@ -12,35 +12,71 @@ interface FaceRecognitionProps {
   principalId: string;
   onSuccess: (data?: any) => void;
   onError: (error: string) => void;
-  mode: "register" | "verify";
   isOpen: boolean;
   onClose: () => void;
+  purpose: "login" | "setup"; // New prop to define the purpose
 }
 
 const FaceRecognition: React.FC<FaceRecognitionProps> = ({
   principalId,
   onSuccess,
   onError,
-  mode: initialMode,
   isOpen,
   onClose,
+  purpose, // Destructure the new prop
 }) => {
   const webcamRef = useRef<Webcam>(null);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [currentMode, setCurrentMode] = useState(initialMode);
+  const [mode, setMode] = useState<"register" | "verify" | "loading">("loading");
   const [captureCount, setCaptureCount] = useState(0);
   const [registrationStatus, setRegistrationStatus] = useState<
     "idle" | "processing" | "success" | "error"
   >("idle");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const checkRegistrationStatus = async () => {
+      if (!isOpen) return;
+
+      if (purpose === "login" && !principalId) {
+        // If purpose is login and no principalId (user not logged in),
+        // it means we are trying to log in. We should attempt verification.
+        setMode("verify"); // Set mode to verify for login attempts
+        setRegistrationStatus("idle");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setMode("loading");
+        setLoading(true);
+        const response = await fetch(`http://localhost:8000/check-registration/${principalId}`);
+        const result = await response.json();
+        if (result.status === "registered") {
+          setMode("verify");
+        } else {
+          setMode("register");
+        }
+      } catch (error) {
+        console.error("Error checking registration status:", error);
+        onError("Could not connect to face recognition service.");
+        setMode("register"); // Default to register on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkRegistrationStatus();
+  }, [isOpen, principalId, onError, purpose]); // Add purpose to dependency array
+
+
+  useEffect(() => {
     if (isOpen) {
-      setCurrentMode(initialMode);
       setCaptureCount(0);
       setRegistrationStatus("idle");
     }
-  }, [isOpen, initialMode]);
+  }, [isOpen]);
 
   const capture = async () => {
     if (!webcamRef.current || isCapturing) return;
@@ -71,12 +107,12 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
       formData.append("file", blob, "image.jpg");
 
       // Only add principal_id if in register mode
-      if (currentMode === "register") {
+      if (mode === "register") {
         formData.append("principal_id", principalId);
       }
 
       const endpoint =
-        currentMode === "register" ? "/register-face" : "/verify-face";
+        mode === "register" ? "/register-face" : "/verify-face";
       const response = await fetch(`http://localhost:8000${endpoint}`, {
         method: "POST",
         body: formData,
@@ -96,25 +132,30 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
         console.log(result.message);
         setRegistrationStatus("success");
 
-        if (currentMode === "verify" && result.principal_id) {
-          // Handle successful verification
-          setTimeout(() => {
+        if (mode === "verify" && result.principal_id) {
+          setTimeout(async () => {
             onSuccess({
               principalId: result.principal_id,
               similarity: result.similarity,
               message: result.message,
             });
-            login(result.principal_id);
-            navigate("/");
+            if (purpose === "login") { // Only login if purpose is login
+              await login(result.principal_id); // Await the login call
+              window.location.reload(); // Reload the page after successful login
+            }
             onClose();
-          }, 1500);
+          }, 500);
         } else {
           // Handle successful registration
           setCaptureCount((prev) => prev + 1);
-          setTimeout(() => {
+          setTimeout(async () => { // Make this async to await login
             if (captureCount >= 2) {
               // If this was the 3rd capture (0-indexed)
               onSuccess();
+              if (purpose === "login") { // Only login if purpose is login
+                await login(principalId); // Use the provided principalId for login, await the call
+                window.location.reload(); // Reload the page after successful login
+              }
               onClose();
             } else {
               setRegistrationStatus("idle");
@@ -136,11 +177,41 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
     }
   };
 
+  const getTitle = () => {
+    if (mode === 'loading') return "Checking Status...";
+    if (purpose === "login") {
+      return mode === "register" ? "Register Face for Login" : "Login with Face Recognition";
+    }
+    return mode === "register" ? "Face Registration" : "Face Verification";
+  }
+
+  const getInstruction = () => {
+    if (mode === 'loading') return "Please wait while we check your registration status.";
+    if (purpose === "login") {
+      return mode === "register"
+        ? "Please capture your face 3 times to register for login."
+        : "Look at the camera to log in with your face.";
+    }
+    return mode === "register"
+      ? "Please capture your face 3 times to register."
+      : "Look at the camera to verify your identity.";
+  }
+
+  const getButtonText = () => {
+    if (registrationStatus === "processing") return "Processing...";
+    if (registrationStatus === "success") return "Captured Successfully!";
+    if (registrationStatus === "error") return "Try Again";
+    if (mode === "register") {
+      return purpose === "login" ? `Register Face ${captureCount + 1}/3` : `Capture Face ${captureCount + 1}/3`;
+    }
+    return purpose === "login" ? "Login with Face" : "Verify Face";
+  }
+
   return (
     <Modal
       title={
         <Title level={3} style={{ margin: 0 }}>
-          {currentMode === "register" ? "Face Registration" : "Face Verification"}
+          {getTitle()}
         </Title>
       }
       open={isOpen}
@@ -152,9 +223,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
     >
       <div className="text-center">
         <Text type="secondary" className="block mb-6">
-          {currentMode === "register"
-            ? "Please capture your face 3 times to register."
-            : "Look at the camera to verify your identity."}
+          {getInstruction()}
         </Text>
 
         <div className="relative inline-block mb-6">
@@ -212,7 +281,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
           </div>
         </div>
 
-        {currentMode === "register" && (
+        {mode === "register" && (
           <div className="mb-6">
             <Progress
               percent={(captureCount / 3) * 100}
@@ -232,19 +301,11 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
             size="large"
             icon={<CameraOutlined />}
             onClick={capture}
-            disabled={isCapturing || registrationStatus === "processing"}
-            loading={registrationStatus === "processing"}
+            disabled={isCapturing || registrationStatus === "processing" || mode === 'loading'}
+            loading={registrationStatus === "processing" || mode === 'loading'}
             className="w-full"
           >
-            {registrationStatus === "processing"
-              ? "Processing..."
-              : registrationStatus === "success"
-              ? "Captured Successfully!"
-              : registrationStatus === "error"
-              ? "Try Again"
-              : currentMode === "register"
-              ? `Capture Face ${captureCount + 1}/3`
-              : "Verify Face"}
+            {getButtonText()}
           </Button>
         </Space>
       </div>

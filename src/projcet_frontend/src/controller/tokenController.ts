@@ -54,7 +54,7 @@ export async function topUpWalletController(user: User, amount: number) {
 
   const mintingOwnerPrincipal = await getMintingAddress(); // Principal type
 
-  // const subaccount : [] | [Uint8Array] = user.subAccount ? [user.subAccount[0]] : [];
+  
 
   // const toAccount = {
   //   owner: mintingOwnerPrincipal,

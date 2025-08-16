@@ -14,11 +14,11 @@ import Debug "mo:base/Debug";
 import Job "../Job/model";
 import Bool "mo:base/Bool";
 
-persistent actor UserModel {
+actor UserModel {
 
     private stable var usersEntries : [(Text, User.User)] = [];
 
-    private transient var users = HashMap.fromIter<Text, User.User>( // Marked as transient
+    private var users = HashMap.fromIter<Text, User.User>( // Marked as transient
         usersEntries.vals(),
         0,
         Text.equal,
@@ -103,107 +103,107 @@ persistent actor UserModel {
         };
     };
 
-    public func topupBalance(
-        userId: Text,
-        amount: Nat,
-        ledger_canister: Text
-    ) : async Result.Result<Text, Text> {
+    // public func topupBalance(
+    //     userId: Text,
+    //     amount: Nat,
+    //     ledger_canister: Text
+    // ) : async Result.Result<Text, Text> {
 
-        switch (await getUserById(userId)) {
-            case (#err(errMsg)) {
-                return #err("Failed to get user: " # errMsg);
-            };
-            case (#ok(user)) {
-                type Account = {
-                    owner : Principal;
-                    subaccount : ?[Nat8];
-                };
+    //     switch (await getUserById(userId)) {
+    //         case (#err(errMsg)) {
+    //             return #err("Failed to get user: " # errMsg);
+    //         };
+    //         case (#ok(user)) {
+    //             type Account = {
+    //                 owner : Principal;
+    //                 subaccount : ?[Nat8];
+    //             };
 
-                type TransferArgs = {
-                    to : Account;
-                    fee : ?Nat;
-                    memo : ?[Nat8];
-                    from_subaccount : ?[Nat8];
-                    created_at_time : ?Nat64;
-                    amount : Nat;
-                };
+    //             type TransferArgs = {
+    //                 to : Account;
+    //                 fee : ?Nat;
+    //                 memo : ?[Nat8];
+    //                 from_subaccount : ?[Nat8];
+    //                 created_at_time : ?Nat64;
+    //                 amount : Nat;
+    //             };
 
-                type TransferError = {
-                    #GenericError : { message : Text; error_code : Nat };
-                    #BadBurn : { min_burn_amount : Nat };
-                    #Duplicate : { duplicate_of : Nat };
-                    #BadFee : { expected_fee : Nat };
-                    #CreatedInFuture : { ledger_time : Nat64 };
-                    #InsufficientFunds : { balance : Nat };
-                };
+    //             type TransferError = {
+    //                 #GenericError : { message : Text; error_code : Nat };
+    //                 #BadBurn : { min_burn_amount : Nat };
+    //                 #Duplicate : { duplicate_of : Nat };
+    //                 #BadFee : { expected_fee : Nat };
+    //                 #CreatedInFuture : { ledger_time : Nat64 };
+    //                 #InsufficientFunds : { balance : Nat };
+    //             };
 
-                type TransferResult = {
-                    #Ok : Nat;
-                    #Err : TransferError;
-                };
+    //             type TransferResult = {
+    //                 #Ok : Nat;
+    //                 #Err : TransferError;
+    //             };
 
-                let ledger = actor (ledger_canister) : actor {
-                    icrc1_transfer : (TransferArgs) -> async TransferResult;
-                    icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
-                };
+    //             let ledger = actor (ledger_canister) : actor {
+    //                 icrc1_transfer : (TransferArgs) -> async TransferResult;
+    //                 icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
+    //             };
 
-                let mintingAccountOpt = await ledger.icrc1_minting_account();
+    //             let mintingAccountOpt = await ledger.icrc1_minting_account();
 
-                // Unwrap optional minting account
-                if (mintingAccountOpt == null) {
-                    return #err("No minting account set");
-                };
+    //             // Unwrap optional minting account
+    //             if (mintingAccountOpt == null) {
+    //                 return #err("No minting account set");
+    //             };
 
-                let mintingAccount = switch (mintingAccountOpt) {
-                    case (?acc) { acc }; // unwrap here
-                };
+    //             let mintingAccount = switch (mintingAccountOpt) {
+    //                 case (?acc) { acc }; // unwrap here
+    //             };
 
-                // Use user's subaccount if it exists, otherwise null
-                let subAcc : ?[Nat8] = switch (user.subAccount) {
-                    case null { null };
-                    case (?v) { ?v };
-                };
+    //             // Use user's subaccount if it exists, otherwise null
+    //             let subAcc : ?[Nat8] = switch (user.subAccount) {
+    //                 case null { null };
+    //                 case (?v) { ?v };
+    //             };
 
-                let transferArgs = {
-                    to = {
-                        owner = mintingAccount.owner;
-                        subaccount = subAcc; // or null if no subaccount
-                    };
-                    amount = amount;
-                    fee = null;
-                    memo = null;
-                    from_subaccount = null;
-                    created_at_time = null;
-                };
+    //             let transferArgs = {
+    //                 to = {
+    //                     owner = mintingAccount.owner;
+    //                     subaccount = subAcc; // or null if no subaccount
+    //                 };
+    //                 amount = amount;
+    //                 fee = null;
+    //                 memo = null;
+    //                 from_subaccount = null;
+    //                 created_at_time = null;
+    //             };
 
-                let transferResult = await ledger.icrc1_transfer(transferArgs);
+    //             let transferResult = await ledger.icrc1_transfer(transferArgs);
 
-                switch (transferResult) {
-                    case (#Ok(blockIndex)) {
-                        return #ok("Transfer succeeded. Block index: ");
-                    };
-                    case (#Err(#GenericError e)) {
-                        return #err("Generic error ("  );
-                    };
-                    case (#Err(#BadBurn e)) {
-                        return #err("Bad burn. Minimum burn amount: " );
-                    };
-                    case (#Err(#Duplicate e)) {
-                        return #err("Duplicate transaction. Original block index: " );
-                    };
-                    case (#Err(#BadFee e)) {
-                        return #err("Bad fee. Expected: " );
-                    };
-                    case (#Err(#CreatedInFuture e)) {
-                        return #err("Created in future. Ledger time: ");
-                    };
-                    case (#Err(#InsufficientFunds e)) {
-                        return #err("Insufficient funds. Balance: ");
-                    };
-                };
-            };
-        };
-    };
+    //             switch (transferResult) {
+    //                 case (#Ok(blockIndex)) {
+    //                     return #ok("Transfer succeeded. Block index: ");
+    //                 };
+    //                 case (#Err(#GenericError e)) {
+    //                     return #err("Generic error ("  );
+    //                 };
+    //                 case (#Err(#BadBurn e)) {
+    //                     return #err("Bad burn. Minimum burn amount: " );
+    //                 };
+    //                 case (#Err(#Duplicate e)) {
+    //                     return #err("Duplicate transaction. Original block index: " );
+    //                 };
+    //                 case (#Err(#BadFee e)) {
+    //                     return #err("Bad fee. Expected: " );
+    //                 };
+    //                 case (#Err(#CreatedInFuture e)) {
+    //                     return #err("Created in future. Ledger time: ");
+    //                 };
+    //                 case (#Err(#InsufficientFunds e)) {
+    //                     return #err("Insufficient funds. Balance: ");
+    //                 };
+    //             };
+    //         };
+    //     };
+    // };
     
 
     public func addBalance(userId: Text, amount: Nat, ledger_canister: Text) : async Result.Result<Text, Text> {
@@ -247,41 +247,41 @@ persistent actor UserModel {
 
                 return #ok("Balance added successfully. Transaction ID: ");
 
-                // switch (transferResult) {
-                //     case (#ok(txId)) {
-                //         // Update user's wallet balance
-                //         let updatedUser : User.User = {
-                //             id = user.id;
-                //             profilePicture = user.profilePicture;
-                //             username = user.username;
-                //             dob = user.dob;
-                //             preference = user.preference;
-                //             description = user.description;
-                //             wallet = user.wallet;
-                //             rating = user.rating;
-                //             createdAt = user.createdAt;
-                //             updatedAt = Time.now();
-                //             isFaceRecognitionOn = user.isFaceRecognitionOn;
-                //             isProfileCompleted = user.isProfileCompleted;
-                //             subAccount = user.subAccount; 
-                //         };
-                //         users.put(userId, updatedUser);
+                switch (transferResult) {
+                    case (#ok(txId)) {
+                        // Update user's wallet balance
+                        let updatedUser : User.User = {
+                            id = user.id;
+                            profilePicture = user.profilePicture;
+                            username = user.username;
+                            dob = user.dob;
+                            preference = user.preference;
+                            description = user.description;
+                            wallet = user.wallet;
+                            rating = user.rating;
+                            createdAt = user.createdAt;
+                            updatedAt = Time.now();
+                            isFaceRecognitionOn = user.isFaceRecognitionOn;
+                            isProfileCompleted = user.isProfileCompleted;
+                            subAccount = user.subAccount; 
+                        };
+                        users.put(userId, updatedUser);
 
-                //         // Record the transaction
-                //         addTransaction({
-                //             fromId = user.id;
-                //             transactionAt = Time.now();
-                //             amount = Float.fromInt(amount);
-                //             transactionType = #topUp; // Assuming this is a top-up
-                //             toId = null; // No recipient for top-ups
-                //         });
+                        // Record the transaction
+                        addTransaction({
+                            fromId = user.id;
+                            transactionAt = Time.now();
+                            amount = Float.fromInt(amount);
+                            transactionType = #topUp; // Assuming this is a top-up
+                            toId = null; // No recipient for top-ups
+                        });
 
-                //         return #ok("Balance added successfully. Transaction ID: " # txId);
-                //     };
-                //     case (#err(errMsg)) {
-                //         return #err("Transfer failed: " # errMsg);
-                //     };
-                // };
+                        return #ok("Balance added successfully. Transaction ID: " # txId);
+                    };
+                    case (#err(errMsg)) {
+                        return #err("Transfer failed: " # errMsg);
+                    };
+                };
             };
         };
     };

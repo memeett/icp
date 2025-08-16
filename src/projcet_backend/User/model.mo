@@ -33,6 +33,12 @@ module{
         #transferToJob;
     };
 
+    public type Token ={
+        token_name: Text;
+        token_symbol: Text;
+        token_value: Nat;
+    };
+
     public type CashFlowHistory = {
         fromId: Text;
         transactionAt: Int;

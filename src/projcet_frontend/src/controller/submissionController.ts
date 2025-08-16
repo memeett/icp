@@ -61,7 +61,8 @@ export const getFileSubmissionbyId = async (id: string): Promise<Blob | null> =>
         const res = await submission.getFileSubmissionbyId(id);
         
         if (res && res.length > 0 && res[0] instanceof Uint8Array) {
-            return new Blob([res[0]], { type: 'application/octet-stream' });
+            const uint8Array = new Uint8Array(res[0]);
+            return new Blob([uint8Array], { type: 'application/octet-stream' });
         } else if (res && res.length > 0 && Array.isArray(res[0])) {
             const uint8Array = new Uint8Array(res[0]);
             return new Blob([uint8Array], { type: 'application/octet-stream' });

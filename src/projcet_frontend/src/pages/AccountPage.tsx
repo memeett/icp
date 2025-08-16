@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Card, 
-  Button, 
-  Typography, 
-  Space, 
-  Switch, 
+import {
+  Card,
+  Button,
+  Typography,
+  Space,
+  Switch,
   Divider,
   Avatar,
   Row,
@@ -13,15 +13,16 @@ import {
   Alert,
   Spin
 } from 'antd';
-import { 
-  UserOutlined, 
-  CameraOutlined, 
+import {
+  UserOutlined,
+  CameraOutlined,
   SettingOutlined,
-  SecurityScanOutlined 
+  SecurityScanOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../shared/hooks/useAuth';
 import FaceRecognition from '../components/FaceRecognition';
 import Navbar from '../ui/components/Navbar';
+import AdvisorChat from '../components/chat/AdvisorChat';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -29,7 +30,33 @@ const AccountPage: React.FC = () => {
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [faceRecognitionEnabled, setFaceRecognitionEnabled] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Set to true initially for loading state
+
+  useEffect(() => {
+    const checkFaceRegistrationStatus = async () => {
+      if (user?.id) {
+        try {
+          setLoading(true);
+          const response = await fetch(`http://localhost:8000/check-registration/${user.id}`);
+          const result = await response.json();
+          if (result.status === "registered") {
+            setFaceRecognitionEnabled(true);
+          } else {
+            setFaceRecognitionEnabled(false);
+          }
+        } catch (error) {
+          console.error("Error checking face registration status:", error);
+          // Optionally, show an error message to the user
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    checkFaceRegistrationStatus();
+  }, [user?.id]);
 
   const handleSuccess = useCallback(() => {
     setFaceRecognitionEnabled(true);
@@ -160,6 +187,11 @@ const AccountPage: React.FC = () => {
               </Card>
             </Col>
           </Row>
+
+          <motion.div className="mt-8">
+            <AdvisorChat />
+          </motion.div>
+
         </motion.div>
       </div>
 
@@ -169,9 +201,9 @@ const AccountPage: React.FC = () => {
           principalId={user.id}
           onSuccess={handleSuccess}
           onError={handleError}
-          mode="register"
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          purpose="setup"
         />
       )}
     </div>

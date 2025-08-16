@@ -1,16 +1,16 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Job } from "../../interface/job/Job";
 import { getJobById } from "../../controller/jobController";
-import { User } from "../../interface/User";
 import { getUserById } from "../../controller/userController";
 import { user } from "../../../../declarations/user";
 import { formatDate } from "../../utils/dateUtils";
+import { User } from "../../shared/types/User";
+import { Job } from "../../shared/types/Job";
 
 export default function PublicProfileJobHistoryCard({ jobId, index, auroraColors }: { jobId: string; index: number, auroraColors: string }) {
     const [job, setJob] = useState<Job | null>(null);
     const [date, setDate] = useState<string>("");
-    const [client, setClient] = useState<User>()
+    const [client, setClient] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     useEffect(() => {

@@ -14,6 +14,7 @@ import {
   message,
   Result,
   List,
+  Modal,
 } from 'antd';
 import {
   UserOutlined,
@@ -23,6 +24,7 @@ import {
   MessageOutlined,
   ShareAltOutlined,
   CalendarOutlined,
+  SendOutlined
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
@@ -30,7 +32,9 @@ import Navbar from '../ui/components/Navbar';
 import { getUserById, getProfilePictureUrl } from '../controller/userController';
 import { User } from '../shared/types/User';
 import dayjs from 'dayjs';
-
+import { formatDate } from '../utils/dateUtils';
+import { useManageJobs } from '../shared/hooks';
+import InviteModal from '../components/modals/InviteModel';
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
@@ -38,6 +42,8 @@ const PublicProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
+  const {jobs} = useManageJobs();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -61,6 +67,7 @@ const PublicProfilePage: React.FC = () => {
     navigator.clipboard.writeText(window.location.href);
     message.success('Profile link copied to clipboard');
   };
+
 
   if (isLoading) {
     return (
@@ -112,7 +119,7 @@ const PublicProfilePage: React.FC = () => {
                 <Space direction="vertical" size="small">
                   <Space>
                     <CalendarOutlined />
-                    <Text>Member since {dayjs(Number(user.createdAt)).format('MMMM YYYY')}</Text>
+                    <Text>Member since {formatDate(user.createdAt)}</Text>
                   </Space>
                   <Space>
                     <Rate disabled value={user.rating} allowHalf />
@@ -122,8 +129,8 @@ const PublicProfilePage: React.FC = () => {
               </Col>
               <Col xs={24} sm={6} className="text-center">
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <Button type="primary" icon={<MessageOutlined />} block>
-                    Contact
+                  <Button type="primary" icon={<SendOutlined />} onClick={() => {setIsInviteModalVisible(true)}} block>
+                    Invite
                   </Button>
                   <Button icon={<ShareAltOutlined />} onClick={handleShare} block>
                     Share
@@ -181,6 +188,15 @@ const PublicProfilePage: React.FC = () => {
           </Card>
         </motion.div>
       </div>
+
+      <InviteModal
+        visible={isInviteModalVisible}
+        onCancel={() => setIsInviteModalVisible(false)}
+        jobs={jobs || []}
+        freelancer={user}
+      />
+
+
     </div>
   );
 };

@@ -83,29 +83,64 @@ export const getCookie = (name: string): string | null => {
 };
 
 export const login = async (principalId: string): Promise<boolean> => {
-    const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
-    const response = await fetch(defaultImagePath);
-    const imageBlob = await response.blob();
+    try {
+        const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
+        const response = await fetch(defaultImagePath);
+        const imageBlob = await response.blob();
 
-    const arrayBuffer = await imageBlob.arrayBuffer();
-    const profilePicBlob = new Uint8Array(arrayBuffer);
+        const arrayBuffer = await imageBlob.arrayBuffer();
+        const profilePicBlob = new Uint8Array(arrayBuffer);
 
-    const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
-    if (!res) {
+        const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
+        if (!res) {
+            return false;
+        }
+
+        const userIdResult = await session.getUserIdBySession(res);
+        if ("ok" in userIdResult) {
+            const userId = userIdResult.ok;
+            const userDetailResult = await user.getUserById(userId);
+
+            if ("ok" in userDetailResult) {
+                const userData = userDetailResult.ok;
+                storage.clear(); // Clear existing storage
+                storage.setSession(res); // Set new session
+
+                // Convert to frontend User format
+                const convertedUser: User = {
+                    id: userData.id,
+                    profilePicture: userData.profilePicture ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' }) : null,
+                    username: userData.username,
+                    dob: userData.dob,
+                    preference: userData.preference.map((pref: any) => ({
+                        id: pref.id.toString(),
+                        jobCategoryName: pref.jobCategoryName
+                    })),
+                    description: userData.description,
+                    wallet: userData.wallet,
+                    rating: userData.rating,
+                    createdAt: BigInt(userData.createdAt),
+                    updatedAt: BigInt(userData.updatedAt),
+                    isFaceRecognitionOn: userData.isFaceRecognitionOn,
+                    isProfileCompleted: (userData as any).isProfileCompleted || false,
+                    subAccount: [new Uint8Array()]
+                };
+                storage.setUser({ ok: convertedUser }); // Store converted user data
+
+                document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
+                return true;
+            } else {
+                console.error("Error fetching user details:", userDetailResult.err);
+                return false;
+            }
+        } else {
+            console.error("Error fetching user ID:", userIdResult.err);
+            return false;
+        }
+    } catch (error) {
+        console.error("Login failed:", error);
         return false;
     }
-    document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
-    storage.setSession(res);
-    const userIdResult = await session.getUserIdBySession(res);
-    if ("ok" in userIdResult) {
-      const userId = userIdResult.ok;
-      const userDetail = await user.getUserById(userId);
-      storage.setUser(userDetail);
-    } else {
-      console.error("Error fetching user ID:", userIdResult.err);
-      return false;
-    }
-    return true;
 };
 
 
@@ -457,7 +492,7 @@ export const getAllUsers = async (): Promise<User[] | null> => {
                 updatedAt: BigInt(userData.updatedAt),
                 subAccount : userSubaccount,
                 isProfileCompleted: (userData as any).isProfileCompleted || false,
-                preference: userData.preference.map((pref:  JobCategory) => ({
+                preference: userData.preference.map((pref: JobCategory) => ({
                     ...pref,
                     id: pref.id.toString()
                 

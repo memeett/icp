@@ -45,10 +45,7 @@ import { useAuth, useManageJobs, useUserManagement } from '../shared/hooks';
 
 import { Job, JobCategory } from '../shared/types/Job';
 import { formatDate } from '../utils/dateUtils';
-import { User } from '../interface/User';
-import { ApplierPayload } from '../interface/Applier';
 import { startJob, updateJob } from '../controller/jobController';
-import { job } from '../../../declarations/job';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;

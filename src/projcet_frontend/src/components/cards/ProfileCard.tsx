@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import GlareCard from "./GlareCard";
-import { User } from "../../interface/User";
+import { User } from "../../shared/types/User";
 
 export const ProfileCard = (user: User) => {
   const nav = useNavigate();

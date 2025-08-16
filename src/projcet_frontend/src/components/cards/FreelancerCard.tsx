@@ -1,8 +1,8 @@
 import React, { useCallback } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Star, Users, UserCircle } from "lucide-react";
-import { User } from "../../interface/User";
 import { useNavigate } from "react-router-dom";
+import { User } from "../../shared/types/User";
 
 export default function FreelancerCard({ user }: { user: User }) {
   const nav = useNavigate();

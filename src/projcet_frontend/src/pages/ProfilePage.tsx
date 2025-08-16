@@ -2,36 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   Card,
   Typography,
-  Button,
-  Avatar,
-  Row,
-  Col,
   Tabs,
-  Form,
-  Input,
-  Select,
-  Upload,
   Tag,
   Space,
-  Divider,
-  Rate,
   List,
-  Modal,
-  message,
   Skeleton,
-  DatePicker,
+  Row,
+  Col,
 } from 'antd';
 import {
-  UserOutlined,
-  EditOutlined,
-  CameraOutlined,
-  StarOutlined,
-  ProjectOutlined,
-  DollarOutlined,
-  CalendarOutlined,
-  MailOutlined,
   GlobalOutlined,
   InfoCircleOutlined,
+  InboxOutlined,
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import Navbar from '../ui/components/Navbar';
@@ -40,10 +22,13 @@ import { getProfilePictureUrl } from '../controller/userController';
 import dayjs from 'dayjs';
 import { JobCategory } from '../shared/types/Job';
 import { User } from '../shared/types/User';
-
+import { useInvitation } from '../shared/hooks/useInvitation';
+import { acceptInvitation, rejectInvitation } from '../controller/invitationController';
+import EditProfileModal from './profile/EditProfileModal';
+import ProfileHeader from './profile/ProfileHeader';
+import StatsCards from './profile/StatsCards';
+import InvitationsTab from './profile/InvitationsTab';
 const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
-const { Option } = Select;
 const { TabPane } = Tabs;
 
 // Mock job categories - in a real app, this would be fetched from the backend
@@ -58,22 +43,15 @@ const mockJobCategories: JobCategory[] = [
 const ProfilePage: React.FC = () => {
   const { user, isLoading, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [form] = Form.useForm();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-
+  const {invitations,refetch, processingInvitation, setProcessingInvitation} = useInvitation(user!.id)
+  
   useEffect(() => {
-    if (user) {
-      form.setFieldsValue({
-        ...user,
-        dob: user.dob ? dayjs(user.dob) : null,
-        preference: user.preference?.map(p => p.id) || [],
-      });
-      if (user.profilePicture) {
-        setProfileImage(getProfilePictureUrl(user.id, user.profilePicture));
-      }
+    if (user && user.profilePicture) {
+      setProfileImage(getProfilePictureUrl(user.id, user.profilePicture));
     }
-  }, [user, form]);
+  }, [user]);
 
   const handleSave = async (values: any) => {
     if (!user) return;
@@ -92,11 +70,9 @@ const ProfilePage: React.FC = () => {
     }
 
     if (uploadedFile) {
-      console.log("1");
       payload.profilePicture = new Blob([uploadedFile], { type: uploadedFile.type });
     }
     else {
-      console.log("2");
       payload.profilePicture = user.profilePicture;
     }
 
@@ -117,6 +93,42 @@ const ProfilePage: React.FC = () => {
       };
       reader.readAsDataURL(file);
       setUploadedFile(file);
+    }
+  };
+
+  const handleAcceptInvitation = async (invitationId: bigint) => {
+    if (!user) return;
+    setProcessingInvitation(invitationId.toString());
+    try {
+      const success = await acceptInvitation(user.id, invitationId);
+      if (success) {
+        console.log("Invitation accepted successfully!");
+        refetch();
+      } else {
+        console.error("Failed to accept invitation.");
+      }
+    } catch (error) {
+      console.error("An error occurred while accepting the invitation.", error);
+    } finally {
+      setProcessingInvitation(null);
+    }
+  };
+
+  const handleRejectInvitation = async (invitationId: bigint) => {
+    if (!user) return;
+    setProcessingInvitation(invitationId.toString());
+    try {
+      const success = await rejectInvitation(user.id, invitationId);
+      if (success) {
+        console.log("Invitation rejected successfully.");
+        refetch();
+      } else {
+        console.error("Failed to reject invitation.");
+      }
+    } catch (error) {
+      console.error("An error occurred while rejecting the invitation.", error);
+    } finally {
+      setProcessingInvitation(null);
     }
   };
 
@@ -153,55 +165,14 @@ const ProfilePage: React.FC = () => {
           transition={{ duration: 0.5 }}
         >
           <Card className="mb-6">
-            <Row gutter={[24, 24]} align="middle">
-              <Col xs={24} sm={6} className="text-center">
-                <Avatar size={120} src={profileImage} icon={<UserOutlined />} />
-              </Col>
-              <Col xs={24} sm={12}>
-                <Title level={2} className="mb-2">{user.username || 'N/A'}</Title>
-                <Space direction="vertical" size="small">
-                  <Space>
-                    <MailOutlined />
-                    <Text>{user.id}</Text>
-                  </Space>
-                </Space>
-              </Col>
-              <Col xs={24} sm={6} className="text-center">
-                <Button
-                  type="primary"
-                  icon={<EditOutlined />}
-                  onClick={() => setIsEditing(true)}
-                  block
-                >
-                  Edit Profile
-                </Button>
-              </Col>
-            </Row>
+            <ProfileHeader
+              user={user}
+              profileImage={profileImage}
+              onEdit={() => setIsEditing(true)}
+            />
           </Card>
 
-          <Row gutter={[16, 16]} className="mb-6">
-            <Col xs={12} sm={8}>
-              <Card className="text-center">
-                <DollarOutlined className="text-2xl text-green-500 mb-2" />
-                <div className="text-xl font-bold">${user.wallet.toLocaleString()}</div>
-                <Text type="secondary">Wallet Balance</Text>
-              </Card>
-            </Col>
-            <Col xs={12} sm={8}>
-              <Card className="text-center">
-                <StarOutlined className="text-2xl text-yellow-500 mb-2" />
-                <div className="text-xl font-bold">{user.rating.toFixed(1)}</div>
-                <Text type="secondary">Average Rating</Text>
-              </Card>
-            </Col>
-            <Col xs={12} sm={8}>
-              <Card className="text-center">
-                <ProjectOutlined className="text-2xl text-blue-500 mb-2" />
-                <div className="text-xl font-bold">0</div>
-                <Text type="secondary">Jobs Completed</Text>
-              </Card>
-            </Col>
-          </Row>
+          <StatsCards user={user} />
 
           <Card>
             <Tabs defaultActiveKey="overview">
@@ -245,61 +216,37 @@ const ProfilePage: React.FC = () => {
                   </Col>
                 </Row>
               </TabPane>
+
+              <TabPane
+                tab={
+                    <Space>
+                      <InboxOutlined />
+                      Invitations
+                    </Space>
+                }
+                key="invitations"
+              >
+                <InvitationsTab
+                  invitations={invitations || []}
+                 processingInvitation={processingInvitation}
+                 onAccept={handleAcceptInvitation}
+                 onReject={handleRejectInvitation}
+               />
+              </TabPane>
             </Tabs>
           </Card>
         </motion.div>
       </div>
 
-      <Modal
-        title="Edit Profile"
+      <EditProfileModal
         open={isEditing}
         onCancel={() => setIsEditing(false)}
-        footer={null}
-        width={800}
-      >
-        <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Row gutter={16}>
-            <Col span={24} className="text-center mb-4">
-              <Upload
-                customRequest={handleAvatarUpload}
-                showUploadList={false}
-                accept="image/*"
-              >
-                <Avatar size={120} src={profileImage} icon={<UserOutlined />} className="cursor-pointer" />
-                <Button icon={<CameraOutlined />} className="mt-2">Change Photo</Button>
-              </Upload>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="username" label="Username" rules={[{ required: true }]}>
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="dob" label="Date of Birth" rules={[{ required: true }]}>
-                <DatePicker className="w-full" />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-                <TextArea rows={4} />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item name="preference" label="Skills" rules={[{ required: true }]}>
-                <Select mode="multiple" placeholder="Select your skills">
-                  {mockJobCategories.map(cat => (
-                    <Option key={cat.id} value={cat.id}>{cat.jobCategoryName}</Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button onClick={() => setIsEditing(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit">Save Changes</Button>
-          </div>
-        </Form>
-      </Modal>
+        onSave={handleSave}
+        user={user}
+        profileImage={profileImage}
+        handleAvatarUpload={handleAvatarUpload}
+        mockJobCategories={mockJobCategories}
+      />
     </div>
   );
 };

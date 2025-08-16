@@ -183,6 +183,15 @@ actor InvitationModel{
         return Buffer.toArray(jobInvitations);
     };
 
+    public func getInvitationByUserIdAndJobId(userId: Text, jobId: Text) : async ?Invitation.Invitation {
+        for (inv in invitations.vals()) {
+            if (inv.user_id == userId and inv.job_id == jobId) {
+                return ?inv;
+            }
+        };
+        return null;
+    };
+
     public func acceptInvitation(user_id: Text, invitation_id: Int, job_canister: Text, job_transaction_canister: Text, user_canister: Text) : async Bool {
         let jobActor = actor (job_canister) : actor {
             getJob : (Text) -> async Result.Result<Job.Job, Text>;

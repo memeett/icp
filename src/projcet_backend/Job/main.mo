@@ -60,12 +60,22 @@ import User "../User/model";
     jobCategoriesEntries := [];
   };
 
+  func newSubaccount(jobId: Text): [Nat8] {
+        let base = Blob.toArray(Text.encodeUtf8(jobId));
+        var sub = Array.tabulate<Nat8>(32, func (i) {
+            if (i < base.size()) base[i] else 0
+        });
+        return sub;
+    };
+
   public func createJob(payload : Job.CreateJobPayload, job_transaction_canister : Text, job_canister : Text) : async Result.Result<Job.Job, Text> {
     let jobId = nextId;
     nextId += 1;
 
     let id = Int.toText(jobId);
     let now = Time.now();
+
+    let sub = newSubaccount(id);
 
     let job : Job.Job = {
       id = id;
@@ -85,6 +95,7 @@ import User "../User/model";
       updatedAt = now;
       jobRating = 0;
       wallet = 0;
+      subAccount = ?sub; // Optional subaccount for the job
     };
 
     jobs.put(id, job);
@@ -352,6 +363,7 @@ import User "../User/model";
           updatedAt = Time.now();
           jobRating = job.jobRating;
           wallet = job.wallet;
+          subAccount = job.subAccount; // Keep the existing subAccount
         };
 
         jobs.put(jobId, updatedJob);
@@ -410,7 +422,7 @@ import User "../User/model";
     return userJobs;
   };
 
-  public func startJob(user_id : Text, job_id : Text) : async Result.Result<Bool, Text> {
+  public func startJob(job_id : Text) : async Result.Result<Bool, Text> {
     let jobResult = await getJob(job_id);
     switch (jobResult) {
       case (#err(error)) {
@@ -440,6 +452,7 @@ import User "../User/model";
           updatedAt = Time.now();
           jobRating = job.jobRating;
           wallet = job.wallet;
+          subAccount = job.subAccount; // Keep the existing subAccount
         };
 
         jobs.put(job_id, updatedJob);
@@ -478,6 +491,7 @@ import User "../User/model";
           updatedAt = Time.now();
           jobRating = job.jobRating;
           wallet = job.wallet;
+          subAccount = job.subAccount; // Keep the existing subAccount
         };
 
         jobs.put(job_id, updatedJob);

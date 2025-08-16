@@ -248,6 +248,7 @@ const Navbar: React.FC = () => {
     },
   ];
 
+
   const navigationItems = [
     { key: 'find', label: 'Find Jobs', path: '/find' },
     { key: 'post', label: 'Post Job', path: '/post' },
@@ -407,7 +408,6 @@ const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(true)}
                   className="flex items-center justify-center w-10 h-10"
                 />
-
               </div>
             </div>
           </div>

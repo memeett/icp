@@ -204,89 +204,26 @@ actor UserModel {
     //         };
     //     };
     // };
-    
 
-    public func addBalance(userId: Text, amount: Nat, ledger_canister: Text) : async Result.Result<Text, Text> {
-        switch (await getUserById(userId)) {
-            case (#err(errMsg)) {
-                return #err("Failed to get user: " # errMsg);
-            };
-            case (#ok(user)) {
-                let ledger = actor (ledger_canister) : actor {
-                    icrc1_transfer : ({ to: { owner : Principal; subaccount : ?[Nat8] };fee: ?Nat; memo: ?[Nat8]; from_subaccount: ?[Nat8]; created_at_time: ?Nat64 ;amount: Nat }) -> async Result.Result<Text, Text>;
-                    icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
-                };
+    public func addBalanceTransaction(userId: Text, amount: Float) : async Result.Result<Text, Text> {
+        switch (users.get(userId)) {
+            case (?user) {
 
-                let subAcc : ?[Nat8] = user.subAccount;
-
-                let mintingAccountOpt = await ledger.icrc1_minting_account();
-
-                // Unwrap optional minting account
-                if (mintingAccountOpt == null) {
-                    return #err("No minting account set");
-                };
-
-                let mintingAccount = switch (mintingAccountOpt) {
-                    case (?acc) { acc }; // unwrap here
-                };
-
-                Debug.print("Minting account owner: " # Principal.toText(mintingAccount.owner));
-
-
-                let transferResult = await ledger.icrc1_transfer({
-                    to = {
-                        owner = mintingAccount.owner;
-                        subaccount = subAcc;
-                    };
+                addTransaction({
+                    fromId = userId;
+                    transactionAt = Time.now();
                     amount = amount;
-                    fee = null; // Assuming no fee for this operation
-                    memo = null; // No memo for this operation
-                    from_subaccount = null; // Use user's subaccount if it exists
-                    created_at_time = null; // No specific time for this operation  
+                    transactionType = #topUp; // Assuming this is a top-up
+                    toId = null; // No recipient for top-ups
                 });
 
-                return #ok("Balance added successfully. Transaction ID: ");
-
-                switch (transferResult) {
-                    case (#ok(txId)) {
-                        // Update user's wallet balance
-                        let updatedUser : User.User = {
-                            id = user.id;
-                            profilePicture = user.profilePicture;
-                            username = user.username;
-                            dob = user.dob;
-                            preference = user.preference;
-                            description = user.description;
-                            wallet = user.wallet;
-                            rating = user.rating;
-                            createdAt = user.createdAt;
-                            updatedAt = Time.now();
-                            isFaceRecognitionOn = user.isFaceRecognitionOn;
-                            isProfileCompleted = user.isProfileCompleted;
-                            subAccount = user.subAccount; 
-                        };
-                        users.put(userId, updatedUser);
-
-                        // Record the transaction
-                        addTransaction({
-                            fromId = user.id;
-                            transactionAt = Time.now();
-                            amount = Float.fromInt(amount);
-                            transactionType = #topUp; // Assuming this is a top-up
-                            toId = null; // No recipient for top-ups
-                        });
-
-                        return #ok("Balance added successfully. Transaction ID: " # txId);
-                    };
-                    case (#err(errMsg)) {
-                        return #err("Transfer failed: " # errMsg);
-                    };
-                };
+                return #ok("Balance added successfully");
+            };
+            case null {
+                return #err("User not found");
             };
         };
     };
-
-
 
 
     public func createUser(newid : Text, profilePic : Blob) : async User.User {
@@ -429,6 +366,7 @@ actor UserModel {
                             createdAt = jobData.createdAt;
                             updatedAt = Time.now();
                             wallet = updatedJobWallet;
+                            subAccount = jobData.subAccount; // Keep subAccount unchanged
                         };
                         await jobActor.putJob(from_job_id, updatedJob);
 
@@ -516,6 +454,7 @@ actor UserModel {
                             createdAt = jobData.createdAt;
                             updatedAt = Time.now();
                             wallet = jobData.wallet + amount;
+                            subAccount = jobData.subAccount; // Keep subAccount unchanged
                         };
                         await jobActor.putJob(job_id, updatedJob);
 
@@ -559,7 +498,41 @@ actor UserModel {
         };
     };
 
+    public func jobPaymentTranfer(user_id: Text, job_id: Text, amount: Float, job_canister: Text): async Result.Result<Text, Text> {
+        let jobActor = actor(job_canister) : actor {
+            getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
+            putJob: (job_id: Text, job: Job.Job) -> async ();
+        };
+        
+        switch (users.get(user_id)) {
+            case (?fromUser) {
+   
+                // Fetch job details from the jobs canister
+                let jobResult = await jobActor.getJob(job_id);
+                switch (jobResult) {
+                    case (#ok(jobData)) {
 
+                        // Record the transaction
+                        addTransaction({
+                            fromId = user_id;
+                            transactionAt = Time.now();
+                            amount = amount;
+                            transactionType = #transferToJob;
+                            toId = ?job_id;
+                        });
+
+                        return #ok("Transferred to job successfully");
+                    };
+                    case (#err(errMsg)) {
+                        return #err("Failed to fetch job details in user: " # errMsg);
+                    };
+                };
+            };
+            case null {
+                return #err("Sender not found");
+            };
+        };
+    };
 
     public func getAllFaceRecogUser() : async [User.User] {
         Iter.toArray(
@@ -588,44 +561,6 @@ actor UserModel {
             };
         };
         true;
-    };
-
-    public shared func topUpICP(userId: Text, amount: Float) : async Result.Result<Text, Text> {
-        switch (users.get(userId)) {
-            case (?user) {
-                let newBalance = user.wallet + amount;
-                let updatedUser: User.User = {
-                    id = user.id;
-                    profilePicture = user.profilePicture;
-                    username = user.username;
-                    description = user.description;
-                    preference = user.preference;
-                    dob = user.dob;
-                    wallet = newBalance;
-                    rating = user.rating;
-                    createdAt = user.createdAt;
-                    updatedAt = Time.now();
-                    isFaceRecognitionOn = user.isFaceRecognitionOn;
-                    isProfileCompleted = user.isProfileCompleted;
-                    subAccount = user.subAccount; // Keep subAccount unchanged
-                };
-                users.put(userId, updatedUser);
-
-                // Save transaction
-                addTransaction({
-                    fromId = userId;
-                    transactionAt = Time.now();
-                    amount = amount;
-                    transactionType = #topUp;
-                    toId = null;
-                });
-
-                return #ok("Topped up ckBTC successfully. New balance: " # Float.toText(newBalance));
-            };
-            case null {
-                return #err("User not found");
-            };
-        };
     };
 
     // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {

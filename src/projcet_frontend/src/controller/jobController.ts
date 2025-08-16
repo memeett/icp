@@ -17,7 +17,9 @@ import { storage } from "../utils/storage";
 import { ensureUserData } from "../utils/sessionUtils";
 import { debugUserData } from "../utils/debugUtils";
 import { fixUserData } from "../utils/userDataFixer";
-import { JobPayload } from "../shared/types/Job";
+import { Job as JobShared, JobPayload } from "../shared/types/Job";
+import { user } from "../../../declarations/user";
+import { transferToJobController } from "./tokenController";
 
 export const createJob = async (payload: JobPayload): Promise<string[]> => {
   const agent = await agentService.getAgent();
@@ -97,6 +99,7 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         jobExperimentLevel: payload.jobExprienceLevel,
         jobDeadline: payload.jobDeadline,
         jobSlots: BigInt(payload.jobSlots),
+        jobStatus: "Open",
       };
 
       console.log("Job payload being sent:", {
@@ -111,7 +114,22 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         process.env.CANISTER_ID_JOB!
       );
       if ("ok" in result) {
-        return ["Success", "Success post a job"];
+        const job_result = result.ok;
+        const jobSubaccount: [] | [Uint8Array] =
+                job_result.subAccount && job_result.subAccount[0]
+                    ? [new Uint8Array(job_result.subAccount[0])]
+                    : [];
+        const convertedJob: JobShared = {
+            ...job_result,
+            subAccount: jobSubaccount, // Ensure subAccount is included
+        };
+        const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
+
+        if ("ok" in transferResult) {
+          return ["Success", "Job posted and transfer completed"];
+        } else {
+          return ["Failed", `Job created but transfer failed: ${transferResult.err}`];
+        }
       } else {
         return ["Failed", "Error creating job"];
       }
@@ -299,6 +317,10 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
           profilePictureBlob = new Blob([], { type: "image/jpeg" });
         }
 
+        const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
         return {
           ...userData,
           profilePicture: profilePictureBlob,
@@ -308,7 +330,7 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
             ...pref,
             id: pref.id.toString(),
           })),
-          subAccount:  [new Uint8Array()],
+          subAccount:  userSubaccount, // Ensure subAccount is included
         };
       })
     );

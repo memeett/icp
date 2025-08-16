@@ -507,15 +507,6 @@ export const getAllUsers = async (): Promise<User[] | null> => {
     }
 };
 
-export const topUp = async (amount: number): Promise<void> =>{
-    const userData = localStorage.getItem("current_user");
-    if (userData){
-        const parsedData = JSON.parse(userData).ok;
-        const principalId = parsedData.id
-        user.topUpICP(principalId, amount)
-    }
-    
-}
 
 export const getUserById = async (userId: string): Promise<User | null> => {
     try {

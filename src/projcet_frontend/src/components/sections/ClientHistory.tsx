@@ -5,7 +5,7 @@ import { JobTransaction } from "../../../../declarations/job_transaction/job_tra
 import { getJobById, getUserJobByStatusFinished } from "../../controller/jobController";
 import { getUserById } from "../../controller/userController";
 import ClientHistoryCard from "../cards/ClientHistoryCard";
-import { Job } from "../../interface/job/Job";
+import { Job } from "../../shared/types/Job";
 
 
 export default function ProfileClientHistory() {

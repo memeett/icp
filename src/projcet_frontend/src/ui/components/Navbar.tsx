@@ -36,11 +36,11 @@ import FaceRecognition from '../../components/FaceRecognition';
 import { AuthenticationModal } from '../../components/modals/AuthenticationModal';
 import ergasiaLogo from '../../assets/ergasia_logo.png'
 import ergasiaLogoWhite from '../../assets/ergasia_logo_white.png'
-import { InboxResponse } from '../../interface/Inbox';
 import { getAllInboxByUserId } from '../../controller/inboxController';
 import { Inbox } from '../../../../declarations/inbox/inbox.did';
-import { getBalanceController } from '../../controller/tokenController';
+import { getBalanceController, topUpWalletController } from '../../controller/tokenController';
 import { Token } from '../../interface/Token';
+import { InboxResponse } from '../../shared/types/Inbox';
 
 const { Text } = Typography;
 
@@ -80,7 +80,7 @@ const Navbar: React.FC = () => {
   const [usernames, setUsernames] = useState<{ [key: string]: string }>({});
   const [userWallet, setUserWallet] = useState<Token>();
 
-  useEffect(() =>{
+  useEffect(() => {
     const fetchUserWallet = async () => {
       if (user?.id) {
         try {
@@ -123,6 +123,7 @@ const Navbar: React.FC = () => {
     }
   };
 
+
   const getUsernameById = useCallback(
     async (userId: string): Promise<string | null> => {
       try {
@@ -164,7 +165,7 @@ const Navbar: React.FC = () => {
   }, [receiverInbox, senderInbox, usernames, getUsernameById]);
 
 
-   useEffect(() => {
+  useEffect(() => {
     if (receiverInbox.length > 0 || senderInbox.length > 0) {
       fetchUsernames();
     }
@@ -406,6 +407,7 @@ const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(true)}
                   className="flex items-center justify-center w-10 h-10"
                 />
+
               </div>
             </div>
           </div>

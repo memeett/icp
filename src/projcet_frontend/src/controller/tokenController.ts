@@ -1,5 +1,5 @@
 import { user } from "../../../declarations/user";
-import { icrc1_ledger_canister } from "../../../declarations/icrc1_ledger_canister";
+// import { icrc1_ledger_canister } from "../../../declarations/icrc1_ledger_canister";
 import { Token } from "../interface/Token";
 import { Principal } from "@dfinity/principal";
 import { User } from "../shared/types/User";

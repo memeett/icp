@@ -550,14 +550,14 @@ const Navbar: React.FC = () => {
             {
               key: 'face',
               label: 'Face Recognition',
-              children: user && (
+              children: (
                 <FaceRecognition
-                  principalId={user.id}
+                  principalId={user?.id || ""}
                   onSuccess={handleLoginSuccess}
                   onError={handleLoginError}
-                  mode="verify"
                   isOpen={isModalOpen && activeTab === 'face'}
                   onClose={() => setIsModalOpen(false)}
+                  purpose="login"
                 />
               ),
             },

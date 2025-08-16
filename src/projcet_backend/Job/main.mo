@@ -410,7 +410,7 @@ import User "../User/model";
     return userJobs;
   };
 
-  public func startJob(user_id : Text, job_id : Text) : async Result.Result<Bool, Text> {
+  public func startJob(job_id : Text) : async Result.Result<Bool, Text> {
     let jobResult = await getJob(job_id);
     switch (jobResult) {
       case (#err(error)) {

@@ -19,30 +19,7 @@ import { debugUserData } from "../utils/debugUtils";
 import { fixUserData } from "../utils/userDataFixer";
 import { Job as JobShared, JobPayload } from "../shared/types/Job";
 import { user } from "../../../declarations/user";
-import { transferToJobController } from "./tokenController";
-
-function normalizeSubaccount(sub: any): [] | [Uint8Array] {
-    if (!sub) return [];
-
-    // Already [Uint8Array]
-    if (Array.isArray(sub) && sub[0] instanceof Uint8Array) {
-        return [sub[0]];
-    }
-
-    // Case: [ {0: 121, 1: 103, ..., length: 32} ]
-    if (Array.isArray(sub) && typeof sub[0] === "object" && "length" in sub[0]) {
-        const values = Array.from({ length: sub[0].length }, (_, i) => sub[0][i]);
-        return [new Uint8Array(values)];
-    }
-
-    // Case: [49, 0, 0, ...]
-    if (Array.isArray(sub) && typeof sub[0] === "number") {
-        return [new Uint8Array(sub)];
-    }
-
-    return [];
-}
-
+import { getBalanceController, transferToJobController } from "./tokenController";
 
 export const createJob = async (payload: JobPayload): Promise<string[]> => {
   const agent = await agentService.getAgent();
@@ -85,6 +62,7 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
       console.log("No user data available");
     }
 
+
     
 
 
@@ -103,6 +81,21 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
     }
 
     if (currentUser) {
+
+      const new_curr_user = currentUser as User;
+      const obj = currentUser.subAccount[0]!;
+
+      const uint8 = new Uint8Array(Object.values(obj));
+      const converted_user: User = {
+        ...new_curr_user,
+        subAccount: [uint8], // Convert subAccount to Uint8Array
+      }
+      const creator_token = await getBalanceController(converted_user);
+      console.log("Creator token balance:", creator_token.token_value);
+      if(creator_token.token_value < payload.jobSalary) {
+        return ["Failed", "Insufficient balance to create job"];
+      }
+      console.log("lanjutt euy")
       // Debug the user data structure
       console.log("User ID:", currentUser.id);
       console.log("User structure type:", typeof currentUser);
@@ -150,10 +143,8 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         const uint8 = new Uint8Array(Object.values(obj));
         const convertedJob: JobShared = {
             ...job_result,
-            subAccount: [uint8], // Ensure subAccount is included
+            subAccount: [uint8], 
         };
-
-
         const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
         console.log("Transfer result:", transferResult);
         if ("ok" in transferResult) {

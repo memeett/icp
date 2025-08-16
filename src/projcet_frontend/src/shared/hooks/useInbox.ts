@@ -4,7 +4,7 @@ import {
   getAllInboxByUserId,
   markInboxAsRead,
 } from '../../controller/inboxController';
-import { InboxResponse } from '../../interface/Inbox';
+import { InboxResponse } from '../types/Inbox';
 
 interface UseInboxReturn {
   // Data

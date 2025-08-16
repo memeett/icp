@@ -9,8 +9,8 @@ import {
   Clock,
   Circle,
 } from "lucide-react";
-import { InboxResponse } from "../../interface/Inbox";
 import { markInboxAsRead } from "../../controller/inboxController";
+import { InboxResponse } from "../../shared/types/Inbox";
 
 interface FloatingInboxProps {
   messages: InboxResponse[] | [];

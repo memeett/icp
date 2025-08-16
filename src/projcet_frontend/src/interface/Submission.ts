@@ -1,4 +1,4 @@
-import { User } from "./User";
+import { User } from "../shared/types/User";
 
 export interface Submission {
     id: string;

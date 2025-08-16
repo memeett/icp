@@ -6,8 +6,8 @@ import {
   getAllSubmissionbyUserJobId 
 } from '../../controller/submissionController';
 import { createInbox } from '../../controller/inboxController';
-import { Job } from '../../interface/job/Job';
-import { User } from '../../interface/User';
+import { User } from '../types/User';
+import { Job } from '../types/Job';
 
 interface Submission {
   id: string;

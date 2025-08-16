@@ -20,7 +20,8 @@ import {
   Avatar,
   Tooltip,
   Skeleton,
-  Empty
+  Empty,
+  DatePicker
 } from 'antd';
 import {
   PlusOutlined,
@@ -33,7 +34,8 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   PauseCircleOutlined,
-  StopOutlined
+  StopOutlined,
+  PlayCircleOutlined
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -43,8 +45,7 @@ import { useAuth, useManageJobs, useUserManagement } from '../shared/hooks';
 
 import { Job, JobCategory } from '../shared/types/Job';
 import { formatDate } from '../utils/dateUtils';
-import { User } from '../interface/User';
-import { ApplierPayload } from '../interface/Applier';
+import { startJob, updateJob } from '../controller/jobController';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -53,7 +54,7 @@ const { Option } = Select;
 const ManageJobPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   // Use the custom hooks
   const {
     jobs,
@@ -67,7 +68,7 @@ const ManageJobPage: React.FC = () => {
     refreshJobs
   } = useManageJobs();
 
-  
+
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isApplicationsModalVisible, setIsApplicationsModalVisible] = useState(false);
@@ -76,38 +77,20 @@ const ManageJobPage: React.FC = () => {
 
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'start': 
-      case 'open': return 'green';
-      case 'ongoing': 
-      case 'in_progress': return 'blue';
-      case 'finished': 
-      case 'completed': return 'purple';
-      case 'cancelled': return 'red';
+    switch (status) {
+      case 'Open': return 'green';
+      case 'Ongoing': return 'blue';
+      case 'Finished': return 'purple';
       default: return 'default';
     }
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'start': 
-      case 'open': return <CheckCircleOutlined />;
-      case 'ongoing': 
-      case 'in_progress': return <ClockCircleOutlined />;
-      case 'finished': 
-      case 'completed': return <CheckCircleOutlined />;
-      case 'cancelled': return <StopOutlined />;
+    switch (status) {
+      case 'Open': return <CheckCircleOutlined />;
+      case 'Ongoing': return <ClockCircleOutlined />;
+      case 'Finished': return <CheckCircleOutlined />;
       default: return null;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'start': return 'Open';
-      case 'ongoing': return 'In Progress';
-      case 'finished': return 'Completed';
-      case 'cancelled': return 'Cancelled';
-      default: return status;
     }
   };
 
@@ -115,24 +98,24 @@ const ManageJobPage: React.FC = () => {
     setSelectedJob(job);
     form.setFieldsValue({
       jobName: job.jobName,
-      jobStatus: job.jobStatus,
-      jobSalary: job.jobSalary,
       jobDescription: job.jobDescription.join('\n')
     });
     setIsEditModalVisible(true);
   };
 
-  const handleViewApplications = (job: Job) => {
-    setSelectedJob(job);
-    setIsApplicationsModalVisible(true);
-  };
-
   const handleSaveJob = async (values: any) => {
     try {
-      // TODO: Implement job update functionality
       setIsEditModalVisible(false);
-      message.success('Job updated successfully');
-      refreshJobs();
+      const startDate = new Date(values.jobStartDate);
+      const deadline = new Date(values.jobDeadline);
+      const result = await updateJob(selectedJob?.id || "", values.jobName
+        , values.jobDescription,
+        BigInt(startDate.getTime()) * 1_000_000n,
+        BigInt(deadline.getTime()) * 1_000_000n);
+        refreshJobs();
+      if (result){
+        message.success('Job updated successfully');
+      }
     } catch (error) {
       message.error('Failed to update job');
     }
@@ -162,7 +145,8 @@ const ManageJobPage: React.FC = () => {
       key: 'jobStatus',
       render: (status) => (
         <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
-          {getStatusText(status)}
+          {status}
+
         </Tag>
       ),
     },
@@ -183,28 +167,28 @@ const ManageJobPage: React.FC = () => {
       title: 'Slots',
       dataIndex: 'jobSlots',
       key: 'jobSlots',
-      render: (slots) => (
-        <Badge count={Number(slots)} showZero>
+      render: (jobSlots) => (
+        <Badge count={Number(jobSlots)} showZero>
           <UserOutlined />
         </Badge>
       ),
     },
     {
-      title: 'Posted',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (createdAt) => {
-        const date = new Date(Number(createdAt) / 1000000); // Convert from nanoseconds
-        return date.toLocaleDateString();
+      title: 'Start Date',
+      dataIndex: 'jobStartDate',
+      key: 'jobStartDate',
+      render: (jobStartDate) => {
+        const date = formatDate(jobStartDate) // Convert from nanoseconds
+        return date;
       },
     },
     {
-      title: 'Updated',
-      dataIndex: 'updatedAt',
-      key: 'updatedAt',
-      render: (updatedAt) => {
-        const date = new Date(Number(updatedAt) / 1000000); // Convert from nanoseconds
-        return date.toLocaleDateString();
+      title: 'Deadline',
+      dataIndex: 'jobDeadline',
+      key: 'jobDeadline',
+      render: (jobDeadline) => {
+        const date = formatDate(jobDeadline); // Convert from nanoseconds
+        return date;
       },
     },
     {
@@ -218,6 +202,8 @@ const ManageJobPage: React.FC = () => {
               onClick={() => navigate(`/jobs/${record.id}`)}
             />
           </Tooltip>
+      {record.jobStatus === 'Open' && (
+        <>
           <Tooltip title="Edit Job">
             <Button
               icon={<EditOutlined />}
@@ -237,24 +223,23 @@ const ManageJobPage: React.FC = () => {
               />
             </Tooltip>
           </Popconfirm>
+        </>
+      )}
         </Space>
       ),
     },
   ];
 
-  // Filter jobs based on active tab
   const getFilteredJobsByTab = () => {
     if (activeTab === 'all') return filteredJobs;
     return filteredJobs.filter(job => {
       switch (activeTab) {
         case 'open':
-          return job.jobStatus.toLowerCase() === 'open';
+          return job.jobStatus === 'Open';
         case 'in_progress':
-          return job.jobStatus.toLowerCase() === 'in progress';
+          return job.jobStatus === 'Ongoing';
         case 'completed':
-          return job.jobStatus.toLowerCase() === 'completed';
-        case 'cancelled':
-          return job.jobStatus.toLowerCase() === 'cancelled';
+          return job.jobStatus === 'Finished';
         default:
           return true;
       }
@@ -265,11 +250,13 @@ const ManageJobPage: React.FC = () => {
 
   const stats = {
     total: jobs.length,
-    open: jobs.filter(job => job.jobStatus.toLowerCase() === 'open').length,
-    inProgress: jobs.filter(job => job.jobStatus.toLowerCase() === 'in_progress').length,
-    completed: jobs.filter(job => job.jobStatus.toLowerCase() === 'completed').length,
+    open: jobs.filter(job => job.jobStatus === 'Open').length,
+    inProgress: jobs.filter(job => job.jobStatus === 'Ongoing').length,
+    completed: jobs.filter(job => job.jobStatus === 'Finished').length,
     totalSlots: jobs.reduce((sum, job) => sum + Number(job.jobSlots), 0)
   };
+
+  console.log('Jobs:', jobs);
 
   if (loading) {
     return (
@@ -328,9 +315,8 @@ const ManageJobPage: React.FC = () => {
               >
                 <Option value="All">All Status</Option>
                 <Option value="Open">Open</Option>
-                <Option value="Ongoing">In Progress</Option>
-                <Option value="Finished">Completed</Option>
-                <Option value="Cancelled">Cancelled</Option>
+                <Option value="Ongoing">Ongoing</Option>
+                <Option value="Finished">Finished</Option>
               </Select>
             </Col>
           </Row>
@@ -359,7 +345,7 @@ const ManageJobPage: React.FC = () => {
             <Col xs={12} sm={6}>
               <Card>
                 <Statistic
-                  title="In Progress"
+                  title="Ongoing"
                   value={stats.inProgress}
                   prefix={<ClockCircleOutlined />}
                   valueStyle={{ color: '#1890ff' }}
@@ -383,10 +369,10 @@ const ManageJobPage: React.FC = () => {
             <Tabs activeKey={activeTab} onChange={setActiveTab}>
               <TabPane tab={`All Jobs (${stats.total})`} key="all" />
               <TabPane tab={`Open (${stats.open})`} key="open" />
-              <TabPane tab={`In Progress (${stats.inProgress})`} key="in_progress" />
+              <TabPane tab={`Ongoing (${stats.inProgress})`} key="in_progress" />
               <TabPane tab={`Completed (${stats.completed})`} key="completed" />
             </Tabs>
-            
+
             {tabFilteredJobs.length === 0 ? (
               <Empty
                 description="No jobs found"
@@ -420,7 +406,6 @@ const ManageJobPage: React.FC = () => {
         <Form
           form={form}
           layout="vertical"
-          onFinish={handleSaveJob}
         >
           <Form.Item
             name="jobName"
@@ -431,24 +416,62 @@ const ManageJobPage: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            name="jobStatus"
-            label="Status"
-            rules={[{ required: true, message: 'Please select status' }]}
+            name="jobStartDate"
+            label="Start Date"
+            rules={[{ required: true, message: 'Please select project Start Date' }]}
           >
-            <Select>
-              <Option value="Start">Open</Option>
-              <Option value="Ongoing">In Progress</Option>
-              <Option value="Finished">Completed</Option>
-              <Option value="Cancelled">Cancelled</Option>
-            </Select>
+            <DatePicker
+              size="large"
+              style={{ width: '100%' }}
+              placeholder="Select start date"
+              disabledDate={(current) => current && current.valueOf() < Date.now()}
+            />
           </Form.Item>
 
           <Form.Item
-            name="jobSalary"
-            label="Budget"
-            rules={[{ required: true, message: 'Please enter budget' }]}
+            name="jobDeadline"
+            label="Deadline Date"
+            rules={[
+              { required: true, message: 'Please select deadline' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value) {
+                    return Promise.resolve();
+                  }
+
+                  const startDate = getFieldValue('jobStartDate');
+                  if (!startDate) {
+                    return Promise.reject(new Error('Please select start date first'));
+                  }
+
+                  const start = new Date(startDate);
+                  const deadline = new Date(value);
+
+                  // Check if deadline is the same as start date
+                  if (start.toDateString() === deadline.toDateString()) {
+                    return Promise.reject(new Error('Deadline cannot be the same as start date'));
+                  }
+
+                  // Check minimum 3 days gap
+                  const diffTime = deadline.getTime() - start.getTime();
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                  if (diffDays < 3) {
+                    return Promise.reject(new Error('Deadline must be at least 3 days after start date'));
+                  }
+
+                  return Promise.resolve();
+                },
+              }),
+            ]}
+            dependencies={['jobStartDate']}
           >
-            <Input type="number" prefix="$" />
+            <DatePicker
+              size="large"
+              style={{ width: '100%' }}
+              placeholder="Select deadline date"
+              disabledDate={(current) => current && current.valueOf() < Date.now()}
+            />
           </Form.Item>
 
           <Form.Item
@@ -463,7 +486,7 @@ const ManageJobPage: React.FC = () => {
             <Button onClick={() => setIsEditModalVisible(false)}>
               Cancel
             </Button>
-            <Button type="primary" htmlType="submit">
+            <Button  onClick={() => handleSaveJob(form.getFieldsValue())}>
               Save Changes
             </Button>
           </div>
@@ -495,9 +518,10 @@ const ManageJobPage: React.FC = () => {
               <Text strong>Available Slots:</Text> {Number(selectedJob.jobSlots)}
             </div>
             <div>
-              <Text strong>Status:</Text> 
+              <Text strong>Status:</Text>
               <Tag color={getStatusColor(selectedJob.jobStatus)} className="ml-2">
-                {getStatusText(selectedJob.jobStatus)}
+                {selectedJob.jobStatus}
+
               </Tag>
             </div>
             {selectedJob.jobTags && selectedJob.jobTags.length > 0 && (

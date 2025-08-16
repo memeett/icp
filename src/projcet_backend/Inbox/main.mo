@@ -117,7 +117,7 @@ actor InboxModule {
     // };
 
     public func getAllInboxByUserId(userId : Text) : async [Inbox.Inbox] {
-        Debug.print("Fetching inbox for user: " # userId);
+        // Debug.print("Fetching inbox for user: " # userId);
         let allInbox = Iter.toArray(inboxes.vals());
         let userInbox = Array.filter(
             allInbox,
@@ -125,7 +125,7 @@ actor InboxModule {
                 inbox.receiverId == userId
             },
         );
-        Debug.print("Inbox fetched for user: " # userId # " with count: " # Int.toText(Array.size(userInbox)));
+        // Debug.print("Inbox fetched for user: " # userId # " with count: " # Int.toText(Array.size(userInbox)));
         
         userInbox;
     };

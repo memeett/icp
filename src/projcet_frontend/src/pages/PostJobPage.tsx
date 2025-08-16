@@ -181,47 +181,7 @@ const PostJobPage: React.FC = () => {
     form.setFieldValue('skills', newSkills);
   }, [skills, form]);
 
-  const fillTestData = useCallback(() => {
-    console.log('🧪 Fill Test Data button clicked!');
-    console.log('Filling test data...');
-
-    // Fill form fields
-    form.setFieldsValue({
-      title: 'Test Full Stack Developer Job',
-      category: ['Web Development'],
-      projectType: 'one-time',
-      description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
-      experienceLevel: 'intermediate',
-      budget: 5000,
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
-    });
-
-    // Fill skills
-    const testSkills = ['React', 'Node.js', 'TypeScript', 'MongoDB'];
-    setSkills(testSkills);
-    form.setFieldValue('skills', testSkills);
-
-    // Update formData
-    setFormData({
-      title: 'Test Full Stack Developer Job',
-      category: ['Web Development'],
-      projectType: 'one-time',
-      description: 'This is a test job posting for a full stack developer position. We need someone experienced with React and Node.js.',
-      experienceLevel: 'intermediate',
-      budget: 5000,
-      startdate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      skills: testSkills
-    });
-
-    // Go to final step
-    setCurrentStep(3);
-
-    console.log('Test data filled and moved to final step');
-  }, [form, setSkills, setFormData, setCurrentStep]);
-
-  const handleSubmit = useCallback(async (isDraft = false) => {
-    console.log('handleSubmit called with isDraft:', isDraft);
+  const handleSubmit = useCallback(async () => {
 
     // Check if user is authenticated
     if (!isAuthenticated) {
@@ -263,7 +223,7 @@ const PostJobPage: React.FC = () => {
       
       console.log(result);
       if (result[0] === 'Success') {
-        message.success(`Job ${isDraft ? 'saved as draft' : 'published'} successfully!`);
+        message.success(`Job published successfully!`);
         navigate('/manage');
       } else {
         message.error(result[1] || 'Failed to create job. Please try again.');
@@ -283,17 +243,6 @@ const PostJobPage: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-              <Button
-                type="primary"
-                onClick={fillTestData}
-                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff' }}
-                block
-                size="large"
-              >
-                🧪 FILL TEST DATA & GO TO FINAL STEP
-              </Button>
-            </div>
 
             <Form.Item
               name="title"
@@ -622,19 +571,6 @@ const PostJobPage: React.FC = () => {
                     </Button>
 
                     <Space>
-                      {currentStep === steps.length - 1 && (
-                        <Button
-                          onClick={() => {
-                            console.log('Save as Draft button clicked!');
-                            handleSubmit(true);
-                          }}
-                          loading={isLoading}
-                          size="large"
-                          icon={<SaveOutlined />}
-                        >
-                          Save as Draft
-                        </Button>
-                      )}
 
                       {currentStep < steps.length - 1 ? (
                         <Button
@@ -649,7 +585,7 @@ const PostJobPage: React.FC = () => {
                           type="primary"
                           onClick={() => {
                             console.log('Publish Job button clicked!');
-                            handleSubmit(false);
+                            handleSubmit();
                           }}
                           loading={isLoading}
                           size="large"

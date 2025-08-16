@@ -7,21 +7,35 @@ import { AuthClient } from "@dfinity/auth-client";
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { Job } from "../shared/types/Job";
 
-export async function getBalanceController(user_id: string): Promise<Token> {
+export async function getBalanceController(curr_user: User): Promise<Token> {
+  const authClient = await AuthClient.create();
+
+  if (!authClient.isAuthenticated()) {
+    await authClient.login({
+      identityProvider: "https://identity.ic0.app/#authorize",
+    });
+  }
+  const identity = authClient.getIdentity();
+
+
   const ledgerCanisterId = process.env.CANISTER_ID_ICRC1_LEDGER_CANISTER;
   if (!ledgerCanisterId) {
     throw new Error("Ledger canister ID is not set in environment variables.");
   }
 
-  const result = await user.getBalance(user_id, ledgerCanisterId);
+  const result = await user.getBalance(curr_user.id, ledgerCanisterId);
 
   if ("ok" in result) {
     const tokenInfo = result.ok;
-
+    const next_reuslt = await icrc1_ledger_canister.icrc1_balance_of({
+      owner: identity.getPrincipal(), // recipient principal
+      subaccount: curr_user.subAccount, // subaccount as Uint8Array
+    });
+    console.log("Balance:", next_reuslt);
     return {
       token_name: tokenInfo.token_name,
       token_symbol: tokenInfo.token_symbol,
-      token_value: Number(tokenInfo.token_value) // convert bigint to number
+      token_value: Number(next_reuslt) // convert bigint to number
     };
   } else {
     throw new Error(result.err);
@@ -70,10 +84,11 @@ export async function topUpWalletController(curr_user: User, amount: number) {
   // };
 
   // console.log("Transfer args:", transferArgs);
+  console.log("Current user subAccount:", curr_user.subAccount);
 
    const result = await icrc1_ledger_canister.icrc1_transfer({
     to: {
-      owner: mintingOwnerPrincipal, // recipient principal
+      owner: identity.getPrincipal(), // recipient principal
       subaccount: curr_user.subAccount,
     },
     fee: [], // None
@@ -86,9 +101,9 @@ export async function topUpWalletController(curr_user: User, amount: number) {
   console.log("Transfer result:", result);
 
   if ("Ok" in result) {
-    const next_result = user.addBalanceTransaction(curr_user.id, amount);
+    const next_result = await user.addBalanceTransaction(curr_user.id, amount);
     console.log("Add balance transaction result:", next_result);
-    if("Ok" in next_result) {
+    if("ok" in next_result) {
       return result.Ok;
     }else{
       throw new Error(
@@ -104,6 +119,7 @@ export async function topUpWalletController(curr_user: User, amount: number) {
 
   }
 }
+
 
 export async function transferToJobController(curr_user: User, curr_job: Job, amount: number) : Promise<{ ok: string } | { err: string }> {
   const authClient = await AuthClient.create();
@@ -121,30 +137,29 @@ export async function transferToJobController(curr_user: User, curr_job: Job, am
 
   const mintingOwnerPrincipal = await getMintingAddress(); // Principal type
 
-  // const toAccount = {
-  //   owner: mintingOwnerPrincipal,
-  //   subaccount: subaccount,
-  // };
+  console.log("current job subaccount:", curr_job.subAccount);
+  console.log("Amount to transfer:", BigInt(amount)); 
+   const obj = curr_user.subAccount[0]!;
 
-  // const transferArgs = {
-  //   to: toAccount,
-  //   amount: amountBigInt,
-  //   fee: [] as [] | [bigint], 
-  //   memo: [] as [] | [Uint8Array],
-  //   created_at_time: [] as [] | [bigint],
-  //   from_subaccount: [] as [],
-  // };
+  // Convert values into Uint8Array
+  const uint8 = new Uint8Array(Object.values(obj));
 
-  // console.log("Transfer args:", transferArgs);
+  const balance = await icrc1_ledger_canister.icrc1_balance_of({
+    
+      owner: identity.getPrincipal(), // recipient principal
+      subaccount: [uint8], // subaccount as Uint8Array
+    },
+  );
 
+  console.log("Balance:", balance);
    const result = await icrc1_ledger_canister.icrc1_transfer({
     to: {
-      owner: mintingOwnerPrincipal, // recipient principal
+      owner: identity.getPrincipal(), // recipient principal
       subaccount: curr_job.subAccount,
     },
     fee: [], // None
     memo: [], // None
-    from_subaccount: curr_user.subAccount, // None
+    from_subaccount: [uint8], // None
     created_at_time: [], // None
     amount: BigInt(amount), // e.g., 1 token in e8s
   });
@@ -152,9 +167,9 @@ export async function transferToJobController(curr_user: User, curr_job: Job, am
   console.log("Transfer result:", result);
 
   if ("Ok" in result) {
-    const next_result = user.jobPaymentTranfer(curr_user.id, curr_job.id, amount, process.env.CANISTER_ID_JOB!);
+    const next_result = await user.jobPaymentTranfer(curr_user.id, curr_job.id, amount, process.env.CANISTER_ID_JOB!);
     console.log("Add job transaction result:", next_result);
-    if("Ok" in next_result) {
+    if("ok" in next_result) {
       return { ok: result.Ok.toString() };
     }else{
       throw new Error(

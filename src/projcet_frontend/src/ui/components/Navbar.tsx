@@ -84,7 +84,7 @@ const Navbar: React.FC = () => {
     const fetchUserWallet = async () => {
       if (user?.id) {
         try {
-          const balance = await getBalanceController(user.id);
+          const balance = await getBalanceController(user);
           setUserWallet(balance);
         } catch (error) {
           console.error("Failed to fetch user wallet:", error);
@@ -123,6 +123,15 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const handleTopUp = async () => {
+    if (user?.id) {
+      try {
+        const result = await topUpWalletController(user, 10); // Top up with 10 tokens
+      } catch (error) {
+        console.error("Top-up failed:", error);
+      }
+    }
+  };
 
   const getUsernameById = useCallback(
     async (userId: string): Promise<string | null> => {
@@ -412,6 +421,13 @@ const Navbar: React.FC = () => {
                   type="text"
                   icon={<MenuOutlined />}
                   onClick={() => setMobileMenuOpen(true)}
+                  className="flex items-center justify-center w-10 h-10"
+                />
+
+                 <Button
+                  type="text"
+                  icon={<MenuOutlined />}
+                  onClick={handleTopUp}
                   className="flex items-center justify-center w-10 h-10"
                 />
               </div>

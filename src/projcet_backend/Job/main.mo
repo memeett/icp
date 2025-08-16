@@ -339,6 +339,14 @@ import User "../User/model";
     return Iter.toArray(jobCategories.vals());
   };
 
+  public func deleteAllJobs() : async () {
+    for (key in jobs.keys()) {
+      ignore jobs.remove(key);
+    };
+  };
+
+
+
   public func updateJob(jobId : Text, payload : Job.UpdateJobPayload) : async Result.Result<Job.Job, Text> {
     switch (jobs.get(jobId)) {
       case (null) {

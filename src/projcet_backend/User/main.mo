@@ -206,6 +206,7 @@ actor UserModel {
     // };
 
     public func addBalanceTransaction(userId: Text, amount: Float) : async Result.Result<Text, Text> {
+        Debug.print("Adding balance transaction for user: " # userId);
         switch (users.get(userId)) {
             case (?user) {
 

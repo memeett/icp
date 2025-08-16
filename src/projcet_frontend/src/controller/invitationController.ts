@@ -2,24 +2,26 @@ import { UserInvitationPayload } from "../../../declarations/invitation/invitati
 import { invitation } from "../../../declarations/invitation";
 
 export const createInvitation = async (
-  owner_id: string,
   job_id: string,
-  freelancer_id: string
-): Promise<boolean> => {
-  const result = await invitation.createInvitation(
-    owner_id,
-    job_id,
-    freelancer_id,
-    process.env.CANISTER_ID_JOB!
-  );
+  freelancer_id: string,
+  currentUserId: string
+):  Promise<string[]> => {
+    
+      const checkInvitation = await invitation.getInvitationByUserIdAndJobId(currentUserId, job_id)
+      if(checkInvitation == null) return ["Failed", "Error creating invitation."];
+      const result = await invitation.createInvitation(
+        String(currentUserId),
+        job_id,
+        freelancer_id,
+        process.env.CANISTER_ID_JOB!
+      );
 
-  if ("err" in result) {
-    console.error("Error creating invitation:", result.err);
-    return false;
-  }
-
-  console.log("Invitation created successfully:", result.ok);
-  return true;
+      if ("err" in result) {
+        console.error("Error creating invitation:", result.err);
+        return ["Failed", result.err];
+      }
+  
+      return ["Success", "Success creating invitaion"];
 };
 
 export const getInvitationByUserId = async (

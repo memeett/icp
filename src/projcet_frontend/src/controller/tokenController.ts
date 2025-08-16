@@ -75,7 +75,7 @@ export async function topUpWalletController(user: User, amount: number) {
    const result = await icrc1_ledger_canister.icrc1_transfer({
     to: {
       owner: mintingOwnerPrincipal, // recipient principal
-      subaccount: user.subAccount, // None
+      subaccount: user.subAccount,
     },
     fee: [], // None
     memo: [], // None

@@ -22,10 +22,13 @@ app.add_middleware(
 
 def numpy_to_list(embedding):
     if isinstance(embedding, dict):
-        embedding = np.array(list(embedding.values()))
+        # If it's a dictionary, assume it's the DeepFace output and extract 'embedding'
+        return np.array(embedding.get('embedding', [])).tolist()
     elif isinstance(embedding, list):
-        embedding = np.array(embedding)
-    return embedding.tolist()
+        return embedding
+    elif isinstance(embedding, np.ndarray):
+        return embedding.tolist()
+    return [] # Return empty list for unexpected types
 
 def list_to_numpy(embedding_list):
     return np.array(embedding_list)
@@ -34,11 +37,24 @@ def list_to_numpy(embedding_list):
 def load_embeddings():
     try:
         with open('face_embeddings.json', 'r') as f:
-            return json.load(f)
+            raw_embeddings = json.load(f)
+            # Ensure all loaded embeddings are in the correct list format
+            cleaned_embeddings = {}
+            for principal_id, embedding_data in raw_embeddings.items():
+                cleaned_embeddings[principal_id] = numpy_to_list(embedding_data)
+            return cleaned_embeddings
     except FileNotFoundError:
         return {}
 
 face_embeddings = load_embeddings()
+
+@app.get("/check-registration/{principal_id}")
+async def check_registration(principal_id: str):
+    print(f"Checking registration for principal_id: {principal_id}")
+    if principal_id in face_embeddings:
+        return {"status": "registered"}
+    else:
+        return {"status": "unregistered"}
 
 @app.post("/register-face")
 async def register_face(
@@ -46,13 +62,7 @@ async def register_face(
     file: UploadFile = File(...)
 ):
     try:
-        # ngcek principal_id
-
         print(f"Registering face for principal_id: {principal_id}")
-        
-        # cek tipe file 
-        
-
 
         if not file.content_type.startswith('image/'):
             raise HTTPException(status_code=422, detail="File must be an image")
@@ -64,17 +74,14 @@ async def register_face(
         if img is None:
             raise HTTPException(status_code=422, detail="Invalid image data")
 
-        embedding = DeepFace.represent(img, model_name="Facenet")[0]
+        embedding_data = DeepFace.represent(img, model_name="Facenet")[0]
+        embedding = numpy_to_list(embedding_data) # Ensure it's a list before saving
     
         face_embeddings[principal_id] = embedding
-        
         
         with open('face_embeddings.json', 'w') as f:
             json.dump(face_embeddings, f)
         
-        # debug keys
-        # print(f"Current face_embeddings keys: {face_embeddings.keys()}")
-
         return {"status": "success", "message": "Face registered successfully"}
         
     except Exception as e:
@@ -85,7 +92,6 @@ async def verify_face(
     file: UploadFile = File(...)
 ):
     try:
-        # Jika tidak ada embeddings yang tersimpan
         if not face_embeddings:
             raise HTTPException(status_code=404, detail="No faces registered in the system")
         
@@ -96,23 +102,19 @@ async def verify_face(
         if img is None:
             raise HTTPException(status_code=422, detail="Invalid image data")
         
-        # Verifikasi liveness
         is_live = check_liveness(img)
         if not is_live:
             return {"status": "error", "message": "Liveness check failed - eyes not detected"}
         
-        # Mendapatkan embedding dari wajah saat ini
-        current_embedding = DeepFace.represent(img, model_name="Facenet")[0]
-        if isinstance(current_embedding, dict):
-            current_embedding = np.array(current_embedding['embedding'])
+        current_embedding_data = DeepFace.represent(img, model_name="Facenet")[0]
+        current_embedding = numpy_to_list(current_embedding_data) # Ensure it's a list
         
-        # Mencari kecocokan terbaik dari semua embeddings yang tersimpan
         best_match = None
         highest_similarity = 0
         threshold = 0.7
         
-        for principal_id, stored_data in face_embeddings.items():
-            stored_embedding = stored_data['embedding']
+        for principal_id, stored_embedding in face_embeddings.items():
+            # stored_embedding is already a list due to load_embeddings cleaning
             similarity = cosine_similarity(np.array(stored_embedding), np.array(current_embedding))
             
             print(f"Similarity with {principal_id}: {similarity}")
@@ -121,7 +123,6 @@ async def verify_face(
                 highest_similarity = similarity
                 best_match = principal_id
         
-        # Jika ada kecocokan di atas threshold
         if highest_similarity >= threshold:
             return {
                 "status": "success", 
@@ -146,20 +147,37 @@ async def verify_face(
         
 def check_liveness(image):
     try:
-        eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+        cascade_path = cv2.data.haarcascades + 'haarcascade_eye.xml'
+        print(f"Attempting to load eye cascade from: {cascade_path}")
+        eye_cascade = cv2.CascadeClassifier(cascade_path)
         if eye_cascade.empty():
-            raise Exception("Failed to load eye cascade classifier")
+            raise Exception(f"Failed to load eye cascade classifier from {cascade_path}")
             
+        # Save the input image for debugging
+        cv2.imwrite("debug_liveness_input.jpg", image)
+        print("Saved debug_liveness_input.jpg")
+
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         eyes = eye_cascade.detectMultiScale(
             gray,
             scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30)
+            minNeighbors=3, # Relaxed from 5 to 3
+            minSize=(20, 20) # Relaxed from 30,30 to 20,20
         )
+        
+        print(f"Detected {len(eyes)} eyes.")
+
+        # Draw rectangles around detected eyes for debugging
+        debug_image = image.copy()
+        for (x, y, w, h) in eyes:
+            cv2.rectangle(debug_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.imwrite("debug_liveness_output.jpg", debug_image)
+        print("Saved debug_liveness_output.jpg with detected eyes.")
+
         return len(eyes) >= 1
     except Exception as e:
-        raise Exception(f"Liveness check failed: {str(e)}")
+        print(f"Liveness check failed: {str(e)}")
+        return False # Return False on liveness check failure
     
 
 def cosine_similarity(embedding1, embedding2):

@@ -42,6 +42,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import { useAuth, useJobDetails, useUserManagement } from '../shared/hooks';
 import { User } from '../shared/types/User';
+import { formatDate } from '../utils/dateUtils';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -123,14 +124,6 @@ const JobDetailPage: React.FC = () => {
     message.success('Job link copied to clipboard');
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
   const getTimeAgo = (dateString: string) => {
     const now = new Date();
     const posted = new Date(dateString);
@@ -143,6 +136,8 @@ const JobDetailPage: React.FC = () => {
       return `${diffInDays} days ago`;
     }
   };
+
+  console.log("Job details:", acceptedFreelancers);
 
   // Component for job details content
   const JobDetailsContent = () => {
@@ -194,7 +189,7 @@ const JobDetailPage: React.FC = () => {
             <Col xs={12} sm={6}>
               <div className="text-center p-4 bg-background rounded-lg">
                 <UserOutlined className="text-2xl text-purple-500 mb-2" />
-                <div className="font-semibold">{Number(job!.jobSlots)}</div>
+                <div className="font-semibold">{Number(job!.jobSlots) - acceptedFreelancers.length}</div>
                 <Text type="secondary">Available Slots</Text>
               </div>
             </Col>
@@ -236,7 +231,8 @@ const JobDetailPage: React.FC = () => {
             </Space>
           </div>
 
-          {user && !isJobOwner && (
+          {user && job!.jobStatus=== 'Open' && !isJobOwner  && Number(job!.jobSlots) - acceptedFreelancers.length !== 0 && (
+
             <div className="text-center">
               {hasApplied ? (
                 <Button
@@ -260,9 +256,21 @@ const JobDetailPage: React.FC = () => {
             </div>
           )}
 
+          {user && Number(job!.jobSlots) - acceptedFreelancers.length == 0 && (
+            <div className="text-center">
+                <Button
+                  size="large"
+                  disabled
+                  className="px-8"
+                >
+                  <Text>All Slots Filled</Text>
+                </Button>
+            </div>
+          )}
+
           {isJobOwner && (
             <div className="text-center space-x-4">
-              {job!.jobStatus.toLowerCase() === 'open' && acceptedFreelancers.length > 0 && (
+              {job!.jobStatus=== 'Open' && acceptedFreelancers.length > 0 && (
                 <Button
                   type="primary"
                   size="large"
@@ -272,7 +280,7 @@ const JobDetailPage: React.FC = () => {
                   Start Job
                 </Button>
               )}
-              {job!.jobStatus.toLowerCase() === 'in_progress' && (
+              {job!.jobStatus=== 'Ongoing' && (
                 <Button
                   type="primary"
                   size="large"
@@ -331,7 +339,7 @@ const JobDetailPage: React.FC = () => {
         title: 'Applied',
         dataIndex: 'appliedAt',
         key: 'appliedAt',
-        render: (date: string) => formatDate(date),
+        render: (date: bigint) => formatDate(date),
       },
       {
         title: 'Actions',
@@ -505,7 +513,6 @@ const JobDetailPage: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Apply Modal */}
       <Modal
         title="Apply for this Job"
         open={isApplyModalVisible}
@@ -529,45 +536,6 @@ const JobDetailPage: React.FC = () => {
               maxLength={1000}
               showCount
             />
-          </Form.Item>
-
-          <Form.Item
-            name="proposedBudget"
-            label="Your Proposed Budget ($)"
-            rules={[{ required: true, message: 'Please enter your proposed budget' }]}
-          >
-            <Input
-              type="number"
-              placeholder="Enter your budget"
-              prefix={<DollarOutlined />}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="timeline"
-            label="Estimated Timeline (days)"
-            rules={[{ required: true, message: 'Please enter estimated timeline' }]}
-          >
-            <Input
-              type="number"
-              placeholder="How many days will you need?"
-              suffix="days"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="attachments"
-            label="Attachments (Optional)"
-          >
-            <Upload
-              multiple
-              beforeUpload={() => false}
-              listType="text"
-            >
-              <Button icon={<PaperClipOutlined />}>
-                Attach Files
-              </Button>
-            </Upload>
           </Form.Item>
 
           <div className="flex justify-end space-x-2">

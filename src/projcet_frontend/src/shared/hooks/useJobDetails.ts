@@ -14,8 +14,8 @@ import {
   rejectApplier
 } from '../../controller/applyController';
 import { createInbox } from '../../controller/inboxController';
-import { Job } from '../../interface/job/Job';
-import { User } from '../../interface/User';
+import { User } from '../types/User';
+import { Job } from '../types/Job';
 
 interface ApplicantData {
   user: User;
@@ -78,7 +78,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
       }
       
       // Fetch applicants and accepted freelancers (only if user is owner)
-      if (user && isOwner) {
+      if (user) {
         promises.push(
           getJobApplier(jobId),
           getAcceptedFreelancer(jobId)
@@ -92,13 +92,18 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
         setHasApplied(results[0]);
       }
       
-      if (user && isOwner && results.length >= 2) {
+      if (user &&isOwner && results.length >= 2) {
         const [applicantsData, acceptedData] = results;
         
         setApplicants(applicantsData.map((app: any) => ({
           user: app.user,
           appliedAt: new Date(Number(app.appliedAt) / 1000000).toISOString()
         })));
+        setAcceptedFreelancers(acceptedData);
+      }
+
+      if (user && !isOwner && results.length >= 2) {
+        const [asd,_, acceptedData] = results;
         setAcceptedFreelancers(acceptedData);
       }
       
@@ -119,7 +124,8 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
       const success = await applyJob(user.id, jobId);
       if (success) {
         // Create inbox notification for job owner
-        await createInbox(job.userId, user.id, 'application', 'request', 'Miaw');
+        console.log("Creating inbox for job owner:", values);
+        await createInbox(job.userId, jobId ,user.id, 'application', values.coverLetter);
         
         message.success('Application submitted successfully!');
         setHasApplied(true);
@@ -193,11 +199,10 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
 
   // Handle job start
   const handleStartJob = useCallback(async (): Promise<boolean> => {
-    if (!job || !user) return false;
+    if (!job || !user || !isJobOwner) return false;
     
     try {
-      const result = await startJob(user.id, job.id, job.jobSalary);
-      console.log(result);
+      const result = await startJob(job.id);
       if (result.jobStarted) {
         message.success('Job started successfully!');
         await fetchJobDetails();
@@ -207,7 +212,6 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
         return false;
       }
     } catch (error) {
-      console.error('Error starting job:', error);
       message.error('Failed to start job.');
       return false;
     }

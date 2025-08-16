@@ -3,6 +3,7 @@ import { message } from 'antd';
 import { getAllUsers } from '../../controller/userController';
 import { createInbox } from '../../controller/inboxController';
 import { User } from '../types/User';
+import { createInvitation } from '../../controller/invitationController';
 
 interface UseUserManagementReturn {
   // Data
@@ -22,26 +23,24 @@ interface UseUserManagementReturn {
 export const useUserManagement = (): UseUserManagementReturn => {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [searchUsers, setSearchUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Fetch all users (cached after first load)
   const fetchAllUsers = useCallback(async () => {
-    // Don't refetch if we already have users
-    if (allUsers.length > 0) return;
-    
     setLoading(true);
     try {
       const users = await getAllUsers();
       if (users) {
         setAllUsers(users);
       }
+      // console.log("user dari hooks", users)
     } catch (error) {
       console.error('Error fetching users:', error);
       message.error('Failed to load users');
     } finally {
       setLoading(false);
     }
-  }, [allUsers.length]);
+  }, []);
 
   // Search users by username (client-side filtering for performance)
   const searchUsersByUsername = useCallback((searchText: string) => {
@@ -59,15 +58,25 @@ export const useUserManagement = (): UseUserManagementReturn => {
 
   // Send invitation to user
   const sendInvitation = useCallback(async (
-    userId: string, 
-    currentUserId: string, 
+    userId: string,
+    currentUserId: string,
     jobId?: string
   ): Promise<boolean> => {
     try {
-      // Create inbox notification for invited user
       await createInbox(userId, currentUserId, 'invitation', 'request', 'Miaw');
-      
-      message.success('Invitation sent successfully!');
+      if(jobId){
+
+        const result = await createInvitation(jobId, userId, currentUserId)
+        
+        
+        if (result[0] === 'Success') {
+          message.success(`Invitation sent successfully!`);
+        } else {
+          message.error(result[1] || 'Failed to create invitation. Please try again.');
+        }
+      }else{
+        message.error('Failed to create invitation. Please try again.');
+      }
       return true;
     } catch (error) {
       console.error('Error sending invitation:', error);
@@ -84,7 +93,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
   // Auto-fetch users on mount
   useEffect(() => {
     fetchAllUsers();
-  }, [fetchAllUsers]);
+  }, []);
 
   return {
     // Data

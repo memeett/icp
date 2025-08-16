@@ -49,12 +49,11 @@ const BrowseFreelancerPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('rating');
   const [currentPage, setCurrentPage] = useState(1);
   const [minRating, setMinRating] = useState(0);
-  const { allUsers } = useUserManagement();
+  const { allUsers, loading } = useUserManagement();
   const { data } = useJobCategories()
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  console.log(data)
-
+  console.log("user di page",allUsers)
 
   const filterFreelancers = useCallback((users: User[]) => {
     return users.filter(user => {
@@ -115,6 +114,7 @@ const BrowseFreelancerPage: React.FC = () => {
             key="view"
             type="text"
             onClick={() => navigate(`/profile/${freelancer.id}`)}
+            className="hover:!bg-[#6366f1] hover:!text-white transition-all duration-200"
           >
             View Profile
           </Button>
@@ -225,106 +225,112 @@ const BrowseFreelancerPage: React.FC = () => {
       <Navbar />
 
       <div className="container mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="text-center mb-8">
-            <Title level={2}>Browse Freelancers</Title>
-            <Text type="secondary">
-              Find the perfect freelancer for your project
-            </Text>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <Spin size="large" />
           </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="text-center mb-8">
+              <Title level={2}>Browse Freelancers</Title>
+              <Text type="secondary">
+                Find the perfect freelancer for your project
+              </Text>
+            </div>
 
-          {/* Search Bar */}
-          <Card className="mb-6">
-            <Row gutter={[16, 16]} align="middle">
-              <Col xs={24} sm={12} md={8}>
-                <Input
-                  size="large"
-                  placeholder="Search freelancers..."
-                  prefix={<SearchOutlined />}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            {/* Search Bar */}
+            <Card className="mb-6">
+              <Row gutter={[16, 16]} align="middle">
+                <Col xs={24} sm={12} md={8}>
+                  <Input
+                    size="large"
+                    placeholder="Search freelancers..."
+                    prefix={<SearchOutlined />}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Select
+                    size="large"
+                    placeholder="Sort by"
+                    style={{ width: '100%' }}
+                    value={sortBy}
+                    onChange={setSortBy}
+                  >
+                    <Option value="rating">Highest Rated</Option>
+                    <Option value="price-low">Price: Low to High</Option>
+                    <Option value="price-high">Price: High to Low</Option>
+                    <Option value="recent">Most Recent</Option>
+                  </Select>
+                </Col>
+                <Col xs={24} sm={24} md={10}>
+                  <div className="flex justify-end">
+                    <Text type="secondary">
+                      Showing {filteredAndSortedFreelancers.length} of {allUsers.length} freelancers
+                    </Text>
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+
+            <Row gutter={[24, 24]}>
+              {/* Filters Sidebar */}
+              <Col xs={24} lg={6}>
+                <FilterSidebar />
               </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Select
-                  size="large"
-                  placeholder="Sort by"
-                  style={{ width: '100%' }}
-                  value={sortBy}
-                  onChange={setSortBy}
-                >
-                  <Option value="rating">Highest Rated</Option>
-                  <Option value="price-low">Price: Low to High</Option>
-                  <Option value="price-high">Price: High to Low</Option>
-                  <Option value="recent">Most Recent</Option>
-                </Select>
-              </Col>
-              <Col xs={24} sm={24} md={10}>
-                <div className="flex justify-end">
-                  <Text type="secondary">
-                    Showing {filteredAndSortedFreelancers.length} of {allUsers.length} freelancers
-                  </Text>
-                </div>
+
+              {/* Freelancers Grid */}
+              <Col xs={24} lg={18}>
+                {filteredAndSortedFreelancers.length > 0 ? (
+                  <>
+                    <Row gutter={[16, 16]}>
+                      {filteredAndSortedFreelancers.map(freelancer => (
+                        <Col xs={24} sm={12} lg={8} key={freelancer.id}>
+                          <FreelancerCard freelancer={freelancer} />
+                        </Col>
+                      ))}
+                    </Row>
+
+                    <div className="text-center mt-8">
+                      <Pagination
+                        current={currentPage}
+                        total={filteredAndSortedFreelancers.length}
+                        pageSize={9}
+                        onChange={setCurrentPage}
+                        showSizeChanger={false}
+                        showTotal={(total, range) =>
+                          `${range[0]}-${range[1]} of ${total} freelancers`
+                        }
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <Card>
+                    <Empty
+                      description={
+                        allUsers.length === 0
+                          ? "No freelancers available at the moment."
+                          : "No freelancers match your current filters."
+                      }
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    >
+                      {allUsers.length > 0 && (
+                        <Button type="primary" onClick={clearAllFilters}>
+                          Clear All Filters
+                        </Button>
+                      )}
+                    </Empty>
+                  </Card>
+                )}
               </Col>
             </Row>
-          </Card>
-
-          <Row gutter={[24, 24]}>
-            {/* Filters Sidebar */}
-            <Col xs={24} lg={6}>
-              <FilterSidebar />
-            </Col>
-
-            {/* Freelancers Grid */}
-            <Col xs={24} lg={18}>
-              {filteredAndSortedFreelancers.length > 0 ? (
-                <>
-                  <Row gutter={[16, 16]}>
-                    {filteredAndSortedFreelancers.map(freelancer => (
-                      <Col xs={24} sm={12} lg={8} key={freelancer.id}>
-                        <FreelancerCard freelancer={freelancer} />
-                      </Col>
-                    ))}
-                  </Row>
-
-                  <div className="text-center mt-8">
-                    <Pagination
-                      current={currentPage}
-                      total={filteredAndSortedFreelancers.length}
-                      pageSize={9}
-                      onChange={setCurrentPage}
-                      showSizeChanger={false}
-                      showTotal={(total, range) =>
-                        `${range[0]}-${range[1]} of ${total} freelancers`
-                      }
-                    />
-                  </div>
-                </>
-              ) : (
-                <Card>
-                  <Empty
-                    description={
-                      allUsers.length === 0
-                        ? "No freelancers available"
-                        : "No freelancers match your filters"
-                    }
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  >
-                    {allUsers.length > 0 && (
-                      <Button type="primary" onClick={clearAllFilters}>
-                        Clear Filters
-                      </Button>
-                    )}
-                  </Empty>
-                </Card>
-              )}
-            </Col>
-          </Row>
-        </motion.div>
+          </motion.div>
+        )}
       </div>
     </div>
   );

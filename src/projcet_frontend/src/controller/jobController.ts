@@ -21,6 +21,29 @@ import { Job as JobShared, JobPayload } from "../shared/types/Job";
 import { user } from "../../../declarations/user";
 import { transferToJobController } from "./tokenController";
 
+function normalizeSubaccount(sub: any): [] | [Uint8Array] {
+    if (!sub) return [];
+
+    // Already [Uint8Array]
+    if (Array.isArray(sub) && sub[0] instanceof Uint8Array) {
+        return [sub[0]];
+    }
+
+    // Case: [ {0: 121, 1: 103, ..., length: 32} ]
+    if (Array.isArray(sub) && typeof sub[0] === "object" && "length" in sub[0]) {
+        const values = Array.from({ length: sub[0].length }, (_, i) => sub[0][i]);
+        return [new Uint8Array(values)];
+    }
+
+    // Case: [49, 0, 0, ...]
+    if (Array.isArray(sub) && typeof sub[0] === "number") {
+        return [new Uint8Array(sub)];
+    }
+
+    return [];
+}
+
+
 export const createJob = async (payload: JobPayload): Promise<string[]> => {
   const agent = await agentService.getAgent();
   try {
@@ -62,6 +85,9 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
       console.log("No user data available");
     }
 
+    
+
+
     const newJobTags: JobCategory[] = [];
 
     for (const tag of payload.jobTags) {
@@ -81,6 +107,7 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
       console.log("User ID:", currentUser.id);
       console.log("User structure type:", typeof currentUser);
       console.log("User keys:", Object.keys(currentUser));
+      console.log("User data:", currentUser);
 
       // Make sure the ID is a string
       const userId = String(currentUser.id);
@@ -114,17 +141,21 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         process.env.CANISTER_ID_JOB!
       );
       if ("ok" in result) {
+
+        
         const job_result = result.ok;
-        const jobSubaccount: [] | [Uint8Array] =
-                job_result.subAccount && job_result.subAccount[0]
-                    ? [new Uint8Array(job_result.subAccount[0])]
-                    : [];
+
+        const obj = job_result.subAccount[0]!;
+
+        const uint8 = new Uint8Array(Object.values(obj));
         const convertedJob: JobShared = {
             ...job_result,
-            subAccount: jobSubaccount, // Ensure subAccount is included
+            subAccount: [uint8], // Ensure subAccount is included
         };
-        const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
 
+
+        const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
+        console.log("Transfer result:", transferResult);
         if ("ok" in transferResult) {
           return ["Success", "Job posted and transfer completed"];
         } else {

@@ -37,12 +37,14 @@ persistent actor JobModel{ // Declared as persistent
 
     // Save state before upgrade
     system func preupgrade() {
+        Debug.print("preupgrade: jobsEntries size = " # Int.toText(jobsEntries.size()));
         jobsEntries := Iter.toArray(jobs.entries());
         jobCategoriesEntries := Iter.toArray(jobCategories.entries());
     };
 
     // Restore state after upgrade
     system func postupgrade() {
+        Debug.print("postupgrade: jobsEntries size = " # Int.toText(jobsEntries.size()));
         jobs := HashMap.fromIter<Text, Job.Job>(
             jobsEntries.vals(),
             0,

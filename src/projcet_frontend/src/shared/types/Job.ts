@@ -16,8 +16,8 @@ export interface Job {
   wallet: number;
   createdAt: bigint;
   updatedAt: bigint;
-  subAccount: [] | [Uint8Array];
-  
+  subAccount: [] | [Uint8Array | number[]];
+
   // Legacy properties for compatibility
   title?: string;
   description?: string;

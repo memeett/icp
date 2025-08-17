@@ -17,7 +17,8 @@ import {
   Divider,
   message,
   App,
-  Modal
+  Modal,
+  Spin
 } from 'antd';
 import {
   PlusOutlined,
@@ -66,9 +67,7 @@ const PostJobPage: React.FC = () => {
   const [formData, setFormData] = useState<Partial<JobFormData>>({});
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
-
-  console.log('Current step:', currentStep);
-  console.log('User authenticated:', isAuthenticated);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const checkUserData = async () => {
@@ -183,6 +182,8 @@ const PostJobPage: React.FC = () => {
 
   const handleSubmit = useCallback(async () => {
 
+    setLoading(true);
+
     // Check if user is authenticated
     if (!isAuthenticated) {
       Modal.confirm({
@@ -203,11 +204,11 @@ const PostJobPage: React.FC = () => {
     try {
       const values = await form.validateFields();
       const allFormData = { ...formData, ...values, skills };
-      
+
       const startDate = new Date(allFormData.startdate)
       const deadline = new Date(allFormData.deadline)
 
-      const payload : JobPayload = {
+      const payload: JobPayload = {
         jobName: allFormData.title,
         jobDescription: [allFormData.description],
         jobTags: allFormData.category,
@@ -220,9 +221,10 @@ const PostJobPage: React.FC = () => {
         jobDeadline: BigInt(deadline.getTime()) * 1_000_000n
       }
       const result = await createJob(payload);
-      
+
       console.log(result);
       if (result[0] === 'Success') {
+        setLoading(false)
         message.success(`Job published successfully!`);
         navigate('/manage');
       } else {
@@ -529,11 +531,16 @@ const PostJobPage: React.FC = () => {
   return (
     <>
       {contextHolder}
+
       <div className="min-h-screen bg-background">
         <Navbar />
-
-        <div className="container mx-auto px-4 py-8">
-          <motion.div
+        {loading ? (
+          <div className="flex justify-center items-center min-h-screen">
+            <Spin size="large" tip="Loading..." />
+          </div>
+        ) : (
+          <div className="container mx-auto px-4 py-8">
+            <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -571,7 +578,6 @@ const PostJobPage: React.FC = () => {
                     </Button>
 
                     <Space>
-
                       {currentStep < steps.length - 1 ? (
                         <Button
                           type="primary"
@@ -594,6 +600,7 @@ const PostJobPage: React.FC = () => {
                           Publish Job
                         </Button>
                       )}
+
                     </Space>
                   </div>
                 </Form>
@@ -601,9 +608,10 @@ const PostJobPage: React.FC = () => {
             </div>
           </motion.div>
         </div>
-      </div>
-    </>
-  );
+      )}
+    </div>
+  </>
+);
 };
 
 export default PostJobPage;

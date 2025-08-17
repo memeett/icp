@@ -48,6 +48,8 @@ import { RcFile } from 'antd/es/upload';
 import { createSubmission, getUserSubmissionsByJobId, getSubmissionByJobId, updateSubmissionStatus } from '../controller/submissionController';
 
 import type { Submission } from '../shared/types/Submission';
+import { get } from 'http';
+import { getUserById, getUserByName } from '../controller/userController';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -62,7 +64,7 @@ const JobDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { jobId } = useParams();
   const { user } = useAuth();
-  
+
   // Use optimized custom hooks
   const {
     job,
@@ -73,32 +75,41 @@ const JobDetailPage: React.FC = () => {
     loading,
     isApplying,
     isJobFreelancer,
+    isAccepting,
+    isRejecting,
+    inbox,
     handleApply,
     handleAcceptApplicant,
     handleRejectApplicant,
     handleStartJob,
-    handleFinishJob
+    handleFinishJob,
+    handleCoverLetter
   } = useJobDetails(jobId, user);
-  
+
   const {
     searchUsers,
     searchUsersByUsername,
     sendInvitation,
     clearSearch
   } = useUserManagement();
-  
+
   const [isApplyModalVisible, setIsApplyModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
+  const [isAcceptModalVisible, setIsAcceptModalVisible] = useState(false);
+  const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
+  const [isCoverModalVisible, setIsCoverModalVisible] = useState(false);
+
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
-  
+
   const [form] = Form.useForm();
   const [inviteForm] = Form.useForm();
 
+  const [coverLetter, setCoverLetter] = useState<string>("");
   // Handle user invitation
   const handleInviteUser = async (values: any) => {
     if (!user || !jobId || !values.userId) return;
-    
+
     try {
       const success = await sendInvitation(values.userId, user.id, jobId);
       if (success) {
@@ -134,7 +145,7 @@ const JobDetailPage: React.FC = () => {
     const now = new Date();
     const posted = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - posted.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 24) {
       return `${diffInHours} hours ago`;
     } else {
@@ -143,12 +154,34 @@ const JobDetailPage: React.FC = () => {
     }
   };
 
-  console.log("Job details:", acceptedFreelancers);
+
+  // Inside ApplicantsContent
+  const getLatestCoverLetter = async (applicantId: string) => {
+    setIsCoverModalVisible(true)
+    if (!jobId || !user) return null;
+
+    await handleCoverLetter(jobId, user.id);
+    const applicant = await getUserById(applicantId)
+    const applicantMessages = inbox.filter(
+      (msg: any) =>
+        msg.senderName = applicant?.id
+    );
+
+    if (applicantMessages.length === 0) return null;
+
+    const sorted = applicantMessages.sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const message = sorted[0].message.split("\n")[1];
+    setCoverLetter(message); // Return the most recent cover letter message
+  };
 
   // Component for job details content
   const JobDetailsContent = () => {
     if (!job) return null;
-    
+
     return (
     <Row gutter={[24, 24]}>
       {/* Main Content */}
@@ -184,141 +217,154 @@ const JobDetailPage: React.FC = () => {
             </Space>
           </div>
 
-          <Row gutter={[16, 16]} className="mb-6">
-            <Col xs={12} sm={6}>
-              <div className="text-center p-4 bg-background rounded-lg">
-                <DollarOutlined className="text-2xl text-green-500 mb-2" />
-                <div className="font-semibold">${job!.jobSalary.toLocaleString()}</div>
-                <Text type="secondary">Fixed Price</Text>
-              </div>
-            </Col>
-            <Col xs={12} sm={6}>
-              <div className="text-center p-4 bg-background rounded-lg">
-                <UserOutlined className="text-2xl text-purple-500 mb-2" />
-                <div className="font-semibold">{Number(job!.jobSlots) - acceptedFreelancers.length}</div>
-                <Text type="secondary">Available Slots</Text>
-              </div>
-            </Col>
-            <Col xs={12} sm={6}>
-              <div className="text-center p-4 bg-background rounded-lg">
-                <UserOutlined className="text-2xl text-blue-500 mb-2" />
-                <div className="font-semibold">{applicants.length}</div>
-                <Text type="secondary">Applicants</Text>
-              </div>
-            </Col>
-            <Col xs={12} sm={6}>
-              <div className="text-center p-4 bg-background rounded-lg">
-                <StarOutlined className="text-2xl text-orange-500 mb-2" />
-                <div className="font-semibold">{job!.jobRating.toFixed(1)}</div>
-                <Text type="secondary">Rating</Text>
-              </div>
-            </Col>
-          </Row>
+            <Row gutter={[16, 16]} className="mb-6">
+              <Col xs={12} sm={6}>
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <DollarOutlined className="text-2xl text-green-500 mb-2" />
+                  <div className="font-semibold">${job!.jobSalary.toLocaleString()}</div>
+                  <Text type="secondary">Fixed Price</Text>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <UserOutlined className="text-2xl text-purple-500 mb-2" />
+                  <div className="font-semibold">{Number(job!.jobSlots) - acceptedFreelancers.length}</div>
+                  <Text type="secondary">Available Slots</Text>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <UserOutlined className="text-2xl text-blue-500 mb-2" />
+                  <div className="font-semibold">{applicants.length}</div>
+                  <Text type="secondary">Applicants</Text>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <StarOutlined className="text-2xl text-orange-500 mb-2" />
+                  <div className="font-semibold">{job!.jobRating.toFixed(1)}</div>
+                  <Text type="secondary">Rating</Text>
+                </div>
+              </Col>
+            </Row>
 
-          <Divider />
+            <Divider />
 
-          <div className="mb-6">
-            <Title level={4}>Job Description</Title>
-            <div className="whitespace-pre-line">
-              {job!.jobDescription.map((desc, index) => (
-                <Paragraph key={index}>{desc}</Paragraph>
+            <div className="mb-6">
+              <Title level={4}>Job Description</Title>
+              <div className="whitespace-pre-line">
+                {job!.jobDescription.map((desc, index) => (
+                  <Paragraph key={index}>{desc}</Paragraph>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <Title level={4}>Required Skills</Title>
+              <Space wrap>
+                {job!.jobTags.map((tag) => (
+                  <Tag key={tag.id} color="processing" className="mb-2">
+                    {tag.jobCategoryName}
+                  </Tag>
+                ))}
+              </Space>
+            </div>
+
+            {user && job!.jobStatus === 'Open' && !isJobOwner && Number(job!.jobSlots) - acceptedFreelancers.length !== 0 && (
+
+              <div className="text-center">
+                {hasApplied ? (
+                  <Button
+                    size="large"
+                    disabled
+                    className="px-8"
+                  >
+                    Already Applied
+                  </Button>
+                ) : (
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<SendOutlined />}
+                    onClick={() => setIsApplyModalVisible(true)}
+                    className="px-8"
+                  >
+                    Apply for this Job
+                  </Button>
+                )}
+                {user && Number(job!.jobSlots) - acceptedFreelancers.length == 0 && (
+                  <div className="text-center">
+                    <Button
+                      size="large"
+                      disabled
+                      className="px-8"
+                    >
+                      <Text>All Slots Filled</Text>
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+            )}
+
+
+
+            {isJobOwner && (
+              <div className="text-center space-x-4">
+                {job!.jobStatus === 'Open' && acceptedFreelancers.length > 0 && (
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<PlayCircleOutlined />}
+                    onClick={handleStartJob}
+                  >
+                    Start Job
+                  </Button>
+                )}
+                {job!.jobStatus === 'Open' && acceptedFreelancers.length == 0 && (
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<CloseOutlined />}
+                    disabled={true}
+                  >
+                    Job has no accepted freelancers
+                  </Button>
+                )
+                }
+                {job!.jobStatus === 'Ongoing' && (
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<StopOutlined />}
+                    onClick={handleFinishJob}
+                  >
+                    Finish Job
+                  </Button>
+                )}
+              </div>
+            )}
+          </Card>
+        </Col>
+
+        {/* Sidebar */}
+        <Col xs={24} lg={8}>
+          <Card title="Similar Jobs" size="small">
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <Text strong className="block mb-1">
+                    React Developer Needed
+                  </Text>
+                  <Text type="secondary" className="text-sm">
+                    $2,500 • Fixed Price
+                  </Text>
+                </div>
               ))}
             </div>
-          </div>
-
-          <div className="mb-6">
-            <Title level={4}>Required Skills</Title>
-            <Space wrap>
-              {job!.jobTags.map((tag) => (
-                <Tag key={tag.id} color="processing" className="mb-2">
-                  {tag.jobCategoryName}
-                </Tag>
-              ))}
-            </Space>
-          </div>
-
-          {user && job!.jobStatus=== 'Open' && !isJobOwner  && Number(job!.jobSlots) - acceptedFreelancers.length !== 0 && (
-
-            <div className="text-center">
-              {hasApplied ? (
-                <Button
-                  size="large"
-                  disabled
-                  className="px-8"
-                >
-                  Already Applied
-                </Button>
-              ) : (
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<SendOutlined />}
-                  onClick={() => setIsApplyModalVisible(true)}
-                  className="px-8"
-                >
-                  Apply for this Job
-                </Button>
-              )}
-            </div>
-          )}
-
-          {user && Number(job!.jobSlots) - acceptedFreelancers.length == 0 && (
-            <div className="text-center">
-                <Button
-                  size="large"
-                  disabled
-                  className="px-8"
-                >
-                  <Text>All Slots Filled</Text>
-                </Button>
-            </div>
-          )}
-
-          {isJobOwner && (
-            <div className="text-center space-x-4">
-              {job!.jobStatus=== 'Open' && acceptedFreelancers.length > 0 && (
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<PlayCircleOutlined />}
-                  onClick={handleStartJob}
-                >
-                  Start Job
-                </Button>
-              )}
-              {job!.jobStatus=== 'Ongoing' && (
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<StopOutlined />}
-                  onClick={handleFinishJob}
-                >
-                  Finish Job
-                </Button>
-              )}
-            </div>
-          )}
-        </Card>
-      </Col>
-
-      {/* Sidebar */}
-      <Col xs={24} lg={8}>
-        <Card title="Similar Jobs" size="small">
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <Text strong className="block mb-1">
-                  React Developer Needed
-                </Text>
-                <Text type="secondary" className="text-sm">
-                  $2,500 • Fixed Price
-                </Text>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </Col>
-    </Row>
+          </Card>
+        </Col>
+      </Row>
     );
   };
 
@@ -345,7 +391,7 @@ const JobDetailPage: React.FC = () => {
         title: 'Applied',
         dataIndex: 'appliedAt',
         key: 'appliedAt',
-        render: (date: string) => new Date(date).toLocaleDateString(),
+        render: (date: string) => formatDate(BigInt(new Date(date).getTime()) * 1_000_000n),
       },
       {
         title: 'Actions',
@@ -353,10 +399,22 @@ const JobDetailPage: React.FC = () => {
         render: (_: any, record: ApplicantData) => (
           <Space>
             <Button
+              size="small"
+              onClick={() => navigate(`/profile/${record.user.id}`)}
+            >
+              View Profile
+            </Button>
+            <Button
+              size="small"
+              onClick={() => getLatestCoverLetter(record.user.id)}
+            >
+              View Cover Letter
+            </Button>
+            <Button
               type="primary"
               size="small"
               icon={<CheckOutlined />}
-              onClick={() => handleAcceptApplicant(record.user.id)}
+              onClick={() => setIsAcceptModalVisible(true)}
             >
               Accept
             </Button>
@@ -364,10 +422,111 @@ const JobDetailPage: React.FC = () => {
               size="small"
               danger
               icon={<CloseOutlined />}
-              onClick={() => handleRejectApplicant(record.user.id)}
+              onClick={() => setIsRejectModalVisible(true)}
             >
               Reject
             </Button>
+
+            <Modal
+              title="Cover Letter"
+              open={isCoverModalVisible}
+              onCancel={() => setIsCoverModalVisible(false)}
+              footer={[
+                <Button key="close" onClick={() => setIsCoverModalVisible(false)}>
+                  Close
+                </Button>,
+              ]}
+              width={600}
+            >
+              <Paragraph style={{ whiteSpace: "pre-line" }}>
+                {coverLetter ?? "Loading..."}
+              </Paragraph>
+            </Modal>
+
+            <Modal
+              title="Accept Applicant"
+              open={isAcceptModalVisible}
+              onCancel={() => setIsAcceptModalVisible(false)}
+              footer={null}
+              width={600}
+            >
+              <Form
+                form={form}
+                layout="vertical"
+                onFinish={() => handleAcceptApplicant(record.user.id, form.getFieldsValue())}
+              >
+                <Form.Item
+                  name="acceptancereason"
+                  label="Acceptance Reason"
+                  rules={[{ required: true, message: 'Please write an acceptance reason' }]}
+                >
+                  <TextArea
+                    rows={6}
+                    placeholder="Explain why this applicant is fit for this job..."
+                    maxLength={1000}
+                    showCount
+                  />
+                </Form.Item>
+
+                <div className="flex justify-end space-x-2">
+                  <Button onClick={() => setIsAcceptModalVisible(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isAccepting}
+                    icon={<SendOutlined />}
+
+                  >
+                    Accept Applicant
+                  </Button>
+                </div>
+              </Form>
+            </Modal>
+
+            <Modal
+              title="Reject Applicant"
+              open={isRejectModalVisible}
+              onCancel={() => setIsRejectModalVisible(false)}
+              footer={null}
+              width={600}
+            >
+              <Form
+                form={form}
+                layout="vertical"
+                onFinish={() => handleRejectApplicant(record.user.id, form.getFieldsValue())}
+              >
+                <Form.Item
+                  name="rejectionreason"
+                  label="Rejection Reason"
+                  rules={[{ required: true, message: 'Please write a rejection reason' }]}
+                >
+                  <TextArea
+                    rows={6}
+                    placeholder="Explain why this applicant isn't fit for this job..."
+                    maxLength={1000}
+                    showCount
+                  />
+                </Form.Item>
+
+                <div className="flex justify-end space-x-2">
+                  <Button onClick={() => setIsRejectModalVisible(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isRejecting}
+                    icon={<CloseOutlined />}
+
+                  >
+                    Reject Applicant
+                  </Button>
+                </div>
+              </Form>
+            </Modal>
+
           </Space>
         ),
       },
@@ -414,12 +573,6 @@ const JobDetailPage: React.FC = () => {
               onClick={() => navigate(`/profile/${record.id}`)}
             >
               View Profile
-            </Button>
-            <Button
-              danger
-              onClick={() => handleRejectApplicant(record.id)}
-            >
-              Remove
             </Button>
           </Space>
         ),
@@ -760,7 +913,7 @@ const JobDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

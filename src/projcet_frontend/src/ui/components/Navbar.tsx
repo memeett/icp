@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Button,
@@ -24,18 +24,25 @@ import {
   ProfileOutlined,
   GlobalOutlined,
   SunOutlined,
-  MoonOutlined
+  MoonOutlined,
+  MessageOutlined
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useAtom } from 'jotai';
 import { themeAtom } from '../../app/store/ui';
-import { getProfilePictureUrl } from '../../controller/userController';
+import { getProfilePictureUrl, getUserById } from '../../controller/userController';
 import { useTheme } from '../../app/providers/ThemeProvider';
+import { useInboxPanel } from '../../contexts/InboxPanelContext';
 import FaceRecognition from '../../components/FaceRecognition';
 import { AuthenticationModal } from '../../components/modals/AuthenticationModal';
-import  ergasiaLogo from '../../assets/ergasia_logo.png'
+import ergasiaLogo from '../../assets/ergasia_logo.png'
 import ergasiaLogoWhite from '../../assets/ergasia_logo_white.png'
+import { getAllInboxByUserId } from '../../controller/inboxController';
+import { Inbox } from '../../../../declarations/inbox/inbox.did';
+import { getBalanceController, topUpWalletController } from '../../controller/tokenController';
+import { Token } from '../../interface/Token';
+import { InboxResponse } from '../../shared/types/Inbox';
 
 const { Text } = Typography;
 
@@ -45,6 +52,7 @@ const Navbar: React.FC = () => {
   const [activeTab, setActiveTab] = useState('icp');
   const [theme] = useAtom(themeAtom);
   const { toggleTheme } = useTheme();
+  const { toggleInboxPanel } = useInboxPanel();
   const {
     isAuthenticated,
     isLoading,
@@ -54,6 +62,47 @@ const Navbar: React.FC = () => {
   } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [inboxes, setInboxes] = useState<InboxResponse[]>([]);
+
+  const fetchInbox = useCallback(async () => {
+    try {
+      const inboxResult = await getAllInboxByUserId(user?.id || "");
+      if (inboxResult) {
+        setInboxes(inboxResult);
+      }
+      console.log(inboxes)
+    } catch (error) {
+      console.error("Failed to fetch inbox:", error);
+    }
+  }, [user?.id]);
+
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [receiverInbox, setReceiverInbox] = useState<Inbox[]>([]);
+  const [senderInbox, setSenderInbox] = useState<Inbox[]>([]);
+  const [usernames, setUsernames] = useState<{ [key: string]: string }>({});
+  const [userWallet, setUserWallet] = useState<Token>();
+
+  useEffect(() => {
+    const fetchUserWallet = async () => {
+      if (user?.id) {
+        try {
+          const balance = await getBalanceController(user);
+          setUserWallet(balance);
+        } catch (error) {
+          console.error("Failed to fetch user wallet:", error);
+        }
+      }
+    };
+
+    fetchUserWallet();
+  }, [user])
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchInbox();
+    }
+  }, [user?.id, fetchInbox]);
+
 
   const handleLogin = async () => {
     setIsModalOpen(true);
@@ -76,6 +125,84 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const handleTopUp = async () => {
+    if (user?.id) {
+      try {
+        const result = await topUpWalletController(user, 10); // Top up with 10 tokens
+      } catch (error) {
+        console.error("Top-up failed:", error);
+      }
+    }
+  };
+
+  const getUsernameById = useCallback(
+    async (userId: string): Promise<string | null> => {
+      try {
+        const result = await getUserById(userId);
+        if (result) {
+          return result.username;
+        }
+        return null;
+      } catch (error) {
+        console.error("Failed to get user by id:", error);
+        return null;
+      }
+    },
+    []
+  );
+
+
+  const fetchUsernames = useCallback(async () => {
+    const uniqueUserIds = [
+      ...new Set([
+        ...receiverInbox.map((n) => n.senderId),
+        ...senderInbox.map((n) => n.receiverId),
+      ]),
+    ];
+    const newUserIds = uniqueUserIds.filter((id) => !usernames[id]);
+
+    if (newUserIds.length > 0) {
+      const usernameMap: { [key: string]: string } = {};
+      const usernamePromises = newUserIds.map(async (id) => {
+        const username = await getUsernameById(id);
+        if (username) {
+          usernameMap[id] = username;
+        }
+      });
+
+      await Promise.all(usernamePromises); // Wait for all requests to complete
+      setUsernames((prev) => ({ ...prev, ...usernameMap })); // Merge with existing usernames
+    }
+  }, [receiverInbox, senderInbox, usernames, getUsernameById]);
+
+
+  useEffect(() => {
+    if (receiverInbox.length > 0 || senderInbox.length > 0) {
+      fetchUsernames();
+    }
+  }, [receiverInbox, senderInbox, fetchUsernames]);
+
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    if (isNotificationOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isNotificationOpen]);
+
   const profilePictureUrl = user?.profilePicture
     ? getProfilePictureUrl(user.id, user.profilePicture)
     : undefined;
@@ -94,7 +221,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between items-center">
           <span>Wallet</span>
           <Text strong className="text-green-600">
-            ${user?.wallet?.toFixed(2) || '0.00'}
+            {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
           </Text>
         </div>
       ),
@@ -132,6 +259,7 @@ const Navbar: React.FC = () => {
     },
   ];
 
+
   const navigationItems = [
     { key: 'find', label: 'Find Jobs', path: '/find' },
     { key: 'post', label: 'Post Job', path: '/post' },
@@ -157,43 +285,43 @@ const Navbar: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center space-x-2"
               >
-                <img src={ theme === 'dark' ? ergasiaLogoWhite : ergasiaLogo }
-                  alt="Ergasia Logo" className="h-8 w-auto"/>
+                <img src={theme === 'dark' ? ergasiaLogoWhite : ergasiaLogo}
+                  alt="Ergasia Logo" className="h-8 w-auto" />
               </motion.div>
             </Link>
 
             <nav className="hidden md:flex items-center space-x-1">
               {navigationItems.map((item) => (
                 <motion.div
-                    key={item.key}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  key={item.key}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                    <Button
-                        type={
-                            isActivePath(item.path)
-                                ? 'primary'
-                                : 'text'
-                        }
-                        onClick={() => navigate(item.path)}
-                        className="relative"
-                    >
-                        {item.label}
-                        {isActivePath(item.path) && (
-                            <motion.div
-                                layoutId="activeTab"
-                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                                initial={false}
-                                transition={{
-                                    type: 'spring',
-                                    stiffness: 500,
-                                    damping: 30,
-                                }}
-                            />
-                        )}
-                    </Button>
-                  </motion.div>
-                ))}
+                  <Button
+                    type={
+                      isActivePath(item.path)
+                        ? 'primary'
+                        : 'text'
+                    }
+                    onClick={() => navigate(item.path)}
+                    className="relative"
+                  >
+                    {item.label}
+                    {isActivePath(item.path) && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                        initial={false}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 500,
+                          damping: 30,
+                        }}
+                      />
+                    )}
+                  </Button>
+                </motion.div>
+              ))}
             </nav>
 
             {/* Right Side Actions */}
@@ -207,19 +335,20 @@ const Navbar: React.FC = () => {
                   className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50"
                 />
               </motion.div>
-
-              {/* Notifications */}
+              
               {isAuthenticated && (
                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <Badge count={3} size="small">
+                  <Badge count={inboxes.filter((m) => !m.read).length} size="small">
                     <Button
                       type="text"
-                      icon={<BellOutlined />}
+                      icon={<MessageOutlined />}
+                      onClick={toggleInboxPanel}
                       className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50"
                     />
                   </Badge>
                 </motion.div>
               )}
+
 
               {/* Authentication Section */}
               <AnimatePresence mode="wait">
@@ -257,7 +386,7 @@ const Navbar: React.FC = () => {
                             {user.username || 'User'}
                           </Text>
                           <Text className="block text-xs text-muted-foreground">
-                            ${user.wallet?.toFixed(2) || '0.00'}
+                            {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
                           </Text>
                         </div>
                       </div>
@@ -291,6 +420,13 @@ const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(true)}
                   className="flex items-center justify-center w-10 h-10"
                 />
+
+                 <Button
+                  type="text"
+                  icon={<MenuOutlined />}
+                  onClick={handleTopUp}
+                  className="flex items-center justify-center w-10 h-10"
+                />
               </div>
             </div>
           </div>
@@ -317,7 +453,7 @@ const Navbar: React.FC = () => {
               <div>
                 <Text className="block font-medium">{user.username || 'User'}</Text>
                 <Text className="block text-sm text-muted-foreground">
-                  ${user.wallet?.toFixed(2) || '0.00'}
+                  {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
                 </Text>
               </div>
             </div>
@@ -433,20 +569,21 @@ const Navbar: React.FC = () => {
             {
               key: 'face',
               label: 'Face Recognition',
-              children: user && (
+              children: (
                 <FaceRecognition
-                  principalId={user.id}
+                  principalId={user?.id || ""}
                   onSuccess={handleLoginSuccess}
                   onError={handleLoginError}
-                  mode="verify"
                   isOpen={isModalOpen && activeTab === 'face'}
                   onClose={() => setIsModalOpen(false)}
+                  purpose="login"
                 />
               ),
             },
           ]}
         />
       </Modal>
+
     </>
   );
 };

@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
-import { Job } from "../../interface/job/Job";
 import { formatDate } from "../../utils/dateUtils";
-import { formatCurrency } from "../../utils/currecncyUtils";
+import { formatCurrency } from "../../utils/salaryUtils";
 import { addIncrementUserClicked } from "../../controller/userClickedController";
 import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
+import { Job } from "../../shared/types/Job";
 
 export default function ClientHistoryCard({ job }: { job: Job }) {
 

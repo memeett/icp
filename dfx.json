@@ -55,24 +55,12 @@
       "main": "src/projcet_backend/Rating/main.mo",
       "type": "motoko"
     },
-    "aiagent":{
-      "main": "src/projcet_backend/AiAgent/main.mo",
-      "type": "motoko"
-    },
-    "clientagent":{
-      "main": "src/projcet_backend/ClientAgent/main.mo",
-      "type": "motoko"
-    },
-    "projcet_frontend": {
-      "dependencies": [
-        "projcet_backend"
-      ],
-      "source": [
-        "src/projcet_frontend/dist"
-      ],
-      "type": "assets",
-      "workspace": "projcet_frontend"
+    "icrc1_ledger_canister": {
+      "type": "custom",
+      "candid": "https://raw.githubusercontent.com/dfinity/ic/047925dfd8386aca91d154054149727131766084/rs/ledger_suite/icrc1/ledger/ledger.did",
+      "wasm": "https://download.dfinity.systems/ic/047925dfd8386aca91d154054149727131766084/canisters/ic-icrc1-ledger.wasm.gz"
     }
+
   },
   "defaults": {
     "bitcoin": {

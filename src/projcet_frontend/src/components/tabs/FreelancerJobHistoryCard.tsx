@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Job } from "../../interface/job/Job";
 import { useNavigate } from "react-router-dom";
 import { getRatingByUserIdJobId } from "../../controller/ratingController";
 import { Star } from "lucide-react";
 import { formatDate } from "../../utils/dateUtils";
+import { Job } from "../../shared/types/Job";
 
 export default function FreelancerJobHistoryCard({ jobId, isLoading }: { jobId: string; isLoading: () => void }) {
     const [job, setJob] = useState<Job | null>(null);
@@ -111,7 +111,7 @@ export default function FreelancerJobHistoryCard({ jobId, isLoading }: { jobId: 
                     <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${job?.jobStatus === "Finished"
                                 ? "bg-green-100 text-green-800"
-                                : job?.jobStatus === "In Progress"
+                                : job?.jobStatus === "Ongoing"
                                     ? "bg-blue-100 text-blue-800"
                                     : "bg-yellow-100 text-yellow-800"
                             }`}

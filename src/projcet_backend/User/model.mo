@@ -15,6 +15,7 @@ module{
         updatedAt: Int;
         isFaceRecognitionOn: Bool;
         isProfileCompleted: Bool;
+        subAccount: ?[Nat8];
     };
 
     public type UpdateUserPayload = {
@@ -30,6 +31,12 @@ module{
         #topUp;
         #transfer;
         #transferToJob;
+    };
+
+    public type Token ={
+        token_name: Text;
+        token_symbol: Text;
+        token_value: Nat;
     };
 
     public type CashFlowHistory = {

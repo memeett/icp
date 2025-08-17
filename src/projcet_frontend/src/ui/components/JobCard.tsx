@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
 import { 
   Card, 
   Tag, 
@@ -59,6 +60,7 @@ const JobCard: React.FC<JobCardProps> = memo(({
 
   const handleSaveToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+
     
     if (!isAuthenticated) {
       navigate('/face-recognition/login');
@@ -80,8 +82,8 @@ const JobCard: React.FC<JobCardProps> = memo(({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Open': return 'green';
-      case 'In Progress': return 'blue';
-      case 'Completed': return 'purple';
+      case 'Ongoing': return 'orange';
+      case 'Finished': return 'purple';
       case 'Cancelled': return 'red';
       default: return 'default';
     }
@@ -292,5 +294,6 @@ const JobCard: React.FC<JobCardProps> = memo(({
 });
 
 JobCard.displayName = 'JobCard';
+
 
 export default JobCard;

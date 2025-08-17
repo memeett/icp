@@ -16,6 +16,7 @@ export interface Job {
   wallet: number;
   createdAt: bigint;
   updatedAt: bigint;
+  subAccount: [] | [Uint8Array];
   
   // Legacy properties for compatibility
   title?: string;
@@ -30,21 +31,24 @@ export interface Job {
   jobType?: string;
 }
 
-export interface CreateJobPayload {
-  title: string;
-  description: string;
-  categoryId: string;
-  budget: number;
-  deadline: string;
+export interface JobPayload {
+  jobName: string;
+  jobDescription: string[];
+  jobTags: string[];
+  jobSalary: number;
+  jobSlots: number;
+  jobSkills: string[];
+  jobExprienceLevel: string;
+  jobProjectType: string;
+  jobStartDate: bigint;
+  jobDeadline: bigint;
 }
 
 export interface UpdateJobPayload {
-  title?: string;
-  description?: string;
-  categoryId?: string;
-  budget?: number;
-  deadline?: string;
-  status?: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  jobName: string;
+  jobDescription: string[];
+  jobStartDate: bigint;
+  jobDeadline: bigint;
 }
 
 export interface JobApplication {

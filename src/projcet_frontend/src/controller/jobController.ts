@@ -320,13 +320,14 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
 };
 
 export const startJob = async (
+  user_id: string,
   job_id: string
 ): Promise<{ jobStarted: boolean; message: string }> => {
-  // try {
+  try {
     // Authenticate the user
     const agent = await agentService.getAgent();
 
-    const result = await job.startJob(job_id);
+    const result = await job.startJob(user_id, job_id);
     if (result) {
       return {
         jobStarted: true,
@@ -381,12 +382,12 @@ export const startJob = async (
     //     message: "Failed to start job: " + JSON.stringify(result.err),
     //   };
     // }
-  // } catch (error) {
-  //   return {
-  //     jobStarted: false,
-  //     message: "Error: " + String(error),
-  //   };
-  // }
+  } catch (error) {
+    return {
+      jobStarted: false,
+      message: "Error: " + String(error),
+    };
+  }
 };
 
 export const getUserJobByStatusFinished = async (

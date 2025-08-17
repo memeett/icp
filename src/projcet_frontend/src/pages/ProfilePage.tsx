@@ -9,6 +9,7 @@ import {
   Skeleton,
   Row,
   Col,
+  message,
 } from 'antd';
 import {
   GlobalOutlined,
@@ -28,16 +29,18 @@ import EditProfileModal from './profile/EditProfileModal';
 import ProfileHeader from './profile/ProfileHeader';
 import StatsCards from './profile/StatsCards';
 import InvitationsTab from './profile/InvitationsTab';
+import { acceptApplier } from '../controller/applyController';
+import { UserInvitationPayload } from '../shared/types/Invitation';
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
 // Mock job categories - in a real app, this would be fetched from the backend
 const mockJobCategories: JobCategory[] = [
-    { id: '1', jobCategoryName: 'Web Development' },
-    { id: '2', jobCategoryName: 'Mobile Development' },
-    { id: '3', jobCategoryName: 'UI/UX Design' },
-    { id: '4', jobCategoryName: 'Data Science' },
-    { id: '5', jobCategoryName: 'DevOps' },
+  { id: '1', jobCategoryName: 'Web Development' },
+  { id: '2', jobCategoryName: 'Mobile Development' },
+  { id: '3', jobCategoryName: 'UI/UX Design' },
+  { id: '4', jobCategoryName: 'Data Science' },
+  { id: '5', jobCategoryName: 'DevOps' },
 ];
 
 const ProfilePage: React.FC = () => {
@@ -45,8 +48,8 @@ const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const {invitations,refetch, processingInvitation, setProcessingInvitation} = useInvitation(user!.id)
-  
+  const { invitations, refetch, processingInvitation, setProcessingInvitation } = useInvitation(user!.id)
+
   useEffect(() => {
     if (user && user.profilePicture) {
       setProfileImage(getProfilePictureUrl(user.id, user.profilePicture));
@@ -60,11 +63,11 @@ const ProfilePage: React.FC = () => {
       username: values.username,
       description: values.description,
     };
-    
+
     if (values.dob) {
       payload.dob = values.dob.format('YYYY-MM-DD');
     }
-    
+
     if (values.preference) {
       payload.preference = values.preference.map((id: string) => mockJobCategories.find(cat => cat.id === id)).filter(Boolean);
     }
@@ -96,16 +99,22 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleAcceptInvitation = async (invitationId: bigint) => {
+  const handleAcceptInvitation = async (invitation: UserInvitationPayload) => {
     if (!user) return;
-    setProcessingInvitation(invitationId.toString());
+    setProcessingInvitation(invitation.id.toString());
     try {
-      const success = await acceptInvitation(user.id, invitationId);
+      const success = await acceptInvitation(user.id, invitation.id);
       if (success) {
-        console.log("Invitation accepted successfully!");
-        refetch();
+        const res = await acceptApplier(user.id, invitation.job.id)
+        if (res) {
+
+          message.success("Invitation accepted successfully!");
+          refetch();
+        } else {
+          message.error("Error at applied");
+        }
       } else {
-        console.error("Failed to accept invitation.");
+        message.error('Job slot already full, please reject it!.');
       }
     } catch (error) {
       console.error("An error occurred while accepting the invitation.", error);
@@ -120,10 +129,10 @@ const ProfilePage: React.FC = () => {
     try {
       const success = await rejectInvitation(user.id, invitationId);
       if (success) {
-        console.log("Invitation rejected successfully.");
+        message.success("Invitation rejected successfully.");
         refetch();
       } else {
-        console.error("Failed to reject invitation.");
+        message.error("Failed to reject invitation.");
       }
     } catch (error) {
       console.error("An error occurred while rejecting the invitation.", error);
@@ -219,19 +228,19 @@ const ProfilePage: React.FC = () => {
 
               <TabPane
                 tab={
-                    <Space>
-                      <InboxOutlined />
-                      Invitations
-                    </Space>
+                  <Space>
+                    <InboxOutlined />
+                    Invitations
+                  </Space>
                 }
                 key="invitations"
               >
                 <InvitationsTab
                   invitations={invitations || []}
-                 processingInvitation={processingInvitation}
-                 onAccept={handleAcceptInvitation}
-                 onReject={handleRejectInvitation}
-               />
+                  processingInvitation={processingInvitation}
+                  onAccept={handleAcceptInvitation}
+                  onReject={handleRejectInvitation}
+                />
               </TabPane>
             </Tabs>
           </Card>

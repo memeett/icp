@@ -19,3 +19,14 @@ export const appendFreelancers = async (jobId: string, newFreelancerId: string):
     }
 };
 
+export const isFreelancerRegistered = async (jobId: string, freelancerId: string): Promise<string[]> => {
+    const agent = await agentService.getAgent();
+
+    try {
+        const result = await job_transaction.isFreelancerRegistered(jobId, freelancerId);
+        return ["succ", result]
+    } catch (error) {
+        return ["err", "error"]
+    }
+
+}

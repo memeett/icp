@@ -26,6 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { Job } from '../../shared/types/Job';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useNotifications } from '../../shared/hooks/useNotifications';
+import { formatDate } from '../../utils/dateUtils';
 
 const { Text, Title } = Typography;
 
@@ -127,41 +128,48 @@ const JobCard: React.FC<JobCardProps> = memo(({
         hoverable
         className={`${cardVariants[variant]} relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl`}
         onClick={handleViewDetails}
+        styles={{
+          actions: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }
+        }}
         cover={
           variant === 'featured' && (
             <div className="h-2 bg-gradient-to-r from-primary to-purple-600" />
           )
         }
         actions={showActions ? [
-          <Tooltip title={localSaved ? 'Remove from favorites' : 'Save job'} key="save">
-            <Button
-              type="text"
-              icon={localSaved ? <HeartFilled className="text-red-500" /> : <HeartOutlined />}
-              onClick={handleSaveToggle}
-              className="hover:scale-110 transition-transform"
-            />
-          </Tooltip>,
-          <Tooltip title="View details" key="view">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={handleViewDetails}
-              className="hover:scale-110 transition-transform"
-            />
-          </Tooltip>,
-          <Tooltip title="Quick apply" key="apply">
-            <Button
-              type="primary"
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/jobs/${job.id}/apply`);
-              }}
-              className="hover:scale-105 transition-transform"
-            >
-              Apply
-            </Button>
-          </Tooltip>
+          // <Tooltip title={localSaved ? 'Remove from favorites' : 'Save job'} key="save">
+          //   <Button
+          //     type="text"
+          //     icon={localSaved ? <HeartFilled className="text-red-500" /> : <HeartOutlined />}
+          //     onClick={handleSaveToggle}
+          //     className="hover:scale-110 transition-transform"
+          //   />
+          // </Tooltip>,
+          // <Tooltip title="View details" key="view">
+          //   <Button
+          //     type="text"
+          //     icon={<EyeOutlined />}
+          //     onClick={handleViewDetails}
+          //     className="hover:scale-110 transition-transform"
+          //   />
+          // </Tooltip>,
+          // <Tooltip title="Quick apply" key="apply">
+          //   <Button
+          //     type="primary"
+          //     size="small"
+          //     onClick={(e) => {
+          //       e.stopPropagation();
+          //       navigate(`/jobs/${job.id}/apply`);
+          //     }}
+          //     className="hover:scale-105 transition-transform "
+          //   >
+          //     Apply
+          //   </Button>
+          // </Tooltip>
         ] : undefined}
       >
         {/* Header */}
@@ -183,19 +191,6 @@ const JobCard: React.FC<JobCardProps> = memo(({
             </Space>
           </div>
           
-          <AnimatePresence>
-            {isHovered && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex items-center space-x-1 text-yellow-500"
-              >
-                <StarOutlined />
-                <Text className="text-sm">4.8</Text>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* Job Details */}
@@ -269,12 +264,12 @@ const JobCard: React.FC<JobCardProps> = memo(({
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center space-x-1">
             <ClockCircleOutlined />
-            <span>Posted {new Date(Number(job.createdAt)).toLocaleDateString()}</span>
+            <span>Posted {formatDate(job.createdAt)}</span>
           </div>
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <Avatar size="small" icon={<UserOutlined />} />
             <span>Client</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Hover Overlay Effect */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Typography,
@@ -19,7 +19,8 @@ import {
   Tooltip,
   Tabs,
   Table,
-  AutoComplete
+  AutoComplete,
+  UploadFile
 } from 'antd';
 import {
   DollarOutlined,
@@ -43,6 +44,10 @@ import Navbar from '../ui/components/Navbar';
 import { useAuth, useJobDetails, useUserManagement } from '../shared/hooks';
 import { User } from '../shared/types/User';
 import { formatDate } from '../utils/dateUtils';
+import { RcFile } from 'antd/es/upload';
+import { createSubmission, getUserSubmissionsByJobId, getSubmissionByJobId, updateSubmissionStatus } from '../controller/submissionController';
+
+import type { Submission } from '../shared/types/Submission';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -67,6 +72,7 @@ const JobDetailPage: React.FC = () => {
     isJobOwner,
     loading,
     isApplying,
+    isJobFreelancer,
     handleApply,
     handleAcceptApplicant,
     handleRejectApplicant,
@@ -172,9 +178,9 @@ const JobDetailPage: React.FC = () => {
               <Tooltip title="Share job">
                 <Button icon={<ShareAltOutlined />} onClick={handleShare} />
               </Tooltip>
-              <Tooltip title="Report job">
+              {/* <Tooltip title="Report job">
                 <Button icon={<FlagOutlined />} />
-              </Tooltip>
+              </Tooltip> */}
             </Space>
           </div>
 
@@ -339,7 +345,7 @@ const JobDetailPage: React.FC = () => {
         title: 'Applied',
         dataIndex: 'appliedAt',
         key: 'appliedAt',
-        render: (date: bigint) => formatDate(date),
+        render: (date: string) => new Date(date).toLocaleDateString(),
       },
       {
         title: 'Actions',
@@ -470,6 +476,276 @@ const JobDetailPage: React.FC = () => {
     </Card>
   );
 
+  const SubmissionContent = () => {
+    const [form] = Form.useForm();
+    const [fileList, setFileList] = useState<UploadFile[]>([]);
+    const [submissionHistory, setSubmissionHistory] = useState<Submission[]>([]);
+    const [ownerSubmissions, setOwnerSubmissions] = useState<Submission[]>([]);
+
+    useEffect(() => {
+      const run = async () => {
+        try {
+          if (user && jobId && !isJobOwner) {
+            const list = await getUserSubmissionsByJobId(jobId, user.id);
+            setSubmissionHistory(list);
+          }
+          if (isJobOwner && jobId) {
+            const listOwner = await getSubmissionByJobId(jobId);
+            setOwnerSubmissions(listOwner);
+          }
+        } catch (err) {
+          console.error('Failed to load submission history', err);
+        }
+      };
+      run();
+    }, [user, jobId, isJobOwner]);
+
+    const handleFileUpload = (info: any) => {
+      let newList = [...info.fileList].slice(-1); // keep only last file
+      setFileList(newList);
+    };
+
+    const beforeUpload = (file: RcFile) => {
+      const validZipTypes = [
+        "application/zip",
+        "application/x-zip-compressed",
+        "multipart/x-zip",
+      ];
+
+      const isZip = validZipTypes.includes(file.type);
+      if (!isZip) {
+        message.error("You can only upload ZIP files!");
+      }
+
+      // ❌ Don’t let Upload auto-upload
+      return false;
+    };
+
+    const handleSubmit = async (values: any) => {
+      try {
+        if (!user || !jobId) {
+          message.error("You must be logged in and have a valid job selected.");
+          return;
+        }
+        if (!fileList.length || !fileList[0]?.originFileObj) {
+          message.error("Please upload your submission file.");
+          return;
+        }
+
+        const file = fileList[0].originFileObj as File;
+        // Save the file to src/projcet_frontend/src/shared/FreelancerAnswer/{jobId}/{userId}/{filename}
+        const resp = await fetch('/api/save-file', {
+          method: 'POST',
+          headers: {
+            'x-job-id': jobId,
+            'x-user-id': user.id,
+            'x-filename': file.name,
+          },
+          body: file,
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          throw new Error(`Failed to save file: ${resp.status} ${errText}`);
+        }
+
+        const data = await resp.json() as { path: string };
+        const relativePath = data.path; // e.g. src/projcet_frontend/src/shared/FreelancerAnswer/{jobId}/{userId}/{filename}
+
+        // Store the relative path in canister
+        const result = await createSubmission(jobId, user as any, relativePath, values.message);
+        if (result[0] === "Ok") {
+          message.success("Submission sent successfully!");
+          form.resetFields();
+          setFileList([]);
+          // refresh history
+          try {
+            if (user && jobId) {
+              const list = await getUserSubmissionsByJobId(jobId, user.id);
+              setSubmissionHistory(list);
+            }
+          } catch (e) {
+            console.warn('Failed to refresh submission history', e);
+          }
+        } else {
+          throw new Error("Create submission did not return Ok");
+        }
+      } catch (e: any) {
+        console.error("Submission error:", e);
+        message.error(e?.message || "Failed to submit work.");
+      }
+    };
+    
+    // UI for Freelancer
+    if (!isJobOwner) {
+      // submissionHistory loaded from canister via useEffect
+
+      return (
+        <Row gutter={[16, 24]}>
+          <Col xs={24} md={12}>
+            <Card title="Submit Your Work">
+              <Form form={form} layout="vertical" onFinish={handleSubmit}>
+                <Form.Item
+                  name="message"
+                  label="Message"
+                  rules={[{ required: true, message: 'Please enter a message for your submission.' }]}
+                >
+                  <TextArea rows={4} placeholder="Add a message about your submission..." />
+                </Form.Item>
+
+                <Form.Item
+                  name="submissionFile"
+                  label="Submission File (ZIP only)"
+                  rules={[{ required: true, message: 'Please upload your submission file.' }]}
+                >
+                  <Upload
+                    beforeUpload={beforeUpload}
+                    onChange={handleFileUpload}
+                    fileList={fileList}
+                    maxCount={1}
+                  >
+                    <Button icon={<PaperClipOutlined />}>Click to Upload</Button>
+                  </Upload>
+                </Form.Item>
+
+                <Form.Item>
+                  <Button type="primary" htmlType="submit" icon={<SendOutlined />}>
+                    Submit Work
+                  </Button>
+                </Form.Item>
+              </Form>
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card title="Submission History">
+              <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '16px' }}>
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  {submissionHistory.length > 0 ? (
+                    submissionHistory.map((sub) => {
+                      const filePath = sub.submissionFile || '';
+                      const fileName = (filePath.split('/').pop() || 'file.zip');
+                      return (
+                        <Card key={sub.id} type="inner">
+                          <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
+                          <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
+                            {sub.submissionStatus}
+                          </Tag>
+                          <br/>
+                          <Text type="secondary">File: {fileName}</Text>
+                          <br/>
+                          {filePath && (
+                            <Button
+                              href={`/api/download-file?path=${encodeURIComponent(filePath)}`}
+                              download
+                              icon={<PaperClipOutlined />}
+                              size="small"
+                              style={{ marginTop: 8 }}
+                            >
+                              Download File
+                            </Button>
+                          )}
+                        </Card>
+                      );
+                    })
+                  ) : (
+                    <Text>No submission history.</Text>
+                  )}
+                </Space>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+      );
+    }
+
+    // UI for Job Owner
+    const submissions = ownerSubmissions;
+
+    return (
+      <Space direction="vertical" size="large" className="w-full">
+        {submissions
+        .map(sub => {
+          const filePath = sub.submissionFile || '';
+          const fileName = (filePath.split('/').pop() || 'file.zip');
+          return (
+            <Card key={sub.id} title={`Submission from ${sub.user.username}`}>
+              <Row gutter={[16, 16]}>
+                <Col span={24}>
+                  <div className="flex items-center space-x-3">
+                    <Avatar icon={<UserOutlined />} />
+                    <div>
+                      <Text strong>{sub.user.username}</Text>
+                      <br/>
+                      <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
+                        {sub.submissionStatus}
+                      </Tag>
+                    </div>
+                  </div>
+                </Col>
+                <Col span={24}>
+                  <Title level={5}>Message:</Title>
+                  <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
+                </Col>
+                <Col span={24}>
+                  {filePath ? (
+                    <Button href={`/api/download-file?path=${encodeURIComponent(filePath)}`} download icon={<PaperClipOutlined />}>
+                      Download Submission ({fileName})
+                    </Button>
+                  ) : (
+                    <Text type="secondary">No file attached</Text>
+                  )}
+                </Col>
+                <Col span={24}>
+                  {sub.submissionStatus === 'Waiting' && (
+                    <Space>
+                      <Button
+                        type="primary"
+                        icon={<CheckOutlined />}
+                        onClick={async () => {
+                          try {
+                            const res = await updateSubmissionStatus(sub.id, 'Accept', sub.submissionMessage || '');
+                            if (res[0] === 'Ok') {
+                              message.success('Submission accepted');
+                              const listOwner = await getSubmissionByJobId(jobId!);
+                              setOwnerSubmissions(listOwner);
+                            }
+                          } catch (e) {
+                            message.error('Failed to accept submission');
+                          }
+                        }}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        danger
+                        icon={<CloseOutlined />}
+                        onClick={async () => {
+                          try {
+                            const res = await updateSubmissionStatus(sub.id, 'Reject', sub.submissionMessage || '');
+                            if (res[0] === 'Ok') {
+                              message.success('Submission rejected');
+                              const listOwner = await getSubmissionByJobId(jobId!);
+                              setOwnerSubmissions(listOwner);
+                            }
+                          } catch (e) {
+                            message.error('Failed to reject submission');
+                          }
+                        }}
+                      >
+                        Decline
+                      </Button>
+                    </Space>
+                  )}
+                </Col>
+              </Row>
+            </Card>
+          );
+        })}
+        {submissions.length === 0 && <Text>No submissions yet.</Text>}
+      </Space>
+    );
+  };
+
   if (loading || !job) {
     return (
       <div className="min-h-screen bg-background">
@@ -503,12 +779,25 @@ const JobDetailPage: React.FC = () => {
               <TabPane tab={`Accepted (${acceptedFreelancers.length})`} key="accepted">
                 <AcceptedContent />
               </TabPane>
+              <TabPane tab="Submission Answer" key="submission">
+                <SubmissionContent/>
+              </TabPane>
               <TabPane tab="Invite Users" key="invite">
                 <InviteContent />
               </TabPane>
             </Tabs>
           ) : (
-            <JobDetailsContent />
+              <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-6">
+              
+                <TabPane tab="Job Details" key="details">
+                  <JobDetailsContent />
+                </TabPane>
+                {isJobFreelancer && (
+                  <TabPane tab="Submission Upload" key="submission">
+                    <SubmissionContent />
+                  </TabPane>
+                )}
+              </Tabs>
           )}
         </motion.div>
       </div>

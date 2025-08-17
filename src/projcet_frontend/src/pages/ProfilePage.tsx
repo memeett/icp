@@ -32,6 +32,9 @@ import InvitationsTab from './profile/InvitationsTab';
 import { acceptApplier } from '../controller/applyController';
 import { UserInvitationPayload } from '../shared/types/Invitation';
 import { appendFreelancers } from '../controller/jobTransactionController';
+import { useAcceptedJobs } from '../shared/hooks/useAcceptedJobs';
+import FreelancerJobCard from '../components/tabs/FreelancerJobCard';
+import { ProjectOutlined } from '@ant-design/icons';
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
@@ -50,7 +53,8 @@ const ProfilePage: React.FC = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { invitations, refetch, processingInvitation, setProcessingInvitation } = useInvitation(user!.id)
-
+  const { activeJobs, historyJobs, loading: loadingAccepted, refetch: refetchAccepted } = useAcceptedJobs(user?.id)
+ 
   useEffect(() => {
     if (user && user.profilePicture) {
       setProfileImage(getProfilePictureUrl(user.id, user.profilePicture));
@@ -108,9 +112,10 @@ const ProfilePage: React.FC = () => {
       if (success) {
         const res = await appendFreelancers(invitation.job.id,user.id)
         if (res) {
-
+ 
           message.success("Invitation accepted successfully!");
           refetch();
+          refetchAccepted();
         } else {
           message.error("Error at applied");
         }
@@ -182,7 +187,7 @@ const ProfilePage: React.FC = () => {
             />
           </Card>
 
-          <StatsCards user={user} />
+          <StatsCards user={user} jobsCompleted={historyJobs.length}/>
 
           <Card>
             <Tabs defaultActiveKey="overview">
@@ -225,6 +230,53 @@ const ProfilePage: React.FC = () => {
                     </Card>
                   </Col>
                 </Row>
+              </TabPane>
+
+              <TabPane
+                tab={
+                  <Space>
+                    <ProjectOutlined />
+                    Jobs
+                  </Space>
+                }
+                key="accepted-jobs"
+              >
+                {loadingAccepted ? (
+                  <Skeleton active paragraph={{ rows: 6 }} />
+                ) : (
+                  <Row gutter={[24, 24]}>
+                    <Col xs={24} lg={12}>
+                      <Card title="Active Jobs">
+                        {activeJobs.length === 0 ? (
+                          <Text type="secondary">No active jobs.</Text>
+                        ) : (
+                          activeJobs.map((jt, index) => (
+                            <FreelancerJobCard
+                              key={jt.jobId + String(index)}
+                              jobId={jt.jobId}
+                              isLoading={() => {}}
+                            />
+                          ))
+                        )}
+                      </Card>
+                    </Col>
+                    <Col xs={24} lg={12}>
+                      <Card title="History Jobs">
+                        {historyJobs.length === 0 ? (
+                          <Text type="secondary">No history yet.</Text>
+                        ) : (
+                          historyJobs.map((jt, index) => (
+                            <FreelancerJobCard
+                              key={jt.jobId + 'hist' + String(index)}
+                              jobId={jt.jobId}
+                              isLoading={() => {}}
+                            />
+                          ))
+                        )}
+                      </Card>
+                    </Col>
+                  </Row>
+                )}
               </TabPane>
 
               <TabPane

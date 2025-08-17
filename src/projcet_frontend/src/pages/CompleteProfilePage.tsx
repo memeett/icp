@@ -1,23 +1,23 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  Form, 
-  Input, 
-  Button, 
-  Upload, 
-  DatePicker, 
-  Select, 
-  Card, 
-  Typography, 
-  Space, 
+import {
+  Form,
+  Input,
+  Button,
+  Upload,
+  DatePicker,
+  Select,
+  Card,
+  Typography,
+  Space,
   message,
   Row,
   Col,
   Avatar,
   Divider
 } from 'antd';
-import { 
-  UserOutlined, 
-  CameraOutlined, 
+import {
+  UserOutlined,
+  CameraOutlined,
   CalendarOutlined,
   TagsOutlined,
   FileTextOutlined,
@@ -66,7 +66,7 @@ const CompleteProfilePage: React.FC = () => {
 
   const handleImageUpload: UploadProps['customRequest'] = useCallback((options: any) => {
     const { file, onSuccess } = options;
-    
+
     if (file instanceof File) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -101,7 +101,7 @@ const CompleteProfilePage: React.FC = () => {
         username: values.username,
         dob: values.dob,
         description: values.description,
-        preference: values.preference.map(id => 
+        preference: values.preference.map(id =>
           mockJobCategories.find(cat => cat.id === id)
         ).filter(Boolean),
         isProfileCompleted: true,
@@ -146,7 +146,7 @@ const CompleteProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-8">
+    <div className="min-h-screen bg-background py-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -194,7 +194,7 @@ const CompleteProfilePage: React.FC = () => {
                         <CameraOutlined className="mr-2" />
                         Profile Picture
                       </Title>
-                      
+
                       <div className="flex flex-col items-center space-y-4">
                         <Avatar
                           size={120}
@@ -202,7 +202,7 @@ const CompleteProfilePage: React.FC = () => {
                           icon={<UserOutlined />}
                           className="border-4 border-blue-200 shadow-lg"
                         />
-                        
+
                         <Upload
                           customRequest={handleImageUpload}
                           beforeUpload={beforeUpload}
@@ -213,7 +213,7 @@ const CompleteProfilePage: React.FC = () => {
                             Upload Photo
                           </Button>
                         </Upload>
-                        
+
                         <Text type="secondary" className="text-sm">
                           JPG or PNG, max 2MB
                         </Text>
@@ -239,8 +239,8 @@ const CompleteProfilePage: React.FC = () => {
                             { max: 50, message: 'Username must be less than 50 characters' }
                           ]}
                         >
-                          <Input 
-                            placeholder="Enter your username" 
+                          <Input
+                            placeholder="Enter your username"
                             size="large"
                             className="rounded-lg"
                           />
@@ -258,7 +258,7 @@ const CompleteProfilePage: React.FC = () => {
                           }
                           rules={[{ required: true, message: 'Please select your date of birth' }]}
                         >
-                          <DatePicker 
+                          <DatePicker
                             placeholder="Select your date of birth"
                             size="large"
                             className="w-full rounded-lg"
@@ -341,7 +341,7 @@ const CompleteProfilePage: React.FC = () => {
                       Complete Profile
                     </span>
                   </Button>
-                  
+
                   <div className="mt-4">
                     <Text type="secondary">
                       By completing your profile, you agree to our Terms of Service and Privacy Policy

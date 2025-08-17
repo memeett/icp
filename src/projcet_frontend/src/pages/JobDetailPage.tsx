@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Typography,
@@ -19,7 +19,8 @@ import {
   Tooltip,
   Tabs,
   Table,
-  AutoComplete
+  AutoComplete,
+  UploadFile
 } from 'antd';
 import {
   DollarOutlined,
@@ -43,8 +44,12 @@ import Navbar from '../ui/components/Navbar';
 import { useAuth, useJobDetails, useUserManagement } from '../shared/hooks';
 import { User } from '../shared/types/User';
 import { formatDate } from '../utils/dateUtils';
-import { get } from 'http';
+import { RcFile } from 'antd/es/upload';
+import { createSubmission, getUserSubmissionsByJobId, getSubmissionByJobId, updateSubmissionStatus } from '../controller/submissionController';
+
+import type { Submission } from '../../../declarations/submission/submission.did';
 import { getUserById, getUserByName } from '../controller/userController';
+import { getStatusColor } from '../utils/JobStatusCololer';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -69,9 +74,10 @@ const JobDetailPage: React.FC = () => {
     isJobOwner,
     loading,
     isApplying,
+    isJobFreelancer,
     isAccepting,
     isRejecting,
-    inbox,
+    isFetchingLetter,
     handleApply,
     handleAcceptApplicant,
     handleRejectApplicant,
@@ -81,8 +87,8 @@ const JobDetailPage: React.FC = () => {
   } = useJobDetails(jobId, user);
 
   const {
-    searchUsers,
-    searchUsersByUsername,
+    allUsers,
+    fetchAllUsers,
     sendInvitation,
     clearSearch
   } = useUserManagement();
@@ -107,17 +113,25 @@ const JobDetailPage: React.FC = () => {
     try {
       const success = await sendInvitation(values.userId, user.id, jobId);
       if (success) {
+        message.success('Invitation sent successfully');
         setIsInviteModalVisible(false);
         inviteForm.resetFields();
         clearSearch();
+      } else {
+        message.error('Failed to send invitation');
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
+      message.error('Error sending invitation');
     }
   };
 
   // Handle application submission
   const handleApplicationSubmit = async (values: any) => {
+    if (Number(job!.jobSlots) - acceptedFreelancers.length <= 0) {
+      message.error('No available slots for new applicants');
+      return;
+    }
     const success = await handleApply(values);
     if (success) {
       setIsApplyModalVisible(false);
@@ -154,22 +168,8 @@ const JobDetailPage: React.FC = () => {
     setIsCoverModalVisible(true)
     if (!jobId || !user) return null;
 
-    await handleCoverLetter(jobId, user.id);
-    const applicant = await getUserById(applicantId)
-    const applicantMessages = inbox.filter(
-      (msg: any) =>
-        msg.senderName = applicant?.id
-    );
-
-    if (applicantMessages.length === 0) return null;
-
-    const sorted = applicantMessages.sort(
-      (a: any, b: any) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-
-    const message = sorted[0].message.split("\n")[1];
-    setCoverLetter(message); // Return the most recent cover letter message
+    const message = await handleCoverLetter(jobId, user.id, applicantId);
+    setCoverLetter(message);
   };
 
   // Component for job details content
@@ -186,7 +186,7 @@ const JobDetailPage: React.FC = () => {
                 <Title level={2} className="mb-2">{job!.jobName}</Title>
                 <Space size="middle" wrap>
                   <Tag color="blue">{job!.jobTags[0]?.jobCategoryName || 'General'}</Tag>
-                  <Tag color="green">{job!.jobStatus}</Tag>
+                  <Tag color={getStatusColor(job.jobStatus)}>{job!.jobStatus}</Tag>
                   <Text type="secondary">
                     <ClockCircleOutlined className="mr-1" />
                     Posted {getTimeAgo(new Date(Number(job!.createdAt) / 1000000).toISOString())}
@@ -205,9 +205,9 @@ const JobDetailPage: React.FC = () => {
                 <Tooltip title="Share job">
                   <Button icon={<ShareAltOutlined />} onClick={handleShare} />
                 </Tooltip>
-                <Tooltip title="Report job">
-                  <Button icon={<FlagOutlined />} />
-                </Tooltip>
+                {/* <Tooltip title="Report job">
+                <Button icon={<FlagOutlined />} />
+              </Tooltip> */}
               </Space>
             </div>
 
@@ -222,7 +222,11 @@ const JobDetailPage: React.FC = () => {
               <Col xs={12} sm={6}>
                 <div className="text-center p-4 bg-background rounded-lg">
                   <UserOutlined className="text-2xl text-purple-500 mb-2" />
-                  <div className="font-semibold">{Number(job!.jobSlots) - acceptedFreelancers.length}</div>
+                  <div className="font-semibold">
+                    {Number(job!.jobSlots) - acceptedFreelancers.length > 0
+                      ? Number(job!.jobSlots) - acceptedFreelancers.length
+                      : "No Slots Available"}
+                  </div>
                   <Text type="secondary">Available Slots</Text>
                 </div>
               </Col>
@@ -264,15 +268,14 @@ const JobDetailPage: React.FC = () => {
               </Space>
             </div>
 
-            {user && job!.jobStatus === 'Open' && !isJobOwner && Number(job!.jobSlots) - acceptedFreelancers.length !== 0 && (
-
+            {user && job!.jobStatus === 'Open' && !isJobOwner && (
               <div className="text-center">
-                {hasApplied ? (
-                  <Button
-                    size="large"
-                    disabled
-                    className="px-8"
-                  >
+                {Number(job!.jobSlots) - acceptedFreelancers.length <= 0 ? (
+                  <Button size="large" disabled className="px-8">
+                    All Slots Filled
+                  </Button>
+                ) : hasApplied ? (
+                  <Button size="large" disabled className="px-8">
                     Already Applied
                   </Button>
                 ) : (
@@ -286,22 +289,8 @@ const JobDetailPage: React.FC = () => {
                     Apply for this Job
                   </Button>
                 )}
-                {user && Number(job!.jobSlots) - acceptedFreelancers.length == 0 && (
-                  <div className="text-center">
-                    <Button
-                      size="large"
-                      disabled
-                      className="px-8"
-                    >
-                      <Text>All Slots Filled</Text>
-                    </Button>
-                  </div>
-                )}
               </div>
-
             )}
-
-
 
             {isJobOwner && (
               <div className="text-center space-x-4">
@@ -432,9 +421,16 @@ const JobDetailPage: React.FC = () => {
               ]}
               width={600}
             >
-              <Paragraph style={{ whiteSpace: "pre-line" }}>
-                {coverLetter ?? "Loading..."}
-              </Paragraph>
+              {isFetchingLetter ? (
+                <div className="container mx-auto px-4 py-8">
+                  <Skeleton active />
+                </div>
+              ) : (
+                <Paragraph style={{ whiteSpace: "pre-line" }}>
+                  {coverLetter}
+                </Paragraph>
+              )}
+
             </Modal>
 
             <Modal
@@ -587,41 +583,426 @@ const JobDetailPage: React.FC = () => {
   };
 
   // Component for invite users content
-  const InviteContent = () => (
-    <Card>
-      <Form
-        form={inviteForm}
-        layout="vertical"
-        onFinish={handleInviteUser}
-      >
-        <Form.Item
-          name="userId"
-          label="Search and Select User"
-          rules={[{ required: true, message: 'Please select a user to invite' }]}
-        >
-          <AutoComplete
-            placeholder="Search by username..."
-            onSearch={searchUsersByUsername}
-            options={searchUsers.map(user => ({
-              value: user.id,
-              label: (
-                <div className="flex items-center space-x-2">
-                  <Avatar size="small" src={user.profilePicture ? URL.createObjectURL(user.profilePicture) : undefined} icon={<UserOutlined />} />
-                  <span>{user.username}</span>
-                </div>
-              )
-            }))}
-          />
-        </Form.Item>
+  const InviteContent = () => {
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [optionsUsers, setOptionsUsers] = useState<User[]>([]);
+    const [open, setOpen] = useState(false);
 
-        <Form.Item>
-          <Button type="primary" htmlType="submit" icon={<SendOutlined />}>
-            Send Invitation
-          </Button>
-        </Form.Item>
-      </Form>
-    </Card>
-  );
+    const baseUsers = (allUsers || []).filter(u => (user ? u.id !== user.id : true));
+
+    useEffect(() => {
+      setOptionsUsers(baseUsers);
+    }, [allUsers, user?.id]);
+
+    const handleSelectUser = (value: string) => {
+      const found = baseUsers.find(u => u.id === value) || null;
+      setSelectedUser(found);
+    };
+
+    const handleSearch = (text: string) => {
+      const query = text.trim().toLowerCase();
+      if (!query) {
+        setOptionsUsers(baseUsers);
+        return;
+      }
+      const filtered = baseUsers
+        .filter(u => (u.username || '').toLowerCase().includes(query))
+        .slice(0, 20);
+      setOptionsUsers(filtered);
+    };
+
+    return (
+      <Card>
+        <Form
+          form={inviteForm}
+          layout="vertical"
+          onFinish={handleInviteUser}
+        >
+          <Form.Item
+            name="userId"
+            label="Search and Select User"
+            rules={[{ required: true, message: 'Please select a user to invite' }]}
+          >
+            <AutoComplete
+              placeholder="Select a freelancer or type a username..."
+              open={open}
+              onSearch={handleSearch}
+              onSelect={(value) => {
+                handleSelectUser(value as string);
+                setOpen(false);
+              }}
+              onFocus={async () => {
+                if (!allUsers || allUsers.length === 0) {
+                  await fetchAllUsers();
+                }
+                setOptionsUsers(baseUsers);
+                setOpen(true);
+              }}
+              onBlur={() => setOpen(false)}
+              options={optionsUsers.map(u => ({
+                value: u.id,
+                label: (
+                  <div className="flex items-center space-x-2">
+                    <Avatar
+                      size="small"
+                      src={u.profilePicture ? URL.createObjectURL(u.profilePicture) : undefined}
+                      icon={<UserOutlined />}
+                    />
+                    <span>{u.username}</span>
+                  </div>
+                )
+              }))}
+            />
+          </Form.Item>
+
+          {selectedUser && (
+            <Card size="small" className="mb-4" title="Selected User">
+              <Row gutter={[16, 8]}>
+                <Col span={24}>
+                  <div className="flex items-center space-x-3">
+                    <Avatar
+                      src={selectedUser.profilePicture ? URL.createObjectURL(selectedUser.profilePicture) : undefined}
+                      icon={<UserOutlined />}
+                    />
+                    <div>
+                      <Text strong>{selectedUser.username}</Text>
+                      <div className="text-sm text-gray-500">Rating: {selectedUser.rating.toFixed(1)}</div>
+                    </div>
+                  </div>
+                </Col>
+
+                {selectedUser.description && (
+                  <Col span={24}>
+                    <Text type="secondary">
+                      {selectedUser.description.length > 160
+                        ? `${selectedUser.description.slice(0, 160)}...`
+                        : selectedUser.description}
+                    </Text>
+                  </Col>
+                )}
+
+                {selectedUser.preference && selectedUser.preference.length > 0 && (
+                  <Col span={24}>
+                    <Space wrap>
+                      {selectedUser.preference.slice(0, 5).map(tag => (
+                        <Tag key={tag.id} color="blue">
+                          {tag.jobCategoryName}
+                        </Tag>
+                      ))}
+                    </Space>
+                  </Col>
+                )}
+              </Row>
+            </Card>
+          )}
+
+          <Form.Item
+            name="message"
+            label="Invitation Message"
+            rules={[
+              { required: true, message: 'Please enter an invitation message' },
+              { min: 10, message: 'Message must be at least 10 characters long' },
+              { max: 500, message: 'Message cannot exceed 500 characters' }
+            ]}
+          >
+            <TextArea
+              rows={4}
+              placeholder={`Hi ${selectedUser ? selectedUser.username : 'there'}, I would like to invite you to work on this job. Please let me know if you're interested!`}
+              showCount
+              maxLength={500}
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <Button
+                onClick={() => {
+                  inviteForm.resetFields();
+                  setSelectedUser(null);
+                  clearSearch();
+                  setOptionsUsers(baseUsers);
+                }}
+              >
+                Clear
+              </Button>
+              <Button type="primary" htmlType="submit" icon={<SendOutlined />}>
+                Send Invitation
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+    );
+  };
+
+  const SubmissionContent = () => {
+    const [form] = Form.useForm();
+    const [fileList, setFileList] = useState<UploadFile[]>([]);
+    const [submissionHistory, setSubmissionHistory] = useState<Submission[]>([]);
+    const [ownerSubmissions, setOwnerSubmissions] = useState<Submission[]>([]);
+
+    useEffect(() => {
+      const run = async () => {
+        try {
+          if (user && jobId && !isJobOwner) {
+            const list = await getUserSubmissionsByJobId(jobId, user.id);
+            setSubmissionHistory(list);
+          }
+          if (isJobOwner && jobId) {
+            const listOwner = await getSubmissionByJobId(jobId);
+            setOwnerSubmissions(listOwner);
+          }
+        } catch (err) {
+          console.error('Failed to load submission history', err);
+        }
+      };
+      run();
+    }, [user, jobId, isJobOwner]);
+
+    const handleFileUpload = (info: any) => {
+      let newList = [...info.fileList].slice(-1); // keep only last file
+      setFileList(newList);
+    };
+
+    const beforeUpload = (file: RcFile) => {
+      const validZipTypes = [
+        "application/zip",
+        "application/x-zip-compressed",
+        "multipart/x-zip",
+      ];
+
+      const isZip = validZipTypes.includes(file.type);
+      if (!isZip) {
+        message.error("You can only upload ZIP files!");
+      }
+
+      return false;
+    };
+
+    const handleSubmit = async (values: any) => {
+      try {
+        if (!user || !jobId) {
+          message.error("You must be logged in and have a valid job selected.");
+          return;
+        }
+        if (!fileList.length || !fileList[0]?.originFileObj) {
+          message.error("Please upload your submission file.");
+          return;
+        }
+
+        const file = fileList[0].originFileObj as File;
+        // Save the file to src/projcet_frontend/src/shared/FreelancerAnswer/{jobId}/{userId}/{filename}
+        const resp = await fetch('/api/save-file', {
+          method: 'POST',
+          headers: {
+            'x-job-id': jobId,
+            'x-user-id': user.id,
+            'x-filename': file.name,
+          },
+          body: file,
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          throw new Error(`Failed to save file: ${resp.status} ${errText}`);
+        }
+
+        const data = await resp.json() as { path: string };
+        const relativePath = data.path; // e.g. src/projcet_frontend/src/shared/FreelancerAnswer/{jobId}/{userId}/{filename}
+
+        // Store the relative path in canister
+        const result = await createSubmission(jobId, user as any, relativePath, values.message);
+        if (result[0] === "Ok") {
+          message.success("Submission sent successfully!");
+          form.resetFields();
+          setFileList([]);
+          // refresh history
+          try {
+            if (user && jobId) {
+              const list = await getUserSubmissionsByJobId(jobId, user.id);
+              setSubmissionHistory(list);
+            }
+          } catch (e) {
+            console.warn('Failed to refresh submission history', e);
+          }
+        } else {
+          throw new Error("Create submission did not return Ok");
+        }
+      } catch (e: any) {
+        console.error("Submission error:", e);
+        message.error(e?.message || "Failed to submit work.");
+      }
+    };
+
+    // UI for Freelancer
+    if (!isJobOwner) {
+      // submissionHistory loaded from canister via useEffect
+
+      return (
+        <Row gutter={[16, 24]}>
+          <Col xs={24} md={12}>
+            <Card title="Submit Your Work">
+              <Form form={form} layout="vertical" onFinish={handleSubmit}>
+                <Form.Item
+                  name="message"
+                  label="Message"
+                  rules={[{ required: true, message: 'Please enter a message for your submission.' }]}
+                >
+                  <TextArea rows={4} placeholder="Add a message about your submission..." />
+                </Form.Item>
+
+                <Form.Item
+                  name="submissionFile"
+                  label="Submission File (ZIP only)"
+                  rules={[{ required: true, message: 'Please upload your submission file.' }]}
+                >
+                  <Upload
+                    beforeUpload={beforeUpload}
+                    onChange={handleFileUpload}
+                    fileList={fileList}
+                    maxCount={1}
+                  >
+                    <Button icon={<PaperClipOutlined />}>Click to Upload</Button>
+                  </Upload>
+                </Form.Item>
+
+                <Form.Item>
+                  <Button type="primary" htmlType="submit" icon={<SendOutlined />}>
+                    Submit Work
+                  </Button>
+                </Form.Item>
+              </Form>
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card title="Submission History">
+              <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '16px' }}>
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  {submissionHistory.length > 0 ? (
+                    submissionHistory.map((sub) => {
+                      const filePath = sub.submissionFile || '';
+                      const fileName = (filePath.split('/').pop() || 'file.zip');
+                      return (
+                        <Card key={sub.id} type="inner">
+                          <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
+                          <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
+                            {sub.submissionStatus}
+                          </Tag>
+                          <br />
+                          <Text type="secondary">File: {fileName}</Text>
+                          <br />
+                          {filePath && (
+                            <Button
+                              href={`/api/download-file?path=${encodeURIComponent(filePath)}`}
+                              download
+                              icon={<PaperClipOutlined />}
+                              size="small"
+                              style={{ marginTop: 8 }}
+                            >
+                              Download File
+                            </Button>
+                          )}
+                        </Card>
+                      );
+                    })
+                  ) : (
+                    <Text>No submission history.</Text>
+                  )}
+                </Space>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+      );
+    }
+
+    // UI for Job Owner
+    const submissions = ownerSubmissions;
+
+    return (
+      <Space direction="vertical" size="large" className="w-full">
+        {submissions
+          .map(sub => {
+            const filePath = sub.submissionFile || '';
+            const fileName = (filePath.split('/').pop() || 'file.zip');
+            return (
+              <Card key={sub.id} title={`Submission from ${sub.user.username}`}>
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    <div className="flex items-center space-x-3">
+                      <Avatar icon={<UserOutlined />} />
+                      <div>
+                        <Text strong>{sub.user.username}</Text>
+                        <br />
+                        <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
+                          {sub.submissionStatus}
+                        </Tag>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col span={24}>
+                    <Title level={5}>Message:</Title>
+                    <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
+                  </Col>
+                  <Col span={24}>
+                    {filePath ? (
+                      <Button href={`/api/download-file?path=${encodeURIComponent(filePath)}`} download icon={<PaperClipOutlined />}>
+                        Download Submission ({fileName})
+                      </Button>
+                    ) : (
+                      <Text type="secondary">No file attached</Text>
+                    )}
+                  </Col>
+                  <Col span={24}>
+                    {sub.submissionStatus === 'Waiting' && (
+                      <Space>
+                        <Button
+                          type="primary"
+                          icon={<CheckOutlined />}
+                          onClick={async () => {
+                            try {
+                              const res = await updateSubmissionStatus(sub.id, 'Accept', sub.submissionMessage || '');
+                              if (res[0] === 'Ok') {
+                                message.success('Submission accepted');
+                                const listOwner = await getSubmissionByJobId(jobId!);
+                                setOwnerSubmissions(listOwner);
+                              }
+                            } catch (e) {
+                              message.error('Failed to accept submission');
+                            }
+                          }}
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          danger
+                          icon={<CloseOutlined />}
+                          onClick={async () => {
+                            try {
+                              const res = await updateSubmissionStatus(sub.id, 'Reject', sub.submissionMessage || '');
+                              if (res[0] === 'Ok') {
+                                message.success('Submission rejected');
+                                const listOwner = await getSubmissionByJobId(jobId!);
+                                setOwnerSubmissions(listOwner);
+                              }
+                            } catch (e) {
+                              message.error('Failed to reject submission');
+                            }
+                          }}
+                        >
+                          Decline
+                        </Button>
+                      </Space>
+                    )}
+                  </Col>
+                </Row>
+              </Card>
+            );
+          })}
+        {submissions.length === 0 && <Text>No submissions yet.</Text>}
+      </Space>
+    );
+  };
 
   if (loading || !job) {
     return (
@@ -656,12 +1037,28 @@ const JobDetailPage: React.FC = () => {
               <TabPane tab={`Accepted (${acceptedFreelancers.length})`} key="accepted">
                 <AcceptedContent />
               </TabPane>
-              <TabPane tab="Invite Users" key="invite">
-                <InviteContent />
+              <TabPane tab="Submission Answer" key="submission">
+                <SubmissionContent />
               </TabPane>
+              {job.jobStatus === "Open" && (
+
+                <TabPane tab="Invite Users" key="invite">
+                  <InviteContent />
+                </TabPane>
+              )}
             </Tabs>
           ) : (
-            <JobDetailsContent />
+            <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-6">
+
+              <TabPane tab="Job Details" key="details">
+                <JobDetailsContent />
+              </TabPane>
+              {isJobFreelancer && job.jobStatus === "Ongoing" && (
+                <TabPane tab="Submission Upload" key="submission">
+                  <SubmissionContent />
+                </TabPane>
+              )}
+            </Tabs>
           )}
         </motion.div>
       </div>

@@ -1,23 +1,28 @@
-import { useState, useCallback, useEffect } from 'react';
-import { message } from 'antd';
+import { useState, useCallback, useEffect } from "react";
+import { message } from "antd";
 import {
   getJobById,
   getJobApplier,
   getAcceptedFreelancer,
   startJob,
-  finishJob
-} from '../../controller/jobController';
+  finishJob,
+} from "../../controller/jobController";
 import {
   applyJob,
   hasUserApplied,
   acceptApplier,
-  rejectApplier
-} from '../../controller/applyController';
-import { createInbox, getInboxMessagesFromAppliers } from '../../controller/inboxController';
-import { User } from '../types/User';
-import { Job } from '../types/Job';
-import { get } from 'http';
-import { InboxResponse } from '../types/Inbox';
+  rejectApplier,
+} from "../../controller/applyController";
+import {
+  createInbox,
+  getInboxMessagesFromAppliers,
+} from "../../controller/inboxController";
+import { isFreelancerRegistered } from "../../controller/jobTransactionController";
+import { User } from "../types/User";
+import { Job } from "../types/Job";
+import { get } from "http";
+import { InboxResponse } from "../types/Inbox";
+import { send } from "vite";
 
 interface ApplicantData {
   user: User;
@@ -31,13 +36,15 @@ interface UseJobDetailsReturn {
   acceptedFreelancers: User[];
   hasApplied: boolean;
   isJobOwner: boolean;
-  inbox: InboxResponse[];
+
+  isJobFreelancer: boolean;
 
   // State
   loading: boolean;
   isApplying: boolean;
   isAccepting: boolean;
   isRejecting: boolean;
+  isFetchingLetter: boolean;
 
   // Actions
   fetchJobDetails: () => Promise<void>;
@@ -46,21 +53,29 @@ interface UseJobDetailsReturn {
   handleRejectApplicant: (userId: string, values: any) => Promise<boolean>;
   handleStartJob: () => Promise<boolean>;
   handleFinishJob: () => Promise<boolean>;
-  handleCoverLetter: (jobId: string, userId: string) => Promise<void>;
+  handleCoverLetter: (
+    jobId: string,
+    userId: string,
+    applicantId: string
+  ) => Promise<string>;
   refreshData: () => Promise<void>;
 }
 
-export const useJobDetails = (jobId: string | undefined, user: User | null): UseJobDetailsReturn => {
+export const useJobDetails = (
+  jobId: string | undefined,
+  user: User | null
+): UseJobDetailsReturn => {
   const [job, setJob] = useState<Job | null>(null);
   const [applicants, setApplicants] = useState<ApplicantData[]>([]);
   const [acceptedFreelancers, setAcceptedFreelancers] = useState<User[]>([]);
   const [hasApplied, setHasApplied] = useState(false);
   const [isJobOwner, setIsJobOwner] = useState(false);
+  const [isJobFreelancer, setisJobFreelancer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
-  const [inbox, setInbox] = useState<InboxResponse[]>([]);
+  const [isFetchingLetter, setIsFetchingLetter] = useState(false);
 
   // Fetch all job-related data in a single optimized call
   const fetchJobDetails = useCallback(async () => {
@@ -68,14 +83,26 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
 
     setLoading(true);
     try {
-      // Fetch job details first
       const jobData = await getJobById(jobId);
       if (!jobData) {
-        throw new Error('Job not found');
+        throw new Error("Job not found");
       }
 
-      setJob(jobData);
-      const isOwner = user?.id === jobData.userId;
+      const convertedJob: Job = {
+        ...(jobData as any),
+        jobTags: (jobData as any).jobTags?.map((t: any) => ({
+          id: t.id?.toString?.() ?? String(t.id),
+          jobCategoryName: t.jobCategoryName,
+        })) || [],
+        subAccount: (jobData as any).subAccount && (jobData as any).subAccount[0]
+          ? [new Uint8Array((jobData as any).subAccount[0])]
+          : [],
+        jobSlots: BigInt((jobData as any).jobSlots),
+        createdAt: BigInt((jobData as any).createdAt),
+        updatedAt: BigInt((jobData as any).updatedAt),
+      };
+      setJob(convertedJob);
+      const isOwner = user?.id === (jobData as any).userId;
       setIsJobOwner(isOwner);
 
       // Parallel fetch for user-specific data
@@ -84,132 +111,165 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
       // Check if user has applied (only if user exists and is not owner)
       if (user && !isOwner) {
         promises.push(hasUserApplied(user.id, jobId));
+        promises.push(isFreelancerRegistered(jobId, user.id));
       }
 
       // Fetch applicants and accepted freelancers (only if user is owner)
       if (user) {
-        promises.push(
-          getJobApplier(jobId),
-          getAcceptedFreelancer(jobId)
-        );
+        promises.push(getJobApplier(jobId), getAcceptedFreelancer(jobId));
       }
 
       const results = await Promise.all(promises);
 
-      // Process results based on user role
-      if (user && !isOwner && results.length > 0) {
-        setHasApplied(results[0]);
+      let resultIndex = 0;
+      if (user && !isOwner) {
+        setHasApplied(results[resultIndex++]);
+        const freelancerStatus = results[resultIndex++];
+        if (freelancerStatus[0] === "succ") {
+          if (freelancerStatus[1] === "true") setisJobFreelancer(true);
+          else setisJobFreelancer(false);
+        }
       }
 
-      if (user && isOwner && results.length >= 2) {
-        const [applicantsData, acceptedData] = results;
+      const applicantsData = results[resultIndex++];
+      const acceptedData = results[resultIndex++];
 
-        setApplicants(applicantsData.map((app: any) => ({
-          user: app.user,
-          appliedAt: new Date(Number(app.appliedAt) / 1000000).toISOString()
-        })));
-        setAcceptedFreelancers(acceptedData);
-      }
+      const acceptedUserIds = new Set(
+        acceptedData.map((user: User) => user.id)
+      );
 
-      if (user && !isOwner && results.length >= 2) {
-        const [asd, _, acceptedData] = results;
-        setAcceptedFreelancers(acceptedData);
-      }
+      const mappedData = applicantsData.map((app: any) => ({
+        user: app.user,
+        appliedAt: new Date(Number(app.appliedAt) / 1000000).toISOString(),
+      }));
 
+      const filteredData = mappedData.filter(
+        (app: any) => !acceptedUserIds.has(app.user.id)
+      );
+
+      setApplicants(filteredData);
+      setAcceptedFreelancers(acceptedData);
     } catch (error) {
-      console.error('Error fetching job details:', error);
-      message.error('Failed to load job details');
+      console.error("Error fetching job details:", error);
+      message.error("Failed to load job details");
     } finally {
       setLoading(false);
     }
   }, [jobId, user]);
 
   // Handle job application
-  const handleApply = useCallback(async (values: any): Promise<boolean> => {
-    if (!user || !jobId || !job) return false;
+  const handleApply = useCallback(
+    async (values: any): Promise<boolean> => {
+      if (!user || !jobId || !job) return false;
 
-    setIsApplying(true);
-    try {
-      const success = await applyJob(user.id, jobId);
-      if (success) {
-        // Create inbox notification for job owner
-        await createInbox(job.userId, jobId, user.id, 'application', values.coverLetter);
+      setIsApplying(true);
+      try {
+        const success = await applyJob(user.id, jobId);
+        if (success) {
+          // Create inbox notification for job owner
+          await createInbox(
+            job.userId,
+            jobId,
+            user.id,
+            "application",
+            values.coverLetter
+          );
 
-        message.success('Application submitted successfully!');
-        setHasApplied(true);
+          message.success("Application submitted successfully!");
+          setHasApplied(true);
 
-        // Refresh applicant data if user is job owner
-        if (isJobOwner) {
-          await fetchJobDetails();
+          // Refresh applicant data if user is job owner
+          if (isJobOwner) {
+            await fetchJobDetails();
+          }
+
+          return true;
+        } else {
+          message.error("Failed to submit application. Please try again.");
+          return false;
         }
-
-        return true;
-      } else {
-        message.error('Failed to submit application. Please try again.');
+      } catch (error) {
+        console.error("Error applying to job:", error);
+        message.error("Failed to submit application. Please try again.");
         return false;
+      } finally {
+        setIsApplying(false);
       }
-    } catch (error) {
-      console.error('Error applying to job:', error);
-      message.error('Failed to submit application. Please try again.');
-      return false;
-    } finally {
-      setIsApplying(false);
-    }
-  }, [user, jobId, job, isJobOwner, fetchJobDetails]);
+    },
+    [user, jobId, job, isJobOwner, fetchJobDetails]
+  );
 
   // Handle applicant acceptance
-  const handleAcceptApplicant = useCallback(async (userId: string, values: any): Promise<boolean> => {
-    if (!jobId || !user) return false;
+  const handleAcceptApplicant = useCallback(
+    async (userId: string, values: any): Promise<boolean> => {
+      if (!jobId || !user) return false;
 
-    try {
-      setIsAccepting(true);
-      const success = await acceptApplier(userId, jobId);
-      if (success) {
-        // Create inbox notification for applicant
-        await createInbox(userId, jobId, user.id, 'application', values.acceptancereason);
+      try {
+        setIsAccepting(true);
+        const success = await acceptApplier(userId, jobId);
+        if (success) {
+          // Create inbox notification for applicant
+          await createInbox(
+            userId,
+            jobId,
+            user.id,
+            "application",
+            values.acceptancereason
+          );
 
-        message.success('Applicant accepted successfully!');
-        await fetchJobDetails(); // Refresh data
-        return true;
-      } else {
-        message.error('Failed to accept applicant.');
+          message.success("Applicant accepted successfully!");
+          await fetchJobDetails(); // Refresh data
+          return true;
+        } else {
+          message.error("Failed to accept applicant.");
+          return false;
+        }
+      } catch (error) {
+        console.error("Error accepting applicant:", error);
+        message.error("Failed to accept applicant.");
         return false;
+      } finally {
+        setIsAccepting(false);
       }
-    } catch (error) {
-      console.error('Error accepting applicant:', error);
-      message.error('Failed to accept applicant.');
-      return false;
-    } finally {
-      setIsAccepting(false);
-    }
-  }, [jobId, user, fetchJobDetails]);
+    },
+    [jobId, user, fetchJobDetails]
+  );
 
   // Handle applicant rejection
-  const handleRejectApplicant = useCallback(async (userId: string, values: any): Promise<boolean> => {
-    if (!jobId || !user) return false;
+  const handleRejectApplicant = useCallback(
+    async (userId: string, values: any): Promise<boolean> => {
+      if (!jobId || !user) return false;
 
-    try {
-      setIsRejecting(true);
-      const success = await rejectApplier(userId, jobId);
-      if (success) {
-        // Create inbox notification for applicant
-        await createInbox(userId, jobId, user.id, 'application', values.rejectionreason);
+      try {
+        setIsRejecting(true);
+        const success = await rejectApplier(userId, jobId);
+        if (success) {
+          // Create inbox notification for applicant
+          await createInbox(
+            userId,
+            jobId,
+            user.id,
+            "application",
+            values.rejectionreason
+          );
 
-        message.success('Applicant rejected.');
-        await fetchJobDetails(); // Refresh data
-        return true;
-      } else {
-        message.error('Failed to reject applicant.');
+          message.success("Applicant rejected.");
+          await fetchJobDetails(); // Refresh data
+          return true;
+        } else {
+          message.error("Failed to reject applicant.");
+          return false;
+        }
+      } catch (error) {
+        console.error("Error rejecting applicant:", error);
+        message.error("Failed to reject applicant.");
         return false;
+      } finally {
+        setIsRejecting(false);
       }
-    } catch (error) {
-      console.error('Error rejecting applicant:', error);
-      message.error('Failed to reject applicant.');
-      return false;
-    } finally {
-      setIsRejecting(false);
-    }
-  }, [jobId, user, fetchJobDetails]);
+    },
+    [jobId, user, fetchJobDetails]
+  );
 
   // Handle job start
   const handleStartJob = useCallback(async (): Promise<boolean> => {
@@ -218,7 +278,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
     try {
       const result = await startJob(job.id);
       if (result.jobStarted) {
-        message.success('Job started successfully!');
+        message.success("Job started successfully!");
         await fetchJobDetails();
         return true;
       } else {
@@ -226,7 +286,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
         return false;
       }
     } catch (error) {
-      message.error('Failed to start job.');
+      message.error("Failed to start job.");
       return false;
     }
   }, [job, user, fetchJobDetails]);
@@ -238,7 +298,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
     try {
       const result = await finishJob(job.id);
       if (result.jobFinished) {
-        message.success('Job finished successfully!');
+        message.success("Job finished successfully!");
         await fetchJobDetails();
         return true;
       } else {
@@ -246,35 +306,38 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
         return false;
       }
     } catch (error) {
-      console.error('Error finishing job:', error);
-      message.error('Failed to finish job.');
+      console.error("Error finishing job:", error);
+      message.error("Failed to finish job.");
       return false;
     }
   }, [job, fetchJobDetails]);
 
-  const handleCoverLetter = useCallback(async (jobId: string, userId: string) => {
-    if (!jobId || !userId) return;
-
-    try {
-      const inboxMessages = await getInboxMessagesFromAppliers(jobId, userId);
-      if (inboxMessages) {
-        const messages = inboxMessages.map((msg) => ({
-          id: msg.id,
-          senderName: msg.senderName,
-          receiverName: msg.receiverName,
-          createdAt: msg.createdAt,
-          read: msg.read,
-          message: msg.message,
-        }));
-        setInbox(messages);
-        console.log('Inbox messages fetched:', messages);
-        await fetchJobDetails();
+  const handleCoverLetter = useCallback(
+    async (jobId: string, userId: string, applicantId: string) => {
+      if (!jobId || !userId) return;
+      setIsFetchingLetter(true)
+      try {
+        const inboxMessages = await getInboxMessagesFromAppliers(jobId, userId);
+        if (inboxMessages) {
+          const messages = inboxMessages.map((msg) => ({
+            createdAt: msg.createdAt,
+            message: msg.message,
+            senderId: msg.senderId,
+          }));
+          const filteredMessages = messages.filter(
+            (msg) => msg.senderId === applicantId
+          );
+          
+          return filteredMessages[0]?.message.split("\n")[1];
+        }
+      } catch (error) {
+        console.error("Error submitting cover letter:", error);
+      } finally {
+        setIsFetchingLetter(false);
       }
-    } catch (error) {
-      console.error('Error submitting cover letter:', error);
-    } finally {
-    }
-  }, [job, user, fetchJobDetails]);
+    },
+    [job, user, fetchJobDetails]
+  );
 
   // Refresh data manually
   const refreshData = useCallback(async () => {
@@ -293,13 +356,15 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
     acceptedFreelancers,
     hasApplied,
     isJobOwner,
-    inbox,
+
+    isJobFreelancer,
 
     // State
     loading,
     isApplying,
     isAccepting,
     isRejecting,
+    isFetchingLetter,
 
     // Actions
     fetchJobDetails,

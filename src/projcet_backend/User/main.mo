@@ -344,10 +344,6 @@ actor UserModel {
             case (#ok(jobData)) {
                 // Debug: Print the job data
 
-                // Step 2: Validate the job's wallet balance
-                if (jobData.wallet < amount) {
-                    return #err("Insufficient balance in job wallet");
-                };
 
                 // Step 3: Fetch the recipient user's details
                 switch (users.get(to_user_id)) {

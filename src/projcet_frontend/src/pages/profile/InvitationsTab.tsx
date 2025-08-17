@@ -152,7 +152,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
     </Card>
   );
 
-  const pendingInvitations = invitations?.filter(inv => !inv.isAccepted) || [];
+  const pendingInvitations = invitations?.filter(inv => !inv.isAccepted && inv.job.jobStatus === "Open") || [];
   const acceptedInvitations = invitations?.filter(inv => inv.isAccepted) || [];
 
   return (

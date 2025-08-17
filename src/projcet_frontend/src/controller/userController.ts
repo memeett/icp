@@ -186,6 +186,11 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
                 storage.clear();
                 storage.setUser(userDetail);
                 storage.setSession(res);
+                
+                const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
 
                 // Convert to frontend User format
                 const convertedUser: User = {
@@ -204,7 +209,8 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
                     updatedAt: BigInt(userData.updatedAt),
                     isFaceRecognitionOn: userData.isFaceRecognitionOn,
                     isProfileCompleted: (userData as any).isProfileCompleted || false,
-                    subAccount: [new Uint8Array()] // Ensure subAccount is set to an array of Uint8Array
+                    subAccount: userSubaccount
+
                 };
 
                 document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
@@ -334,13 +340,17 @@ export const fetchUserBySession = async (): Promise<User | null> => {
                     ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' })
                     : new Blob([], { type: 'image/jpeg' });
 
+                const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
                 const convertedUser: User = {
                     ...userData,
                     profilePicture: profilePictureBlob,
                     createdAt: BigInt(userData.createdAt),
                     updatedAt: BigInt(userData.updatedAt),
                     isProfileCompleted: (userData as any).isProfileCompleted || false,
-                    subAccount: [new Uint8Array()] // Ensure subAccount is set to an array of Uint8Array
+                    subAccount : userSubaccount
                 };
                 
                 userCache = { user: convertedUser, timestamp: now };
@@ -479,17 +489,23 @@ export const getAllUsers = async (): Promise<User[] | null> => {
                 profilePictureBlob = new Blob([], { type: 'image/jpeg' });
             }
 
+            const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
+
             return {
                 ...userData,
                 profilePicture: profilePictureBlob,
                 createdAt: BigInt(userData.createdAt),
                 updatedAt: BigInt(userData.updatedAt),
+                subAccount : userSubaccount,
                 isProfileCompleted: (userData as any).isProfileCompleted || false,
                 preference: userData.preference.map((pref: JobCategory) => ({
                     ...pref,
                     id: pref.id.toString()
-                })),
-                subAccount: [new Uint8Array()]
+                
+                }))
             };
         }));
 
@@ -500,15 +516,6 @@ export const getAllUsers = async (): Promise<User[] | null> => {
     }
 };
 
-export const topUp = async (amount: number): Promise<void> =>{
-    const userData = localStorage.getItem("current_user");
-    if (userData){
-        const parsedData = JSON.parse(userData).ok;
-        const principalId = parsedData.id
-        user.topUpICP(principalId, amount)
-    }
-    
-}
 
 export const getUserById = async (userId: string): Promise<User | null> => {
     try {
@@ -527,13 +534,17 @@ export const getUserById = async (userId: string): Promise<User | null> => {
                 profilePictureBlob = new Blob([], { type: 'image/jpeg' });
             }
 
+            const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
             const convertedUser: User = {
                 ...userData,
                 profilePicture: profilePictureBlob,
                 createdAt: BigInt(userData.createdAt),
                 updatedAt: BigInt(userData.updatedAt),
                 isProfileCompleted: (userData as any).isProfileCompleted || false,
-                subAccount: [new Uint8Array()]
+                subAccount: userSubaccount
             };
 
             return convertedUser;
@@ -562,14 +573,18 @@ export const getUserByName = async (username: string): Promise<User | null> => {
         } else {
           profilePictureBlob = new Blob([], { type: "image/jpeg" });
         }
-  
+        const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
+
         const convertedUser: User = {
           ...userData,
           profilePicture: profilePictureBlob,
           createdAt: BigInt(userData.createdAt),
           updatedAt: BigInt(userData.updatedAt),
           isProfileCompleted: (userData as any).isProfileCompleted || false,
-          subAccount: [new Uint8Array()]
+          subAccount: userSubaccount
         };
 
   

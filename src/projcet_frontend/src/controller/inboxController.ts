@@ -21,7 +21,7 @@ export const createInbox = async (
       jobId,
       senderId,
       inbox_type,
-      // message,
+      message,
     );
     if ("ok" in result) {
       return result.ok;
@@ -130,68 +130,38 @@ export const getSenderInbox = async (
 //   }
 // };
 
-// export const getAllInboxByUserId = async (
-//   userId: string
-// ): Promise<InboxResponse[] | null> => {
-//   const agent = await agentService.getAgent();
-//   try {
-//     const result = await inbox.getAllInboxByUserId(userId);
-//     const responses: InboxResponse[] = await Promise.all(
-//       result.map(async (i) => {
-//         const senderName = await user.getUsernameById(i.senderId);
-//         const receiverName = await user.getUsernameById(i.receiverId);
-//         const submission_type = i.submission_type;
-//         let message = "Invalid message";
-//         if (
-//           submission_type.toLocaleLowerCase() ===
-//           "submission".toLocaleLowerCase()
-//         ) {
-//           if (i.status === "request") {
-//             message = `You have a new submission request from ${senderName}`;
-//           } else if (i.status === "accepted") {
-//             message = `Your submission request has been accepted by ${senderName}`;
-//           } else if (i.status === "rejected") {
-//             message = `Your submission request has been rejected by ${senderName}`;
-//           }
-//         } else if (
-//           submission_type.toLocaleLowerCase() ===
-//           "application".toLocaleLowerCase()
-//         ) {
-//           if (i.status === "request") {
-//             message = `You have a new application request from ${senderName}`;
-//           } else if (i.status === "accepted") {
-//             message = `Your application request has been accepted by ${senderName}`;
-//           } else if (i.status === "rejected") {
-//             message = `Your application request has been rejected by ${senderName}`;
-//           }
-//         } else if (
-//           submission_type.toLocaleLowerCase() ===
-//           "invitation".toLocaleLowerCase()
-//         ) {
-//           if (i.status === "request") {
-//             message = `You have a new invitation request from ${senderName}`;
-//           } else if (i.status === "accepted") {
-//             message = `Your invitation request has been accepted by ${senderName}`;
-//           } else if (i.status === "rejected") {
-//             message = `Your invitation request has been rejected by ${senderName}`;
-//           }
-//         }
-//         return {
-//           id: i.id,
-//           senderName: senderName,
-//           receiverName: receiverName,
-//           createdAt: formatDate(i.createdAt),
-//           read: i.read,
-//           message: i.message,
-//         };
-//       })
-//     );
-//     return responses;
-//   } catch (error) {
-//     console.error("Failed to get inbox:", error);
-//     return null;
-//   }
-// };
+export const getAllInboxByUserId = async (
+  userId: string
+): Promise<InboxResponse[] | null> => {
+  const agent = await agentService.getAgent();
+  try {
+    console.log("Fetching inbox for user:", userId);
+    const result = await inbox.getAllInboxByUserId(userId);
+    console.log("Inbox Result:", result);
+    const responses: InboxResponse[] = await Promise.all(
+      result.map(async (i) => {
+        const senderName = await user.getUsernameById(i.senderId);
+        const receiverName = await user.getUsernameById(i.receiverId);
+        
+        return {
+          id: i.id,
+          jobId: i.jobId,
+          senderId: i.senderId,
+          receiverId: i.receiverId,
+          senderName: senderName,
+          receiverName: receiverName,
+          createdAt: formatDate(i.createdAt),
+          read: i.read,
+          message: i.message,
+        };
+      })
+    );
+    return responses;
+  } catch (error) {
+    console.error("Failed to get inbox:", error);
+    return null;
+  }
+};
 
 export const getAllInboxBySubmissionType = async (
   submissionType: string
@@ -200,6 +170,38 @@ export const getAllInboxBySubmissionType = async (
   try {
     const result = await inbox.getAllInboxBySubmissionType(submissionType);
     return result;
+  } catch (error) {
+    console.error("Failed to get inbox:", error);
+    return null;
+  }
+};
+
+export const getInboxMessagesFromAppliers = async (
+  jobId: string,
+  userId: string
+): Promise<InboxResponse[] | null> => {
+  const agent = await agentService.getAgent();
+  try {
+    const result = await inbox.getInboxMessagesFromAppliers(jobId, userId);
+      const responses: InboxResponse[] = await Promise.all(
+      result.map(async (i) => {
+        const senderName = await user.getUsernameById(i.senderId);
+        const receiverName = await user.getUsernameById(i.receiverId);
+        
+        return {
+          id: i.id,
+          jobId: i.jobId,
+          senderId: i.senderId,
+          receiverId: i.receiverId,
+          senderName: senderName,
+          receiverName: receiverName,
+          createdAt: formatDate(i.createdAt),
+          read: i.read,
+          message: i.message,
+        };
+      })
+    );
+    return responses;
   } catch (error) {
     console.error("Failed to get inbox:", error);
     return null;

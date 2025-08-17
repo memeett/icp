@@ -1,4 +1,4 @@
-import { User } from "../interface/User";
+import { User } from "../shared/types/User";
 import { storage } from "./storage";
 
 /**
@@ -62,7 +62,8 @@ export function fixUserData(): User | null {
       createdAt: BigInt(fixedUser.createdAt || '0'),
       updatedAt: BigInt(fixedUser.updatedAt || '0'),
       isFaceRecognitionOn: fixedUser.isFaceRecognitionOn || false,
-      isProfileCompleted: fixedUser.isProfileCompleted || false
+      isProfileCompleted: fixedUser.isProfileCompleted || false,
+      subAccount: [new Uint8Array()]
     };
     
     // Save the fixed user data

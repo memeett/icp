@@ -8,7 +8,7 @@ import {
 import { getUserById } from "../../controller/userController";
 import { getJobById } from "../../controller/jobController";
 import { formatDate } from "../../utils/dateUtils";
-import { formatCurrency } from "../../utils/currecncyUtils";
+import { formatCurrency } from "../../utils/salaryUtils";
 
 export default function ProfileTransactionsSection({
   userId,

@@ -22,7 +22,7 @@ export const useManageJobs = (): UseManageJobsReturn => {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('Start');
+  const [selectedStatus, setSelectedStatus] = useState('All');
 
   const fetchJobs = useCallback(async () => {
     if (!user) return;
@@ -50,7 +50,6 @@ export const useManageJobs = (): UseManageJobsReturn => {
   }, [fetchJobs, refreshKey]);
 
   const handleDeleteJob = async (jobId: string) => {
-    if (window.confirm('Are you sure you want to delete this job?')) {
       try {
         await deleteJob(jobId);
         message.success('Job deleted successfully.');
@@ -59,7 +58,6 @@ export const useManageJobs = (): UseManageJobsReturn => {
         console.error('Error deleting job:', err);
         message.error('Failed to delete job.');
       }
-    }
   };
 
   const refreshJobs = () => {
@@ -70,11 +68,11 @@ export const useManageJobs = (): UseManageJobsReturn => {
     const matchesSearch = job.jobName
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
+      console.log(selectedStatus, job.jobStatus)
     const matchesStatus =
       selectedStatus === 'All' || job.jobStatus === selectedStatus;
     return matchesSearch && matchesStatus;
   });
-
   return {
     jobs,
     loading,

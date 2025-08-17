@@ -6,8 +6,8 @@ import {
   getAllSubmissionbyUserJobId 
 } from '../../controller/submissionController';
 import { createInbox } from '../../controller/inboxController';
-import { Job } from '../../interface/job/Job';
-import { User } from '../../interface/User';
+import { User } from '../types/User';
+import { Job } from '../types/Job';
 
 interface Submission {
   id: string;
@@ -92,7 +92,7 @@ export const useWorkSubmission = (
 
       if (success) {
         // Create inbox notification for job owner
-        await createInbox(job.userId, user.id, 'submission', 'request');
+        await createInbox(job.userId, jobId, user.id, 'submission', 'request');
         
         message.success('Work submitted successfully!');
         await fetchJobAndSubmissions(); // Refresh submissions

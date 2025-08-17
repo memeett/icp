@@ -1,5 +1,7 @@
 import { AuthClient } from "@dfinity/auth-client";
-import { UpdateUserPayload, User } from "../shared/types/User";
+import { job } from "../../../declarations/job";
+import { User } from "../shared/types/User";
+import { UpdateUserPayload } from "../../../declarations/user/user.did";
 import { user } from "../../../declarations/user";
 import { session } from "../../../declarations/session";
 import { HttpAgent } from "@dfinity/agent";
@@ -81,29 +83,64 @@ export const getCookie = (name: string): string | null => {
 };
 
 export const login = async (principalId: string): Promise<boolean> => {
-    const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
-    const response = await fetch(defaultImagePath);
-    const imageBlob = await response.blob();
+    try {
+        const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
+        const response = await fetch(defaultImagePath);
+        const imageBlob = await response.blob();
 
-    const arrayBuffer = await imageBlob.arrayBuffer();
-    const profilePicBlob = new Uint8Array(arrayBuffer);
+        const arrayBuffer = await imageBlob.arrayBuffer();
+        const profilePicBlob = new Uint8Array(arrayBuffer);
 
-    const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
-    if (!res) {
+        const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
+        if (!res) {
+            return false;
+        }
+
+        const userIdResult = await session.getUserIdBySession(res);
+        if ("ok" in userIdResult) {
+            const userId = userIdResult.ok;
+            const userDetailResult = await user.getUserById(userId);
+
+            if ("ok" in userDetailResult) {
+                const userData = userDetailResult.ok;
+                storage.clear(); // Clear existing storage
+                storage.setSession(res); // Set new session
+
+                // Convert to frontend User format
+                const convertedUser: User = {
+                    id: userData.id,
+                    profilePicture: userData.profilePicture ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' }) : null,
+                    username: userData.username,
+                    dob: userData.dob,
+                    preference: userData.preference.map((pref: any) => ({
+                        id: pref.id.toString(),
+                        jobCategoryName: pref.jobCategoryName
+                    })),
+                    description: userData.description,
+                    wallet: userData.wallet,
+                    rating: userData.rating,
+                    createdAt: BigInt(userData.createdAt),
+                    updatedAt: BigInt(userData.updatedAt),
+                    isFaceRecognitionOn: userData.isFaceRecognitionOn,
+                    isProfileCompleted: (userData as any).isProfileCompleted || false,
+                    subAccount: [new Uint8Array()]
+                };
+                storage.setUser({ ok: convertedUser }); // Store converted user data
+
+                document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
+                return true;
+            } else {
+                console.error("Error fetching user details:", userDetailResult.err);
+                return false;
+            }
+        } else {
+            console.error("Error fetching user ID:", userIdResult.err);
+            return false;
+        }
+    } catch (error) {
+        console.error("Login failed:", error);
         return false;
     }
-    document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
-    storage.setSession(res);
-    const userIdResult = await session.getUserIdBySession(res);
-    if ("ok" in userIdResult) {
-      const userId = userIdResult.ok;
-      const userDetail = await user.getUserById(userId);
-      storage.setUser(userDetail);
-    } else {
-      console.error("Error fetching user ID:", userIdResult.err);
-      return false;
-    }
-    return true;
 };
 
 
@@ -149,6 +186,11 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
                 storage.clear();
                 storage.setUser(userDetail);
                 storage.setSession(res);
+                
+                const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
 
                 // Convert to frontend User format
                 const convertedUser: User = {
@@ -167,6 +209,8 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
                     updatedAt: BigInt(userData.updatedAt),
                     isFaceRecognitionOn: userData.isFaceRecognitionOn,
                     isProfileCompleted: (userData as any).isProfileCompleted || false,
+                    subAccount: userSubaccount
+
                 };
 
                 document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
@@ -296,12 +340,17 @@ export const fetchUserBySession = async (): Promise<User | null> => {
                     ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' })
                     : new Blob([], { type: 'image/jpeg' });
 
+                const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
                 const convertedUser: User = {
                     ...userData,
                     profilePicture: profilePictureBlob,
                     createdAt: BigInt(userData.createdAt),
                     updatedAt: BigInt(userData.updatedAt),
                     isProfileCompleted: (userData as any).isProfileCompleted || false,
+                    subAccount : userSubaccount
                 };
                 
                 userCache = { user: convertedUser, timestamp: now };
@@ -320,11 +369,7 @@ export const fetchUserBySession = async (): Promise<User | null> => {
     }
 };
 
-
-
-
-
-export const updateUserProfile = async (payload: any): Promise<boolean> => {
+export const updateUserProfile = async (payload: Partial<User>): Promise<boolean> => {
     try {
         const authClient = await AuthClient.create();
         const identity = authClient.getIdentity();
@@ -339,14 +384,24 @@ export const updateUserProfile = async (payload: any): Promise<boolean> => {
             throw new Error('No active session');
         }
 
-        const backendPayload: any = {};
+        const backendPayload: UpdateUserPayload = {
+            dob: [],
+            username: [],
+            isProfileCompleted: [],
+            description: [],
+            preference: [],
+            profilePicture: []
+        };
+        
         if (payload.username !== undefined) backendPayload.username = [payload.username];
         if (payload.description !== undefined) backendPayload.description = [payload.description];
         if (payload.dob !== undefined) {
-            const dobString = typeof payload.dob === 'string' ? payload.dob : payload.dob.format('YYYY-MM-DD');
-            backendPayload.dob = [dobString];
+            if (typeof payload.dob === 'string') {
+                backendPayload.dob = [payload.dob];
+            } else {
+                backendPayload.dob = [(payload.dob as any).format('YYYY-MM-DD')];
+            }
         }
-        if (payload.isFaceRecognitionOn !== undefined) backendPayload.isFaceRecognitionOn = [payload.isFaceRecognitionOn];
         if (payload.isProfileCompleted !== undefined) backendPayload.isProfileCompleted = [payload.isProfileCompleted];
         if (payload.preference !== undefined) backendPayload.preference = [payload.preference];
         
@@ -355,17 +410,29 @@ export const updateUserProfile = async (payload: any): Promise<boolean> => {
             backendPayload.profilePicture = [new Uint8Array(arrayBuffer)];
         }
 
+        if(payload.preference && payload.preference.length > 0){
+            for (const tag of payload.preference) {
+                console.log(tag.jobCategoryName)
+                let existingCategory = await job.findJobCategoryByName(tag.jobCategoryName as string );
+                console.log(existingCategory)
+                if (!("ok" in existingCategory)) {
+                    existingCategory = await job.createJobCategory(tag.jobCategoryName as string);
+                    
+                }
+                
+            }
+                    
+        }
+
         if (process.env.CANISTER_ID_SESSION) {
             await user.updateUser(cleanSession, backendPayload, process.env.CANISTER_ID_SESSION);
         } else {
             throw new Error('CANISTER_ID_SESSION not found');
         }
 
-        // Invalidate user cache and refetch
         userCache = { user: null, timestamp: 0 };
         const updatedUser = await fetchUserBySession();
         
-        // Reset session and current user value
         if (updatedUser) {
             const sessionString = storage.getSession();
             storage.clear();
@@ -413,15 +480,22 @@ export const getAllUsers = async (): Promise<User[] | null> => {
                 profilePictureBlob = new Blob([], { type: 'image/jpeg' });
             }
 
+            const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
+
             return {
                 ...userData,
                 profilePicture: profilePictureBlob,
                 createdAt: BigInt(userData.createdAt),
                 updatedAt: BigInt(userData.updatedAt),
+                subAccount : userSubaccount,
                 isProfileCompleted: (userData as any).isProfileCompleted || false,
-                preference: userData.preference.map((pref:  JobCategory) => ({
+                preference: userData.preference.map((pref: JobCategory) => ({
                     ...pref,
                     id: pref.id.toString()
+                
                 }))
             };
         }));
@@ -433,15 +507,6 @@ export const getAllUsers = async (): Promise<User[] | null> => {
     }
 };
 
-export const topUp = async (amount: number): Promise<void> =>{
-    const userData = localStorage.getItem("current_user");
-    if (userData){
-        const parsedData = JSON.parse(userData).ok;
-        const principalId = parsedData.id
-        user.topUpICP(principalId, amount)
-    }
-    
-}
 
 export const getUserById = async (userId: string): Promise<User | null> => {
     try {
@@ -460,12 +525,17 @@ export const getUserById = async (userId: string): Promise<User | null> => {
                 profilePictureBlob = new Blob([], { type: 'image/jpeg' });
             }
 
+            const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
             const convertedUser: User = {
                 ...userData,
                 profilePicture: profilePictureBlob,
                 createdAt: BigInt(userData.createdAt),
                 updatedAt: BigInt(userData.updatedAt),
                 isProfileCompleted: (userData as any).isProfileCompleted || false,
+                subAccount: userSubaccount
             };
 
             return convertedUser;
@@ -494,13 +564,18 @@ export const getUserByName = async (username: string): Promise<User | null> => {
         } else {
           profilePictureBlob = new Blob([], { type: "image/jpeg" });
         }
-  
+        const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
+
         const convertedUser: User = {
           ...userData,
           profilePicture: profilePictureBlob,
           createdAt: BigInt(userData.createdAt),
           updatedAt: BigInt(userData.updatedAt),
           isProfileCompleted: (userData as any).isProfileCompleted || false,
+          subAccount: userSubaccount
         };
 
   

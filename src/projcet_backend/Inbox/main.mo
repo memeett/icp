@@ -7,6 +7,7 @@ import Result "mo:base/Result";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Time "mo:base/Time";
+import Debug "mo:base/Debug";
 import Job "canister:job";
 
 actor InboxModule {
@@ -116,6 +117,7 @@ actor InboxModule {
     // };
 
     public func getAllInboxByUserId(userId : Text) : async [Inbox.Inbox] {
+        // Debug.print("Fetching inbox for user: " # userId);
         let allInbox = Iter.toArray(inboxes.vals());
         let userInbox = Array.filter(
             allInbox,
@@ -123,6 +125,8 @@ actor InboxModule {
                 inbox.receiverId == userId
             },
         );
+        // Debug.print("Inbox fetched for user: " # userId # " with count: " # Int.toText(Array.size(userInbox)));
+        
         userInbox;
     };
 
@@ -143,6 +147,17 @@ actor InboxModule {
             allInbox,
             func(inbox : Inbox.Inbox) : Bool {
                 inbox.inbox_type == inbox_type;
+            },
+        );
+        userInbox;
+    };
+
+    public func getInboxMessagesFromAppliers(jobId : Text, userId:Text) : async [Inbox.Inbox] {
+        let allInbox = Iter.toArray(inboxes.vals());
+        let userInbox = Array.filter(
+            allInbox,
+            func(inbox : Inbox.Inbox) : Bool {
+                inbox.jobId == jobId and inbox.receiverId == userId and inbox.inbox_type == "application";
             },
         );
         userInbox;

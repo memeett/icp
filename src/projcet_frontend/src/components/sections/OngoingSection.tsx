@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 import { Inbox } from "lucide-react";
 import HistorySubmissionCard from "../cards/HistorySubmissionCard";
 import { createSubmission, getAllSubmissionbyUserJobId } from "../../controller/submissionController";
-import { Job } from "../../interface/job/Job";
 import { createInbox } from "../../controller/inboxController";
+import { Job } from "../../shared/types/Job";
 
 export default function OngoingSection({ job }: { job: Job }) {
   const [submission, setSubmission] = useState<ResponseSubmission[] | []>([]);

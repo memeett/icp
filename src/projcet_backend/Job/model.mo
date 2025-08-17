@@ -8,12 +8,18 @@ module{
         jobSalary: Float;
         jobRating: Float;
         jobTags: [JobCategory];
+        jobProjectType: Text;
         jobSlots: Int;
         jobStatus: Text;
+        jobExperimentLevel: Text;
+        jobRequirementSkills: [Text];
+        jobStartDate: Int;
+        jobDeadline: Int;
         userId: Text;
         createdAt: Int;
         updatedAt: Int;
         wallet: Float;
+        subAccount: ?[Nat8];
     };
 
     public type JobCategory = {
@@ -26,16 +32,20 @@ module{
         jobDescription: [Text];
         jobSalary: Float;
         jobTags: [JobCategory];
+        jobProjectType: Text;
         jobSlots: Int;
         userId: Text;
+        jobRequirementSkills: [Text];
+        jobExperimentLevel: Text;
+        jobStartDate: Int;
+        jobDeadline: Int;
+        jobStatus: Text;
     };
 
     public type UpdateJobPayload = {
-        jobName: ?Text;
-        jobDescription: ?[Text];
-        jobSalary: ?Float;
-        jobTags: ?[JobCategory];
-        jobSlots: ?Int;
-        userId: ?Text;
+        jobName: Text;
+        jobDescription: [Text];
+        jobStartDate: Int;
+        jobDeadline: Int;
     };
 }

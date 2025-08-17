@@ -7,13 +7,18 @@ import Time "mo:base/Time";
 import Option "mo:base/Option";
 import Float "mo:base/Float";
 import Array "mo:base/Array";
+import Int "mo:base/Int";
+import Blob "mo:base/Blob";
+import Principal "mo:base/Principal";
+import Debug "mo:base/Debug";
 import Job "../Job/model";
+import Bool "mo:base/Bool";
 
 actor UserModel {
 
     private stable var usersEntries : [(Text, User.User)] = [];
 
-    private var users = HashMap.fromIter<Text, User.User>(
+    private var users = HashMap.fromIter<Text, User.User>( // Marked as transient
         usersEntries.vals(),
         0,
         Text.equal,
@@ -44,8 +49,187 @@ actor UserModel {
         cashFlowHistories := Array.append(cashFlowHistories, [transaction]);
     };
 
+    func newSubaccount(userId: Text): [Nat8] {
+        let base = Blob.toArray(Text.encodeUtf8(userId));
+        var sub = Array.tabulate<Nat8>(32, func (i) {
+            if (i < base.size()) base[i] else 0
+        });
+        return sub;
+    };
+
+    public func getBalance(userId: Text, ledger_canister: Text) : async Result.Result<User.Token, Text> {
+        switch (await getUserById(userId)) {
+            case (#err(errMsg)) {
+                return #err("Failed to get user: " # errMsg);
+            };
+            case (#ok(user)) {
+                let ledger = actor (ledger_canister) : actor {
+                    icrc1_balance_of : ({ owner : Principal; subaccount : ?[Nat8] }) -> async Nat;
+                    icrc1_name: () -> async Text;
+                    icrc1_symbol: () -> async Text;
+                    icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
+                };
+
+                let mintingAccountOpt = await ledger.icrc1_minting_account();
+
+                // Unwrap optional minting account
+                if (mintingAccountOpt == null) {
+                    return #err("No minting account set");
+                };
+
+                let mintingAccount = switch (mintingAccountOpt) {
+                    case (?acc) { acc }; // unwrap here
+                };
+
+                // Use user's subaccount if it exists, otherwise null
+                let subAcc : ?[Nat8] = switch (user.subAccount) {
+                    case null { null };
+                    case (?v) { ?v };
+                };
+
+                let balance = await ledger.icrc1_balance_of({
+                    owner = mintingAccount.owner;
+                    subaccount = subAcc;
+                });
+                let token_name = await ledger.icrc1_name();
+                let token_symbol = await ledger.icrc1_symbol();
+
+                return #ok({
+                    token_name = token_name;
+                    token_symbol = token_symbol;
+                    token_value = balance;
+                });
+            };
+        };
+    };
+
+    // public func topupBalance(
+    //     userId: Text,
+    //     amount: Nat,
+    //     ledger_canister: Text
+    // ) : async Result.Result<Text, Text> {
+
+    //     switch (await getUserById(userId)) {
+    //         case (#err(errMsg)) {
+    //             return #err("Failed to get user: " # errMsg);
+    //         };
+    //         case (#ok(user)) {
+    //             type Account = {
+    //                 owner : Principal;
+    //                 subaccount : ?[Nat8];
+    //             };
+
+    //             type TransferArgs = {
+    //                 to : Account;
+    //                 fee : ?Nat;
+    //                 memo : ?[Nat8];
+    //                 from_subaccount : ?[Nat8];
+    //                 created_at_time : ?Nat64;
+    //                 amount : Nat;
+    //             };
+
+    //             type TransferError = {
+    //                 #GenericError : { message : Text; error_code : Nat };
+    //                 #BadBurn : { min_burn_amount : Nat };
+    //                 #Duplicate : { duplicate_of : Nat };
+    //                 #BadFee : { expected_fee : Nat };
+    //                 #CreatedInFuture : { ledger_time : Nat64 };
+    //                 #InsufficientFunds : { balance : Nat };
+    //             };
+
+    //             type TransferResult = {
+    //                 #Ok : Nat;
+    //                 #Err : TransferError;
+    //             };
+
+    //             let ledger = actor (ledger_canister) : actor {
+    //                 icrc1_transfer : (TransferArgs) -> async TransferResult;
+    //                 icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
+    //             };
+
+    //             let mintingAccountOpt = await ledger.icrc1_minting_account();
+
+    //             // Unwrap optional minting account
+    //             if (mintingAccountOpt == null) {
+    //                 return #err("No minting account set");
+    //             };
+
+    //             let mintingAccount = switch (mintingAccountOpt) {
+    //                 case (?acc) { acc }; // unwrap here
+    //             };
+
+    //             // Use user's subaccount if it exists, otherwise null
+    //             let subAcc : ?[Nat8] = switch (user.subAccount) {
+    //                 case null { null };
+    //                 case (?v) { ?v };
+    //             };
+
+    //             let transferArgs = {
+    //                 to = {
+    //                     owner = mintingAccount.owner;
+    //                     subaccount = subAcc; // or null if no subaccount
+    //                 };
+    //                 amount = amount;
+    //                 fee = null;
+    //                 memo = null;
+    //                 from_subaccount = null;
+    //                 created_at_time = null;
+    //             };
+
+    //             let transferResult = await ledger.icrc1_transfer(transferArgs);
+
+    //             switch (transferResult) {
+    //                 case (#Ok(blockIndex)) {
+    //                     return #ok("Transfer succeeded. Block index: ");
+    //                 };
+    //                 case (#Err(#GenericError e)) {
+    //                     return #err("Generic error ("  );
+    //                 };
+    //                 case (#Err(#BadBurn e)) {
+    //                     return #err("Bad burn. Minimum burn amount: " );
+    //                 };
+    //                 case (#Err(#Duplicate e)) {
+    //                     return #err("Duplicate transaction. Original block index: " );
+    //                 };
+    //                 case (#Err(#BadFee e)) {
+    //                     return #err("Bad fee. Expected: " );
+    //                 };
+    //                 case (#Err(#CreatedInFuture e)) {
+    //                     return #err("Created in future. Ledger time: ");
+    //                 };
+    //                 case (#Err(#InsufficientFunds e)) {
+    //                     return #err("Insufficient funds. Balance: ");
+    //                 };
+    //             };
+    //         };
+    //     };
+    // };
+
+    public func addBalanceTransaction(userId: Text, amount: Float) : async Result.Result<Text, Text> {
+        Debug.print("Adding balance transaction for user: " # userId);
+        switch (users.get(userId)) {
+            case (?user) {
+
+                addTransaction({
+                    fromId = userId;
+                    transactionAt = Time.now();
+                    amount = amount;
+                    transactionType = #topUp; // Assuming this is a top-up
+                    toId = null; // No recipient for top-ups
+                });
+
+                return #ok("Balance added successfully");
+            };
+            case null {
+                return #err("User not found");
+            };
+        };
+    };
+
+
     public func createUser(newid : Text, profilePic : Blob) : async User.User {
         let timestamp = Time.now();
+        let sub = newSubaccount(newid);
 
         let newUser : User.User = {
             id = newid;
@@ -60,6 +244,7 @@ actor UserModel {
             updatedAt = timestamp;
             isFaceRecognitionOn = false;
             isProfileCompleted = false;
+            subAccount = ?sub; // Initialize subAccount as null
         };
 
         users.put(newid, newUser);
@@ -67,7 +252,7 @@ actor UserModel {
     };
 
     public query func getAllUsers() : async [User.User] {
-        Iter.toArray(users.vals());
+        return Iter.toArray(users.vals());
     };
 
     public func getUserById(userId : Text) : async Result.Result<User.User, Text> {
@@ -117,6 +302,7 @@ actor UserModel {
                             updatedAt = timestamp;
                             isFaceRecognitionOn = currUser.isFaceRecognitionOn;
                             isProfileCompleted = Option.get(payload.isProfileCompleted, currUser.isProfileCompleted);
+                            subAccount = currUser.subAccount; // Keep subAccount unchanged
                         };
                         users.put(userId, updatedUser);
                         #ok(updatedUser);
@@ -170,12 +356,18 @@ actor UserModel {
                             jobSalary = jobData.jobSalary;
                             jobRating = jobData.jobRating;
                             jobTags = jobData.jobTags;
+                            jobProjectType = jobData.jobProjectType;
                             jobSlots = jobData.jobSlots;
                             jobStatus = jobData.jobStatus;
+                            jobExperimentLevel = jobData.jobExperimentLevel;
+                            jobRequirementSkills = jobData.jobRequirementSkills;
+                            jobStartDate = jobData.jobStartDate;
+                            jobDeadline = jobData.jobDeadline;
                             userId = jobData.userId;
                             createdAt = jobData.createdAt;
                             updatedAt = Time.now();
                             wallet = updatedJobWallet;
+                            subAccount = jobData.subAccount; // Keep subAccount unchanged
                         };
                         await jobActor.putJob(from_job_id, updatedJob);
 
@@ -194,10 +386,10 @@ actor UserModel {
                             updatedAt = Time.now();
                             isFaceRecognitionOn = toUser.isFaceRecognitionOn;
                             isProfileCompleted = toUser.isProfileCompleted;
+                            subAccount = toUser.subAccount; // Keep subAccount unchanged
                         };
                         users.put(to_user_id, updatedToUser);
 
-                        // Step 6: Record the transaction
                         addTransaction({
                             fromId = from_job_id; // Job ID as the sender
                             transactionAt = Time.now();
@@ -222,7 +414,6 @@ actor UserModel {
     };
 
     public shared func transfer_icp_to_job(user_id: Text, job_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
-        // Dynamically create the job actor
         let jobActor = actor(job_canister) : actor {
             getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
             putJob: (job_id: Text, job: Job.Job) -> async ();
@@ -253,12 +444,18 @@ actor UserModel {
                             jobSalary = jobData.jobSalary;
                             jobRating = jobData.jobRating;
                             jobTags = jobData.jobTags;
+                            jobProjectType = jobData.jobProjectType;
                             jobSlots = jobData.jobSlots;
                             jobStatus = "Ongoing";
+                            jobExperimentLevel = jobData.jobExperimentLevel;
+                            jobRequirementSkills = jobData.jobRequirementSkills;
+                            jobStartDate = jobData.jobStartDate;
+                            jobDeadline = jobData.jobDeadline;
                             userId = jobData.userId;
                             createdAt = jobData.createdAt;
                             updatedAt = Time.now();
                             wallet = jobData.wallet + amount;
+                            subAccount = jobData.subAccount; // Keep subAccount unchanged
                         };
                         await jobActor.putJob(job_id, updatedJob);
 
@@ -276,6 +473,7 @@ actor UserModel {
                             updatedAt = Time.now();
                             isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
                             isProfileCompleted = fromUser.isProfileCompleted;
+                            subAccount = fromUser.subAccount; // Keep subAccount unchanged
                         };
                         users.put(user_id, updatedFromUser);
 
@@ -301,7 +499,41 @@ actor UserModel {
         };
     };
 
+    public func jobPaymentTranfer(user_id: Text, job_id: Text, amount: Float, job_canister: Text): async Result.Result<Text, Text> {
+        let jobActor = actor(job_canister) : actor {
+            getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
+            putJob: (job_id: Text, job: Job.Job) -> async ();
+        };
+        
+        switch (users.get(user_id)) {
+            case (?fromUser) {
+   
+                // Fetch job details from the jobs canister
+                let jobResult = await jobActor.getJob(job_id);
+                switch (jobResult) {
+                    case (#ok(jobData)) {
 
+                        // Record the transaction
+                        addTransaction({
+                            fromId = user_id;
+                            transactionAt = Time.now();
+                            amount = amount;
+                            transactionType = #transferToJob;
+                            toId = ?job_id;
+                        });
+
+                        return #ok("Transferred to job successfully");
+                    };
+                    case (#err(errMsg)) {
+                        return #err("Failed to fetch job details in user: " # errMsg);
+                    };
+                };
+            };
+            case null {
+                return #err("Sender not found");
+            };
+        };
+    };
 
     public func getAllFaceRecogUser() : async [User.User] {
         Iter.toArray(
@@ -332,43 +564,6 @@ actor UserModel {
         true;
     };
 
-    public shared func topUpICP(userId: Text, amount: Float) : async Result.Result<Text, Text> {
-        switch (users.get(userId)) {
-            case (?user) {
-                let newBalance = user.wallet + amount;
-                let updatedUser: User.User = {
-                    id = user.id;
-                    profilePicture = user.profilePicture;
-                    username = user.username;
-                    description = user.description;
-                    preference = user.preference;
-                    dob = user.dob;
-                    wallet = newBalance;
-                    rating = user.rating;
-                    createdAt = user.createdAt;
-                    updatedAt = Time.now();
-                    isFaceRecognitionOn = user.isFaceRecognitionOn;
-                    isProfileCompleted = user.isProfileCompleted;
-                };
-                users.put(userId, updatedUser);
-
-                // Save transaction
-                addTransaction({
-                    fromId = userId;
-                    transactionAt = Time.now();
-                    amount = amount;
-                    transactionType = #topUp;
-                    toId = null;
-                });
-
-                return #ok("Topped up ckBTC successfully. New balance: " # Float.toText(newBalance));
-            };
-            case null {
-                return #err("User not found");
-            };
-        };
-    };
-
     // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
     //     minter_fee : Nat64;
     //     bitcoin_fee : Nat64;
@@ -396,6 +591,193 @@ actor UserModel {
         };
     };
 
+        // ----- HTTP Interface Implementation -----
+
+    // Tipe data standar untuk HTTP request & response
+    type HeaderField = (Text, Text);
+    
+    type HttpRequest = {
+        method : Text;
+        url : Text;
+        headers : [HeaderField];
+        body : Blob;
+        certificate_version : ?Nat16;
+    };
+
+    type HttpResponse = {
+        status_code : Nat16;
+        headers : [HeaderField];
+        body : Blob;
+        streaming_strategy : ?StreamingCallbackStrategy;
+        upgrade: ?Bool;
+    };
+
+    type StreamingCallback = query (StreamingCallbackToken) -> async StreamingCallbackResponse;
+    
+    type StreamingCallbackToken = {
+        key: Text;
+        content_encoding: Text;
+        index: Nat;
+        sha256: ?[Nat8];
+    };
+    
+    type StreamingCallbackResponse = {
+        body: Blob;
+        token: ?StreamingCallbackToken;
+    };
+
+    type StreamingCallbackStrategy = {
+        #Callback: {
+            token: StreamingCallbackToken;
+            callback: StreamingCallback;
+        };
+    };
+
+    // Fungsi pembantu untuk membuat respons JSON
+    private func makeJsonResponse(statusCode : Nat16, jsonContent : Text) : HttpResponse {
+        {
+            status_code = statusCode;
+            headers = [
+                ("Content-Type", "application/json"),
+                ("Access-Control-Allow-Origin", "*"),
+                ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                ("Access-Control-Allow-Headers", "Content-Type")
+            ];
+            body = Text.encodeUtf8(jsonContent);
+            streaming_strategy = null;
+            upgrade = null;
+        };
+    };
+
+    // Fungsi untuk mengubah satu objek User menjadi string JSON
+    private func userToJsonString(user : User.User) : Text {
+
+        let prefItems = Array.map<Job.JobCategory, Text>(
+            user.preference,
+            func (p : Job.JobCategory) : Text {
+                "{\"id\":\"" # p.id # "\",\"jobCategoryName\":\"" # p.jobCategoryName # "\"}"
+            }
+        );
+        let preferenceJson = "[" # Text.join(",", Iter.fromArray(prefItems)) # "]";
+
+        "{" #
+        "\"id\":\"" # user.id # "\"," #
+        "\"username\":\"" # user.username # "\"," #
+        "\"dob\":\"" # user.dob # "\"," #
+        "\"preference\":" # preferenceJson # "," #
+        "\"description\":\"" # user.description # "\"," #
+        "\"wallet\":" # Float.toText(user.wallet) # "," #
+        "\"rating\":" # Float.toText(user.rating) # "," #
+        "\"createdAt\":" # Int.toText(user.createdAt) # "," #
+        "\"updatedAt\":" # Int.toText(user.updatedAt) # "," #
+        "\"isFaceRecognitionOn\":" # Bool.toText(user.isFaceRecognitionOn) # "," #
+        "\"isProfileCompleted\":" # Bool.toText(user.isProfileCompleted) #
+        "}"
+    };
+
+    // Fungsi untuk mengubah array User menjadi array JSON
+    private func usersToJsonArray(userList : [User.User]) : Text {
+        let userJsonArray = Array.map<User.User, Text>(
+            userList,
+            func (user : User.User) : Text = userToJsonString(user)
+        );
+        "[" # Text.join(",", Iter.fromArray(userJsonArray)) # "]"
+    };
+
+    // Handler utama untuk HTTP query (read-only)
+    public query func http_request(req : HttpRequest) : async HttpResponse {
+        let path = req.url;
+        let method = req.method;
+
+        // Routing berdasarkan method dan path
+        Debug.print("http_request called for User canister. Method: " # method # ", Path: " # path);
+        
+        if (method == "POST" and path == "/getAllUsers") {
+            return {
+                status_code = 200;
+                headers = [
+                    ("Access-Control-Allow-Origin", "*"),
+                    ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                    ("Access-Control-Allow-Headers", "Content-Type")
+                ];
+                body = Text.encodeUtf8("");
+                streaming_strategy = null;
+                upgrade = ?true;
+            };
+        };
+
+        switch (method, path) {
+            case ("GET", "/getAllUsers") {
+                Debug.print("Handling GET /getAllUsers in User canister.");
+                // 1. Panggil fungsi yang sudah ada
+                let allUsers = Iter.toArray(users.vals());
+                // 2. Ubah hasilnya menjadi JSON
+                let jsonResponse = usersToJsonArray(allUsers);
+                // 3. Buat dan kembalikan HttpResponse
+                return makeJsonResponse(200, jsonResponse);
+            };
+            case ("OPTIONS", _) {
+                Debug.print("Handling OPTIONS request in User canister.");
+                // Menangani CORS preflight request dari browser
+                return {
+                    status_code = 200;
+                    headers = [
+                        ("Access-Control-Allow-Origin", "*"),
+                        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                        ("Access-Control-Allow-Headers", "Content-Type")
+                    ];
+                    body = Text.encodeUtf8("");
+                    streaming_strategy = null;
+                    upgrade = null;
+                };
+            };
+            case _ {
+                Debug.print("Unhandled HTTP GET/OPTIONS request in User canister. Path: " # path);
+                // Jika path tidak ditemukan
+                return makeJsonResponse(404, "{\"error\": \"Not Found\"}");
+            };
+        };
+    };
+
+    // Handler untuk HTTP update (jika diperlukan untuk request yang mengubah data)
+    public func http_request_update(req : HttpRequest) : async HttpResponse {
+        let path = req.url;
+        let method = req.method;
+        Debug.print("http_request_update called for User canister. Method: " # method # ", Path: " # path);
+
+        // Handle only specific paths that match our pattern
+        if (method == "POST" and path == "/getAllUsers") {
+            Debug.print("Handling POST /getAllUsers in User canister.");
+            let allUsers = Iter.toArray(users.vals());
+            let jsonResponse = usersToJsonArray(allUsers);
+            return makeJsonResponse(200, jsonResponse);
+        };
+
+        switch(method, path) {
+            case ("OPTIONS", _) {
+                Debug.print("Handling OPTIONS request in User canister (update call).");
+                 // Menangani CORS preflight request dari browser
+                return {
+                    status_code = 200;
+                    headers = [
+                        ("Access-Control-Allow-Origin", "*"),
+                        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                        ("Access-Control-Allow-Headers", "Content-Type")
+                    ];
+                    body = Text.encodeUtf8("");
+                    streaming_strategy = null;
+                    upgrade = null;
+                };
+            };
+            case _ {
+                Debug.print("Unhandled HTTP POST/OPTIONS request in User canister (update call). Path: " # path);
+                 // Jika path tidak ditemukan
+                return makeJsonResponse(404, "{\"error\": \"Not Found in update call\"}");
+            }
+        }
+    };
+
+
     public func updateUserRating(userId: Text, newRating: Float) : async Result.Result<Text, Text> {
     // Step 1: Retrieve the user by userId
         switch (users.get(userId)) {
@@ -414,6 +796,7 @@ actor UserModel {
                     updatedAt = Time.now(); // Update the timestamp
                     isFaceRecognitionOn = user.isFaceRecognitionOn;
                     isProfileCompleted = user.isProfileCompleted;
+                    subAccount = user.subAccount; // Keep subAccount unchanged
                 };
 
                 // Step 3: Save the updated user back to the HashMap
@@ -429,4 +812,6 @@ actor UserModel {
         };
     };
 
+
+    
 };

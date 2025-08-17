@@ -77,8 +77,21 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
         throw new Error('Job not found');
       }
 
-      setJob(jobData);
-      const isOwner = user?.id === jobData.userId;
+      const convertedJob: Job = {
+        ...(jobData as any),
+        jobTags: (jobData as any).jobTags?.map((t: any) => ({
+          id: t.id?.toString?.() ?? String(t.id),
+          jobCategoryName: t.jobCategoryName,
+        })) || [],
+        subAccount: (jobData as any).subAccount && (jobData as any).subAccount[0]
+          ? [new Uint8Array((jobData as any).subAccount[0])]
+          : [],
+        jobSlots: BigInt((jobData as any).jobSlots),
+        createdAt: BigInt((jobData as any).createdAt),
+        updatedAt: BigInt((jobData as any).updatedAt),
+      };
+      setJob(convertedJob);
+      const isOwner = user?.id === (jobData as any).userId;
       setIsJobOwner(isOwner);
 
       // Parallel fetch for user-specific data

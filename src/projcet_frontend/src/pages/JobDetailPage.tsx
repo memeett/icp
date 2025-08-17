@@ -87,8 +87,8 @@ const JobDetailPage: React.FC = () => {
   } = useJobDetails(jobId, user);
 
   const {
-    searchUsers,
-    searchUsersByUsername,
+    allUsers,
+    fetchAllUsers,
     sendInvitation,
     clearSearch
   } = useUserManagement();
@@ -113,12 +113,16 @@ const JobDetailPage: React.FC = () => {
     try {
       const success = await sendInvitation(values.userId, user.id, jobId);
       if (success) {
+        message.success('Invitation sent successfully');
         setIsInviteModalVisible(false);
         inviteForm.resetFields();
         clearSearch();
+      } else {
+        message.error('Failed to send invitation');
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
+      message.error('Error sending invitation');
     }
   };
 
@@ -593,41 +597,157 @@ const JobDetailPage: React.FC = () => {
   };
 
   // Component for invite users content
-  const InviteContent = () => (
-    <Card>
-      <Form
-        form={inviteForm}
-        layout="vertical"
-        onFinish={handleInviteUser}
-      >
-        <Form.Item
-          name="userId"
-          label="Search and Select User"
-          rules={[{ required: true, message: 'Please select a user to invite' }]}
-        >
-          <AutoComplete
-            placeholder="Search by username..."
-            onSearch={searchUsersByUsername}
-            options={searchUsers.map(user => ({
-              value: user.id,
-              label: (
-                <div className="flex items-center space-x-2">
-                  <Avatar size="small" src={user.profilePicture ? URL.createObjectURL(user.profilePicture) : undefined} icon={<UserOutlined />} />
-                  <span>{user.username}</span>
-                </div>
-              )
-            }))}
-          />
-        </Form.Item>
+  const InviteContent = () => {
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [optionsUsers, setOptionsUsers] = useState<User[]>([]);
+    const [open, setOpen] = useState(false);
 
-        <Form.Item>
-          <Button type="primary" htmlType="submit" icon={<SendOutlined />}>
-            Send Invitation
-          </Button>
-        </Form.Item>
-      </Form>
-    </Card>
-  );
+    const baseUsers = (allUsers || []).filter(u => (user ? u.id !== user.id : true));
+
+    useEffect(() => {
+      setOptionsUsers(baseUsers);
+    }, [allUsers, user?.id]);
+
+    const handleSelectUser = (value: string) => {
+      const found = baseUsers.find(u => u.id === value) || null;
+      setSelectedUser(found);
+    };
+
+    const handleSearch = (text: string) => {
+      const query = text.trim().toLowerCase();
+      if (!query) {
+        setOptionsUsers(baseUsers);
+        return;
+      }
+      const filtered = baseUsers
+        .filter(u => (u.username || '').toLowerCase().includes(query))
+        .slice(0, 20);
+      setOptionsUsers(filtered);
+    };
+
+    return (
+      <Card>
+        <Form
+          form={inviteForm}
+          layout="vertical"
+          onFinish={handleInviteUser}
+        >
+          <Form.Item
+            name="userId"
+            label="Search and Select User"
+            rules={[{ required: true, message: 'Please select a user to invite' }]}
+          >
+            <AutoComplete
+              placeholder="Select a freelancer or type a username..."
+              open={open}
+              onSearch={handleSearch}
+              onSelect={(value) => {
+                handleSelectUser(value as string);
+                setOpen(false);
+              }}
+              onFocus={async () => {
+                if (!allUsers || allUsers.length === 0) {
+                  await fetchAllUsers();
+                }
+                setOptionsUsers(baseUsers);
+                setOpen(true);
+              }}
+              onBlur={() => setOpen(false)}
+              options={optionsUsers.map(u => ({
+                value: u.id,
+                label: (
+                  <div className="flex items-center space-x-2">
+                    <Avatar
+                      size="small"
+                      src={u.profilePicture ? URL.createObjectURL(u.profilePicture) : undefined}
+                      icon={<UserOutlined />}
+                    />
+                    <span>{u.username}</span>
+                  </div>
+                )
+              }))}
+            />
+          </Form.Item>
+
+          {selectedUser && (
+            <Card size="small" className="mb-4" title="Selected User">
+              <Row gutter={[16, 8]}>
+                <Col span={24}>
+                  <div className="flex items-center space-x-3">
+                    <Avatar
+                      src={selectedUser.profilePicture ? URL.createObjectURL(selectedUser.profilePicture) : undefined}
+                      icon={<UserOutlined />}
+                    />
+                    <div>
+                      <Text strong>{selectedUser.username}</Text>
+                      <div className="text-sm text-gray-500">Rating: {selectedUser.rating.toFixed(1)}</div>
+                    </div>
+                  </div>
+                </Col>
+
+                {selectedUser.description && (
+                  <Col span={24}>
+                    <Text type="secondary">
+                      {selectedUser.description.length > 160
+                        ? `${selectedUser.description.slice(0, 160)}...`
+                        : selectedUser.description}
+                    </Text>
+                  </Col>
+                )}
+
+                {selectedUser.preference && selectedUser.preference.length > 0 && (
+                  <Col span={24}>
+                    <Space wrap>
+                      {selectedUser.preference.slice(0, 5).map(tag => (
+                        <Tag key={tag.id} color="blue">
+                          {tag.jobCategoryName}
+                        </Tag>
+                      ))}
+                    </Space>
+                  </Col>
+                )}
+              </Row>
+            </Card>
+          )}
+
+          <Form.Item
+            name="message"
+            label="Invitation Message"
+            rules={[
+              { required: true, message: 'Please enter an invitation message' },
+              { min: 10, message: 'Message must be at least 10 characters long' },
+              { max: 500, message: 'Message cannot exceed 500 characters' }
+            ]}
+          >
+            <TextArea
+              rows={4}
+              placeholder={`Hi ${selectedUser ? selectedUser.username : 'there'}, I would like to invite you to work on this job. Please let me know if you're interested!`}
+              showCount
+              maxLength={500}
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <Button
+                onClick={() => {
+                  inviteForm.resetFields();
+                  setSelectedUser(null);
+                  clearSearch();
+                  setOptionsUsers(baseUsers);
+                }}
+              >
+                Clear
+              </Button>
+              <Button type="primary" htmlType="submit" icon={<SendOutlined />}>
+                Send Invitation
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+    );
+  };
 
   const SubmissionContent = () => {
     const [form] = Form.useForm();
@@ -934,9 +1054,12 @@ const JobDetailPage: React.FC = () => {
               <TabPane tab="Submission Answer" key="submission">
                 <SubmissionContent />
               </TabPane>
-              <TabPane tab="Invite Users" key="invite">
-                <InviteContent />
-              </TabPane>
+              {job.jobStatus === "Open" && (
+
+                <TabPane tab="Invite Users" key="invite">
+                  <InviteContent />
+                </TabPane>
+              )}
             </Tabs>
           ) : (
             <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-6">

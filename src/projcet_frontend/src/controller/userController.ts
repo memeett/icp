@@ -370,6 +370,7 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
         }
 
         const cleanSession = storage.getSession();
+        console.log("DEBUG: cleanSession before updateUser:", cleanSession);
         if (!cleanSession) {
             throw new Error('No active session');
         }
@@ -393,29 +394,37 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
             }
         }
         if (payload.isProfileCompleted !== undefined) backendPayload.isProfileCompleted = [payload.isProfileCompleted];
-        if (payload.preference !== undefined) backendPayload.preference = [payload.preference];
+        
+        console.log("DEBUG: Original payload.preference:", payload.preference);
+        if (payload.preference !== undefined) {
+            // Assuming backendPayload.preference expects an array of JobCategory objects directly
+            backendPayload.preference = [payload.preference];
+        }
         
         if (payload.profilePicture && payload.profilePicture instanceof Blob && payload.profilePicture.size > 0) {
             const arrayBuffer = await payload.profilePicture.arrayBuffer();
             backendPayload.profilePicture = [new Uint8Array(arrayBuffer)];
         }
 
+        console.log("DEBUG: Original payload.preference:", payload.preference);
         if(payload.preference && payload.preference.length > 0){
             for (const tag of payload.preference) {
-                console.log(tag.jobCategoryName)
+                console.log("DEBUG: Processing preference tag:", tag.jobCategoryName);
                 let existingCategory = await job.findJobCategoryByName(tag.jobCategoryName as string );
-                console.log(existingCategory)
+                console.log("DEBUG: Existing category result:", existingCategory);
                 if (!("ok" in existingCategory)) {
+                    console.log("DEBUG: Creating new job category:", tag.jobCategoryName);
                     existingCategory = await job.createJobCategory(tag.jobCategoryName as string);
-                    
+                    console.log("DEBUG: New category created:", existingCategory);
                 }
-                
             }
-                    
         }
 
+        console.log("DEBUG: Backend payload before updateUser:", backendPayload);
+
         if (process.env.CANISTER_ID_SESSION) {
-            await user.updateUser(cleanSession, backendPayload, process.env.CANISTER_ID_SESSION);
+            const updateResult = await user.updateUser(cleanSession, backendPayload, process.env.CANISTER_ID_SESSION);
+            console.log("DEBUG: updateUser result:", updateResult);
         } else {
             throw new Error('CANISTER_ID_SESSION not found');
         }

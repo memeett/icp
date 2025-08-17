@@ -77,7 +77,7 @@ const JobDetailPage: React.FC = () => {
     isJobFreelancer,
     isAccepting,
     isRejecting,
-    inbox,
+    isFetchingLetter,
     handleApply,
     handleAcceptApplicant,
     handleRejectApplicant,
@@ -124,6 +124,10 @@ const JobDetailPage: React.FC = () => {
 
   // Handle application submission
   const handleApplicationSubmit = async (values: any) => {
+    if (Number(job!.jobSlots) - acceptedFreelancers.length <= 0) {
+      message.error('No available slots for new applicants');
+      return;
+    }
     const success = await handleApply(values);
     if (success) {
       setIsApplyModalVisible(false);
@@ -160,22 +164,8 @@ const JobDetailPage: React.FC = () => {
     setIsCoverModalVisible(true)
     if (!jobId || !user) return null;
 
-    await handleCoverLetter(jobId, user.id);
-    const applicant = await getUserById(applicantId)
-    const applicantMessages = inbox.filter(
-      (msg: any) =>
-        msg.senderName = applicant?.id
-    );
-
-    if (applicantMessages.length === 0) return null;
-
-    const sorted = applicantMessages.sort(
-      (a: any, b: any) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-
-    const message = sorted[0].message.split("\n")[1];
-    setCoverLetter(message); // Return the most recent cover letter message
+    const message = await handleCoverLetter(jobId, user.id, applicantId);
+    setCoverLetter(message);
   };
 
   // Component for job details content
@@ -228,7 +218,11 @@ const JobDetailPage: React.FC = () => {
               <Col xs={12} sm={6}>
                 <div className="text-center p-4 bg-background rounded-lg">
                   <UserOutlined className="text-2xl text-purple-500 mb-2" />
-                  <div className="font-semibold">{Number(job!.jobSlots) - acceptedFreelancers.length}</div>
+                  <div className="font-semibold">
+                    {Number(job!.jobSlots) - acceptedFreelancers.length > 0
+                      ? Number(job!.jobSlots) - acceptedFreelancers.length
+                      : "No Slots Available"}
+                  </div>
                   <Text type="secondary">Available Slots</Text>
                 </div>
               </Col>
@@ -270,15 +264,14 @@ const JobDetailPage: React.FC = () => {
               </Space>
             </div>
 
-            {user && job!.jobStatus === 'Open' && !isJobOwner && Number(job!.jobSlots) - acceptedFreelancers.length !== 0 && (
-
+            {user && job!.jobStatus === 'Open' && !isJobOwner && (
               <div className="text-center">
-                {hasApplied ? (
-                  <Button
-                    size="large"
-                    disabled
-                    className="px-8"
-                  >
+                {Number(job!.jobSlots) - acceptedFreelancers.length <= 0 ? (
+                  <Button size="large" disabled className="px-8">
+                    All Slots Filled
+                  </Button>
+                ) : hasApplied ? (
+                  <Button size="large" disabled className="px-8">
                     Already Applied
                   </Button>
                 ) : (
@@ -292,22 +285,8 @@ const JobDetailPage: React.FC = () => {
                     Apply for this Job
                   </Button>
                 )}
-                {user && Number(job!.jobSlots) - acceptedFreelancers.length == 0 && (
-                  <div className="text-center">
-                    <Button
-                      size="large"
-                      disabled
-                      className="px-8"
-                    >
-                      <Text>All Slots Filled</Text>
-                    </Button>
-                  </div>
-                )}
               </div>
-
             )}
-
-
 
             {isJobOwner && (
               <div className="text-center space-x-4">
@@ -438,9 +417,16 @@ const JobDetailPage: React.FC = () => {
               ]}
               width={600}
             >
-              <Paragraph style={{ whiteSpace: "pre-line" }}>
-                {coverLetter ?? "Loading..."}
-              </Paragraph>
+              {isFetchingLetter ? (
+                <div className="container mx-auto px-4 py-8">
+                  <Skeleton active />
+                </div>
+              ) : (
+                <Paragraph style={{ whiteSpace: "pre-line" }}>
+                  {coverLetter}
+                </Paragraph>
+              )}
+
             </Modal>
 
             <Modal

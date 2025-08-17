@@ -593,6 +593,7 @@ export const getUserByName = async (username: string): Promise<User | null> => {
 export const getUserTransaction = async (userId: string): Promise<CashFlowHistory[] | null> => {
     try {
         const result = await user.getUserTransactions(userId);
+        // console.log(result)
         return result;
     } catch (error) {
         console.error("Failed to get user transaction:", error);

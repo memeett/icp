@@ -4,6 +4,7 @@ import { Spin } from 'antd';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from '../../shared/components/ErrorFallback';
 import ProfileCompletionGuard from '../../shared/components/ProfileCompletionGuard';
+import BalanceTransactionPage from '../../pages/BalanceTransactionPage';
 
 const LandingPage = lazy(() => import('../../pages/LandingPage'));
 const FindJobPage = lazy(() => import('../../pages/FindJobPage'));
@@ -102,6 +103,14 @@ export const AppRouter: React.FC = () => {
             <PublicProfilePage />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/balance-transaction"
+        element={
+          <ProtectedRoute>
+            <BalanceTransactionPage />
+          </ProtectedRoute>
+        }
       />
       <Route 
         path="/manage" 

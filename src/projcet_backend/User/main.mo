@@ -57,6 +57,12 @@ actor UserModel {
         return sub;
     };
 
+    public func deleteAllUser() : async () {
+        for (key in users.keys()) {
+            ignore users.remove(key);
+        };
+    };
+
     public func getBalance(userId: Text, ledger_canister: Text) : async Result.Result<User.Token, Text> {
         switch (await getUserById(userId)) {
             case (#err(errMsg)) {
@@ -325,12 +331,11 @@ actor UserModel {
         };
     };
 
-    public shared func transfer_icp_to_user(from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
+    public func workerPaymentTransfer(from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
 
         // Dynamically create the job actor
         let jobActor = actor(job_canister) : actor {
             getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
-            putJob: (job_id: Text, job: Job.Job) -> async ();
         };
 
         // Step 1: Fetch the job's wallet balance
@@ -347,48 +352,6 @@ actor UserModel {
                 // Step 3: Fetch the recipient user's details
                 switch (users.get(to_user_id)) {
                     case (?toUser) {
-                        // Step 4: Update the job's wallet
-                        let updatedJobWallet = jobData.wallet - amount;
-                        let updatedJob : Job.Job = {
-                            id = jobData.id;
-                            jobName = jobData.jobName;
-                            jobDescription = jobData.jobDescription;
-                            jobSalary = jobData.jobSalary;
-                            jobRating = jobData.jobRating;
-                            jobTags = jobData.jobTags;
-                            jobProjectType = jobData.jobProjectType;
-                            jobSlots = jobData.jobSlots;
-                            jobStatus = jobData.jobStatus;
-                            jobExperimentLevel = jobData.jobExperimentLevel;
-                            jobRequirementSkills = jobData.jobRequirementSkills;
-                            jobStartDate = jobData.jobStartDate;
-                            jobDeadline = jobData.jobDeadline;
-                            userId = jobData.userId;
-                            createdAt = jobData.createdAt;
-                            updatedAt = Time.now();
-                            wallet = updatedJobWallet;
-                            subAccount = jobData.subAccount; // Keep subAccount unchanged
-                        };
-                        await jobActor.putJob(from_job_id, updatedJob);
-
-                        // Step 5: Update the recipient user's wallet
-                        let updatedUserWallet = toUser.wallet + amount;
-                        let updatedToUser : User.User = {
-                            id = toUser.id;
-                            profilePicture = toUser.profilePicture;
-                            username = toUser.username;
-                            description = toUser.description;
-                            preference = toUser.preference;
-                            dob = toUser.dob;
-                            wallet = updatedUserWallet;
-                            rating = toUser.rating;
-                            createdAt = toUser.createdAt;
-                            updatedAt = Time.now();
-                            isFaceRecognitionOn = toUser.isFaceRecognitionOn;
-                            isProfileCompleted = toUser.isProfileCompleted;
-                            subAccount = toUser.subAccount; // Keep subAccount unchanged
-                        };
-                        users.put(to_user_id, updatedToUser);
 
                         addTransaction({
                             fromId = from_job_id; // Job ID as the sender
@@ -409,92 +372,6 @@ actor UserModel {
             };
             case (#err(errMsg)) {
                 return #err("Failed to fetch job details: " # errMsg);
-            };
-        };
-    };
-
-    public shared func transfer_icp_to_job(user_id: Text, job_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
-        let jobActor = actor(job_canister) : actor {
-            getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
-            putJob: (job_id: Text, job: Job.Job) -> async ();
-        };
-
-        // Fetch the sender's details
-        switch (users.get(user_id)) {
-            case (?fromUser) {
-                // Validate the sender's wallet balance
-                if (fromUser.wallet < amount) {
-                    return #err("Insufficient balance in sender's wallet");
-                };
-
-                // Fetch job details from the jobs canister
-                let jobResult = await jobActor.getJob(job_id);
-                switch (jobResult) {
-                    case (#ok(jobData)) {
-                        // Validate if the current user is the owner of the job
-                        if (user_id != jobData.userId) {
-                            return #err("User is not the owner of the job");
-                        };
-
-                        // Update the job wallet and job status (set to "Ongoing")
-                        let updatedJob : Job.Job = {
-                            id = jobData.id;
-                            jobName = jobData.jobName;
-                            jobDescription = jobData.jobDescription;
-                            jobSalary = jobData.jobSalary;
-                            jobRating = jobData.jobRating;
-                            jobTags = jobData.jobTags;
-                            jobProjectType = jobData.jobProjectType;
-                            jobSlots = jobData.jobSlots;
-                            jobStatus = "Ongoing";
-                            jobExperimentLevel = jobData.jobExperimentLevel;
-                            jobRequirementSkills = jobData.jobRequirementSkills;
-                            jobStartDate = jobData.jobStartDate;
-                            jobDeadline = jobData.jobDeadline;
-                            userId = jobData.userId;
-                            createdAt = jobData.createdAt;
-                            updatedAt = Time.now();
-                            wallet = jobData.wallet + amount;
-                            subAccount = jobData.subAccount; // Keep subAccount unchanged
-                        };
-                        await jobActor.putJob(job_id, updatedJob);
-
-                        // Update the sender's wallet
-                        let updatedFromUser : User.User = {
-                            id = fromUser.id;
-                            profilePicture = fromUser.profilePicture;
-                            username = fromUser.username;
-                            description = fromUser.description;
-                            preference = fromUser.preference;
-                            dob = fromUser.dob;
-                            wallet = fromUser.wallet - amount;
-                            rating = fromUser.rating;
-                            createdAt = fromUser.createdAt;
-                            updatedAt = Time.now();
-                            isFaceRecognitionOn = fromUser.isFaceRecognitionOn;
-                            isProfileCompleted = fromUser.isProfileCompleted;
-                            subAccount = fromUser.subAccount; // Keep subAccount unchanged
-                        };
-                        users.put(user_id, updatedFromUser);
-
-                        // Record the transaction
-                        addTransaction({
-                            fromId = user_id;
-                            transactionAt = Time.now();
-                            amount = amount;
-                            transactionType = #transferToJob;
-                            toId = ?job_id;
-                        });
-
-                        return #ok("Transferred ckBTC to job successfully");
-                    };
-                    case (#err(errMsg)) {
-                        return #err("Failed to fetch job details in user: " # errMsg);
-                    };
-                };
-            };
-            case null {
-                return #err("Sender not found");
             };
         };
     };

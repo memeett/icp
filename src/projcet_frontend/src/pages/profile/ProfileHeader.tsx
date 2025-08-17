@@ -9,6 +9,7 @@ interface ProfileHeaderProps {
   user: User;
   profileImage: string | null;
   onEdit: () => void;
+  
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, profileImage, onEdit }) => {

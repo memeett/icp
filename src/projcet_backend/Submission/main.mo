@@ -2,7 +2,6 @@ import Submission "./model";
 import HashMap "mo:base/HashMap";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
-import Blob "mo:base/Blob";
 import Result "mo:base/Result";
 import Nat "mo:base/Nat";
 import Array "mo:base/Array";
@@ -35,7 +34,7 @@ actor submissionModel {
     };
 
     // Create a new submission
-    public func createSubmission(jobId: Text, user: User.User, fileSubmission: Blob, message: Text): async Result.Result<Submission.Submission, Text> {
+    public func createSubmission(jobId: Text, user: User.User, fileSubmission: Text, message: Text): async Result.Result<Submission.Submission, Text> {
         try {
             let submissionId = Nat.toText(nextId);
             nextId += 1;
@@ -154,7 +153,7 @@ actor submissionModel {
         );
     };
 
-    public query func getFileSubmissionbyId(Id: Text): async ?Blob {
+    public query func getFileSubmissionbyId(Id: Text): async ?Text {
         switch (submissions.get(Id)) {
             case (null) {
                 // Return null if the submission is not found

@@ -14,6 +14,7 @@ import {
   rejectApplier
 } from '../../controller/applyController';
 import { createInbox } from '../../controller/inboxController';
+import { isFreelancerRegistered } from '../../controller/jobTransactionController';
 import { User } from '../types/User';
 import { Job } from '../types/Job';
 
@@ -29,7 +30,8 @@ interface UseJobDetailsReturn {
   acceptedFreelancers: User[];
   hasApplied: boolean;
   isJobOwner: boolean;
-  
+  isJobFreelancer: boolean;
+
   // State
   loading: boolean;
   isApplying: boolean;
@@ -50,6 +52,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
   const [acceptedFreelancers, setAcceptedFreelancers] = useState<User[]>([]);
   const [hasApplied, setHasApplied] = useState(false);
   const [isJobOwner, setIsJobOwner] = useState(false);
+  const [isJobFreelancer, setisJobFreelancer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
 
@@ -59,7 +62,6 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
     
     setLoading(true);
     try {
-      // Fetch job details first
       const jobData = await getJobById(jobId);
       if (!jobData) {
         throw new Error('Job not found');
@@ -69,43 +71,37 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
       const isOwner = user?.id === jobData.userId;
       setIsJobOwner(isOwner);
       
-      // Parallel fetch for user-specific data
       const promises: Promise<any>[] = [];
       
-      // Check if user has applied (only if user exists and is not owner)
       if (user && !isOwner) {
         promises.push(hasUserApplied(user.id, jobId));
+        promises.push(isFreelancerRegistered(jobId, user.id));
       }
       
-      // Fetch applicants and accepted freelancers (only if user is owner)
-      if (user) {
-        promises.push(
-          getJobApplier(jobId),
-          getAcceptedFreelancer(jobId)
-        );
-      }
+      promises.push(
+        getJobApplier(jobId),
+        getAcceptedFreelancer(jobId)
+      );
       
       const results = await Promise.all(promises);
       
-      // Process results based on user role
-      if (user && !isOwner && results.length > 0) {
-        setHasApplied(results[0]);
-      }
-      
-      if (user &&isOwner && results.length >= 2) {
-        const [applicantsData, acceptedData] = results;
-        
-        setApplicants(applicantsData.map((app: any) => ({
-          user: app.user,
-          appliedAt: new Date(Number(app.appliedAt) / 1000000).toISOString()
-        })));
-        setAcceptedFreelancers(acceptedData);
+      let resultIndex = 0;
+      if (user && !isOwner) {
+        setHasApplied(results[resultIndex++]);
+        const freelancerStatus = results[resultIndex++];
+        if (freelancerStatus[0] === 'succ') {
+          setisJobFreelancer(freelancerStatus[1]);
+        }
       }
 
-      if (user && !isOwner && results.length >= 2) {
-        const [asd,_, acceptedData] = results;
-        setAcceptedFreelancers(acceptedData);
-      }
+      const applicantsData = results[resultIndex++];
+      const acceptedData = results[resultIndex++];
+
+      setApplicants(applicantsData.map((app: any) => ({
+        user: app.user,
+        appliedAt: new Date(Number(app.appliedAt) / 1000000).toISOString()
+      })));
+      setAcceptedFreelancers(acceptedData);
       
     } catch (error) {
       console.error('Error fetching job details:', error);
@@ -202,7 +198,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
     if (!job || !user || !isJobOwner) return false;
     
     try {
-      const result = await startJob(job.id);
+      const result = await startJob(user.id, job.id);
       if (result.jobStarted) {
         message.success('Job started successfully!');
         await fetchJobDetails();
@@ -255,7 +251,8 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
     acceptedFreelancers,
     hasApplied,
     isJobOwner,
-    
+    isJobFreelancer,
+
     // State
     loading,
     isApplying,

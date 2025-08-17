@@ -6,6 +6,6 @@ export interface Submission {
     user: User;
     submissionStatus: string;
     submissionMessage?: string;
-    submissionFile?: Blob;
+    submissionFile?: string;
   }
   

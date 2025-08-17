@@ -43,27 +43,27 @@ export const createJobTransaction = async (ownerId: string, jobId: string): Prom
 //     }
 // }
 
-// export const getAcceptedFreelancers = async (transactionId: string): Promise<User[] | null> => {
-//     const authClient = await AuthClient.create();
-//     const identity = authClient.getIdentity();
-//     const agent = new HttpAgent({ identity });
+export const getAcceptedFreelancers = async (transactionId: string): Promise<User[] | null> => {
+    const authClient = await AuthClient.create();
+    const identity = authClient.getIdentity();
+    const agent = new HttpAgent({ identity });
 
-//     if (process.env.DFX_NETWORK === "local") {
-//         await agent.fetchRootKey();
-//     }
-//     try {
-//         const res = await job_transaction.getAcceptedFreelancers(transactionId);
-//         if ("ok" in res) {
-//             console.log("Accepted freelancers:", res.ok);
-//             return res.ok;
-//         }
-//         console.error("Failed to get accepted freelancers:", res.err);
-//         return null;
-//     } catch (error) {
-//         console.error("Failed to get accepted freelancers:", error);
-//         return null;
-//     }
-// }
+    if (process.env.DFX_NETWORK === "local") {
+        await agent.fetchRootKey();
+    }
+    try {
+        const res = await job_transaction.getAcceptedFreelancers(transactionId, process.env.CANISTER_ID_USER!);
+        if ("ok" in res) {
+            console.log("Accepted freelancers:", res.ok);
+            return res.ok;
+        }
+        console.error("Failed to get accepted freelancers:", res.err);
+        return null;
+    } catch (error) {
+        console.error("Failed to get accepted freelancers:", error);
+        return null;
+    }
+}
 
 // export const getAllTransactions = async (): Promise<JobTransaction[] | null> => {
 //     const authClient = await AuthClient.create();

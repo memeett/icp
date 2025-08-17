@@ -31,6 +31,7 @@ import StatsCards from './profile/StatsCards';
 import InvitationsTab from './profile/InvitationsTab';
 import { acceptApplier } from '../controller/applyController';
 import { UserInvitationPayload } from '../shared/types/Invitation';
+import { appendFreelancers } from '../controller/jobTransactionController';
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
@@ -105,7 +106,7 @@ const ProfilePage: React.FC = () => {
     try {
       const success = await acceptInvitation(user.id, invitation.id);
       if (success) {
-        const res = await acceptApplier(user.id, invitation.job.id)
+        const res = await appendFreelancers(invitation.job.id,user.id)
         if (res) {
 
           message.success("Invitation accepted successfully!");

@@ -69,7 +69,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
 
         const checkApplied = await isFreelancerRegistered(jobId, userId)
         console.log(checkApplied)
-        if(checkApplied[0] == "succ" && checkApplied[1] == true){
+        if(checkApplied[0] == "succ" && checkApplied[1] == "true"){
           message.error('This freelancer already accepted in this job')
           return false
         }

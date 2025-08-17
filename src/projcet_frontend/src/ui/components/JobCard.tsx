@@ -27,7 +27,7 @@ import { Job } from '../../shared/types/Job';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useNotifications } from '../../shared/hooks/useNotifications';
 import { formatDate } from '../../utils/dateUtils';
-
+import { getStatusColor } from '../../utils/JobStatusCololer';
 const { Text, Title } = Typography;
 
 interface JobCardProps {
@@ -80,15 +80,6 @@ const JobCard: React.FC<JobCardProps> = memo(({
     }
   }, [isAuthenticated, localSaved, onSave, onUnsave, job.id, navigate, success]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Open': return 'green';
-      case 'Ongoing': return 'orange';
-      case 'Finished': return 'purple';
-      case 'Cancelled': return 'red';
-      default: return 'default';
-    }
-  };
 
   const getExperienceColor = (level?: string) => {
     switch (level) {

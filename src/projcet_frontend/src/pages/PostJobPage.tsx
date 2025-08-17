@@ -229,10 +229,12 @@ const PostJobPage: React.FC = () => {
         navigate('/manage');
       } else {
         message.error(result[1] || 'Failed to create job. Please try again.');
+        setLoading(false)
       }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       messageApi.error('Please fill out all required fields before submitting.');
+      setLoading(false)
     }
   }, [form, formData, skills, navigate, messageApi, isAuthenticated, loginWithInternetIdentity]);
 
@@ -541,77 +543,77 @@ const PostJobPage: React.FC = () => {
         ) : (
           <div className="container mx-auto px-4 py-8">
             <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <Title level={2}>Post a New Job</Title>
-                <Text type="secondary">
-                  Create a detailed job posting to attract the best freelancers
-                </Text>
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="max-w-4xl mx-auto">
+                <div className="text-center mb-8">
+                  <Title level={2}>Post a New Job</Title>
+                  <Text type="secondary">
+                    Create a detailed job posting to attract the best freelancers
+                  </Text>
+                </div>
+
+                <Card className="mb-6">
+                  <Steps current={currentStep} items={steps} />
+                </Card>
+
+                <Card>
+                  <Form
+                    form={form}
+                    layout="vertical"
+                    initialValues={formData}
+                    onValuesChange={(_, allValues) => setFormData(prev => ({ ...prev, ...allValues }))}
+                  >
+                    {renderStepContent()}
+
+                    <Divider />
+
+                    <div className="flex justify-between">
+                      <Button
+                        onClick={handlePrev}
+                        disabled={currentStep === 0}
+                        size="large"
+                      >
+                        Previous
+                      </Button>
+
+                      <Space>
+                        {currentStep < steps.length - 1 ? (
+                          <Button
+                            type="primary"
+                            onClick={handleNext}
+                            size="large"
+                          >
+                            Next
+                          </Button>
+                        ) : (
+                          <Button
+                            type="primary"
+                            onClick={() => {
+                              console.log('Publish Job button clicked!');
+                              handleSubmit();
+                            }}
+                            loading={isLoading}
+                            size="large"
+                            icon={<SendOutlined />}
+                          >
+                            Publish Job
+                          </Button>
+                        )}
+
+                      </Space>
+                    </div>
+                  </Form>
+                </Card>
               </div>
-
-              <Card className="mb-6">
-                <Steps current={currentStep} items={steps} />
-              </Card>
-
-              <Card>
-                <Form
-                  form={form}
-                  layout="vertical"
-                  initialValues={formData}
-                  onValuesChange={(_, allValues) => setFormData(prev => ({ ...prev, ...allValues }))}
-                >
-                  {renderStepContent()}
-
-                  <Divider />
-
-                  <div className="flex justify-between">
-                    <Button
-                      onClick={handlePrev}
-                      disabled={currentStep === 0}
-                      size="large"
-                    >
-                      Previous
-                    </Button>
-
-                    <Space>
-                      {currentStep < steps.length - 1 ? (
-                        <Button
-                          type="primary"
-                          onClick={handleNext}
-                          size="large"
-                        >
-                          Next
-                        </Button>
-                      ) : (
-                        <Button
-                          type="primary"
-                          onClick={() => {
-                            console.log('Publish Job button clicked!');
-                            handleSubmit();
-                          }}
-                          loading={isLoading}
-                          size="large"
-                          icon={<SendOutlined />}
-                        >
-                          Publish Job
-                        </Button>
-                      )}
-
-                    </Space>
-                  </div>
-                </Form>
-              </Card>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </div>
-  </>
-);
+            </motion.div>
+          </div>
+        )}
+      </div>
+    </>
+  );
 };
 
 export default PostJobPage;

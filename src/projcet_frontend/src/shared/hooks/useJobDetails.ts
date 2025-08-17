@@ -105,7 +105,8 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
         setHasApplied(results[resultIndex++]);
         const freelancerStatus = results[resultIndex++];
         if (freelancerStatus[0] === 'succ') {
-          setisJobFreelancer(freelancerStatus[1]);
+          if(freelancerStatus[1] === 'true')setisJobFreelancer(true);
+          else setisJobFreelancer(false);
         }
       }
 
@@ -218,7 +219,7 @@ export const useJobDetails = (jobId: string | undefined, user: User | null): Use
     if (!job || !user || !isJobOwner) return false;
 
     try {
-      const result = await startJob(user.id, job.id);
+      const result = await startJob( job.id);
       if (result.jobStarted) {
         message.success('Job started successfully!');
         await fetchJobDetails();

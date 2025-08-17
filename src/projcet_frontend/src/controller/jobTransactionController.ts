@@ -24,7 +24,7 @@ export const isFreelancerRegistered = async (jobId: string, freelancerId: string
 
     try {
         const result = await job_transaction.isFreelancerRegistered(jobId, freelancerId);
-        return ["succ", result]
+        return ["succ", String(result)]
     } catch (error) {
         return ["err", "error"]
     }

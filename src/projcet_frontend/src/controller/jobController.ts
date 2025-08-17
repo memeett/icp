@@ -92,9 +92,9 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
       }
       const creator_token = await getBalanceController(converted_user);
       console.log("Creator token balance:", creator_token.token_value);
-      if(creator_token.token_value < payload.jobSalary) {
-        return ["Failed", "Insufficient balance to create job"];
-      }
+      // if(creator_token.token_value < payload.jobSalary) {
+      //   return ["Failed", "Insufficient balance to create job"];
+      // }
       console.log("lanjutt euy")
       // Debug the user data structure
       console.log("User ID:", currentUser.id);
@@ -136,22 +136,22 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
       if ("ok" in result) {
 
         
-        const job_result = result.ok;
+        // const job_result = result.ok;
 
-        const obj = job_result.subAccount[0]!;
+        // const obj = job_result.subAccount[0]!;
 
-        const uint8 = new Uint8Array(Object.values(obj));
-        const convertedJob: JobShared = {
-            ...job_result,
-            subAccount: [uint8], 
-        };
-        const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
-        console.log("Transfer result:", transferResult);
-        if ("ok" in transferResult) {
+        // const uint8 = new Uint8Array(Object.values(obj));
+        // const convertedJob: JobShared = {
+        //     ...job_result,
+        //     subAccount: [uint8], 
+        // };
+        // const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
+        // console.log("Transfer result:", transferResult);
+        // if ("ok" in transferResult) {
           return ["Success", "Job posted and transfer completed"];
-        } else {
-          return ["Failed", `Job created but transfer failed: ${transferResult.err}`];
-        }
+        // } else {
+        //   return ["Failed", `Job created but transfer failed: ${transferResult.err}`];
+        // }
       } else {
         return ["Failed", "Error creating job"];
       }
@@ -364,14 +364,13 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
 };
 
 export const startJob = async (
-  user_id: string,
   job_id: string
 ): Promise<{ jobStarted: boolean; message: string }> => {
   try {
     // Authenticate the user
     const agent = await agentService.getAgent();
 
-    const result = await job.startJob(user_id, job_id);
+    const result = await job.startJob(job_id);
     if (result) {
       return {
         jobStarted: true,

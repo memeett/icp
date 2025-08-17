@@ -47,9 +47,9 @@ import { formatDate } from '../utils/dateUtils';
 import { RcFile } from 'antd/es/upload';
 import { createSubmission, getUserSubmissionsByJobId, getSubmissionByJobId, updateSubmissionStatus } from '../controller/submissionController';
 
-import type { Submission } from '../shared/types/Submission';
-import { get } from 'http';
+import type { Submission } from '../../../declarations/submission/submission.did';
 import { getUserById, getUserByName } from '../controller/userController';
+import { getStatusColor } from '../utils/JobStatusCololer';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -183,39 +183,39 @@ const JobDetailPage: React.FC = () => {
     if (!job) return null;
 
     return (
-    <Row gutter={[24, 24]}>
-      {/* Main Content */}
-      <Col xs={24} lg={16}>
-        <Card className="mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
-              <Title level={2} className="mb-2">{job!.jobName}</Title>
-              <Space size="middle" wrap>
-                <Tag color="blue">{job!.jobTags[0]?.jobCategoryName || 'General'}</Tag>
-                <Tag color="green">{job!.jobStatus}</Tag>
-                <Text type="secondary">
-                  <ClockCircleOutlined className="mr-1" />
-                  Posted {getTimeAgo(new Date(Number(job!.createdAt) / 1000000).toISOString())}
-                </Text>
-              </Space>
-            </div>
-            
-            <Space>
-              <Tooltip title={isSaved ? 'Remove from saved' : 'Save job'}>
-                <Button
-                  icon={isSaved ? <HeartFilled /> : <HeartOutlined />}
-                  onClick={handleSaveJob}
-                  type={isSaved ? 'primary' : 'default'}
-                />
-              </Tooltip>
-              <Tooltip title="Share job">
-                <Button icon={<ShareAltOutlined />} onClick={handleShare} />
-              </Tooltip>
-              {/* <Tooltip title="Report job">
+      <Row gutter={[24, 24]}>
+        {/* Main Content */}
+        <Col xs={24} lg={16}>
+          <Card className="mb-6">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex-1">
+                <Title level={2} className="mb-2">{job!.jobName}</Title>
+                <Space size="middle" wrap>
+                  <Tag color="blue">{job!.jobTags[0]?.jobCategoryName || 'General'}</Tag>
+                  <Tag color={getStatusColor(job.jobStatus)}>{job!.jobStatus}</Tag>
+                  <Text type="secondary">
+                    <ClockCircleOutlined className="mr-1" />
+                    Posted {getTimeAgo(new Date(Number(job!.createdAt) / 1000000).toISOString())}
+                  </Text>
+                </Space>
+              </div>
+
+              <Space>
+                <Tooltip title={isSaved ? 'Remove from saved' : 'Save job'}>
+                  <Button
+                    icon={isSaved ? <HeartFilled /> : <HeartOutlined />}
+                    onClick={handleSaveJob}
+                    type={isSaved ? 'primary' : 'default'}
+                  />
+                </Tooltip>
+                <Tooltip title="Share job">
+                  <Button icon={<ShareAltOutlined />} onClick={handleShare} />
+                </Tooltip>
+                {/* <Tooltip title="Report job">
                 <Button icon={<FlagOutlined />} />
               </Tooltip> */}
-            </Space>
-          </div>
+              </Space>
+            </div>
 
             <Row gutter={[16, 16]} className="mb-6">
               <Col xs={12} sm={6}>
@@ -670,7 +670,6 @@ const JobDetailPage: React.FC = () => {
         message.error("You can only upload ZIP files!");
       }
 
-      // ❌ Don’t let Upload auto-upload
       return false;
     };
 
@@ -728,7 +727,7 @@ const JobDetailPage: React.FC = () => {
         message.error(e?.message || "Failed to submit work.");
       }
     };
-    
+
     // UI for Freelancer
     if (!isJobOwner) {
       // submissionHistory loaded from canister via useEffect
@@ -783,9 +782,9 @@ const JobDetailPage: React.FC = () => {
                           <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
                             {sub.submissionStatus}
                           </Tag>
-                          <br/>
+                          <br />
                           <Text type="secondary">File: {fileName}</Text>
-                          <br/>
+                          <br />
                           {filePath && (
                             <Button
                               href={`/api/download-file?path=${encodeURIComponent(filePath)}`}
@@ -817,83 +816,83 @@ const JobDetailPage: React.FC = () => {
     return (
       <Space direction="vertical" size="large" className="w-full">
         {submissions
-        .map(sub => {
-          const filePath = sub.submissionFile || '';
-          const fileName = (filePath.split('/').pop() || 'file.zip');
-          return (
-            <Card key={sub.id} title={`Submission from ${sub.user.username}`}>
-              <Row gutter={[16, 16]}>
-                <Col span={24}>
-                  <div className="flex items-center space-x-3">
-                    <Avatar icon={<UserOutlined />} />
-                    <div>
-                      <Text strong>{sub.user.username}</Text>
-                      <br/>
-                      <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
-                        {sub.submissionStatus}
-                      </Tag>
+          .map(sub => {
+            const filePath = sub.submissionFile || '';
+            const fileName = (filePath.split('/').pop() || 'file.zip');
+            return (
+              <Card key={sub.id} title={`Submission from ${sub.user.username}`}>
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    <div className="flex items-center space-x-3">
+                      <Avatar icon={<UserOutlined />} />
+                      <div>
+                        <Text strong>{sub.user.username}</Text>
+                        <br />
+                        <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
+                          {sub.submissionStatus}
+                        </Tag>
+                      </div>
                     </div>
-                  </div>
-                </Col>
-                <Col span={24}>
-                  <Title level={5}>Message:</Title>
-                  <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
-                </Col>
-                <Col span={24}>
-                  {filePath ? (
-                    <Button href={`/api/download-file?path=${encodeURIComponent(filePath)}`} download icon={<PaperClipOutlined />}>
-                      Download Submission ({fileName})
-                    </Button>
-                  ) : (
-                    <Text type="secondary">No file attached</Text>
-                  )}
-                </Col>
-                <Col span={24}>
-                  {sub.submissionStatus === 'Waiting' && (
-                    <Space>
-                      <Button
-                        type="primary"
-                        icon={<CheckOutlined />}
-                        onClick={async () => {
-                          try {
-                            const res = await updateSubmissionStatus(sub.id, 'Accept', sub.submissionMessage || '');
-                            if (res[0] === 'Ok') {
-                              message.success('Submission accepted');
-                              const listOwner = await getSubmissionByJobId(jobId!);
-                              setOwnerSubmissions(listOwner);
-                            }
-                          } catch (e) {
-                            message.error('Failed to accept submission');
-                          }
-                        }}
-                      >
-                        Accept
+                  </Col>
+                  <Col span={24}>
+                    <Title level={5}>Message:</Title>
+                    <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
+                  </Col>
+                  <Col span={24}>
+                    {filePath ? (
+                      <Button href={`/api/download-file?path=${encodeURIComponent(filePath)}`} download icon={<PaperClipOutlined />}>
+                        Download Submission ({fileName})
                       </Button>
-                      <Button
-                        danger
-                        icon={<CloseOutlined />}
-                        onClick={async () => {
-                          try {
-                            const res = await updateSubmissionStatus(sub.id, 'Reject', sub.submissionMessage || '');
-                            if (res[0] === 'Ok') {
-                              message.success('Submission rejected');
-                              const listOwner = await getSubmissionByJobId(jobId!);
-                              setOwnerSubmissions(listOwner);
+                    ) : (
+                      <Text type="secondary">No file attached</Text>
+                    )}
+                  </Col>
+                  <Col span={24}>
+                    {sub.submissionStatus === 'Waiting' && (
+                      <Space>
+                        <Button
+                          type="primary"
+                          icon={<CheckOutlined />}
+                          onClick={async () => {
+                            try {
+                              const res = await updateSubmissionStatus(sub.id, 'Accept', sub.submissionMessage || '');
+                              if (res[0] === 'Ok') {
+                                message.success('Submission accepted');
+                                const listOwner = await getSubmissionByJobId(jobId!);
+                                setOwnerSubmissions(listOwner);
+                              }
+                            } catch (e) {
+                              message.error('Failed to accept submission');
                             }
-                          } catch (e) {
-                            message.error('Failed to reject submission');
-                          }
-                        }}
-                      >
-                        Decline
-                      </Button>
-                    </Space>
-                  )}
-                </Col>
-              </Row>
-            </Card>
-          );
-        })}
+                          }}
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          danger
+                          icon={<CloseOutlined />}
+                          onClick={async () => {
+                            try {
+                              const res = await updateSubmissionStatus(sub.id, 'Reject', sub.submissionMessage || '');
+                              if (res[0] === 'Ok') {
+                                message.success('Submission rejected');
+                                const listOwner = await getSubmissionByJobId(jobId!);
+                                setOwnerSubmissions(listOwner);
+                              }
+                            } catch (e) {
+                              message.error('Failed to reject submission');
+                            }
+                          }}
+                        >
+                          Decline
+                        </Button>
+                      </Space>
+                    )}
+                  </Col>
+                </Row>
+              </Card>
+            );
+          })}
         {submissions.length === 0 && <Text>No submissions yet.</Text>}
       </Space>
     );
@@ -933,24 +932,24 @@ const JobDetailPage: React.FC = () => {
                 <AcceptedContent />
               </TabPane>
               <TabPane tab="Submission Answer" key="submission">
-                <SubmissionContent/>
+                <SubmissionContent />
               </TabPane>
               <TabPane tab="Invite Users" key="invite">
                 <InviteContent />
               </TabPane>
             </Tabs>
           ) : (
-              <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-6">
-              
-                <TabPane tab="Job Details" key="details">
-                  <JobDetailsContent />
+            <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-6">
+
+              <TabPane tab="Job Details" key="details">
+                <JobDetailsContent />
+              </TabPane>
+              {isJobFreelancer && job.jobStatus === "Ongoing" && (
+                <TabPane tab="Submission Upload" key="submission">
+                  <SubmissionContent />
                 </TabPane>
-                {isJobFreelancer && (
-                  <TabPane tab="Submission Upload" key="submission">
-                    <SubmissionContent />
-                  </TabPane>
-                )}
-              </Tabs>
+              )}
+            </Tabs>
           )}
         </motion.div>
       </div>

@@ -106,6 +106,9 @@ export const login = async (principalId: string): Promise<boolean> => {
                 storage.clear(); // Clear existing storage
                 storage.setSession(res); // Set new session
 
+                const obj = userData.subAccount[0]!;
+
+                const uint8 = new Uint8Array(Object.values(obj));
                 // Convert to frontend User format
                 const convertedUser: User = {
                     id: userData.id,
@@ -123,7 +126,7 @@ export const login = async (principalId: string): Promise<boolean> => {
                     updatedAt: BigInt(userData.updatedAt),
                     isFaceRecognitionOn: userData.isFaceRecognitionOn,
                     isProfileCompleted: (userData as any).isProfileCompleted || false,
-                    subAccount: [new Uint8Array()]
+                    subAccount: [uint8]
                 };
                 storage.setUser({ ok: convertedUser }); // Store converted user data
 
@@ -187,10 +190,10 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
                 storage.setUser(userDetail);
                 storage.setSession(res);
                 
-                const userSubaccount: [] | [Uint8Array] =
-                    userData.subAccount && userData.subAccount[0]
-                        ? [new Uint8Array(userData.subAccount[0])]
-                        : [];
+                const obj = userData.subAccount[0]!;
+
+                const uint8 = new Uint8Array(Object.values(obj));
+
 
                 // Convert to frontend User format
                 const convertedUser: User = {
@@ -209,7 +212,7 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
                     updatedAt: BigInt(userData.updatedAt),
                     isFaceRecognitionOn: userData.isFaceRecognitionOn,
                     isProfileCompleted: (userData as any).isProfileCompleted || false,
-                    subAccount: userSubaccount
+                    subAccount: [uint8]
 
                 };
 
@@ -340,17 +343,18 @@ export const fetchUserBySession = async (): Promise<User | null> => {
                     ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' })
                     : new Blob([], { type: 'image/jpeg' });
 
-                const userSubaccount: [] | [Uint8Array] =
-                    userData.subAccount && userData.subAccount[0]
-                        ? [new Uint8Array(userData.subAccount[0])]
-                        : [];
+                const obj = userData.subAccount[0]!;
+
+                const uint8 = new Uint8Array(Object.values(obj));
+
+
                 const convertedUser: User = {
                     ...userData,
                     profilePicture: profilePictureBlob,
                     createdAt: BigInt(userData.createdAt),
                     updatedAt: BigInt(userData.updatedAt),
                     isProfileCompleted: (userData as any).isProfileCompleted || false,
-                    subAccount : userSubaccount
+                    subAccount : [uint8]
                 };
                 
                 userCache = { user: convertedUser, timestamp: now };
@@ -485,6 +489,10 @@ export const getAllUsers = async (): Promise<User[] | null> => {
                         ? [new Uint8Array(userData.subAccount[0])]
                         : [];
 
+            const obj = userData.subAccount[0]!;
+
+            const uint8 = new Uint8Array(Object.values(obj));
+
             return {
                 ...userData,
                 profilePicture: profilePictureBlob,
@@ -525,17 +533,17 @@ export const getUserById = async (userId: string): Promise<User | null> => {
                 profilePictureBlob = new Blob([], { type: 'image/jpeg' });
             }
 
-            const userSubaccount: [] | [Uint8Array] =
-                    userData.subAccount && userData.subAccount[0]
-                        ? [new Uint8Array(userData.subAccount[0])]
-                        : [];
+            const obj = userData.subAccount[0]!;
+
+            const uint8 = new Uint8Array(Object.values(obj));
+
             const convertedUser: User = {
-                ...userData,
-                profilePicture: profilePictureBlob,
-                createdAt: BigInt(userData.createdAt),
-                updatedAt: BigInt(userData.updatedAt),
-                isProfileCompleted: (userData as any).isProfileCompleted || false,
-                subAccount: userSubaccount
+            ...userData,
+            profilePicture: profilePictureBlob,
+            createdAt: BigInt(userData.createdAt),
+            updatedAt: BigInt(userData.updatedAt),
+            isProfileCompleted: (userData as any).isProfileCompleted || false,
+            subAccount: [uint8]
             };
 
             return convertedUser;
@@ -564,10 +572,10 @@ export const getUserByName = async (username: string): Promise<User | null> => {
         } else {
           profilePictureBlob = new Blob([], { type: "image/jpeg" });
         }
-        const userSubaccount: [] | [Uint8Array] =
-                    userData.subAccount && userData.subAccount[0]
-                        ? [new Uint8Array(userData.subAccount[0])]
-                        : [];
+        
+        const obj = userData.subAccount[0]!;
+
+        const uint8 = new Uint8Array(Object.values(obj));
 
         const convertedUser: User = {
           ...userData,
@@ -575,7 +583,7 @@ export const getUserByName = async (username: string): Promise<User | null> => {
           createdAt: BigInt(userData.createdAt),
           updatedAt: BigInt(userData.updatedAt),
           isProfileCompleted: (userData as any).isProfileCompleted || false,
-          subAccount: userSubaccount
+          subAccount: [uint8]
         };
 
   

@@ -3,6 +3,8 @@ import { getJobById } from "../../controller/jobController";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/dateUtils";
 import { Job } from "../../shared/types/Job";
+import { Tag } from "antd";
+import { getStatusColor } from "../../utils/JobStatusCololer";
 
 export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string; isLoading : () => void }) {
     const [job, setJob] = useState<Job | null>(null);
@@ -15,8 +17,22 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
             try {
                 const res = await getJobById(jobId);
                 if (res) {
-                    setJob(res);
-                    setDate(formatDate(res.createdAt));
+                    const converted: Job = {
+                        ...(res as any),
+                        jobTags: (res as any).jobTags?.map((t: any) => ({
+                            id: t.id?.toString?.() ?? String(t.id),
+                            jobCategoryName: t.jobCategoryName,
+                        })) || [],
+                        subAccount:
+                            (res as any).subAccount && (res as any).subAccount[0]
+                                ? [new Uint8Array((res as any).subAccount[0])]
+                                : [],
+                        jobSlots: BigInt((res as any).jobSlots),
+                        createdAt: BigInt((res as any).createdAt),
+                        updatedAt: BigInt((res as any).updatedAt),
+                    };
+                    setJob(converted);
+                    setDate(formatDate(converted.createdAt));
                 } else {
                     setError("Job not found");
                 }
@@ -48,22 +64,21 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
                 </p>
                 <div className="mt-3 flex items-center">
                     <span className="font-medium mr-2">Status:</span>
-                    <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${job?.jobStatus === "Completed"
-                                ? "bg-green-100 text-green-800"
-                                : job?.jobStatus === "Ongoing"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-yellow-100 text-yellow-800"
-                            }`}
-                    >
-                        {job?.jobStatus}
-                    </span>
+                    {job?.jobStatus && (
+                        <Tag color={getStatusColor(job.jobStatus)} className="text-xs">
+                            {job.jobStatus}
+                        </Tag>
+                    )}
                 </div>
             </div>
             <div className="mt-4">
-                <button className="text-sm text-purple-600 hover:text-purple-800 font-medium" onClick={viewDetail}>
+                <button
+                    onClick={viewDetail}
+                    className="text-sm bg-[#6366f1] text-white px-3 py-1.5 rounded-md hover:bg-[#4f46e5] transition-all duration-300 font-medium shadow-sm"
+                >
                     View Details
                 </button>
+
             </div>
         </div>
     );

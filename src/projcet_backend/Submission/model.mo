@@ -7,7 +7,7 @@ module {
         user: User.User;
         submissionMessage: Text;
         submissionStatus: Text;
-        submissionFile: Blob;
+        submissionFile: Text;
     };
 
     public type ResponseSubmission = {

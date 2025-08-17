@@ -216,7 +216,9 @@ const FindJobPage: React.FC = memo(() => {
           transition={{ duration: 0.3 }}
         >
           <Row gutter={[16, 16]}>
-            {paginatedJobs.map((job, index) => (
+            {paginatedJobs
+            // .filter(job => job.jobStatus === "Open")
+            .map((job, index) => (
               <Col
                 key={job.id}
                 xs={24}

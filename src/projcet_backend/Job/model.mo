@@ -19,26 +19,7 @@ module{
         createdAt: Int;
         updatedAt: Int;
         wallet: Float;
-    };
-
-    public type Job_V2 = {
-        id: Text;
-        jobName: Text;
-        jobDescription: [Text];
-        jobSalary: Float;
-        jobRating: Float;
-        jobTags: [JobCategory];
-        jobProjectType: Text;
-        jobSlots: Int;
-        jobStatus: Text;
-        jobExperimentLevel: Text;
-        jobRequirementSkills: [Text];
-        jobStartDate: Int;
-        jobDeadline: Int;
-        userId: Text;
-        createdAt: Int;
-        updatedAt: Int;
-        wallet: Float;
+        subAccount: ?[Nat8];
     };
 
     public type JobCategory = {
@@ -58,6 +39,7 @@ module{
         jobExperimentLevel: Text;
         jobStartDate: Int;
         jobDeadline: Int;
+        jobStatus: Text;
     };
 
     public type UpdateJobPayload = {

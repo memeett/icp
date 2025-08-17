@@ -20,6 +20,9 @@ export const pageLoadingAtom = atom(false);
 export const activeModalAtom = atom<string | null>(null);
 export const modalDataAtom = atom<any>(null);
 
+// AI Advisor Chat state
+export const isAdvisorChatOpenAtom = atom(false);
+
 // Notification states
 export interface Notification {
   id: string;

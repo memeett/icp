@@ -342,8 +342,6 @@ actor UserModel {
         let jobResult = await jobActor.getJob(from_job_id);
         switch (jobResult) {
             case (#ok(jobData)) {
-                // Debug: Print the job data
-
 
                 // Step 3: Fetch the recipient user's details
                 switch (users.get(to_user_id)) {

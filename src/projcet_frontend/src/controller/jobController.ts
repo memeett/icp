@@ -17,7 +17,9 @@ import { storage } from "../utils/storage";
 import { ensureUserData } from "../utils/sessionUtils";
 import { debugUserData } from "../utils/debugUtils";
 import { fixUserData } from "../utils/userDataFixer";
-import { JobPayload } from "../shared/types/Job";
+import { Job as JobShared, JobPayload } from "../shared/types/Job";
+import { user } from "../../../declarations/user";
+import { getBalanceController, transferToJobController } from "./tokenController";
 
 export const createJob = async (payload: JobPayload): Promise<string[]> => {
   const agent = await agentService.getAgent();
@@ -60,6 +62,10 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
       console.log("No user data available");
     }
 
+
+    
+
+
     const newJobTags: JobCategory[] = [];
 
     for (const tag of payload.jobTags) {
@@ -75,10 +81,26 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
     }
 
     if (currentUser) {
+
+      const new_curr_user = currentUser as User;
+      const obj = currentUser.subAccount[0]!;
+
+      const uint8 = new Uint8Array(Object.values(obj));
+      const converted_user: User = {
+        ...new_curr_user,
+        subAccount: [uint8], // Convert subAccount to Uint8Array
+      }
+      const creator_token = await getBalanceController(converted_user);
+      console.log("Creator token balance:", creator_token.token_value);
+      if(creator_token.token_value < payload.jobSalary) {
+        return ["Failed", "Insufficient balance to create job"];
+      }
+      console.log("lanjutt euy")
       // Debug the user data structure
       console.log("User ID:", currentUser.id);
       console.log("User structure type:", typeof currentUser);
       console.log("User keys:", Object.keys(currentUser));
+      console.log("User data:", currentUser);
 
       // Make sure the ID is a string
       const userId = String(currentUser.id);
@@ -97,6 +119,7 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         jobExperimentLevel: payload.jobExprienceLevel,
         jobDeadline: payload.jobDeadline,
         jobSlots: BigInt(payload.jobSlots),
+        jobStatus: "Open",
       };
 
       console.log("Job payload being sent:", {
@@ -111,7 +134,24 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         process.env.CANISTER_ID_JOB!
       );
       if ("ok" in result) {
-        return ["Success", "Success post a job"];
+
+        
+        const job_result = result.ok;
+
+        const obj = job_result.subAccount[0]!;
+
+        const uint8 = new Uint8Array(Object.values(obj));
+        const convertedJob: JobShared = {
+            ...job_result,
+            subAccount: [uint8], 
+        };
+        const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
+        console.log("Transfer result:", transferResult);
+        if ("ok" in transferResult) {
+          return ["Success", "Job posted and transfer completed"];
+        } else {
+          return ["Failed", `Job created but transfer failed: ${transferResult.err}`];
+        }
       } else {
         return ["Failed", "Error creating job"];
       }
@@ -299,6 +339,10 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
           profilePictureBlob = new Blob([], { type: "image/jpeg" });
         }
 
+        const userSubaccount: [] | [Uint8Array] =
+                    userData.subAccount && userData.subAccount[0]
+                        ? [new Uint8Array(userData.subAccount[0])]
+                        : [];
         return {
           ...userData,
           profilePicture: profilePictureBlob,
@@ -308,7 +352,7 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
             ...pref,
             id: pref.id.toString(),
           })),
-          subAccount:  [new Uint8Array()],
+          subAccount:  userSubaccount, // Ensure subAccount is included
         };
       })
     );
@@ -414,7 +458,9 @@ export const finishJob = async (
       await agent.fetchRootKey();
     }
 
-    const result = await job.finishJob(job_id);
+    const result = await job.finishJob(
+      job_id
+    );
 
     if ("ok" in result) {
       return { jobFinished: true, message: "Job finished successfully." };

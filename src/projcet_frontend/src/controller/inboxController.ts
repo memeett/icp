@@ -145,6 +145,9 @@ export const getAllInboxByUserId = async (
         
         return {
           id: i.id,
+          jobId: i.jobId,
+          senderId: i.senderId,
+          receiverId: i.receiverId,
           senderName: senderName,
           receiverName: receiverName,
           createdAt: formatDate(i.createdAt),
@@ -187,6 +190,9 @@ export const getInboxMessagesFromAppliers = async (
         
         return {
           id: i.id,
+          jobId: i.jobId,
+          senderId: i.senderId,
+          receiverId: i.receiverId,
           senderName: senderName,
           receiverName: receiverName,
           createdAt: formatDate(i.createdAt),

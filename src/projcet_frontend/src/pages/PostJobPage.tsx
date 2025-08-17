@@ -57,7 +57,6 @@ interface JobFormData {
 }
 
 const PostJobPage: React.FC = () => {
-  console.log('PostJobPage component is rendering');
   const navigate = useNavigate();
   const { isLoading } = useJobs();
   const { isAuthenticated, loginWithInternetIdentity } = useAuth();

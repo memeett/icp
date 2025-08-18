@@ -4,6 +4,7 @@ import { getAllUsers } from '../../controller/userController';
 import { createInbox } from '../../controller/inboxController';
 import { User } from '../types/User';
 import { createInvitation } from '../../controller/invitationController';
+import { isFreelancerRegistered } from '../../controller/jobTransactionController';
 
 interface UseUserManagementReturn {
   // Data
@@ -66,6 +67,13 @@ export const useUserManagement = (): UseUserManagementReturn => {
       await createInbox(userId, jobId ? jobId : '', currentUserId, 'invitation', 'request');
       if (jobId) {
 
+        const checkApplied = await isFreelancerRegistered(jobId, userId)
+        console.log(checkApplied)
+        if(checkApplied[0] == "succ" && checkApplied[1] == "true"){
+          message.error('This freelancer already accepted in this job')
+          return false
+        }
+        
         const result = await createInvitation(jobId, userId, currentUserId)
         
         

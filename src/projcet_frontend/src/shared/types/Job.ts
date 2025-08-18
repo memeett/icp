@@ -17,7 +17,7 @@ export interface Job {
   createdAt: bigint;
   updatedAt: bigint;
   subAccount: [] | [Uint8Array];
-  
+
   // Legacy properties for compatibility
   title?: string;
   description?: string;

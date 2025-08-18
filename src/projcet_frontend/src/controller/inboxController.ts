@@ -179,7 +179,7 @@ export const getAllInboxBySubmissionType = async (
 export const getInboxMessagesFromAppliers = async (
   jobId: string,
   userId: string
-): Promise<InboxResponse[] | null> => {
+): Promise<any[]> => {
   const agent = await agentService.getAgent();
   try {
     const result = await inbox.getInboxMessagesFromAppliers(jobId, userId);
@@ -204,7 +204,7 @@ export const getInboxMessagesFromAppliers = async (
     return responses;
   } catch (error) {
     console.error("Failed to get inbox:", error);
-    return null;
+    return [] ;
   }
 };
 

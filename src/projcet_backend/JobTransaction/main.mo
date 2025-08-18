@@ -192,4 +192,26 @@ actor JobTransactionModel {
         return freelancerTransactions;
     };
 
+   public func isFreelancerRegistered(
+    jobId: Text,
+    freelancerId: Text
+    ) : async Bool {
+        switch (jobTransactions.get(jobId)) {
+            case (null) {
+                return false;
+            };
+            case (?transaction) {
+                switch (List.find<Text>(transaction.freelancers, func(f) { f == freelancerId })) {
+                    case (null) {
+                        return false;
+                    };
+                    case (?_) {
+                        return true;
+                    };
+                };
+            };
+        };
+    };
+
+
 };

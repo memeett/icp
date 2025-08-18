@@ -19,7 +19,7 @@ import { debugUserData } from "../utils/debugUtils";
 import { fixUserData } from "../utils/userDataFixer";
 import { Job as JobShared, JobPayload } from "../shared/types/Job";
 import { user } from "../../../declarations/user";
-import { getBalanceController, transferToJobController } from "./tokenController";
+import { getBalanceController, transferToJobController, transfertoWorkerController } from "./tokenController";
 
 export const createJob = async (payload: JobPayload): Promise<string[]> => {
   const agent = await agentService.getAgent();
@@ -92,9 +92,9 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
       }
       const creator_token = await getBalanceController(converted_user);
       console.log("Creator token balance:", creator_token.token_value);
-      if(creator_token.token_value < payload.jobSalary) {
-        return ["Failed", "Insufficient balance to create job"];
-      }
+      // if(creator_token.token_value < payload.jobSalary) {
+      //   return ["Failed", "Insufficient balance to create job"];
+      // }
       console.log("lanjutt euy")
       // Debug the user data structure
       console.log("User ID:", currentUser.id);
@@ -152,6 +152,7 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         } else {
           return ["Failed", `Job created but transfer failed: ${transferResult.err}`];
         }
+
       } else {
         return ["Failed", "Error creating job"];
       }
@@ -366,14 +367,11 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
 export const startJob = async (
   job_id: string
 ): Promise<{ jobStarted: boolean; message: string }> => {
-  // try {
+  try {
     // Authenticate the user
     const agent = await agentService.getAgent();
 
-    const result = await job.startJob(
-      job_id
-    );
-
+    const result = await job.startJob(job_id);
     if (result) {
       return {
         jobStarted: true,
@@ -428,12 +426,12 @@ export const startJob = async (
     //     message: "Failed to start job: " + JSON.stringify(result.err),
     //   };
     // }
-  // } catch (error) {
-  //   return {
-  //     jobStarted: false,
-  //     message: "Error: " + String(error),
-  //   };
-  // }
+  } catch (error) {
+    return {
+      jobStarted: false,
+      message: "Error: " + String(error),
+    };
+  }
 };
 
 export const getUserJobByStatusFinished = async (
@@ -465,6 +463,13 @@ export const finishJob = async (
     );
 
     if ("ok" in result) {
+      const next_result = await transfertoWorkerController(job_id)
+        if ("ok" in next_result) {
+          return {jobFinished: true, message: "Job posted and transfer completed"};
+        } else {
+          return {jobFinished: false, message: `Job created but transfer failed: ${next_result.err}`};
+        }
+
       return { jobFinished: true, message: "Job finished successfully." };
     } else {
       return {

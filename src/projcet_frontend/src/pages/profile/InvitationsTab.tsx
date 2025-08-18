@@ -18,7 +18,7 @@ import {
   ClockCircleOutlined,
   InboxOutlined,
 } from '@ant-design/icons';
-import { UserInvitationPayload } from '../../shared/types/Invitation';
+import { Invitation, UserInvitationPayload } from '../../shared/types/Invitation';
 import { formatDate } from '../../utils/dateUtils';
 import { formatSalary } from '../../utils/formatter';
 import { acceptInvitation, rejectInvitation } from '../../controller/invitationController';
@@ -28,7 +28,7 @@ const { Title, Text, Paragraph } = Typography;
 interface InvitationsTabProps {
   invitations: UserInvitationPayload[];
   processingInvitation: string | null;
-  onAccept: (invitationId: bigint) => Promise<void>;
+  onAccept: (invitationId: UserInvitationPayload) => Promise<void>;
   onReject: (invitationId: bigint) => Promise<void>;
 }
 
@@ -38,8 +38,8 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
   onAccept,
   onReject,
 }) => {
-  const handleAccept = async (invitationId: bigint) => {
-    await onAccept(invitationId);
+  const handleAccept = async (invitation: UserInvitationPayload) => {
+    await onAccept(invitation);
   };
 
   const handleReject = async (invitationId: bigint) => {
@@ -106,7 +106,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
                 <Popconfirm
                   title="Accept this invitation?"
                   description="Are you sure you want to accept this job invitation?"
-                  onConfirm={() => handleAccept(invitation.id)}
+                  onConfirm={() => handleAccept(invitation)}
                   okText="Yes"
                   cancelText="No"
                 >
@@ -152,7 +152,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
     </Card>
   );
 
-  const pendingInvitations = invitations?.filter(inv => !inv.isAccepted) || [];
+  const pendingInvitations = invitations?.filter(inv => !inv.isAccepted && inv.job.jobStatus === "Open") || [];
   const acceptedInvitations = invitations?.filter(inv => inv.isAccepted) || [];
 
   return (

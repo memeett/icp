@@ -9,6 +9,7 @@ export const createInvitation = async (
     
       const checkInvitation = await invitation.getInvitationByUserIdAndJobId(currentUserId, job_id)
       if(checkInvitation == null) return ["Failed", "Error creating invitation."];
+
       const result = await invitation.createInvitation(
         String(currentUserId),
         job_id,

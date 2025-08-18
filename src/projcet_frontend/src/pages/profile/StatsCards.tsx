@@ -7,9 +7,10 @@ const { Text } = Typography;
 
 interface StatsCardsProps {
   user: User;
+  jobsCompleted: number;
 }
 
-const StatsCards: React.FC<StatsCardsProps> = ({ user }) => {
+const StatsCards: React.FC<StatsCardsProps> = ({ user, jobsCompleted }) => {
   return (
     <Row gutter={[16, 16]} className="mb-6">
       <Col xs={12} sm={8}>
@@ -29,7 +30,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ user }) => {
       <Col xs={12} sm={8}>
         <Card className="text-center">
           <ProjectOutlined className="text-2xl text-blue-500 mb-2" />
-          <div className="text-xl font-bold">0</div>
+          <div className="text-xl font-bold">{jobsCompleted}</div>
           <Text type="secondary">Jobs Completed</Text>
         </Card>
       </Col>

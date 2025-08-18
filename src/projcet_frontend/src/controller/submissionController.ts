@@ -7,33 +7,38 @@ import { agentService } from "../singleton/agentService";
 
 export const createSubmission = async (
     jobId: string,
-    user: User,
-    submissionFile: Blob,
+    user: any,
+    submissionFilePath: string,
     submissionMessage: string
 ): Promise<string[]> => {
     try {
-
-        const arrayBuffer = await submissionFile.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
 
         if (typeof user.createdAt === 'string' && typeof user.updatedAt === 'string') {
             user.createdAt = BigInt(user.createdAt);
             user.updatedAt = BigInt(user.updatedAt);
         }
 
-        if (user.profilePicture && !(user.profilePicture instanceof Uint8Array)) {
+        // Normalize profilePicture to Uint8Array as required by candid types
+        if (user.profilePicture instanceof Blob) {
+            const ab = await user.profilePicture.arrayBuffer();
+            user.profilePicture = new Uint8Array(ab);
+        } else if (!user.profilePicture) {
+            user.profilePicture = new Uint8Array([]);
+        } else if (!(user.profilePicture instanceof Uint8Array)) {
             if (Array.isArray(user.profilePicture)) {
                 user.profilePicture = new Uint8Array(user.profilePicture as number[]);
             } else if (typeof user.profilePicture === 'object') {
-                const values = Object.values(user.profilePicture) as number[]; 
+                const values = Object.values(user.profilePicture) as number[];
                 user.profilePicture = new Uint8Array(values);
+            } else if (typeof user.profilePicture === 'string') {
+                user.profilePicture = new Uint8Array([]);
             } else {
-                throw new Error("Invalid profilePicture format");
+                user.profilePicture = new Uint8Array([]);
             }
         }
 
-
-        const result = await submission.createSubmission(jobId, user, uint8Array, submissionMessage);
+        // Cast to any to avoid stale TS type errors if editor hasn't reloaded generated declarations
+        const result = await (submission as any).createSubmission(jobId, user, submissionFilePath, submissionMessage);
 
         if ("ok" in result) {
             return ["Ok"];
@@ -56,21 +61,16 @@ export const getAllSubmissionbyUserJobId = async (user: User, jobId: string): Pr
     return filteredSubmissions;
 };
 
-export const getFileSubmissionbyId = async (id: string): Promise<Blob | null> => {
+export const getFileSubmissionbyId = async (id: string): Promise<string | null> => {
     try {
         const res = await submission.getFileSubmissionbyId(id);
-        
-        if (res && res.length > 0 && res[0] instanceof Uint8Array) {
-            const uint8Array = new Uint8Array(res[0]);
-            return new Blob([uint8Array], { type: 'application/octet-stream' });
-        } else if (res && res.length > 0 && Array.isArray(res[0])) {
-            const uint8Array = new Uint8Array(res[0]);
-            return new Blob([uint8Array], { type: 'application/octet-stream' });
+        if (res && res.length > 0 && typeof res[0] === 'string') {
+            return res[0] as string;
         } else {
             return null;
         }
     } catch (err) {
-        console.error('Error fetching file:', err);
+        console.error('Error fetching file path:', err);
         return null;
     }
 };
@@ -172,5 +172,14 @@ export const getSubmissionRejectbyJobId = async (jobId: string): Promise<any[]> 
         return result;
     } catch (error) {
         throw new Error("Failed to fetch submissions: " + error);
+    }
+};
+
+export const getUserSubmissionsByJobId = async (jobId: string, userId: string): Promise<Submission[]> => {
+    try {
+        const result = await submission.getUserSubmissionsByJobId(jobId, userId);
+        return result;
+    } catch (error) {
+        throw new Error("Failed to fetch user submissions by job: " + error);
     }
 };

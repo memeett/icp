@@ -6,9 +6,14 @@ import { User } from "../shared/types/User";
 import { AuthClient } from "@dfinity/auth-client";
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { Job } from "../shared/types/Job";
+import { job_transaction } from "../../../declarations/job_transaction";
+import { count } from "console";
+import { aC } from "vitest/dist/chunks/reporters.66aFHiyX";
+import { job } from "../../../declarations/job";
 
 export async function getBalanceController(curr_user: User): Promise<Token> {
   const authClient = await AuthClient.create();
+  const OwnerPrincipal = await getPrincipalAddress();
 
   if (!authClient.isAuthenticated()) {
     await authClient.login({
@@ -28,7 +33,7 @@ export async function getBalanceController(curr_user: User): Promise<Token> {
   if ("ok" in result) {
     const tokenInfo = result.ok;
     const next_reuslt = await icrc1_ledger_canister.icrc1_balance_of({
-      owner: identity.getPrincipal(), // recipient principal
+      owner: OwnerPrincipal, // recipient principal
       subaccount: curr_user.subAccount, // subaccount as Uint8Array
     });
     console.log("Balance:", next_reuslt);
@@ -42,15 +47,8 @@ export async function getBalanceController(curr_user: User): Promise<Token> {
   }
 }
 
-export async function getMintingAddress(): Promise<Principal> {
-  const result = await icrc1_ledger_canister.icrc1_minting_account();
-
-  if (result.length === 0) {
-    throw new Error("No minting account set");
-  }
-
-  const { owner } = result[0];
-  return owner;
+export function getPrincipalAddress(): Principal {
+  return Principal.fromText("2vxsx-fae");
 }
 
 export async function topUpWalletController(curr_user: User, amount: number) {
@@ -67,7 +65,7 @@ export async function topUpWalletController(curr_user: User, amount: number) {
   const identity = authClient.getIdentity();
   const agent = new HttpAgent({ identity });
 
-  const mintingOwnerPrincipal = await getMintingAddress(); // Principal type
+  const OwnerPrincipal = await getPrincipalAddress(); // Principal type
 
   // const toAccount = {
   //   owner: mintingOwnerPrincipal,
@@ -89,7 +87,7 @@ export async function topUpWalletController(curr_user: User, amount: number) {
 
    const result = await icrc1_ledger_canister.icrc1_transfer({
     to: {
-      owner: identity.getPrincipal(), // recipient principal
+      owner: OwnerPrincipal, // recipient principal
       subaccount: curr_user.subAccount,
     },
     fee: [], // None
@@ -136,7 +134,7 @@ export async function transferToJobController(curr_user: User, curr_job: Job, am
   const identity = authClient.getIdentity();
   const agent = new HttpAgent({ identity });
 
-  const mintingOwnerPrincipal = await getMintingAddress(); // Principal type
+  const OwnerPrincipal = await getPrincipalAddress(); // Principal type
 
   console.log("current job subaccount:", curr_job.subAccount);
   console.log("Amount to transfer:", BigInt(amount)); 
@@ -152,7 +150,7 @@ export async function transferToJobController(curr_user: User, curr_job: Job, am
 
    const result = await icrc1_ledger_canister.icrc1_transfer({
     to: {
-      owner: identity.getPrincipal(), // recipient principal
+      owner: OwnerPrincipal, // recipient principal
       subaccount: curr_job.subAccount,
     },
     fee: [], // None
@@ -184,3 +182,61 @@ export async function transferToJobController(curr_user: User, curr_job: Job, am
   }
 }
 
+
+export async function transfertoWorkerController(job_id: string) {
+  
+  try {
+    const job_result = await job.getJob(job_id)
+    if ("err" in job_result) {
+      return { err: job_result.err }; // stop if job not found
+    }
+
+    const curr_job = job_result.ok
+    const result = await job_transaction.getAcceptedFreelancers(
+      curr_job.id,
+      process.env.CANISTER_ID_USER! // user canister ID from env
+    );
+
+
+    if ("ok" in result) {
+      const acceptedFreelancers = result.ok; // this is an array of User.User
+      const OwnerPrincipal = await getPrincipalAddress();
+      const count = acceptedFreelancers.length;
+      const amountPerFreelancer = Math.floor(curr_job.jobSalary / count);
+      // Loop through freelancers and do transfers
+      for (const freelancer of acceptedFreelancers) {
+        console.log("Freelancer:", freelancer);
+        const result = await icrc1_ledger_canister.icrc1_transfer({
+          to: {
+            owner: OwnerPrincipal, // recipient principal
+            subaccount: freelancer.subAccount,
+          },
+          fee: [], // None
+          memo: [], // None
+          from_subaccount: curr_job.subAccount, // None
+          created_at_time: [], // None
+          amount: BigInt(amountPerFreelancer), // e.g., 1 token in e8s
+        });
+
+
+        if ("Ok" in result) {
+          const next_result = await user.workerPaymentTransfer(curr_job.id, freelancer.id ,amountPerFreelancer, process.env.CANISTER_ID_JOB!);
+          console.log("Add job transaction result:", next_result);
+        }
+        else {
+          console.error(`Transfer to ${freelancer.id} failed:`, result.Err);
+          return { err: `Transfer to ${freelancer.id} failed: ${JSON.stringify(result.Err)}` };
+        }
+        
+      }
+
+      return { ok: true };
+    } else {
+      console.error("Error from canister:", result.err);
+      return { err: result.err };
+    }
+  } catch (err) {
+    console.error("transfertoWorkerController error:", err);
+    return { err: (err as Error).message };
+  }
+}

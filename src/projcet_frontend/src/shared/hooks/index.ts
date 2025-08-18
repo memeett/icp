@@ -11,3 +11,4 @@ export { useUserManagement } from './useUserManagement';
 export { useInbox } from './useInbox';
 export { useWorkSubmission } from './useWorkSubmission';
 export { useManageJobs } from './useManageJobs';
+export { useRating } from './useRating';

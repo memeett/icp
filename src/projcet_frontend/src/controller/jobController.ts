@@ -92,9 +92,9 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
       }
       const creator_token = await getBalanceController(converted_user);
       console.log("Creator token balance:", creator_token.token_value);
-      // if(creator_token.token_value < payload.jobSalary) {
-      //   return ["Failed", "Insufficient balance to create job"];
-      // }
+      if(creator_token.token_value < payload.jobSalary) {
+        return ["Failed", "Insufficient balance to create job"];
+      }
       console.log("lanjutt euy")
       // Debug the user data structure
       console.log("User ID:", currentUser.id);
@@ -143,7 +143,8 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         const uint8 = new Uint8Array(Object.values(obj));
         const convertedJob: JobShared = {
             ...job_result,
-            subAccount: [uint8], 
+            jobStatus: job_result.jobStatus as 'Open' | 'Ongoing' | 'Finished' | 'Cancelled',
+            subAccount: [uint8],
         };
         const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
         console.log("Transfer result:", transferResult);
@@ -470,7 +471,6 @@ export const finishJob = async (
           return {jobFinished: false, message: `Job created but transfer failed: ${next_result.err}`};
         }
 
-      return { jobFinished: true, message: "Job finished successfully." };
     } else {
       return {
         jobFinished: false,

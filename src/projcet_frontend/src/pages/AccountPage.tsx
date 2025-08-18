@@ -22,7 +22,6 @@ import {
 import { useAuth } from '../shared/hooks/useAuth';
 import FaceRecognition from '../components/FaceRecognition';
 import Navbar from '../ui/components/Navbar';
-import AdvisorChat from '../components/chat/AdvisorChat';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -188,9 +187,6 @@ const AccountPage: React.FC = () => {
             </Col>
           </Row>
 
-          <motion.div className="mt-8">
-            <AdvisorChat />
-          </motion.div>
 
         </motion.div>
       </div>

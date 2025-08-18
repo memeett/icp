@@ -220,11 +220,12 @@ const Navbar: React.FC = () => {
       label: (
         <div className="flex justify-between items-center">
           <span>Wallet</span>
-          <Text strong className="text-green-600">
+          {/* <Text strong className="text-green-600">
             {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
-          </Text>
+          </Text> */}
         </div>
       ),
+      onClick: () => navigate('/balance-transaction')
     },
     {
       key: 'rating',

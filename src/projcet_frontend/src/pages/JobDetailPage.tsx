@@ -126,7 +126,6 @@ const JobDetailPage: React.FC = () => {
     }
   };
 
-  // Handle application submission
   const handleApplicationSubmit = async (values: any) => {
     if (Number(job!.jobSlots) - acceptedFreelancers.length <= 0) {
       message.error('No available slots for new applicants');
@@ -139,10 +138,6 @@ const JobDetailPage: React.FC = () => {
     }
   };
 
-  const handleSaveJob = () => {
-    setIsSaved(!isSaved);
-    message.success(isSaved ? 'Job removed from saved' : 'Job saved successfully');
-  };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -195,13 +190,6 @@ const JobDetailPage: React.FC = () => {
               </div>
 
               <Space>
-                <Tooltip title={isSaved ? 'Remove from saved' : 'Save job'}>
-                  <Button
-                    icon={isSaved ? <HeartFilled /> : <HeartOutlined />}
-                    onClick={handleSaveJob}
-                    type={isSaved ? 'primary' : 'default'}
-                  />
-                </Tooltip>
                 <Tooltip title="Share job">
                   <Button icon={<ShareAltOutlined />} onClick={handleShare} />
                 </Tooltip>
@@ -237,14 +225,8 @@ const JobDetailPage: React.FC = () => {
                   <Text type="secondary">Applicants</Text>
                 </div>
               </Col>
-              <Col xs={12} sm={6}>
-                <div className="text-center p-4 bg-background rounded-lg">
-                  <StarOutlined className="text-2xl text-orange-500 mb-2" />
-                  <div className="font-semibold">{job!.jobRating.toFixed(1)}</div>
-                  <Text type="secondary">Rating</Text>
-                </div>
-              </Col>
-            </Row>
+
+            </Row>  
 
             <Divider />
 
@@ -1052,10 +1034,12 @@ const JobDetailPage: React.FC = () => {
 
               <TabPane tab="Job Details" key="details">
                 <JobDetailsContent />
+                <p>{String(isJobFreelancer)}</p>
               </TabPane>
               {isJobFreelancer && job.jobStatus === "Ongoing" && (
                 <TabPane tab="Submission Upload" key="submission">
                   <SubmissionContent />
+                  
                 </TabPane>
               )}
             </Tabs>

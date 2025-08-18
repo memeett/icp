@@ -20,7 +20,8 @@ import {
   Tabs,
   Table,
   AutoComplete,
-  UploadFile
+  UploadFile,
+  Rate
 } from 'antd';
 import {
   DollarOutlined,
@@ -41,7 +42,7 @@ import {
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
-import { useAuth, useJobDetails, useUserManagement } from '../shared/hooks';
+import { useAuth, useJobDetails, useUserManagement, useRating } from '../shared/hooks';
 import { User } from '../shared/types/User';
 import { formatDate } from '../utils/dateUtils';
 import { RcFile } from 'antd/es/upload';
@@ -107,6 +108,8 @@ const JobDetailPage: React.FC = () => {
   const [inviteForm] = Form.useForm();
 
   const [coverLetter, setCoverLetter] = useState<string>("");
+
+
   // Handle user invitation
   const handleInviteUser = async (values: any) => {
     if (!user || !jobId || !values.userId) return;
@@ -168,9 +171,20 @@ const JobDetailPage: React.FC = () => {
     setCoverLetter(message);
   };
 
-  // Component for job details content
   const JobDetailsContent = () => {
-    if (!job) return null;
+    if (!job) {
+      return null;
+    }
+    const {
+      ratingRecords,
+      localRatings,
+      isSubmittingRating,
+      isRatingFinalized,
+      loading: ratingLoading,
+      handleRateChange,
+      handleFinalizeRatings,
+    } = useRating(jobId, isJobOwner);
+    const displayFreelancers = acceptedFreelancers;
 
     return (
       <Row gutter={[24, 24]}>
@@ -194,9 +208,6 @@ const JobDetailPage: React.FC = () => {
                 <Tooltip title="Share job">
                   <Button icon={<ShareAltOutlined />} onClick={handleShare} />
                 </Tooltip>
-                {/* <Tooltip title="Report job">
-                <Button icon={<FlagOutlined />} />
-              </Tooltip> */}
               </Space>
             </div>
 
@@ -309,6 +320,68 @@ const JobDetailPage: React.FC = () => {
                   </Button>
                 )}
               </div>
+            )}
+
+            {/* UI-only: Freelancer Ratings Section */}
+            {isJobOwner && job!.jobStatus === 'Finished' && (
+              <>
+                <Divider />
+                <div className="mb-6">
+                  <Title level={4}>Freelancer Ratings</Title>
+                  <Text type="secondary">
+                    Rate accepted freelancers, then click Finalize Ratings to submit.
+                  </Text>
+                  <Row gutter={[16, 16]} className="mt-3">
+                    {displayFreelancers.length > 0 ? (
+                      displayFreelancers.map((f) => (
+                        <Col xs={24} sm={12} key={f.id}>
+                          <Card size="small" className="hover:shadow">
+                            <div className="flex items-center gap-3">
+                              <Avatar
+                                src={
+                                  f.profilePicture
+                                    ? URL.createObjectURL(f.profilePicture)
+                                    : undefined
+                                }
+                                icon={<UserOutlined />}
+                              />
+                              <div className="flex-1">
+                                <Text strong>{f.username}</Text>
+                                <div className="text-xs text-gray-500">
+                                  Current: {f.rating?.toFixed
+                                    ? f.rating.toFixed(1)
+                                    : Number(f.rating || 0).toFixed(1)}
+                                </div>
+                              </div>
+                              <Rate
+                                allowHalf
+                                value={localRatings[f.id] ?? Number(f.rating || 0)}
+                                onChange={(value) => handleRateChange(f.id, value)}
+                                disabled={Boolean(ratingRecords.find((r: any) => r.user.id === f.id)?.isEdit)}
+                              />
+                            </div>
+                          </Card>
+                        </Col>
+                      ))
+                    ) : (
+                      <Col span={24}>
+                        <Text type="secondary">No freelancers to rate yet.</Text>
+                      </Col>
+                    )}
+                  </Row>
+                  <div className="mt-3 text-right">
+                    <Button
+                      type="primary"
+                      icon={<CheckOutlined />}
+                      onClick={handleFinalizeRatings}
+                      disabled={displayFreelancers.length === 0 || isSubmittingRating || isRatingFinalized}
+                      loading={isSubmittingRating}
+                    >
+                      {isRatingFinalized ? "Ratings Finalized" : "Finalize Ratings"}
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </Card>
         </Col>

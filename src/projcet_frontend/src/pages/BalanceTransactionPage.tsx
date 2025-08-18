@@ -10,6 +10,9 @@ import {
   Statistic,
   Row,
   Col,
+  DatePicker,
+  Space,
+  Tabs,
 } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -47,6 +50,7 @@ const BalanceTransactionPage: React.FC = () => {
   const [loadingWallet, setLoadingWallet] = useState(true);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [wallet, setWallet] = useState<Token>()
+  const [selectedMonth, setSelectedMonth] = useState<dayjs.Dayjs | null>(dayjs());
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -138,8 +142,26 @@ const BalanceTransactionPage: React.FC = () => {
 
 
 
-  // Calculate balance stats
-  const totalIncome = transactions.reduce((sum, tx) => {
+  // Filter transactions by selected month
+  const filteredTransactions = transactions.filter(tx => {
+    if (!selectedMonth) return true;
+    const transactionDate = dayjs(Number(tx.transactionAt) / 1_000_000);
+    return transactionDate.isSame(selectedMonth, 'month');
+  });
+
+  // Filter transactions by type
+  const incomingTransactions = filteredTransactions.filter(tx => {
+    if ("topUp" in tx.transactionType) return true;
+    return tx.fromId !== user?.id;
+  });
+
+  const outgoingTransactions = filteredTransactions.filter(tx => {
+    if ("transferToJob" in tx.transactionType) return true;
+    return tx.fromId === user?.id && !("topUp" in tx.transactionType);
+  });
+
+  // Calculate balance stats from filtered transactions
+  const totalIncome = filteredTransactions.reduce((sum, tx) => {
     // Income includes: top-ups and money received from others
     if ("topUp" in tx.transactionType) {
       return sum + tx.amount;
@@ -151,7 +173,7 @@ const BalanceTransactionPage: React.FC = () => {
     return sum;
   }, 0);
 
-  const totalExpenses = transactions.reduce((sum, tx) => {
+  const totalExpenses = filteredTransactions.reduce((sum, tx) => {
     // Expenses include: transfers to jobs and money sent to others
     if ("transferToJob" in tx.transactionType) {
       return sum + tx.amount;
@@ -164,6 +186,134 @@ const BalanceTransactionPage: React.FC = () => {
   }, 0);
 
   const currentBalance = totalIncome - totalExpenses;
+
+  // Function to render transaction list
+  const renderTransactionList = (transactionData: CashFlowHistory[], emptyMessage: string) => (
+    <List
+      loading={loadingTransactions}
+      dataSource={transactionData}
+      locale={{ emptyText: emptyMessage }}
+      renderItem={(item, index) => {
+        let sign = "+";
+        let color: "red" | "green" | "blue" = "green";
+        let description = "";
+        let icon = <PlusCircleOutlined />;
+
+        if ("topUp" in item.transactionType) {
+          description = "Account Top Up";
+          sign = "+";
+          color = "green";
+          icon = <PlusCircleOutlined />;
+        } else if ("transferToJob" in item.transactionType) {
+          const jobId = item.toId?.[0];
+          if (jobId) {
+            getJobInformation(jobId);
+            description = `Transfer to Job ${jobNames[jobId] ?? jobId}`;
+          } else {
+            description = "Transfer to Job (Unknown)";
+          }
+          sign = "-";
+          color = "red";
+          icon = <SwapOutlined />;
+        } else {
+          const isOutgoing = item.fromId === user?.id;
+          sign = isOutgoing ? "-" : "+";
+          color = isOutgoing ? "red" : "green";
+          
+          if (isOutgoing) {
+            description = `Sent to ${item.toId.join(", ")}`;
+          } else {
+            // For incoming transactions, the sender ID is actually a job ID
+            const jobId = item.fromId;
+            if (jobAndOwnerInfo[jobId]) {
+              const { jobName, ownerName } = jobAndOwnerInfo[jobId];
+              description = `Payment from "${jobName}" by ${ownerName}`;
+            } else if (loadingJobInfo[jobId]) {
+              description = "Loading job information...";
+            } else {
+              // Fetch job and owner information
+              getJobAndOwnerInfo(jobId).then(({ jobName, ownerName }) => {
+                setJobAndOwnerInfo(prev => ({ ...prev, [jobId]: { jobName, ownerName } }));
+              });
+              description = `Payment received from job ${jobId}`;
+            }
+          }
+          
+          icon = isOutgoing ? <MinusCircleOutlined /> : <PlusCircleOutlined />;
+        }
+
+        return (
+          <motion.div
+            key={`${item.transactionAt}-${index}`}
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ scale: 1.02, x: 10 }}
+            onHoverStart={() => setHoveredItem(`${item.transactionAt}-${index}`)}
+            onHoverEnd={() => setHoveredItem(null)}
+          >
+            <List.Item style={{ padding: 0 }}>
+              <Card
+                className="w-full m-2 shadow-sm border border-border hover:shadow-md transition-all duration-300"
+                style={{
+                  transform: hoveredItem === `${item.transactionAt}-${index}` ? 'translateY(-2px)' : 'none'
+                }}
+                bodyStyle={{ padding: '1.5rem' }}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.3 }}
+                      className={`p-3 rounded-full ${
+                        color === 'green' ? 'bg-green-100 text-green-600' :
+                        color === 'red' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                      }`}
+                    >
+                      {React.cloneElement(icon, {
+                        className: 'text-xl'
+                      })}
+                    </motion.div>
+                    <div>
+                      {loadingJobInfo[item.fromId] && !("topUp" in item.transactionType) && !("transferToJob" in item.transactionType) && item.fromId !== user?.id ? (
+                        <Skeleton.Input
+                          active
+                          size="small"
+                          style={{ width: 200, height: 20 }}
+                          className="mb-1"
+                        />
+                      ) : (
+                        <Text className="text-foreground font-semibold text-lg block">
+                          {description}
+                        </Text>
+                      )}
+                      <Text className="text-muted-foreground">
+                        {dayjs(Number(item.transactionAt) / 1_000_000).format("MMMM DD, YYYY • HH:mm")}
+                      </Text>
+                    </div>
+                  </div>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Tag
+                      color={color}
+                      className={`text-lg px-4 py-2 rounded-lg font-semibold border-0 ${
+                        color === 'green' ? 'bg-green-100 text-green-700' :
+                        color === 'red' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
+                      {`${sign}${item.amount} ${wallet?.token_symbol}`}
+                    </Tag>
+                  </motion.div>
+                </div>
+              </Card>
+            </List.Item>
+          </motion.div>
+        );
+      }}
+    />
+  );
 
   if (isLoading) {
     return (
@@ -223,17 +373,31 @@ const BalanceTransactionPage: React.FC = () => {
               transition={{ type: "spring", stiffness: 300 }}
               className="inline-block mb-6"
             >
-              <Avatar
-                size={120}
-                src={profileImage}
-                icon={<WalletOutlined />}
-                className="shadow-lg border-4 border-primary/20"
-              />
             </motion.div>
             <Title level={1} className="text-foreground mb-2">
               Digital Wallet
             </Title>
             <Text className="text-muted-foreground text-lg">Manage your finances with ease</Text>
+          </motion.div>
+
+          {/* Month Filter */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex justify-center mb-8"
+          >
+            <Space>
+              <Text className="text-foreground font-medium">Filter by month:</Text>
+              <DatePicker
+                picker="month"
+                value={selectedMonth}
+                onChange={setSelectedMonth}
+                placeholder="Select month"
+                allowClear
+                className="w-40"
+              />
+            </Space>
           </motion.div>
 
           {/* Balance Cards */}
@@ -357,127 +521,35 @@ const BalanceTransactionPage: React.FC = () => {
               className="shadow-sm border border-border"
               bodyStyle={{ padding: '0' }}
             >
-              <List
-                loading={loadingTransactions}
-                dataSource={transactions}
-                locale={{ emptyText: "No transactions yet." }}
-                renderItem={(item, index) => {
-                  let sign = "+";
-                  let color: "red" | "green" | "blue" = "green";
-                  let description = "";
-                  let icon = <PlusCircleOutlined />;
-
-                  if ("topUp" in item.transactionType) {
-                    description = "Account Top Up";
-                    sign = "+";
-                    color = "green";
-                    icon = <PlusCircleOutlined />;
-                  } else if ("transferToJob" in item.transactionType) {
-                    const jobId = item.toId?.[0];
-                    if (jobId) {
-                      getJobInformation(jobId);
-                      description = `Transfer to Job ${jobNames[jobId] ?? jobId}`;
-                    } else {
-                      description = "Transfer to Job (Unknown)";
-                    }
-                    sign = "-";
-                    color = "red";
-                    icon = <SwapOutlined />;
-                  } else {
-                    const isOutgoing = item.fromId === user.id;
-                    sign = isOutgoing ? "-" : "+";
-                    color = isOutgoing ? "red" : "green";
-
-                    if (isOutgoing) {
-                      description = `Sent to ${item.toId.join(", ")}`;
-                    } else {
-                      // For incoming transactions, the sender ID is actually a job ID
-                      const jobId = item.fromId;
-                      if (jobAndOwnerInfo[jobId]) {
-                        const { jobName, ownerName } = jobAndOwnerInfo[jobId];
-                        description = `Payment from "${jobName}" by ${ownerName}`;
-                      } else if (loadingJobInfo[jobId]) {
-                        description = "Loading job information...";
-                      } else {
-                        // Fetch job and owner information
-                        getJobAndOwnerInfo(jobId).then(({ jobName, ownerName }) => {
-                          setJobAndOwnerInfo(prev => ({ ...prev, [jobId]: { jobName, ownerName } }));
-                        });
-                        description = `Payment received from job ${jobId}`;
-                      }
-                    }
-
-                    icon = isOutgoing ? <MinusCircleOutlined /> : <PlusCircleOutlined />;
-                  }
-
-                  return (
-                    <motion.div
-                      key={`${item.transactionAt}-${index}`}
-                      initial={{ opacity: 0, x: -50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ scale: 1.02, x: 10 }}
-                      onHoverStart={() => setHoveredItem(`${item.transactionAt}-${index}`)}
-                      onHoverEnd={() => setHoveredItem(null)}
-                    >
-                      <List.Item style={{ padding: 0 }}>
-                        <Card
-                          className="w-full m-2 shadow-sm border border-border hover:shadow-md transition-all duration-300"
-                          style={{
-                            transform: hoveredItem === `${item.transactionAt}-${index}` ? 'translateY(-2px)' : 'none'
-                          }}
-                          bodyStyle={{ padding: '1.5rem' }}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                              <motion.div
-                                whileHover={{ scale: 1.1 }}
-                                transition={{ duration: 0.3 }}
-                                className={`p-3 rounded-full ${color === 'green' ? 'bg-green-100 text-green-600' :
-                                    color === 'red' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
-                                  }`}
-                              >
-                                {React.cloneElement(icon, {
-                                  className: 'text-xl'
-                                })}
-                              </motion.div>
-                              <div>
-                                {loadingJobInfo[item.fromId] && !("topUp" in item.transactionType) && !("transferToJob" in item.transactionType) && item.fromId !== user.id ? (
-                                  <Skeleton.Input
-                                    active
-                                    size="small"
-                                    style={{ width: 200, height: 20 }}
-                                    className="mb-1"
-                                  />
-                                ) : (
-                                  <Text className="text-foreground font-semibold text-lg block">
-                                    {description}
-                                  </Text>
-                                )}
-                                <Text className="text-muted-foreground">
-                                  {dayjs(Number(item.transactionAt) / 1_000_000).format("MMMM DD, YYYY • HH:mm")}
-                                </Text>
-                              </div>
-                            </div>
-                            <motion.div
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                            >
-                              <Tag
-                                color={color}
-                                className={`text-lg px-4 py-2 rounded-lg font-semibold border-0 ${color === 'green' ? 'bg-green-100 text-green-700' :
-                                    color === 'red' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-                                  }`}
-                              >
-                                {`${sign}${item.amount} ${wallet?.token_symbol}`}
-                              </Tag>
-                            </motion.div>
-                          </div>
-                        </Card>
-                      </List.Item>
-                    </motion.div>
-                  );
-                }}
+              <Tabs
+                defaultActiveKey="all"
+                className="px-6"
+                items={[
+                  {
+                    key: 'all',
+                    label: `All Transactions (${filteredTransactions.length})`,
+                    children: renderTransactionList(
+                      filteredTransactions,
+                      selectedMonth ? `No transactions found for ${selectedMonth.format('MMMM YYYY')}.` : "No transactions yet."
+                    ),
+                  },
+                  {
+                    key: 'incoming',
+                    label: `Income (${incomingTransactions.length})`,
+                    children: renderTransactionList(
+                      incomingTransactions,
+                      selectedMonth ? `No incoming transactions for ${selectedMonth.format('MMMM YYYY')}.` : "No incoming transactions yet."
+                    ),
+                  },
+                  {
+                    key: 'outgoing',
+                    label: `Expenses (${outgoingTransactions.length})`,
+                    children: renderTransactionList(
+                      outgoingTransactions,
+                      selectedMonth ? `No outgoing transactions for ${selectedMonth.format('MMMM YYYY')}.` : "No outgoing transactions yet."
+                    ),
+                  },
+                ]}
               />
             </Card>
           </motion.div>

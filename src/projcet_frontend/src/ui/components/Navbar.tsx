@@ -24,7 +24,8 @@ import {
   ProfileOutlined,
   GlobalOutlined,
   SunOutlined,
-  MoonOutlined
+  MoonOutlined,
+  MessageOutlined
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../shared/hooks/useAuth';
@@ -32,6 +33,7 @@ import { useAtom } from 'jotai';
 import { themeAtom } from '../../app/store/ui';
 import { getProfilePictureUrl, getUserById } from '../../controller/userController';
 import { useTheme } from '../../app/providers/ThemeProvider';
+import { useInboxPanel } from '../../contexts/InboxPanelContext';
 import FaceRecognition from '../../components/FaceRecognition';
 import { AuthenticationModal } from '../../components/modals/AuthenticationModal';
 import ergasiaLogo from '../../assets/ergasia_logo.png'
@@ -41,7 +43,6 @@ import { Inbox } from '../../../../declarations/inbox/inbox.did';
 import { getBalanceController, topUpWalletController } from '../../controller/tokenController';
 import { Token } from '../../interface/Token';
 import { InboxResponse } from '../../shared/types/Inbox';
-import { InboxDropdown } from './InboxDropdown';
 
 const { Text } = Typography;
 
@@ -51,6 +52,7 @@ const Navbar: React.FC = () => {
   const [activeTab, setActiveTab] = useState('icp');
   const [theme] = useAtom(themeAtom);
   const { toggleTheme } = useTheme();
+  const { toggleInboxPanel } = useInboxPanel();
   const {
     isAuthenticated,
     isLoading,
@@ -336,19 +338,14 @@ const Navbar: React.FC = () => {
               
               {isAuthenticated && (
                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <Dropdown
-                    overlay={<InboxDropdown inboxes={inboxes} />}
-                    placement="bottomRight"
-                    trigger={["click"]}
-                  >
-                    <Badge count={inboxes.filter((m) => !m.read).length} size="small">
-                      <Button
-                        type="text"
-                        icon={<BellOutlined />}
-                        className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50"
-                      />
-                    </Badge>
-                  </Dropdown>
+                  <Badge count={inboxes.filter((m) => !m.read).length} size="small">
+                    <Button
+                      type="text"
+                      icon={<MessageOutlined />}
+                      onClick={toggleInboxPanel}
+                      className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50"
+                    />
+                  </Badge>
                 </motion.div>
               )}
 
@@ -586,6 +583,7 @@ const Navbar: React.FC = () => {
           ]}
         />
       </Modal>
+
     </>
   );
 };

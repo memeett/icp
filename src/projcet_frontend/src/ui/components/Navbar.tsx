@@ -225,6 +225,7 @@ const Navbar: React.FC = () => {
       label: (
         <div className="flex justify-between items-center">
           <span>Wallet</span>
+
           {isWalletLoading ? (
             <Skeleton.Input style={{ width: 80 }} active size="small" />
           ) : (
@@ -232,8 +233,10 @@ const Navbar: React.FC = () => {
               {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
             </Text>
           )}
+    
         </div>
       ),
+      onClick: () => navigate('/balance-transaction')
     },
     {
       key: 'rating',

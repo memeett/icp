@@ -26,6 +26,7 @@ interface SearchBarProps {
   placeholder?: string;
   onSearch?: (query: string) => void;
   onFilterClick?: () => void;
+  onClear?: () => void;
   showFilters?: boolean;
   className?: string;
   size?: 'small' | 'middle' | 'large';
@@ -38,6 +39,7 @@ const SearchBar: React.FC<SearchBarProps> = memo(({
   onSearch,
   onFilterClick,
   showFilters = true,
+  onClear,
   className = '',
   size = 'large',
   suggestions = [],
@@ -72,6 +74,12 @@ const SearchBar: React.FC<SearchBarProps> = memo(({
       onSearch(debouncedSearchValue);
     }
   }, [debouncedSearchValue, onSearch]);
+
+  useEffect(() => {
+    if (!searchValue && onClear) {
+      onClear();
+    }
+  }, [searchValue, onClear]);
 
   const handleSearch = useCallback((value: string) => {
     if (value.trim()) {

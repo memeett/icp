@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { askAdvisor } from '../../controller/advisorController';
 import { motion } from 'framer-motion';
-import { Send, Bot, User } from 'lucide-react';
+import { Input, Button, Avatar, Typography, Spin } from 'antd';
+import { SendOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
+
+const { Text } = Typography;
 
 interface Message {
     text: string;
@@ -45,59 +48,107 @@ const AdvisorChat: React.FC = () => {
         }
     };
 
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="bg-white/80 backdrop-blur-sm border border-purple-100/50 rounded-xl shadow-lg w-full max-w-2xl mx-auto flex flex-col h-[500px]"
-        >
-            <div className="p-4 border-b border-purple-100/50">
-                <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                    <Bot className="mr-2 text-purple-500" size={20} />
-                    AI Job Advisor
-                </h3>
+        <div className="flex flex-col h-[400px] w-full bg-background border border-border rounded-lg z-50">
+            {/* Header */}
+            <div className="flex items-center p-3 border-b border-border bg-card rounded-t-lg">
+                <RobotOutlined className="text-primary mr-2" />
+                <Text strong className="text-foreground">AI Job Advisor</Text>
             </div>
-            <div className="flex-grow p-4 overflow-y-auto">
+
+            {/* Messages */}
+            <div className="flex-1 p-3 overflow-y-auto bg-background">
                 {messages.map((msg, index) => (
                     <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`flex items-start gap-3 my-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}
+                        className={`flex items-start gap-2 mb-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}
                     >
-                        {msg.sender === 'ai' && <Bot className="text-purple-500 flex-shrink-0 mt-1" size={20} />}
-                        <div className={`px-4 py-2 rounded-lg max-w-xs md:max-w-md ${msg.sender === 'user' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-800'}`}>
-                            <div className="prose prose-sm max-w-full">
-                                <ReactMarkdown>{msg.text}</ReactMarkdown>
+                        {msg.sender === 'ai' && (
+                            <Avatar
+                                size="small"
+                                icon={<RobotOutlined />}
+                                className="bg-primary/10 text-primary border-primary/20 flex-shrink-0"
+                            />
+                        )}
+                        <div
+                            className={`px-3 py-2 rounded-lg max-w-[80%] ${
+                                msg.sender === 'user'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground'
+                            }`}
+                        >
+                            <div className="prose prose-sm max-w-full text-inherit">
+                                <ReactMarkdown
+                                    components={{
+                                        p: ({ children }) => <p className="mb-1 last:mb-0 text-inherit">{children}</p>,
+                                        strong: ({ children }) => <strong className="text-inherit">{children}</strong>,
+                                        em: ({ children }) => <em className="text-inherit">{children}</em>,
+                                    }}
+                                >
+                                    {msg.text}
+                                </ReactMarkdown>
                             </div>
                         </div>
-                        {msg.sender === 'user' && <User className="text-gray-500 flex-shrink-0 mt-1" size={20} />}
+                        {msg.sender === 'user' && (
+                            <Avatar
+                                size="small"
+                                icon={<UserOutlined />}
+                                className="bg-muted text-muted-foreground flex-shrink-0"
+                            />
+                        )}
                     </motion.div>
                 ))}
+                {isLoading && (
+                    <div className="flex items-center gap-2 mb-3">
+                        <Avatar
+                            size="small"
+                            icon={<RobotOutlined />}
+                            className="bg-primary/10 text-primary border-primary/20"
+                        />
+                        <div className="bg-muted px-3 py-2 rounded-lg">
+                            <Spin size="small" />
+                            <Text className="ml-2 text-muted-foreground">Thinking...</Text>
+                        </div>
+                    </div>
+                )}
                 <div ref={messagesEndRef} />
             </div>
-            <div className="p-4 border-t border-purple-100/50 flex items-center">
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                    disabled={isLoading}
-                    placeholder="Ask the AI Advisor..."
-                    className="flex-grow px-4 py-2 bg-white/50 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all"
-                />
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleSend}
-                    disabled={isLoading}
-                    className="ml-3 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg disabled:opacity-50"
-                >
-                    {isLoading ? '...' : <Send size={20} />}
-                </motion.button>
+
+            {/* Input */}
+            <div className="p-3 border-t border-border bg-card rounded-b-lg">
+                <div className="flex gap-2">
+                    <Input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onPressEnter={handleKeyPress}
+                        disabled={isLoading}
+                        placeholder="Ask the AI Advisor..."
+                        className="flex-1"
+                        style={{
+                            backgroundColor: 'hsl(var(--background))',
+                            borderColor: 'hsl(var(--border))',
+                            color: 'hsl(var(--foreground))'
+                        }}
+                    />
+                    <Button
+                        type="primary"
+                        icon={<SendOutlined />}
+                        onClick={handleSend}
+                        disabled={isLoading || !input.trim()}
+                        loading={isLoading}
+                    />
+                </div>
             </div>
-        </motion.div>
+        </div>
     );
 };
 

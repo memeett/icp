@@ -5,6 +5,7 @@ import { ConfigProvider } from 'antd';
 import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from './ThemeProvider';
 import { ModalProvider } from '../../contexts/modal-context';
+import { InboxPanelProvider } from '../../contexts/InboxPanelContext';
 import { ErrorFallback } from '../../shared/components/ErrorFallback';
 import { antdTheme } from '../theme/antd-theme';
 
@@ -25,7 +26,9 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
           <ConfigProvider theme={antdTheme}>
             <ThemeProvider>
               <ModalProvider>
-                {children}
+                <InboxPanelProvider>
+                  {children}
+                </InboxPanelProvider>
               </ModalProvider>
             </ThemeProvider>
           </ConfigProvider>

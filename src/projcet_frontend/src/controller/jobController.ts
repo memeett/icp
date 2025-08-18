@@ -19,7 +19,7 @@ import { debugUserData } from "../utils/debugUtils";
 import { fixUserData } from "../utils/userDataFixer";
 import { Job as JobShared, JobPayload } from "../shared/types/Job";
 import { user } from "../../../declarations/user";
-import { getBalanceController, transferToJobController } from "./tokenController";
+import { getBalanceController, transferToJobController, transfertoWorkerController } from "./tokenController";
 
 export const createJob = async (payload: JobPayload): Promise<string[]> => {
   const agent = await agentService.getAgent();
@@ -136,22 +136,23 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
       if ("ok" in result) {
 
         
-        // const job_result = result.ok;
+        const job_result = result.ok;
 
-        // const obj = job_result.subAccount[0]!;
+        const obj = job_result.subAccount[0]!;
 
-        // const uint8 = new Uint8Array(Object.values(obj));
-        // const convertedJob: JobShared = {
-        //     ...job_result,
-        //     subAccount: [uint8], 
-        // };
-        // const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
-        // console.log("Transfer result:", transferResult);
-        // if ("ok" in transferResult) {
+        const uint8 = new Uint8Array(Object.values(obj));
+        const convertedJob: JobShared = {
+            ...job_result,
+            subAccount: [uint8], 
+        };
+        const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
+        console.log("Transfer result:", transferResult);
+        if ("ok" in transferResult) {
           return ["Success", "Job posted and transfer completed"];
-        // } else {
-        //   return ["Failed", `Job created but transfer failed: ${transferResult.err}`];
-        // }
+        } else {
+          return ["Failed", `Job created but transfer failed: ${transferResult.err}`];
+        }
+
       } else {
         return ["Failed", "Error creating job"];
       }
@@ -462,6 +463,13 @@ export const finishJob = async (
     );
 
     if ("ok" in result) {
+      const next_result = await transfertoWorkerController(job_id)
+        if ("ok" in next_result) {
+          return {jobFinished: true, message: "Job posted and transfer completed"};
+        } else {
+          return {jobFinished: false, message: `Job created but transfer failed: ${next_result.err}`};
+        }
+
       return { jobFinished: true, message: "Job finished successfully." };
     } else {
       return {

@@ -57,6 +57,10 @@ const FindJobPage: React.FC = memo(() => {
   const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 5000]);
   const [sortBy, setSortBy] = useState('newest');
   
+  // Add comprehensive loading state management
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  
   const {
     jobs,
     jobCategories,
@@ -70,6 +74,22 @@ const FindJobPage: React.FC = memo(() => {
   } = useJobs();
 
   const { searchValue, debouncedSearchValue, setSearchValue } = useDebouncedSearch('', 300);
+
+  // Handle initial loading state more carefully
+  useEffect(() => {
+    // Only consider it loaded when we have actual data or confirmed empty state
+    if (!isLoading && jobCategories.length > 0) {
+      setHasInitiallyLoaded(true);
+      setIsInitializing(false);
+    }
+  }, [isLoading, jobCategories.length]);
+
+  // Additional check for when jobs data is available
+  useEffect(() => {
+    if (jobs && Array.isArray(jobs) && hasInitiallyLoaded) {
+      setIsInitializing(false);
+    }
+  }, [jobs, hasInitiallyLoaded]);
 
   // Update search query when debounced value changes
   useEffect(() => {
@@ -182,9 +202,12 @@ const FindJobPage: React.FC = memo(() => {
     clearFilters
   ]);
 
-  // Memoized job grid
-  const jobGrid = useMemo(() => {
-    if (isLoading) {
+  // Improved job grid rendering with proper loading sequence
+  const renderJobGrid = () => {
+    // Determine if we should show loading
+    const shouldShowLoading = isInitializing || isLoading || (!hasInitiallyLoaded && jobs.length === 0);
+    
+    if (shouldShowLoading) {
       return (
         <div className="flex justify-center items-center py-20">
           <Spin size="large" tip="Loading jobs..." />
@@ -192,7 +215,8 @@ const FindJobPage: React.FC = memo(() => {
       );
     }
 
-    if (paginatedJobs.length === 0) {
+    // Show empty state only when fully loaded and no jobs found
+    if (hasInitiallyLoaded && !isLoading && paginatedJobs.length === 0) {
       return (
         <Empty
           description="No jobs found matching your criteria"
@@ -206,6 +230,7 @@ const FindJobPage: React.FC = memo(() => {
       );
     }
 
+    // Show jobs when available
     return (
       <AnimatePresence mode="wait">
         <motion.div
@@ -216,9 +241,7 @@ const FindJobPage: React.FC = memo(() => {
           transition={{ duration: 0.3 }}
         >
           <Row gutter={[16, 16]}>
-            {paginatedJobs
-            // .filter(job => job.jobStatus === "Open")
-            .map((job, index) => (
+            {paginatedJobs.map((job, index) => (
               <Col
                 key={job.id}
                 xs={24}
@@ -242,7 +265,7 @@ const FindJobPage: React.FC = memo(() => {
         </motion.div>
       </AnimatePresence>
     );
-  }, [isLoading, paginatedJobs, viewMode, currentPage, clearFilters]);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -259,113 +282,118 @@ const FindJobPage: React.FC = memo(() => {
           <SearchBar
             placeholder="Search jobs, skills, companies..."
             onSearch={setSearchValue}
+            onClear={() => setSearchValue('')}
             onFilterClick={toggleFilters}
             className="mb-6"
           />
         </motion.div>
 
-        {/* Controls */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-wrap items-center justify-between mb-6 gap-4"
-        >
-          <div className="flex items-center space-x-4">
-            <Text type="secondary">
-              {filteredJobs.length} jobs found
-            </Text>
-            {(selectedCategories.length > 0 || selectedPriceRanges.length > 0) && (
-              <div className="flex flex-wrap gap-2">
-                {selectedCategories.map(category => (
-                  <Tag
-                    key={category}
-                    closable
-                    onClose={() => handleCategoryChange(
-                      selectedCategories.filter(c => c !== category)
-                    )}
-                  >
-                    {category}
-                  </Tag>
+        {/* Controls - Hide during initial loading */}
+        {!isInitializing && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex flex-wrap items-center justify-between mb-6 gap-4"
+          >
+            <div className="flex items-center space-x-4">
+              <Text type="secondary">
+                {filteredJobs.length} jobs found
+              </Text>
+              {(selectedCategories.length > 0 || selectedPriceRanges.length > 0) && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedCategories.map(category => (
+                    <Tag
+                      key={category}
+                      closable
+                      onClose={() => handleCategoryChange(
+                        selectedCategories.filter(c => c !== category)
+                      )}
+                    >
+                      {category}
+                    </Tag>
+                  ))}
+                  {selectedPriceRanges.map(range => (
+                    <Tag
+                      key={range}
+                      closable
+                      onClose={() => handlePriceRangeChange(
+                        selectedPriceRanges.filter(r => r !== range)
+                      )}
+                    >
+                      {PRICE_RANGES.find(p => p.value === range)?.label}
+                    </Tag>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Space>
+              <Select
+                value={sortBy}
+                onChange={handleSortChange}
+                style={{ width: 150 }}
+                suffixIcon={<SortAscendingOutlined />}
+              >
+                {SORT_OPTIONS.map(option => (
+                  <Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Option>
                 ))}
-                {selectedPriceRanges.map(range => (
-                  <Tag
-                    key={range}
-                    closable
-                    onClose={() => handlePriceRangeChange(
-                      selectedPriceRanges.filter(r => r !== range)
-                    )}
-                  >
-                    {PRICE_RANGES.find(p => p.value === range)?.label}
-                  </Tag>
-                ))}
-              </div>
-            )}
-          </div>
+              </Select>
 
-          <Space>
-            <Select
-              value={sortBy}
-              onChange={handleSortChange}
-              style={{ width: 150 }}
-              suffixIcon={<SortAscendingOutlined />}
-            >
-              {SORT_OPTIONS.map(option => (
-                <Option key={option.value} value={option.value}>
-                  {option.label}
-                </Option>
-              ))}
-            </Select>
+              <Button.Group>
+                <Button
+                  type={viewMode === 'grid' ? 'primary' : 'default'}
+                  icon={<AppstoreOutlined />}
+                  onClick={() => setViewMode('grid')}
+                />
+                <Button
+                  type={viewMode === 'list' ? 'primary' : 'default'}
+                  icon={<UnorderedListOutlined />}
+                  onClick={() => setViewMode('list')}
+                />
+              </Button.Group>
 
-            <Button.Group>
               <Button
-                type={viewMode === 'grid' ? 'primary' : 'default'}
-                icon={<AppstoreOutlined />}
-                onClick={() => setViewMode('grid')}
-              />
-              <Button
-                type={viewMode === 'list' ? 'primary' : 'default'}
-                icon={<UnorderedListOutlined />}
-                onClick={() => setViewMode('list')}
-              />
-            </Button.Group>
-
-            <Button
-              icon={<FilterOutlined />}
-              onClick={toggleFilters}
-              className="md:hidden"
-            >
-              Filters
-            </Button>
-          </Space>
-        </motion.div>
+                icon={<FilterOutlined />}
+                onClick={toggleFilters}
+                className="md:hidden"
+              >
+                Filters
+              </Button>
+            </Space>
+          </motion.div>
+        )}
 
         {/* Main Content */}
         <Row gutter={24}>
-          {/* Desktop Filters */}
-          <Col xs={0} md={6}>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card title="Filters" className="sticky">
-                {filterContent}
-              </Card>
-            </motion.div>
-          </Col>
+          {/* Desktop Filters - Hide during initial loading */}
+          {!isInitializing && (
+            <Col xs={0} md={6}>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card title="Filters" className="sticky">
+                  {filterContent}
+                </Card>
+              </motion.div>
+            </Col>
+          )}
 
           {/* Job Listings */}
-          <Col xs={24} md={18}>
+          <Col xs={24} md={isInitializing ? 24 : 18}>
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
-              {jobGrid}
+              {renderJobGrid()}
 
-              {/* Pagination */}
-              {paginatedJobs.length > 0 && (
+              {/* Pagination - Only show when not loading and have jobs */}
+              {!isLoading && !isInitializing && paginatedJobs.length > 0 && (
                 <div className="flex justify-center mt-8">
                   <Pagination
                     current={currentPage}

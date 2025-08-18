@@ -11,7 +11,8 @@ import {
   Typography,
   Divider,
   Modal,
-  Tabs
+  Tabs,
+  Skeleton
 } from 'antd';
 import {
   UserOutlined,
@@ -81,15 +82,19 @@ const Navbar: React.FC = () => {
   const [senderInbox, setSenderInbox] = useState<Inbox[]>([]);
   const [usernames, setUsernames] = useState<{ [key: string]: string }>({});
   const [userWallet, setUserWallet] = useState<Token>();
+  const [isWalletLoading, setIsWalletLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserWallet = async () => {
       if (user?.id) {
+        setIsWalletLoading(true);
         try {
           const balance = await getBalanceController(user);
           setUserWallet(balance);
         } catch (error) {
           console.error("Failed to fetch user wallet:", error);
+        } finally {
+          setIsWalletLoading(false);
         }
       }
     };
@@ -220,9 +225,13 @@ const Navbar: React.FC = () => {
       label: (
         <div className="flex justify-between items-center">
           <span>Wallet</span>
-          <Text strong className="text-green-600">
-            {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
-          </Text>
+          {isWalletLoading ? (
+            <Skeleton.Input style={{ width: 80 }} active size="small" />
+          ) : (
+            <Text strong className="text-green-600">
+              {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
+            </Text>
+          )}
         </div>
       ),
     },
@@ -386,7 +395,11 @@ const Navbar: React.FC = () => {
                             {user.username || 'User'}
                           </Text>
                           <Text className="block text-xs text-muted-foreground">
-                            {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
+                            {isWalletLoading ? (
+                              <Skeleton.Input style={{ width: 80 }} active size="small" />
+                            ) : (
+                              `${userWallet?.token_value.toFixed(2) || '0.00'} ${userWallet?.token_symbol || 'undefined'}`
+                            )}
                           </Text>
                         </div>
                       </div>
@@ -453,7 +466,11 @@ const Navbar: React.FC = () => {
               <div>
                 <Text className="block font-medium">{user.username || 'User'}</Text>
                 <Text className="block text-sm text-muted-foreground">
-                  {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
+                  {isWalletLoading ? (
+                    <Skeleton.Input style={{ width: 80 }} active size="small" />
+                  ) : (
+                    `${userWallet?.token_value.toFixed(2) || '0.00'} ${userWallet?.token_symbol || 'undefined'}`
+                  )}
                 </Text>
               </div>
             </div>

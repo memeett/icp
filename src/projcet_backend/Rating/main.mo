@@ -54,21 +54,24 @@ actor RatingModel{
         List.iterate<Text>(
             user_ids,
             func(user_id : Text) {
-                let ratingId = Int.toText(nextId);
+                let currentId = nextId; // simpan id sekarang
+                nextId += 1;
+
+                let ratingId = Int.toText(currentId);
 
                 let newRating : Rating.Rating = {
-                    id = nextId+1;          // Assign the next unique ID
-                    job_id = job_id;      // Job ID for the rating
-                    user_id = user_id;    // User ID for the rating
-                    rating = 0;           // Default rating value
-                    isEdit = false;       // Default edit status
+                    id = currentId;
+                    job_id = job_id;
+                    user_id = user_id;
+                    rating = 0;
+                    isEdit = false;
                 };
 
-                // Add the new rating to the HashMap
                 ratings.put(ratingId, newRating);
-                nextId += 1;
             }
         );
+
+
 
         // Return success message
         #ok("Ratings created successfully");
@@ -173,7 +176,7 @@ actor RatingModel{
                     };
 
                     // Step 7: Save the updated rating back to the HashMap
-                    ratings.put(payload.rating_id, updatedRating);
+                    ratings.put(Int.toText(rating.id), updatedRating);
 
                     // Step 8: Call updateUserRating for the user associated with this rating
                     let updateResult = await updateUserRating(rating.user_id, user_canister);

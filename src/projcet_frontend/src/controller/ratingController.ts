@@ -3,6 +3,7 @@ import { rating } from "../../../declarations/rating";
 import {
   HistoryRatingPayload,
   RequestRatingPayload,
+  List,
 } from "../../../declarations/rating/rating.did";
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent } from "@dfinity/agent";
@@ -42,7 +43,6 @@ export const getFreelancerForRating = async (
       process.env.CANISTER_ID_USER!, // Ensure this environment variable is set
       process.env.CANISTER_ID_JOB! // Ensure this environment variable is set
     );
-
     // Step 4: Handle the result
     if ("ok" in result) {
       // Step 5: Transform the profilePicture field to Blob
@@ -63,7 +63,10 @@ export const getFreelancerForRating = async (
           user: {
             ...rating.user,
             profilePicture: profilePictureBlob,
-            subAccount: parsedData.subAccount.length > 0 ? [new Uint8Array(parsedData.subAccount[0])] : [new Uint8Array()]
+            subAccount:
+              parsedData.ok.subAccount && parsedData.ok.subAccount.length > 0
+                ? [new Uint8Array(parsedData.ok.subAccount[0])] as [Uint8Array]
+                : [] as []
           },
         };
       });
@@ -81,56 +84,32 @@ export const getFreelancerForRating = async (
     return [];
   }
 };
-
 export const ratingUser = async (
-  rating_id: string,
-  ratingValue: number
+  payloads: RequestRatingPayload[]
 ): Promise<string> => {
   try {
-    // Verify we have valid values before proceeding
-    if (
-      rating_id === undefined ||
-      rating_id === null ||
-      isNaN(Number(rating_id))
-    ) {
-      console.error("Invalid rating ID:", rating_id);
-      return "Error: Invalid rating ID";
+    await agentService.getAgent();
+
+    // Pastikan user canister id tersedia
+    const userCanisterId = process.env.CANISTER_ID_USER;
+    if (!userCanisterId) {
+      throw new Error("User canister ID is not configured.");
     }
 
-    if (
-      ratingValue === undefined ||
-      ratingValue === null ||
-      isNaN(Number(ratingValue))
-    ) {
-      console.error("Invalid rating value:", ratingValue);
-      return "Error: Invalid rating value";
-    }
+    const result = await rating.ratingUser(payloads, userCanisterId);
 
-    // Step 1: Create the payload for the rating update - ensure valid number conversion
-    const payload: RequestRatingPayload = {
-      rating_id: rating_id,
-      rating: Number(ratingValue),
-    };
-    console.log("Payload for rating:", payload);
-    // Step 2: Call the `ratingUser` method on the rating actor with an array of payloads
-    const result = await rating.ratingUser(
-      [payload],
-      process.env.CANISTER_ID_USER!
-    );
-
-    // Step 3: Handle the result
     if ("ok" in result) {
-      // Success case: Return the success message
       return result.ok;
     } else {
-      // Error case: Log the error and return the error message
-      console.error("Failed to rate user:", result.err);
+      console.error("Failed to rate users:", result.err);
       return result.err;
     }
   } catch (error) {
-    // Handle any unexpected errors
-    console.error("Error rating user:", error);
-    return "Error rating user. Please try again later.";
+    console.error("Error rating users:", error);
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return "An unexpected error occurred while rating users.";
   }
 };
 
@@ -153,5 +132,43 @@ export const getRatingByUserIdJobId = async (
     // Error case: Log the error and return the error message
     console.error("Failed to rate user:", result.err);
     return result.err;
+  }
+};
+
+export const createRating = async (
+  jobId: string,
+  userIds: string[]
+): Promise<string> => {
+  try {
+    await agentService.getAgent();
+
+    if (!jobId || jobId.trim().length === 0) {
+      return "Job ID cannot be empty";
+    }
+    if (!userIds || userIds.length === 0) {
+      return "User IDs list cannot be empty";
+    }
+
+    const arrayToList = (arr: string[]): List => {
+      let list: List = [];
+      for (let i = arr.length - 1; i >= 0; i--) {
+        list = [[arr[i], list]];
+      }
+      return list;
+    };
+
+    const userIdsList: List = arrayToList(userIds);
+
+    const result = await rating.createRating(jobId, userIdsList);
+
+    if ("ok" in result) {
+      return result.ok;
+    } else {
+      console.error("Failed to create ratings:", result.err);
+      return result.err;
+    }
+  } catch (error) {
+    console.error("Error creating ratings:", error);
+    return "Error creating ratings. Please try again later.";
   }
 };

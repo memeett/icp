@@ -125,6 +125,7 @@ export const useJobDetails = (
       if (user && !isOwner) {
         setHasApplied(results[resultIndex++]);
         const freelancerStatus = results[resultIndex++];
+        console.log('Hi '+freelancerStatus)
         if (freelancerStatus[0] === "succ") {
           if (freelancerStatus[1] === "true") setisJobFreelancer(true);
           else setisJobFreelancer(false);

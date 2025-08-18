@@ -78,6 +78,7 @@ const JobDetailPage: React.FC = () => {
     isAccepting,
     isRejecting,
     isFetchingLetter,
+    similarJobs,
     handleApply,
     handleAcceptApplicant,
     handleRejectApplicant,
@@ -126,7 +127,6 @@ const JobDetailPage: React.FC = () => {
     }
   };
 
-  // Handle application submission
   const handleApplicationSubmit = async (values: any) => {
     if (Number(job!.jobSlots) - acceptedFreelancers.length <= 0) {
       message.error('No available slots for new applicants');
@@ -139,10 +139,6 @@ const JobDetailPage: React.FC = () => {
     }
   };
 
-  const handleSaveJob = () => {
-    setIsSaved(!isSaved);
-    message.success(isSaved ? 'Job removed from saved' : 'Job saved successfully');
-  };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -195,13 +191,6 @@ const JobDetailPage: React.FC = () => {
               </div>
 
               <Space>
-                <Tooltip title={isSaved ? 'Remove from saved' : 'Save job'}>
-                  <Button
-                    icon={isSaved ? <HeartFilled /> : <HeartOutlined />}
-                    onClick={handleSaveJob}
-                    type={isSaved ? 'primary' : 'default'}
-                  />
-                </Tooltip>
                 <Tooltip title="Share job">
                   <Button icon={<ShareAltOutlined />} onClick={handleShare} />
                 </Tooltip>
@@ -237,14 +226,8 @@ const JobDetailPage: React.FC = () => {
                   <Text type="secondary">Applicants</Text>
                 </div>
               </Col>
-              <Col xs={12} sm={6}>
-                <div className="text-center p-4 bg-background rounded-lg">
-                  <StarOutlined className="text-2xl text-orange-500 mb-2" />
-                  <div className="font-semibold">{job!.jobRating.toFixed(1)}</div>
-                  <Text type="secondary">Rating</Text>
-                </div>
-              </Col>
-            </Row>
+
+            </Row>  
 
             <Divider />
 
@@ -334,16 +317,24 @@ const JobDetailPage: React.FC = () => {
         <Col xs={24} lg={8}>
           <Card title="Similar Jobs" size="small">
             <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <Text strong className="block mb-1">
-                    React Developer Needed
-                  </Text>
-                  <Text type="secondary" className="text-sm">
-                    $2,500 • Fixed Price
-                  </Text>
-                </div>
-              ))}
+              {similarJobs && similarJobs.length > 0 ? (
+                similarJobs.map(similarJob => (
+                  <div
+                    key={similarJob.id}
+                    className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                    onClick={() => navigate(`/job/${similarJob.id}`)}
+                  >
+                    <Text strong className="block mb-1">
+                      {similarJob.jobName}
+                    </Text>
+                    <Text type="secondary" className="text-sm">
+                      ${similarJob.jobSalary.toLocaleString()} • Fixed Price
+                    </Text>
+                  </div>
+                ))
+              ) : (
+                <Text type="secondary">No similar jobs found.</Text>
+              )}
             </div>
           </Card>
         </Col>
@@ -1052,10 +1043,12 @@ const JobDetailPage: React.FC = () => {
 
               <TabPane tab="Job Details" key="details">
                 <JobDetailsContent />
+                <p>{String(isJobFreelancer)}</p>
               </TabPane>
               {isJobFreelancer && job.jobStatus === "Ongoing" && (
                 <TabPane tab="Submission Upload" key="submission">
                   <SubmissionContent />
+                  
                 </TabPane>
               )}
             </Tabs>

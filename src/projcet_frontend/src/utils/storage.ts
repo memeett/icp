@@ -66,8 +66,9 @@ export const storage = {
   },
   setSession: (session: any) => {
     try {
-      const sessionString = JSON.stringify(session);
-      localStorage.setItem(SESSION_KEY, sessionString);
+      // If session is already a string, store it directly. Otherwise, stringify it.
+      const sessionToStore = typeof session === 'string' ? session : JSON.stringify(session);
+      localStorage.setItem(SESSION_KEY, sessionToStore);
     } catch (error) {
       console.error("Failed to set session in localStorage:", error);
     }
@@ -76,10 +77,33 @@ export const storage = {
     try {
       const sessionString = localStorage.getItem(SESSION_KEY);
       if (!sessionString) return null;
-      const parsed = JSON.parse(sessionString);
-      return typeof parsed === 'string' ? parsed.replace(/^"|"$/g, '') : sessionString.replace(/^"|"$/g, '');
+      let cleanedSession = sessionString;
+      // Repeatedly unescape and unquote until the string no longer changes
+      while (true) {
+        const prevCleanedSession = cleanedSession;
+        try {
+          // Try to parse if it's a JSON string (e.g., "\"abc\"")
+          const parsed = JSON.parse(cleanedSession);
+          if (typeof parsed === 'string') {
+            cleanedSession = parsed;
+          } else {
+            // If it's not a string after parsing, revert and break
+            cleanedSession = prevCleanedSession;
+            break;
+          }
+        } catch (e) {
+          // If JSON.parse fails, it's not a JSON string, so just remove outer quotes/backslashes
+          cleanedSession = cleanedSession.replace(/^"|"$/g, '').replace(/^\\|\\$/g, '');
+        }
+        if (cleanedSession === prevCleanedSession) {
+          break; // No more changes, stop
+        }
+      }
+      return cleanedSession;
     } catch (error) {
-      return localStorage.getItem(SESSION_KEY)?.replace(/^"|"$/g, '') || null;
+      console.error("Failed to get session from localStorage:", error);
+      // Fallback to a simpler cleanup if parsing fails
+      return localStorage.getItem(SESSION_KEY)?.replace(/^"|"$/g, '').replace(/^\\|\\$/g, '') || null;
     }
   },
   clear: () => {

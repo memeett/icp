@@ -7,6 +7,7 @@ import { ThemeProvider } from './ThemeProvider';
 import { ModalProvider } from '../../contexts/modal-context';
 import { InboxPanelProvider } from '../../contexts/InboxPanelContext';
 import { ErrorFallback } from '../../shared/components/ErrorFallback';
+import FaviconManager from '../../components/FaviconManager';
 import { antdTheme } from '../theme/antd-theme';
 
 interface AppProvidersProps {
@@ -25,6 +26,7 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
         <JotaiProvider>
           <ConfigProvider theme={antdTheme}>
             <ThemeProvider>
+              <FaviconManager />
               <ModalProvider>
                 <InboxPanelProvider>
                   {children}

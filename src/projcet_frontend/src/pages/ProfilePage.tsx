@@ -38,7 +38,6 @@ import { ProjectOutlined } from '@ant-design/icons';
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
-// Mock job categories - in a real app, this would be fetched from the backend
 const mockJobCategories: JobCategory[] = [
   { id: '1', jobCategoryName: 'Web Development' },
   { id: '2', jobCategoryName: 'Mobile Development' },
@@ -59,6 +58,8 @@ const ProfilePage: React.FC = () => {
     if (user && user.profilePicture) {
       setProfileImage(getProfilePictureUrl(user.id, user.profilePicture));
     }
+
+    
   }, [user]);
 
   const handleSave = async (values: any) => {

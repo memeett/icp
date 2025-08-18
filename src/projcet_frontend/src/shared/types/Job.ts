@@ -10,7 +10,7 @@ export interface Job {
   jobTags: JobCategory[];
   jobSalary: number;
   jobSlots: bigint;
-  jobStatus: string;
+  jobStatus: 'Open' | 'Ongoing' | 'Finished' | 'Cancelled';
   jobRating: number;
   userId: string;
   wallet: number;

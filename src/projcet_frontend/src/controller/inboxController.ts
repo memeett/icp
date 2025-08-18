@@ -145,6 +145,9 @@ export const getAllInboxByUserId = async (
         
         return {
           id: i.id,
+          jobId: i.jobId,
+          senderId: i.senderId,
+          receiverId: i.receiverId,
           senderName: senderName,
           receiverName: receiverName,
           createdAt: formatDate(i.createdAt),
@@ -180,7 +183,25 @@ export const getInboxMessagesFromAppliers = async (
   const agent = await agentService.getAgent();
   try {
     const result = await inbox.getInboxMessagesFromAppliers(jobId, userId);
-    return result;
+      const responses: InboxResponse[] = await Promise.all(
+      result.map(async (i) => {
+        const senderName = await user.getUsernameById(i.senderId);
+        const receiverName = await user.getUsernameById(i.receiverId);
+        
+        return {
+          id: i.id,
+          jobId: i.jobId,
+          senderId: i.senderId,
+          receiverId: i.receiverId,
+          senderName: senderName,
+          receiverName: receiverName,
+          createdAt: formatDate(i.createdAt),
+          read: i.read,
+          message: i.message,
+        };
+      })
+    );
+    return responses;
   } catch (error) {
     console.error("Failed to get inbox:", error);
     return [] ;

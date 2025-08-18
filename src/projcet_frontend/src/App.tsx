@@ -1,7 +1,7 @@
 import React from 'react';
 import { AppProviders } from './app/providers/AppProviders';
 import { AppRouter } from './app/router';
-import { NotificationContainer } from './ui/components/NotificationContainer';
+import InboxPanel from './components/inbox/InboxPanel';
 import './styles/style.css';
 
 function App() {
@@ -9,7 +9,7 @@ function App() {
     <AppProviders>
       <div className="App">
         <AppRouter />
-        <NotificationContainer />
+        <InboxPanel />
       </div>
     </AppProviders>
   );

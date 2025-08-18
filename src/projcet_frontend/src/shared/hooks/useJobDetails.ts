@@ -24,6 +24,7 @@ import { Job } from "../types/Job";
 import { get } from "http";
 import { InboxResponse } from "../types/Inbox";
 import { send } from "vite";
+import { createRating } from "../../controller/ratingController";
 
 interface ApplicantData {
   user: User;
@@ -340,6 +341,21 @@ export const useJobDetails = (
       const result = await finishJob(job.id);
       if (result.jobFinished) {
         message.success("Job finished successfully!");
+        const userIds = acceptedFreelancers
+          .map((u) => u.id)
+          .filter((id): id is string => typeof id === "string" && id.length > 0);
+
+        if (userIds.length > 0) {
+          const res = await createRating(job.id, userIds);
+          if (typeof res === "string" && res.toLowerCase().includes("success")) {
+            message.success("Rating created successfully");
+          } else {
+            message.warning(res);
+          }
+        } else {
+          message.info("No accepted freelancers to create ratings for.");
+        }
+
         await fetchJobDetails();
         return true;
       } else {
@@ -351,7 +367,7 @@ export const useJobDetails = (
       message.error("Failed to finish job.");
       return false;
     }
-  }, [job, fetchJobDetails]);
+  }, [job, acceptedFreelancers, fetchJobDetails]);
 
   const handleCoverLetter = useCallback(
     async (jobId: string, userId: string, applicantId: string) => {

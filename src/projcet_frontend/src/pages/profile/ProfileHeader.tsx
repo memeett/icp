@@ -2,6 +2,7 @@ import React from 'react';
 import { Row, Col, Avatar, Typography, Button, Space } from 'antd';
 import { UserOutlined, EditOutlined, MailOutlined } from '@ant-design/icons';
 import { User } from '../../shared/types/User';
+import { DescriptionsContext } from 'antd/es/descriptions';
 
 const { Title, Text } = Typography;
 
@@ -22,8 +23,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, profileImage, onEdi
         <Title level={2} className="mb-2">{user.username || 'N/A'}</Title>
         <Space direction="vertical" size="small">
           <Space>
-            <MailOutlined />
-            <Text>{user.id}</Text>
+            {/* <Descriptions */}
+            <Text>{user.description}</Text>
           </Space>
         </Space>
       </Col>

@@ -6,6 +6,7 @@ import {
   getAcceptedFreelancer,
   startJob,
   finishJob,
+  viewAllJobs,
 } from "../../controller/jobController";
 import {
   applyJob,
@@ -36,8 +37,8 @@ interface UseJobDetailsReturn {
   acceptedFreelancers: User[];
   hasApplied: boolean;
   isJobOwner: boolean;
-
   isJobFreelancer: boolean;
+  similarJobs: Job[];
 
   // State
   loading: boolean;
@@ -71,6 +72,7 @@ export const useJobDetails = (
   const [hasApplied, setHasApplied] = useState(false);
   const [isJobOwner, setIsJobOwner] = useState(false);
   const [isJobFreelancer, setisJobFreelancer] = useState(false);
+  const [similarJobs, setSimilarJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
@@ -83,7 +85,11 @@ export const useJobDetails = (
 
     setLoading(true);
     try {
-      const jobData = await getJobById(jobId);
+      const [jobData, allJobsData] = await Promise.all([
+        getJobById(jobId),
+        viewAllJobs(),
+      ]);
+
       if (!jobData) {
         throw new Error("Job not found");
       }
@@ -150,6 +156,40 @@ export const useJobDetails = (
 
       setApplicants(filteredData);
       setAcceptedFreelancers(acceptedData);
+
+      // Logic for similar jobs
+      if (convertedJob && allJobsData) {
+        const convertedAllJobs: Job[] = allJobsData.map((jobData: any) => ({
+          ...jobData,
+          jobTags: jobData.jobTags?.map((t: any) => ({
+            id: t.id?.toString?.() ?? String(t.id),
+            jobCategoryName: t.jobCategoryName,
+          })) || [],
+          subAccount: jobData.subAccount && jobData.subAccount[0]
+            ? [new Uint8Array(jobData.subAccount[0])]
+            : [],
+          jobSlots: BigInt(jobData.jobSlots),
+          createdAt: BigInt(jobData.createdAt),
+          updatedAt: BigInt(jobData.updatedAt),
+        }));
+
+        const currentJobTags = new Set(
+          convertedJob.jobTags.map((tag) => tag.jobCategoryName)
+        );
+
+        const similar = convertedAllJobs
+          .filter((j: Job) => {
+            if (j.id === convertedJob.id) return false; // Exclude self
+            const jobTags = new Set(j.jobTags.map((tag) => tag.jobCategoryName));
+            const intersection = new Set(
+              [...currentJobTags].filter((tag) => jobTags.has(tag))
+            );
+            return intersection.size > 0; // Find jobs with at least one common tag
+          })
+          .slice(0, 3); // Take top 3
+        setSimilarJobs(similar);
+      }
+
     } catch (error) {
       console.error("Error fetching job details:", error);
       message.error("Failed to load job details");
@@ -357,8 +397,8 @@ export const useJobDetails = (
     acceptedFreelancers,
     hasApplied,
     isJobOwner,
-
     isJobFreelancer,
+    similarJobs,
 
     // State
     loading,

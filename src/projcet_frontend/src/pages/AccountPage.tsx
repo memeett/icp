@@ -23,14 +23,33 @@ import { useAuth } from '../shared/hooks/useAuth';
 import FaceRecognition from '../components/FaceRecognition';
 import Navbar from '../ui/components/Navbar';
 import AdvisorChat from '../components/chat/AdvisorChat';
+import { Token } from '../interface/Token';
+import { getBalanceController } from '../controller/tokenController';
+import { getProfilePictureUrl } from '../controller/userController';
 
 const { Title, Text, Paragraph } = Typography;
 
 const AccountPage: React.FC = () => {
   const { user } = useAuth();
+  const [userWallet, setUserWallet] = useState<Token>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [faceRecognitionEnabled, setFaceRecognitionEnabled] = useState(false);
   const [loading, setLoading] = useState(true); // Set to true initially for loading state
+
+  useEffect(() => {
+    const fetchUserWallet = async () => {
+      if (user?.id) {
+        try {
+          const balance = await getBalanceController(user);
+          setUserWallet(balance);
+        } catch (error) {
+          console.error("Failed to fetch user wallet:", error);
+        }
+      }
+    };
+
+    fetchUserWallet();
+  }, [user]);
 
   useEffect(() => {
     const checkFaceRegistrationStatus = async () => {
@@ -46,7 +65,6 @@ const AccountPage: React.FC = () => {
           }
         } catch (error) {
           console.error("Error checking face registration status:", error);
-          // Optionally, show an error message to the user
         } finally {
           setLoading(false);
         }
@@ -72,6 +90,10 @@ const AccountPage: React.FC = () => {
     setIsModalOpen(true);
   }, []);
 
+  const profilePictureUrl = user?.profilePicture
+    ? getProfilePictureUrl(user.id, user.profilePicture)
+    : undefined;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -88,9 +110,10 @@ const AccountPage: React.FC = () => {
             {/* Profile Overview */}
             <Col xs={24} lg={8}>
               <Card className="text-center">
-                <Avatar 
-                  size={120} 
+                <Avatar
+                  size={120}
                   icon={<UserOutlined />}
+                  src={profilePictureUrl}
                   className="mb-4"
                 />
                 <Title level={4}>{user?.username || 'User'}</Title>
@@ -99,7 +122,7 @@ const AccountPage: React.FC = () => {
                   <div className="flex justify-between">
                     <Text>Wallet Balance:</Text>
                     <Text strong className="text-green-600">
-                      ${user?.wallet?.toFixed(2) || '0.00'}
+                      {userWallet?.token_value.toFixed(2) || '0.00'} {userWallet?.token_symbol || 'undefined'}
                     </Text>
                   </div>
                   <div className="flex justify-between">

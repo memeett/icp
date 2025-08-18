@@ -78,6 +78,7 @@ const JobDetailPage: React.FC = () => {
     isAccepting,
     isRejecting,
     isFetchingLetter,
+    similarJobs,
     handleApply,
     handleAcceptApplicant,
     handleRejectApplicant,
@@ -316,16 +317,24 @@ const JobDetailPage: React.FC = () => {
         <Col xs={24} lg={8}>
           <Card title="Similar Jobs" size="small">
             <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <Text strong className="block mb-1">
-                    React Developer Needed
-                  </Text>
-                  <Text type="secondary" className="text-sm">
-                    $2,500 • Fixed Price
-                  </Text>
-                </div>
-              ))}
+              {similarJobs && similarJobs.length > 0 ? (
+                similarJobs.map(similarJob => (
+                  <div
+                    key={similarJob.id}
+                    className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                    onClick={() => navigate(`/job/${similarJob.id}`)}
+                  >
+                    <Text strong className="block mb-1">
+                      {similarJob.jobName}
+                    </Text>
+                    <Text type="secondary" className="text-sm">
+                      ${similarJob.jobSalary.toLocaleString()} • Fixed Price
+                    </Text>
+                  </div>
+                ))
+              ) : (
+                <Text type="secondary">No similar jobs found.</Text>
+              )}
             </div>
           </Card>
         </Col>

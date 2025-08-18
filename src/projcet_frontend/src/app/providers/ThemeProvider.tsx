@@ -89,7 +89,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   const currentTheme = getAntdTheme(theme === 'dark');
-
   return (
     <ThemeContext.Provider value={contextValue}>
       <ConfigProvider theme={currentTheme}>

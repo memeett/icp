@@ -318,7 +318,7 @@ export const useJobDetails = (
     if (!job || !user || !isJobOwner) return false;
 
     try {
-      const result = await startJob(job.id);
+      const result = await startJob(job.id, user);
       if (result.jobStarted) {
         message.success("Job started successfully!");
         await fetchJobDetails();

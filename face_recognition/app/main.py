@@ -75,7 +75,7 @@ async def register_face(
             raise HTTPException(status_code=422, detail="Invalid image data")
 
         embedding_data = DeepFace.represent(img, model_name="Facenet")[0]
-        embedding = numpy_to_list(embedding_data) # Ensure it's a list before saving
+        embedding = numpy_to_list(embedding_data)
     
         face_embeddings[principal_id] = embedding
         

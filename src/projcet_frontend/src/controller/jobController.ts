@@ -90,11 +90,6 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         ...new_curr_user,
         subAccount: [uint8], // Convert subAccount to Uint8Array
       }
-      const creator_token = await getBalanceController(converted_user);
-      console.log("Creator token balance:", creator_token.token_value);
-      if(creator_token.token_value < payload.jobSalary) {
-        return ["Failed", "Insufficient balance to create job"];
-      }
       console.log("lanjutt euy")
       // Debug the user data structure
       console.log("User ID:", currentUser.id);
@@ -134,25 +129,9 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         process.env.CANISTER_ID_JOB!
       );
       if ("ok" in result) {
+   
 
-        
-        const job_result = result.ok;
-
-        const obj = job_result.subAccount[0]!;
-
-        const uint8 = new Uint8Array(Object.values(obj));
-        const convertedJob: JobShared = {
-            ...job_result,
-            jobStatus: job_result.jobStatus as 'Open' | 'Ongoing' | 'Finished' | 'Cancelled',
-            subAccount: [uint8],
-        };
-        const transferResult = await transferToJobController(currentUser, convertedJob, job_result.jobSalary);
-        console.log("Transfer result:", transferResult);
-        if ("ok" in transferResult) {
-          return ["Success", "Job posted and transfer completed"];
-        } else {
-          return ["Failed", `Job created but transfer failed: ${transferResult.err}`];
-        }
+        return ["Success", "Successfully created job"]
 
       } else {
         return ["Failed", "Error creating job"];
@@ -366,69 +345,68 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
 };
 
 export const startJob = async (
-  job_id: string
+  job_id: string,
+  curr_user: User,
 ): Promise<{ jobStarted: boolean; message: string }> => {
   try {
     // Authenticate the user
     const agent = await agentService.getAgent();
+    const curr_job = await getJobById(job_id);
 
-    const result = await job.startJob(job_id);
-    if (result) {
-      return {
-        jobStarted: true,
-        message: "Job started successfully.",
-      };
-    }else{
+    
+
+    if(curr_job){
+      const result = await job.startJob(job_id);
+      if (result) {
+
+          const creator_token = await getBalanceController(curr_user);
+          console.log("Creator token balance:", creator_token.token_value);
+          if(creator_token.token_value < curr_job.jobSalary) {
+            return {
+                jobStarted: false,
+                message: "Insufficient Balance.",
+              };
+          }
+          const obj = curr_job.subAccount[0]!;
+          const uint8 = new Uint8Array(Object.values(obj));
+
+          
+          const transferResult = await transferToJobController(
+            curr_user,
+            {
+              ...curr_job,
+              jobStatus: curr_job.jobStatus as "Open" | "Ongoing" | "Finished" | "Cancelled",
+              subAccount: [uint8],
+            },
+            curr_job.jobSalary
+          );
+          console.log("Transfer result:", transferResult);
+          if ("ok" in transferResult) {
+            return {
+                jobStarted: true,
+                message: "Job started successfully.",
+              };
+          } else {
+            return {
+              jobStarted: false,
+              message: "Job started unsuccessfully.",
+            };
+          }
+      
+      }else{
+        return {
+          jobStarted: false,
+          message: "Failed to start job: " + JSON.stringify(result),
+        };
+      }
+    } else {
       return {
         jobStarted: false,
-        message: "Failed to start job: " + JSON.stringify(result),
+        message: "Job not found.",
       };
     }
-      // Check if the result is successful
-      // if ("ok" in result) {
-      //   // Update the user's wallet balance in local storage
-      //   const userStr = localStorage.getItem("current_user");
-        //   if (userStr) {
-    //     const parsedData = JSON.parse(userStr);
-    //     if (
-    //       parsedData &&
-    //       typeof parsedData === "object" &&
-    //       "ok" in parsedData
-    //     ) {
-    //       const updatedUser = {
-    //         ...parsedData.ok,
-    //         wallet: parsedData.ok.wallet - amount,
-    //       };
-
-    //       localStorage.setItem(
-    //         "current_user",
-    //         JSON.stringify({ ok: updatedUser })
-    //       );
-    //       return {
-    //         jobStarted: true,
-    //         message: "Job started and wallet updated successfully",
-    //       };
-    //     } else {
-    //       return {
-    //         jobStarted: true,
-    //         message: "Job started but user data in local storage is invalid",
-    //       };
-    //     }
-    //   } else {
-    //     return {
-    //       jobStarted: true,
-    //       message: "Job started but user not found in local storage",
-    //     };
-    //   }
-    // } else {
-    //   console.log("no money");
-    //   return {
-    //     jobStarted: false,
-    //     message: "Failed to start job: " + JSON.stringify(result.err),
-    //   };
-    // }
-  } catch (error) {
-    return {
+   } catch (error) {
+     return {
       jobStarted: false,
       message: "Error: " + String(error),
     };

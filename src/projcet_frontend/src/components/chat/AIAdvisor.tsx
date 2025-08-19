@@ -43,7 +43,7 @@ const AIAdvisor: React.FC = () => {
                 {isOpen && (
                     <motion.div
                         ref={chatRef}
-                        className="fixed bottom-24 right-8 z-40"
+                        className="fixed bottom-24 right-8 z-40 no-horizontal-scroll"
                         initial={{ opacity: 0, scale: 0.8, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.8, y: 20 }}

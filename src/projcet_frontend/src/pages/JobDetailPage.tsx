@@ -1116,7 +1116,6 @@ const JobDetailPage: React.FC = () => {
 
               <TabPane tab="Job Details" key="details">
                 <JobDetailsContent />
-                <p>{String(isJobFreelancer)}</p>
               </TabPane>
               {isJobFreelancer && job.jobStatus === "Ongoing" && (
                 <TabPane tab="Submission Upload" key="submission">

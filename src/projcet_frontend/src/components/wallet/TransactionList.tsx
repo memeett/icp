@@ -34,6 +34,20 @@ const TransactionList: React.FC<TransactionListProps> = ({
     const { user } = useAuth();
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
+   useEffect(() => {
+       transactions.forEach(item => {
+           if (!("topUp" in item.transactionType) && !("transferToJob" in item.transactionType)) {
+               const isOutgoing = item.fromId === user?.id;
+               if (!isOutgoing) {
+                   const jobId = item.fromId;
+                   if (!jobAndOwnerInfo[jobId] && !loadingJobInfo[jobId]) {
+                       getJobAndOwnerInfo(jobId);
+                   }
+               }
+           }
+       });
+   }, [transactions, user, jobAndOwnerInfo, loadingJobInfo, getJobAndOwnerInfo]);
+
     return (
         <List
             loading={loading}
@@ -64,11 +78,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
                         description = `Sent to ${item.toId.join(", ")}`;
                     } else {
                         const jobId = item.fromId;
-                        useEffect(() => {
-                            if (!jobAndOwnerInfo[jobId] && !loadingJobInfo[jobId]) {
-                                getJobAndOwnerInfo(jobId);
-                            }
-                        }, [jobId, jobAndOwnerInfo, loadingJobInfo, getJobAndOwnerInfo]);
 
                         if (loadingJobInfo[jobId]) {
                             description = "Loading job information...";

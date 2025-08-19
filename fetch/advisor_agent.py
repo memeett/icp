@@ -26,8 +26,8 @@ ASI1_HEADERS = {
 }
 
 # ICP HTTP routing
-JOB_CANISTER_ID = "ufxgi-4p777-77774-qaadq-cai"
-USER_CANISTER_ID = "vt46d-j7777-77774-qaagq-cai"
+JOB_CANISTER_ID = "ucwa4-rx777-77774-qaada-cai"
+USER_CANISTER_ID = "vu5yx-eh777-77774-qaaga-cai"
 RATING_CANISTER_ID = "vg3po-ix777-77774-qaafa-cai"
 
 BASE_URL = "http://127.0.0.1:4943"

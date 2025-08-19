@@ -140,7 +140,7 @@ const BalanceTransactionPage: React.FC = () => {
                                 items={[
                                     {
                                         key: 'all',
-                                        label: `All Transactions (${filteredTransactions.length})`,
+                                        label: `All Transactions (${filteredTransactions?.length})`,
                                         children: (
                                             <TransactionList
                                                 transactions={
@@ -167,7 +167,7 @@ const BalanceTransactionPage: React.FC = () => {
                                     },
                                     {
                                         key: 'incoming',
-                                        label: `Income (${incomingTransactions.length})`,
+                                        label: `Income (${incomingTransactions?.length})`,
                                         children: (
                                             <TransactionList
                                                 transactions={
@@ -194,7 +194,7 @@ const BalanceTransactionPage: React.FC = () => {
                                     },
                                     {
                                         key: 'outgoing',
-                                        label: `Expenses (${outgoingTransactions.length})`,
+                                        label: `Expenses (${outgoingTransactions?.length})`,
                                         children: (
                                             <TransactionList
                                                 transactions={

@@ -318,13 +318,16 @@ export const useJobDetails = (
     if (!job || !user || !isJobOwner) return false;
 
     try {
+      setLoading(true);
       const result = await startJob(job.id);
       if (result.jobStarted) {
         message.success("Job started successfully!");
+        setLoading(false);
         await fetchJobDetails();
         return true;
       } else {
         message.error(result.message);
+        setLoading(false);
         return false;
       }
     } catch (error) {

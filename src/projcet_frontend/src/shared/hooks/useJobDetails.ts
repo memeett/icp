@@ -338,6 +338,7 @@ export const useJobDetails = (
     if (!job) return false;
 
     try {
+      setLoading(true);
       const result = await finishJob(job.id);
       if (result.jobFinished) {
         message.success("Job finished successfully!");
@@ -357,12 +358,15 @@ export const useJobDetails = (
         }
 
         await fetchJobDetails();
+        setLoading(false);
         return true;
       } else {
+        setLoading(false);
         message.error(result.message);
         return false;
       }
     } catch (error) {
+      setLoading(false);
       console.error("Error finishing job:", error);
       message.error("Failed to finish job.");
       return false;

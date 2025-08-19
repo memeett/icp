@@ -100,6 +100,7 @@ const JobDetailPage: React.FC = () => {
   const [isAcceptModalVisible, setIsAcceptModalVisible] = useState(false);
   const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
   const [isCoverModalVisible, setIsCoverModalVisible] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState<boolean>(false);
 
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
@@ -115,6 +116,7 @@ const JobDetailPage: React.FC = () => {
     if (!user || !jobId || !values.userId) return;
 
     try {
+      setInviteLoading(true);
       const success = await sendInvitation(values.userId, user.id, jobId);
       if (success) {
         message.success('Invitation sent successfully');
@@ -124,6 +126,7 @@ const JobDetailPage: React.FC = () => {
       } else {
         message.error('Failed to send invitation');
       }
+      setInviteLoading(false)
     } catch (error) {
       console.error('Error sending invitation:', error);
       message.error('Error sending invitation');
@@ -1068,7 +1071,7 @@ const JobDetailPage: React.FC = () => {
     );
   };
 
-  if (loading || !job) {
+  if (loading || inviteLoading ||!job) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />

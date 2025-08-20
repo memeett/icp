@@ -64,7 +64,7 @@ const AdvisorChat: React.FC = () => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 p-3 overflow-y-auto bg-background">
+            <div className="flex-1 p-3 overflow-y-auto bg-background no-horizontal-scroll">
                 {messages.map((msg, index) => (
                     <motion.div
                         key={index}

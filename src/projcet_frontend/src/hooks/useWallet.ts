@@ -54,6 +54,7 @@ export const useWallet = () => {
         setLoadingTransactions(true);
         try {
             const history = await getUserTransaction(user.id);
+            console.log('Transaction history:', history);
             setTransactions(history as CashFlowHistory[]);
         } catch (err) {
             console.error('Failed to fetch transactions:', err);
@@ -95,6 +96,7 @@ export const useWallet = () => {
             setLoadingJobInfo((prev) => ({ ...prev, [jobId]: false }));
         }
     };
+
 
     const handleTopUp = async (amount: number) => {
         if (!user?.id) {

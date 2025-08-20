@@ -131,7 +131,7 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({ message, onBack, o
                   <div className="py-4">
                       <div className="bg-background border border-border rounded-lg p-4">
                           <Text className="text-foreground leading-relaxed whitespace-pre-wrap">
-                              {message.message}
+                              {message.message.split("\n")[1]}
                           </Text>
                       </div>
                   </div>

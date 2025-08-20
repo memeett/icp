@@ -44,6 +44,7 @@ export const useRating = (jobId: string | undefined, isJobOwner: boolean) => {
     };
 
     const handleFinalizeRatings = useCallback(async () => {
+        setIsSubmittingRating(true);
         const payloads: RequestRatingPayload[] = Object.entries(localRatings)
             .map(([userId, rating]) => {
                 const record = ratingRecords.find(r => r.user.id === userId);
@@ -62,7 +63,6 @@ export const useRating = (jobId: string | undefined, isJobOwner: boolean) => {
             return;
         }
 
-        setIsSubmittingRating(true);
         try {
             const result = await ratingUser(payloads);
             console.log(result)

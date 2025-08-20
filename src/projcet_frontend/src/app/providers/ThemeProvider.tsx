@@ -60,6 +60,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       root.style.setProperty('--border', '217 32.6% 17.5%');
       root.style.setProperty('--input', '217 32.6% 17.5%');
       root.style.setProperty('--ring', '238 75% 65%'); // Modern Indigo
+      root.style.setProperty('--text', '0 40% 100%');
     } else {
       root.style.setProperty('--background', '0 0% 100%'); // Pure White
       root.style.setProperty('--foreground', '222 84% 4.9%'); // Rich Dark Blue-Gray
@@ -80,6 +81,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       root.style.setProperty('--border', '220 13% 91%');
       root.style.setProperty('--input', '220 13% 91%');
       root.style.setProperty('--ring', '238 75% 65%'); // Modern Indigo
+      root.style.setProperty('--text', '222 40% 98%');
     }
   }, [theme]);
 

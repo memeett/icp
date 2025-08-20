@@ -64,7 +64,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
           <Space direction="vertical" size="small" className="w-full mb-4">
             <div className="flex items-center">
               <DollarOutlined className="text-green-500 mr-2" />
-              <Text strong className="text-lg">{formatSalary(invitation.job.jobSalary)}</Text>
+              <Text strong className="text-lg">{invitation.job.jobSalary} Ergn</Text>
             </div>
 
             <div className="flex items-center">
@@ -90,11 +90,11 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
           <div className="h-full flex flex-col justify-between">
             {/* Status Section */}
             <div className="text-center lg:text-right mb-4">
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="rounded-lg p-4 mb-4">
                 <Text type="secondary" className="text-sm block mb-1">
                   Invitation Status
                 </Text>
-                <Text strong className={invitation.isAccepted ? "text-green-600" : "text-orange-600"}>
+                <Text strong style={{color: invitation.isAccepted? 'green' : 'orange'}}>
                   {invitation.isAccepted ? "Accepted" : "Pending Response"}
                 </Text>
               </div>

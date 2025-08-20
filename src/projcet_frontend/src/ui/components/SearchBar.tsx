@@ -121,7 +121,7 @@ const SearchBar: React.FC<SearchBarProps> = memo(({
   }, []);
 
   const dropdownContent = (
-    <div className="w-full max-w-md p-4 bg-white rounded-lg shadow-lg border">
+    <div className="w-full max-w-md p-4 bg-foreground rounded-lg shadow-lg border">
       {/* Recent Searches */}
       {displayRecentSearches.length > 0 && (
         <div className="mb-4">

@@ -319,7 +319,7 @@ export const useJobDetails = (
 
     try {
       setLoading(true);
-      const result = await startJob(job.id);
+      const result = await startJob(job.id, user);
       if (result.jobStarted) {
         message.success("Job started successfully!");
         setLoading(false);

@@ -558,46 +558,46 @@ const PostJobPage: React.FC = () => {
                   <Steps current={currentStep} items={steps} />
                 </Card>
 
-                <Card>
+                <Card style={{marginTop: '2rem'}}>
                   <Form
-                    form={form}
-                    layout="vertical"
-                    initialValues={formData}
-                    onValuesChange={(_, allValues) => setFormData(prev => ({ ...prev, ...allValues }))}
+                  form={form}
+                  layout="vertical"
+                  initialValues={formData}
+                  onValuesChange={(_, allValues) => setFormData(prev => ({ ...prev, ...allValues }))}
                   >
-                    {renderStepContent()}
+                  {renderStepContent()}
 
-                    <Divider />
+                  <Divider />
 
-                    <div className="flex justify-between">
+                  <div className="flex justify-between">
+                    <Button
+                    onClick={handlePrev}
+                    disabled={currentStep === 0}
+                    size="large"
+                    >
+                    Previous
+                    </Button>
+
+                    <Space>
+                    {currentStep < steps.length - 1 ? (
                       <Button
-                        onClick={handlePrev}
-                        disabled={currentStep === 0}
-                        size="large"
+                      type="primary"
+                      onClick={handleNext}
+                      size="large"
                       >
-                        Previous
+                      Next
                       </Button>
-
-                      <Space>
-                        {currentStep < steps.length - 1 ? (
-                          <Button
-                            type="primary"
-                            onClick={handleNext}
-                            size="large"
-                          >
-                            Next
-                          </Button>
-                        ) : (
-                          <Button
-                            type="primary"
-                            onClick={() => {
-                              console.log('Publish Job button clicked!');
-                              handleSubmit();
-                            }}
-                            loading={isLoading}
-                            size="large"
-                            icon={<SendOutlined />}
-                          >
+                    ) : (
+                      <Button
+                      type="primary"
+                      onClick={() => {
+                        console.log('Publish Job button clicked!');
+                        handleSubmit();
+                      }}
+                      loading={isLoading}
+                      size="large"
+                      icon={<SendOutlined />}
+                      >
                             Publish Job
                           </Button>
                         )}

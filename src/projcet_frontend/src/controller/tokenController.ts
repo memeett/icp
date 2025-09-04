@@ -1,40 +1,34 @@
-import { user } from "../../../declarations/user";
+import { projcet_backend_single } from "../../../declarations/projcet_backend_single";
 import { icrc1_ledger_canister } from "../../../declarations/icrc1_ledger_canister";
 import { Token } from "../interface/Token";
 import { Principal } from "@dfinity/principal";
 import { User } from "../shared/types/User";
 import { AuthClient } from "@dfinity/auth-client";
-import { Actor, HttpAgent } from "@dfinity/agent";
+import { HttpAgent } from "@dfinity/agent";
 import { Job } from "../shared/types/Job";
-import { job_transaction } from "../../../declarations/job_transaction";
-import { count } from "console";
-import { aC } from "vitest/dist/chunks/reporters.66aFHiyX";
-import { job } from "../../../declarations/job";
 
 export async function getBalanceController(curr_user: User): Promise<Token> {
   const authClient = await AuthClient.create();
-  const OwnerPrincipal = await getPrincipalAddress();
+  const OwnerPrincipal = getPrincipalAddress();
 
-  if (!authClient.isAuthenticated()) {
+  if (!await authClient.isAuthenticated()) {
     await authClient.login({
       identityProvider: "https://identity.ic0.app/#authorize",
     });
   }
-  const identity = authClient.getIdentity();
-
 
   const ledgerCanisterId = process.env.CANISTER_ID_ICRC1_LEDGER_CANISTER;
   if (!ledgerCanisterId) {
     throw new Error("Ledger canister ID is not set in environment variables.");
   }
 
-  const result = await user.getBalance(curr_user.id, ledgerCanisterId);
+  const result = await projcet_backend_single.getBalance(curr_user.id, ledgerCanisterId);
 
   if ("ok" in result) {
     const tokenInfo = result.ok;
     const next_reuslt = await icrc1_ledger_canister.icrc1_balance_of({
       owner: OwnerPrincipal, // recipient principal
-      subaccount: curr_user.subAccount, // subaccount as Uint8Array
+      subaccount: curr_user.subAccount && curr_user.subAccount.length > 0 && curr_user.subAccount[0] ? [curr_user.subAccount[0]] : [],
     });
     console.log("Balance:", next_reuslt);
     return {
@@ -54,41 +48,21 @@ export function getPrincipalAddress(): Principal {
 export async function topUpWalletController(curr_user: User, amount: number) {
   const authClient = await AuthClient.create();
 
-  if (!authClient.isAuthenticated()) {
+  if (!await authClient.isAuthenticated()) {
     await authClient.login({
       identityProvider: "https://identity.ic0.app/#authorize",
     });
   }
-
-  console.log("Authenticated user:", authClient.getIdentity().getPrincipal().toText());
   
   const identity = authClient.getIdentity();
   const agent = new HttpAgent({ identity });
 
-  const OwnerPrincipal = await getPrincipalAddress(); // Principal type
-
-  // const toAccount = {
-  //   owner: mintingOwnerPrincipal,
-  //   subaccount: subaccount,
-  // };
-
-  // const transferArgs = {
-  //   to: toAccount,
-  //   amount: amountBigInt,
-  //   fee: [] as [] | [bigint], 
-  //   memo: [] as [] | [Uint8Array],
-  //   created_at_time: [] as [] | [bigint],
-  //   from_subaccount: [] as [],
-  // };
-
-  // console.log("Transfer args:", transferArgs);
-  console.log("Current user subAccount:", curr_user.subAccount);
-  console.log("Current user principal:", identity.getPrincipal().toText());
+  const OwnerPrincipal = getPrincipalAddress(); // Principal type
 
    const result = await icrc1_ledger_canister.icrc1_transfer({
     to: {
       owner: OwnerPrincipal, // recipient principal
-      subaccount: curr_user.subAccount,
+      subaccount: curr_user.subAccount && curr_user.subAccount.length > 0 && curr_user.subAccount[0] ? [curr_user.subAccount[0]] : [],
     },
     fee: [], // None
     memo: [], // None
@@ -100,7 +74,7 @@ export async function topUpWalletController(curr_user: User, amount: number) {
   console.log("Transfer result:", result);
 
   if ("Ok" in result) {
-    const next_result = await user.addBalanceTransaction(curr_user.id, amount);
+    const next_result = await projcet_backend_single.addBalanceTransaction(curr_user.id, amount);
     console.log("Add balance transaction result:", next_result);
     if("ok" in next_result) {
       return result.Ok;
@@ -123,39 +97,25 @@ export async function topUpWalletController(curr_user: User, amount: number) {
 export async function transferToJobController(curr_user: User, curr_job: Job, amount: number) : Promise<{ ok: string } | { err: string }> {
   const authClient = await AuthClient.create();
 
-  if (!authClient.isAuthenticated()) {
+  if (!await authClient.isAuthenticated()) {
     await authClient.login({
       identityProvider: "https://identity.ic0.app/#authorize",
     });
   }
-
-  console.log("Authenticated user:", authClient.getIdentity().getPrincipal().toText());
   
   const identity = authClient.getIdentity();
   const agent = new HttpAgent({ identity });
 
-  const OwnerPrincipal = await getPrincipalAddress(); // Principal type
-
-  console.log("current job subaccount:", curr_job.subAccount);
-  console.log("Amount to transfer:", BigInt(amount)); 
-   const obj = curr_user.subAccount[0]!;
-
-
-  // Convert values into Uint8Array
-  const uint8 = new Uint8Array(Object.values(obj));
-  console.log("Uint8Array representation of subaccount:", uint8);
-  console.log("Current user subAccount:", curr_user.subAccount);
-  console.log("Current user principal:", identity.getPrincipal().toText());
-  console.log("Current job subAccount:", curr_job.subAccount);
+  const OwnerPrincipal = getPrincipalAddress(); // Principal type
 
    const result = await icrc1_ledger_canister.icrc1_transfer({
     to: {
       owner: OwnerPrincipal, // recipient principal
-      subaccount: curr_job.subAccount,
+      subaccount: curr_job.subAccount && curr_job.subAccount.length > 0 && curr_job.subAccount[0] ? [curr_job.subAccount[0]] : [],
     },
     fee: [], // None
     memo: [], // None
-    from_subaccount: [uint8], // None
+    from_subaccount: curr_user.subAccount && curr_user.subAccount.length > 0 && curr_user.subAccount[0] ? [curr_user.subAccount[0]] : [],
     created_at_time: [], // None
     amount: BigInt(amount), // e.g., 1 token in e8s
   });
@@ -163,15 +123,17 @@ export async function transferToJobController(curr_user: User, curr_job: Job, am
   console.log("Transfer result:", result);
 
   if ("Ok" in result) {
-    const next_result = await user.jobPaymentTranfer(curr_user.id, curr_job.id, amount, process.env.CANISTER_ID_JOB!);
-    console.log("Add job transaction result:", next_result);
-    if("ok" in next_result) {
-      return { ok: result.Ok.toString() };
-    }else{
-      throw new Error(
-        "Failed to histry transfer to job: " 
-      );
-    }
+    // Backend logic for this is not yet implemented in the single canister
+    // const next_result = await projcet_backend_single.jobPaymentTranfer(curr_user.id, curr_job.id, amount);
+    // console.log("Add job transaction result:", next_result);
+    // if("ok" in next_result) {
+    //   return { ok: result.Ok.toString() };
+    // }else{
+    //   throw new Error(
+    //     "Failed to histry transfer to job: " 
+    //   );
+    // }
+    return { ok: result.Ok.toString() };
     
   } else {
     throw new Error(
@@ -186,46 +148,46 @@ export async function transferToJobController(curr_user: User, curr_job: Job, am
 export async function transfertoWorkerController(job_id: string) {
   
   try {
-    const job_result = await job.getJob(job_id)
+    const job_result = await projcet_backend_single.getJob(job_id)
     if ("err" in job_result) {
       return { err: job_result.err }; // stop if job not found
     }
 
     const curr_job = job_result.ok
-    const result = await job_transaction.getAcceptedFreelancers(
-      curr_job.id,
-      process.env.CANISTER_ID_USER! // user canister ID from env
-    );
+    const result = await projcet_backend_single.getJobAppliers(curr_job.id);
 
 
     if ("ok" in result) {
-      const acceptedFreelancers = result.ok; // this is an array of User.User
+      const acceptedFreelancers = result.ok; // this is an array of { user: BackendUser, appliedAt: bigint }
       const OwnerPrincipal = await getPrincipalAddress();
       const count = acceptedFreelancers.length;
-      const amountPerFreelancer = Math.floor(curr_job.jobSalary / count);
+      if (count === 0) return { ok: true }; // No one to pay
+      const amountPerFreelancer = Math.floor(Number(curr_job.jobSalary) / count);
       // Loop through freelancers and do transfers
-      for (const freelancer of acceptedFreelancers) {
+      for (const freelancerData of acceptedFreelancers) {
+        const freelancer = freelancerData.user;
         console.log("Freelancer:", freelancer);
-        const result = await icrc1_ledger_canister.icrc1_transfer({
+        const transferResult = await icrc1_ledger_canister.icrc1_transfer({
           to: {
             owner: OwnerPrincipal, // recipient principal
-            subaccount: freelancer.subAccount,
+            subaccount: freelancer.subAccount && freelancer.subAccount.length > 0 && freelancer.subAccount[0] ? [freelancer.subAccount[0]] : [],
           },
           fee: [], // None
           memo: [], // None
-          from_subaccount: curr_job.subAccount, // None
+          from_subaccount: curr_job.subAccount && curr_job.subAccount.length > 0 && curr_job.subAccount[0] ? [curr_job.subAccount[0]] : [], // None
           created_at_time: [], // None
           amount: BigInt(amountPerFreelancer), // e.g., 1 token in e8s
         });
 
 
-        if ("Ok" in result) {
-          const next_result = await user.workerPaymentTransfer(curr_job.id, freelancer.id ,amountPerFreelancer, process.env.CANISTER_ID_JOB!);
-          console.log("Add job transaction result:", next_result);
+        if ("Ok" in transferResult) {
+          // Backend logic for this is not yet implemented in the single canister
+          // const next_result = await projcet_backend_single.workerPaymentTransfer(curr_job.id, freelancer.id ,amountPerFreelancer);
+          // console.log("Add job transaction result:", next_result);
         }
         else {
-          console.error(`Transfer to ${freelancer.id} failed:`, result.Err);
-          return { err: `Transfer to ${freelancer.id} failed: ${JSON.stringify(result.Err)}` };
+          console.error(`Transfer to ${freelancer.id} failed:`, transferResult.Err);
+          return { err: `Transfer to ${freelancer.id} failed: ${JSON.stringify(transferResult.Err)}` };
         }
         
       }

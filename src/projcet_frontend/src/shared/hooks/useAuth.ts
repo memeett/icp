@@ -1,3 +1,4 @@
+import { AuthClient } from '@dfinity/auth-client';
 import { message } from 'antd';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
@@ -17,7 +18,6 @@ import { notificationActionsAtom } from '../../app/store/ui';
 import { User } from '../types/User';
 import {
   loginWithInternetIdentity as controllerLogin,
-  validateCookie,
   fetchUserBySession,
   logout as controllerLogout,
   updateUserProfile as controllerUpdateProfile,
@@ -149,7 +149,8 @@ export const useAuth = (): UseAuthReturn => {
         const sessionToken = localStorage.getItem('session');
         if (sessionToken) {
           console.log('Session token found, validating...');
-          const isValid = await validateCookie();
+          const authClient = await AuthClient.create();
+          const isValid = await authClient.isAuthenticated();
           if (isValid) {
             console.log('Session is valid, fetching user data...');
             const userData = await fetchUserBySession();

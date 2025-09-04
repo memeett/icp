@@ -1,8 +1,5 @@
-import { AuthClient } from "@dfinity/auth-client";
-import { submission } from "../../../declarations/submission";
-import { ResponseSubmission, Submission } from "../../../declarations/submission/submission.did";
-import { User } from "../../../declarations/user/user.did";
-import { HttpAgent } from "@dfinity/agent";
+import { projcet_backend_single } from "../../../declarations/projcet_backend_single";
+import { Submission, User } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { agentService } from "../singleton/agentService";
 
 export const createSubmission = async (
@@ -18,7 +15,6 @@ export const createSubmission = async (
             user.updatedAt = BigInt(user.updatedAt);
         }
 
-        // Normalize profilePicture to Uint8Array as required by candid types
         if (user.profilePicture instanceof Blob) {
             const ab = await user.profilePicture.arrayBuffer();
             user.profilePicture = new Uint8Array(ab);
@@ -37,8 +33,7 @@ export const createSubmission = async (
             }
         }
 
-        // Cast to any to avoid stale TS type errors if editor hasn't reloaded generated declarations
-        const result = await (submission as any).createSubmission(jobId, user, submissionFilePath, submissionMessage);
+        const result = await projcet_backend_single.createSubmission(jobId, user.id, submissionFilePath, submissionMessage);
 
         if ("ok" in result) {
             return ["Ok"];
@@ -51,11 +46,11 @@ export const createSubmission = async (
 };
 
 
-export const getAllSubmissionbyUserJobId = async (user: User, jobId: string): Promise<ResponseSubmission[]> => {
-    const result = await submission.getAllSubmissions();
+export const getAllSubmissionbyUserJobId = async (user: User, jobId: string): Promise<Submission[]> => {
+    const result = await projcet_backend_single.getAllSubmissions();
 
     const filteredSubmissions = result.filter(sub => 
-        sub.user.id === user.id && sub.jobId === jobId
+        sub.userId === user.id && sub.jobId === jobId
     );
 
     return filteredSubmissions;
@@ -63,7 +58,7 @@ export const getAllSubmissionbyUserJobId = async (user: User, jobId: string): Pr
 
 export const getFileSubmissionbyId = async (id: string): Promise<string | null> => {
     try {
-        const res = await submission.getFileSubmissionbyId(id);
+        const res = await projcet_backend_single.getFileSubmissionbyId(id);
         if (res && res.length > 0 && typeof res[0] === 'string') {
             return res[0] as string;
         } else {
@@ -80,7 +75,7 @@ export const getSubmissionByJobId =  async (jobId: string): Promise<Submission[]
 
     try {
         console.log("Submissions:");
-        const result = await submission.getSubmissionByJobId(jobId);
+        const result = await projcet_backend_single.getSubmissionByJobId(jobId);
         if ("ok" in result) {
             return result.ok;
         } else {
@@ -96,15 +91,9 @@ export const updateSubmissionStatus = async (
     newStatus: string,
     message: string
 ): Promise<string[]> => {
-        const authClient = await AuthClient.create();
-        const identity = authClient.getIdentity();
-        const agent = new HttpAgent({ identity });
-    
-        if (process.env.DFX_NETWORK === "local") {
-            await agent.fetchRootKey();
-        }
+    const agent = await agentService.getAgent();
     try {
-        const result = await submission.updateSubmissionStatus(submissionId, newStatus, message);
+        const result = await projcet_backend_single.updateSubmissionStatus(submissionId, newStatus, message);
 
         if ("ok" in result) {
             return ["Ok"];
@@ -118,7 +107,7 @@ export const updateSubmissionStatus = async (
 
 export const getSubmissionAcceptbyUserId = async (userId: string): Promise<any[]> => {
     try {
-        const result = await submission.getSubmissionAcceptbyUserId(userId);
+        const result = await projcet_backend_single.getSubmissionAcceptbyUserId(userId);
         return result;
     } catch (error) {
         throw new Error("Failed to fetch submissions: " + error);
@@ -128,7 +117,7 @@ export const getSubmissionAcceptbyUserId = async (userId: string): Promise<any[]
 // Get submissions by userId where status is "Waiting"
 export const getSubmissionWaitingbyUserId = async (userId: string): Promise<any[]> => {
     try {
-        const result = await submission.getSubmissionWaitingbyUserId(userId);
+        const result = await projcet_backend_single.getSubmissionWaitingbyUserId(userId);
         return result;
     } catch (error) {
         throw new Error("Failed to fetch submissions: " + error);
@@ -138,7 +127,7 @@ export const getSubmissionWaitingbyUserId = async (userId: string): Promise<any[
 // Get submissions by userId where status is "Reject"
 export const getSubmissionRejectbyUserId = async (userId: string): Promise<any[]> => {
     try {
-        const result = await submission.getSubmissionRejectbyUserId(userId);
+        const result = await projcet_backend_single.getSubmissionRejectbyUserId(userId);
         return result;
     } catch (error) {
         throw new Error("Failed to fetch submissions: " + error);
@@ -148,7 +137,7 @@ export const getSubmissionRejectbyUserId = async (userId: string): Promise<any[]
 // Get submissions by jobId where status is "Accept"
 export const getSubmissionAcceptbyJobId = async (jobId: string): Promise<any[]> => {
     try {
-        const result = await submission.getSubmissionAcceptbyJobId(jobId);
+        const result = await projcet_backend_single.getSubmissionAcceptbyJobId(jobId);
         return result;
     } catch (error) {
         throw new Error("Failed to fetch submissions: " + error);
@@ -158,7 +147,7 @@ export const getSubmissionAcceptbyJobId = async (jobId: string): Promise<any[]> 
 // Get submissions by jobId where status is "Waiting"
 export const getSubmissionWaitingbyJobId = async (jobId: string): Promise<any[]> => {
     try {
-        const result = await submission.getSubmissionWaitingbyJobId(jobId);
+        const result = await projcet_backend_single.getSubmissionWaitingbyJobId(jobId);
         return result;
     } catch (error) {
         throw new Error("Failed to fetch submissions: " + error);
@@ -168,7 +157,7 @@ export const getSubmissionWaitingbyJobId = async (jobId: string): Promise<any[]>
 // Get submissions by jobId where status is "Reject"
 export const getSubmissionRejectbyJobId = async (jobId: string): Promise<any[]> => {
     try {
-        const result = await submission.getSubmissionRejectbyJobId(jobId);
+        const result = await projcet_backend_single.getSubmissionRejectbyJobId(jobId);
         return result;
     } catch (error) {
         throw new Error("Failed to fetch submissions: " + error);
@@ -177,7 +166,7 @@ export const getSubmissionRejectbyJobId = async (jobId: string): Promise<any[]> 
 
 export const getUserSubmissionsByJobId = async (jobId: string, userId: string): Promise<Submission[]> => {
     try {
-        const result = await submission.getUserSubmissionsByJobId(jobId, userId);
+        const result = await projcet_backend_single.getUserSubmissionsByJobId(jobId, userId);
         return result;
     } catch (error) {
         throw new Error("Failed to fetch user submissions by job: " + error);

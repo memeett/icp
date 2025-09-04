@@ -28,3 +28,6 @@ src/**/*.jsx
 # environment variables
 .env
 .venv
+
+src/projcet_frontend/src/shared
+.kilocode/

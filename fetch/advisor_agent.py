@@ -16,7 +16,6 @@ from uagents import Agent, Context, Protocol, Model
 from datetime import datetime, timezone
 from uuid import uuid4
 
-# NOTE: mengikuti pola agent.py: gunakan ASI1 + tools; backend hanya sebagai data source via /getAllJobs
 
 ASI1_API_KEY = "sk_e6ca5699fe394c2ea28f700c1a1eac6de6f7e4f8a5fd404d97c625a387f3df1e"  # sama pola dengan agent.py (hardcoded)
 ASI1_BASE_URL = "https://api.asi1.ai/v1"
@@ -26,9 +25,7 @@ ASI1_HEADERS = {
 }
 
 # ICP HTTP routing
-JOB_CANISTER_ID = "ucwa4-rx777-77774-qaada-cai"
-USER_CANISTER_ID = "vu5yx-eh777-77774-qaaga-cai"
-RATING_CANISTER_ID = "vg3po-ix777-77774-qaafa-cai"
+BACKEND_CANISTER_ID = "uzt4z-lp777-77774-qaabq-cai"
 
 BASE_URL = "http://127.0.0.1:4943"
 HEADERS = {
@@ -211,7 +208,6 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
     url = f"{BASE_URL}/{endpoint}"
 
     # Explicitly log headers to ensure visibility
-    ctx.logger.error(f"DEBUG_HEADERS: Attempting to fetch from {endpoint} at URL: {url} with headers: {headers_with_host}")
 
     # Coba POST dulu karena beberapa query butuh body
     try:
@@ -265,12 +261,12 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
     raise RuntimeError(f"Failed to fetch from {endpoint}: " + " | ".join(errors))
 
 async def fetch_jobs(ctx: Context) -> List[Dict[str, Any]]:
-    return await _fetch_canister_data(ctx, _JOBS_CACHE, "getAllJobs", JOB_CANISTER_ID)
+    return await _fetch_canister_data(ctx, _JOBS_CACHE, "getAllJobs", BACKEND_CANISTER_ID)
 
 # BAGIAN 3: Fungsi fetch untuk users, sama seperti fetch_jobs
 async def fetch_users(ctx: Context) -> List[Dict[str, Any]]:
     # Asumsi canister User punya endpoint /getAllUsers
-    return await _fetch_canister_data(ctx, _USERS_CACHE, "getAllUsers", USER_CANISTER_ID)
+    return await _fetch_canister_data(ctx, _USERS_CACHE, "getAllUsers", BACKEND_CANISTER_ID)
 
 # --------------------------
 # TF-IDF logic has been removed as requested.
@@ -540,7 +536,7 @@ async def process_query(query: str, ctx: Context) -> str:
 # uAgents bootstrap
 # --------------------------
 
-agent = Agent(name='advisor-agent', port=8002, mailbox=True,endpoint=["http://localhost:8002/submit"])
+agent = Agent(name='advisor-agent', port=8002, mailbox="efb08343-de5c-4a29-8a62-2535c43734a9")
 chat_proto = Protocol(spec=chat_protocol_spec)
 
 @chat_proto.on_message(model=ChatMessage)

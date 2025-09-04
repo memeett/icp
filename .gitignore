@@ -29,5 +29,7 @@ src/**/*.jsx
 .env
 .venv
 
+venv/
+
 src/projcet_frontend/src/shared
 .kilocode/

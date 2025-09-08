@@ -8,6 +8,19 @@ import { HttpAgent } from "@dfinity/agent";
 import { Job } from "../shared/types/Job";
 
 export async function getBalanceController(curr_user: User): Promise<Token> {
+  // Data Sanitization
+  let sanitizedSubAccount: [] | [Uint8Array] = [];
+  if (curr_user.subAccount && curr_user.subAccount.length > 0) {
+    const sub = curr_user.subAccount[0];
+    if (sub instanceof Uint8Array) {
+      sanitizedSubAccount = [sub];
+    } else if (typeof sub === 'object' && sub !== null && !Array.isArray(sub)) {
+      // It's a plain object, convert it
+      const byteArray = Object.values(sub).filter((v): v is number => typeof v === 'number');
+      sanitizedSubAccount = [new Uint8Array(byteArray)];
+    }
+  }
+
   const authClient = await AuthClient.create();
   const OwnerPrincipal = getPrincipalAddress();
 
@@ -28,7 +41,7 @@ export async function getBalanceController(curr_user: User): Promise<Token> {
     const tokenInfo = result.ok;
     const next_reuslt = await icrc1_ledger_canister.icrc1_balance_of({
       owner: OwnerPrincipal, // recipient principal
-      subaccount: curr_user.subAccount && curr_user.subAccount.length > 0 && curr_user.subAccount[0] ? [curr_user.subAccount[0]] : [],
+      subaccount: sanitizedSubAccount,
     });
     console.log("Balance:", next_reuslt);
     return {

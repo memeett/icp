@@ -14,7 +14,9 @@ const replacer = (key: string, value: any) => {
 export const storage = {
   setUser: (user: any) => {
     try {
-      const userString = JSON.stringify(user, replacer);
+      // Hapus gambar profil sebelum menyimpan untuk menghindari penyimpanan data biner
+      const { profilePicture, ...userToStore } = user;
+      const userString = JSON.stringify(userToStore, replacer);
       localStorage.setItem(CURRENT_USER_KEY, userString);
     } catch (error) {
       console.error("Failed to set user in localStorage:", error);
@@ -25,39 +27,15 @@ export const storage = {
       const userString = localStorage.getItem(CURRENT_USER_KEY);
       if (!userString) return null;
       
-      console.log('Raw user string from localStorage:', userString);
+      const userData = JSON.parse(userString);
       
-      const parsed = JSON.parse(userString);
-      console.log('Parsed user data:', parsed);
-      
-      // Handle different possible structures
-      const userData = parsed.ok || parsed;
-      console.log('User data after ok check:', userData);
-      
-      // Ensure the id field exists
-      if (!userData.id) {
-        console.error('User data is missing id field:', userData);
-        
-        // Try to get the ID from another field or path
-        if (userData.userId) {
-          userData.id = userData.userId;
-        } else if (userData.principal) {
-          userData.id = userData.principal;
-        } else if (userData.user && userData.user.id) {
-          userData.id = userData.user.id;
-        }
-        
-        if (!userData.id) {
-          return null;
-        }
-      }
-      
+      // Kembalikan data pengguna tanpa gambar profil; ini akan diambil secara terpisah
       return {
         ...userData,
-        id: String(userData.id), // Ensure ID is a string
+        id: String(userData.id),
         createdAt: BigInt(userData.createdAt || '0'),
         updatedAt: BigInt(userData.updatedAt || '0'),
-        profilePicture: null,
+        profilePicture: null, // Selalu null dari localStorage
       };
     } catch (error) {
       console.error("Failed to get user from localStorage:", error);

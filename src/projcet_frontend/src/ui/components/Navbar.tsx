@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useAtom } from 'jotai';
 import { themeAtom } from '../../app/store/ui';
-import { getProfilePictureUrl, getUserById } from '../../controller/userController';
+import { getUserById } from '../../controller/userController';
 import { useTheme } from '../../app/providers/ThemeProvider';
 import { useInboxPanel } from '../../contexts/InboxPanelContext';
 import FaceRecognition from '../../components/FaceRecognition';
@@ -40,7 +40,6 @@ import { AuthenticationModal } from '../../components/modals/AuthenticationModal
 import ergasiaLogo from '../../assets/ergasia_logo.png'
 import ergasiaLogoWhite from '../../assets/ergasia_logo_white.png'
 import { getAllInboxByUserId } from '../../controller/inboxController';
-import { Inbox } from '../../../../declarations/inbox/inbox.did';
 import { getBalanceController, topUpWalletController } from '../../controller/tokenController';
 import { Token } from '../../interface/Token';
 import { InboxResponse } from '../../shared/types/Inbox';
@@ -78,8 +77,8 @@ const Navbar: React.FC = () => {
   }, [user?.id]);
 
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [receiverInbox, setReceiverInbox] = useState<Inbox[]>([]);
-  const [senderInbox, setSenderInbox] = useState<Inbox[]>([]);
+  const [receiverInbox, setReceiverInbox] = useState<any[]>([]);
+  const [senderInbox, setSenderInbox] = useState<any[]>([]);
   const [usernames, setUsernames] = useState<{ [key: string]: string }>({});
   const [userWallet, setUserWallet] = useState<Token>();
   const [isWalletLoading, setIsWalletLoading] = useState(false);
@@ -208,9 +207,6 @@ const Navbar: React.FC = () => {
     };
   }, [isNotificationOpen]);
 
-  const profilePictureUrl = user?.profilePicture
-    ? getProfilePictureUrl(user.id, user.profilePicture)
-    : undefined;
 
   const userMenuItems = [
     {
@@ -389,7 +385,7 @@ const Navbar: React.FC = () => {
                       <div className="flex items-center space-x-6 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors">
                         <Avatar
                           size={32}
-                          src={profilePictureUrl}
+                          src={user ? `/api/users/${user.id}/profile-picture` : undefined}
                           icon={<UserOutlined />}
                           className="border-2 border-primary/30"
                         />
@@ -463,7 +459,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-lg">
               <Avatar
                 size={40}
-                src={profilePictureUrl}
+                src={user ? `/api/users/${user.id}/profile-picture` : undefined}
                 icon={<UserOutlined />}
               />
               <div>

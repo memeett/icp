@@ -121,7 +121,6 @@ tools = [
     "function": {
         "name": "getAllUsers",
         "description": "Mengambil dan menampilkan daftar lengkap semua pengguna (users) yang terdaftar di platform. Gunakan fungsi ini jika diminta untuk 'list semua user', 'tampilkan pengguna', 'berikan data user', atau permintaan sejenisnya.",
-        
         "parameters": {"type": "object", "properties": {}, "required": []},
         "strict": True,
     },
@@ -190,8 +189,37 @@ tools = [
         },
         "strict": True,
     },
-}
-
+},
+{
+    "type": "function",
+    "function": {
+        "name": "get_project_reminders",
+        "description": "Dapatkan ringkasan status proyek dan pengingat untuk seorang pengguna. Berguna untuk memeriksa pekerjaan yang sedang berjalan, submission yang tertunda, dan deadline yang mendekat.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "user_id": {"type": "string", "description": "ID unik dari pengguna."}
+            },
+            "required": ["user_id"],
+        },
+        "strict": True,
+    },
+},
+{
+    "type": "function",
+    "function": {
+        "name": "get_financial_summary",
+        "description": "Dapatkan ringkasan keuangan (pemasukan, pengeluaran, jumlah transaksi) untuk seorang pengguna.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "user_id": {"type": "string", "description": "ID unik dari pengguna."}
+            },
+            "required": ["user_id"],
+        },
+        "strict": True,
+    },
+},
 ]
 
 # --------------------------
@@ -207,9 +235,7 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
     headers_with_host = with_host(HEADERS, canister_id)
     url = f"{BASE_URL}/{endpoint}"
 
-    # Explicitly log headers to ensure visibility
 
-    # Coba POST dulu karena beberapa query butuh body
     try:
         ctx.logger.debug(f"Trying POST request to {url}")
         resp = requests.post(url, headers=headers_with_host, json={}, timeout=15)
@@ -433,6 +459,49 @@ async def tool_find_talent(ctx: Context, args: Dict[str, Any]):
         "potential_candidates": active_users
     }
 
+async def tool_get_project_reminders(ctx: Context, args: Dict[str, Any]):
+    user_id = args.get("user_id")
+    if not user_id:
+        return {"error": "user_id is required"}
+    
+    jobs = await fetch_jobs(ctx)
+    
+    ongoing_jobs = [j for j in jobs if j.get("userId") == user_id and j.get("jobStatus") == "Ongoing"]
+    pending_submissions = [j for j in jobs if j.get("userId") == user_id and j.get("jobStatus") == "Submitted"] # Assuming "Submitted" status
+    
+    now = int(time.time() * 1_000_000_000)
+    three_days_in_ns = 3 * 24 * 60 * 60 * 1_000_000_000
+    
+    near_deadline_jobs = [
+        j["jobName"] for j in ongoing_jobs 
+        if "jobDeadline" in j and (int(j["jobDeadline"]) - now) < three_days_in_ns
+    ]
+
+    return {
+        "ongoingJobs": len(ongoing_jobs),
+        "pendingSubmissions": len(pending_submissions),
+        "jobsNearDeadline": near_deadline_jobs
+    }
+
+async def tool_get_financial_summary(ctx: Context, args: Dict[str, Any]):
+    user_id = args.get("user_id")
+    if not user_id:
+        return {"error": "user_id is required"}
+
+    users = await fetch_users(ctx)
+    user = next((u for u in users if u.get("id") == user_id), None)
+
+    if not user:
+        return {"error": "User not found"}
+
+    # This is a simplification. A real implementation would need to fetch transactions.
+    # We will simulate this based on the user's wallet value.
+    return {
+        "totalIncome": user.get("wallet", 0.0),
+        "totalExpense": 0.0, # Cannot be calculated from user data
+        "transactionCount": 0 # Cannot be calculated from user data
+    }
+
 
 # --------------------------
 # Dispatcher untuk tool calls dari ASI1
@@ -455,6 +524,10 @@ async def execute_tool(func_name: str, arguments: dict, ctx: Context):
         return await tool_proposal_template(ctx, arguments)
     if func_name == "find_talent":
         return await tool_find_talent(ctx, arguments)
+    if func_name == "get_project_reminders":
+        return await tool_get_project_reminders(ctx, arguments)
+    if func_name == "get_financial_summary":
+        return await tool_get_financial_summary(ctx, arguments)
     
     ctx.logger.error(f"Unsupported function call: {func_name}")
     raise ValueError(f"Unsupported function call: {func_name}")

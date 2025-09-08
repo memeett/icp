@@ -21,7 +21,7 @@ export const ensureUserData = async (): Promise<boolean> => {
       
       if (userData) {
         console.log('Successfully fetched user data from session');
-        storage.setUser({ ok: userData });
+        await storage.setUser({ ok: userData });
         return true;
       } else {
         console.error('Failed to fetch user data from session');

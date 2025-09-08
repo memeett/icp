@@ -304,9 +304,9 @@ persistent actor SingleBackend {
         return #err("User not found");
     };
 
-    public query func getUserTransactions(userId: Text): async [Model.CashFlowHistory] {
+    public shared func getUserTransactions(userId: Text): async [Model.CashFlowHistory] {
         return Array.filter<Model.CashFlowHistory>(cashFlowHistories, func(t: Model.CashFlowHistory): Bool {
-            t.fromId == userId or (switch (t.toId) { 
+            t.fromId == userId or (switch (t.toId) {
                 case (?to) to == userId;
                 case (_) false;
             })
@@ -1304,14 +1304,39 @@ persistent actor SingleBackend {
         Debug.print("http_request_update called. Method: " # method # ", Path: " # path);
 
         if (method == "POST") {
-            if (path == "/getAllUsers") {
-                let allUsers = Iter.toArray(users.vals());
-                return makeJsonResponse(200, usersToJsonArray(allUsers));
-            } else if (path == "/getAllJobs") {
-                let allJobs = Iter.toArray(jobs.vals());
-                return makeJsonResponse(200, jobsToJsonArray(allJobs));
-            } else {
-                return makeJsonResponse(404, "{\"error\": \"Not Found in update call\"}");
+            let userIdOpt = Text.decodeUtf8(req.body);
+
+            switch (userIdOpt) {
+                case (null) { return makeJsonResponse(400, "{\"error\": \"Invalid UTF-8 in body\"}"); };
+                case (?userId) {
+                    if (userId == "") {
+                        return makeJsonResponse(400, "{\"error\": \"userId in body cannot be empty\"}");
+                    };
+
+                    if (path == "/getUserTransactions") {
+                        let transactions = await getUserTransactions(userId);
+                        // This is a simplified JSON conversion
+                        var transStrs : [Text] = [];
+                        for (t in Iter.fromArray(transactions)) {
+                            let toIdStr = switch (t.toId) {
+                                case null { "null" };
+                                case (?s) { "\"" # s # "\"" };
+                            };
+                            let transStr = "{\"fromId\":\"" # t.fromId # "\",\"transactionAt\":" # Int.toText(t.transactionAt) # ",\"amount\":" # Float.toText(t.amount) # ",\"toId\":" # toIdStr # "}";
+                            transStrs := Array.append(transStrs, [transStr]);
+                        };
+                        let jsonResponse = "[" # Text.join(",", Iter.fromArray(transStrs)) # "]";
+                        return makeJsonResponse(200, jsonResponse);
+                    } else if (path == "/getAllUsers") {
+                        let allUsers = Iter.toArray(users.vals());
+                        return makeJsonResponse(200, usersToJsonArray(allUsers));
+                    } else if (path == "/getAllJobs") {
+                        let allJobs = Iter.toArray(jobs.vals());
+                        return makeJsonResponse(200, jobsToJsonArray(allJobs));
+                    } else {
+                        return makeJsonResponse(404, "{\"error\": \"Not Found in update call\"}");
+                    };
+                };
             };
         } else {
             return makeJsonResponse(405, "{\"error\": \"Method Not Allowed in update call\"}");

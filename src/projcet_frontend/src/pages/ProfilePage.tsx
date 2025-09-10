@@ -55,13 +55,8 @@ const ProfilePage: React.FC = () => {
   const { activeJobs, historyJobs, loading: loadingAccepted, refetch: refetchAccepted } = useAcceptedJobs(user?.id)
  
   useEffect(() => {
-<<<<<<< HEAD
     if (user && user.profilePictureUrl) {
       setProfileImage(user.profilePictureUrl);
-=======
-    if (user && user.profilePicture) {
-      setProfileImage(getProfilePictureUrl(user.id, user.profilePicture));
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
     }
 
     

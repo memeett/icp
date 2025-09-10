@@ -92,21 +92,14 @@ const CompleteProfilePage: React.FC = () => {
     return true;
   };
 
-<<<<<<< HEAD
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
       console.log('Form values received:', values);
-=======
-  const handleSubmit = async (values: CompleteProfileFormData) => {
-    try {
-      setLoading(true);
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 
       // Convert form data to update payload
       const updatePayload: any = {
         username: values.username,
-<<<<<<< HEAD
         dob: values.dob ? values.dob.format('YYYY-MM-DD') : '', // Convert dayjs to string
         description: values.description,
         preference: values.preference.map((id: string) => {
@@ -114,39 +107,22 @@ const CompleteProfilePage: React.FC = () => {
           console.log('Selected category for ID', id, ':', category);
           return category;
         }).filter(Boolean),
-=======
-        dob: values.dob,
-        description: values.description,
-        preference: values.preference.map(id =>
-          mockJobCategories.find(cat => cat.id === id)
-        ).filter(Boolean),
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
         isProfileCompleted: true,
       };
 
       // Add profile picture if uploaded
       if (uploadedFile) {
-<<<<<<< HEAD
         updatePayload.profilePicture = uploadedFile; // Pass File directly
       }
 
       console.log('Update payload prepared:', updatePayload);
 
-=======
-        updatePayload.profilePicture = new Blob([uploadedFile], { type: uploadedFile.type });
-      }
-
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
       const success = await updateProfile(updatePayload);
 
       if (success) {
         message.success('Profile completed successfully!');
-<<<<<<< HEAD
         // Navigate to home page instead of profile page for better UX
         navigate('/');
-=======
-        navigate('/profile');
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
       } else {
         message.error('Failed to complete profile. Please try again.');
       }
@@ -211,10 +187,7 @@ const CompleteProfilePage: React.FC = () => {
                 onFinish={handleSubmit}
                 initialValues={{
                   username: user?.username || '',
-<<<<<<< HEAD
                   dob: user?.dob ? dayjs(user.dob) : undefined,
-=======
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                   description: user?.description || '',
                   preference: user?.preference?.map(p => p.id) || [],
                 }}

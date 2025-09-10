@@ -5,10 +5,7 @@ import { addIncrementUserClicked } from "../../controller/userClickedController"
 import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
 import { Job } from "../../shared/types/Job";
-<<<<<<< HEAD
 import JobChatButton from "../chat/JobChatButton";
-=======
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 
 export default function ClientHistoryCard({ job }: { job: Job }) {
 
@@ -73,7 +70,6 @@ export default function ClientHistoryCard({ job }: { job: Job }) {
                     </div>
                 </div>
 
-<<<<<<< HEAD
                 <div className="mt-6 flex justify-end gap-3">
                     <JobChatButton
                         jobId={job.id}
@@ -81,9 +77,6 @@ export default function ClientHistoryCard({ job }: { job: Job }) {
                         clientId={job.userId}
                         freelancerId={job.acceptedFreelancerId}
                     />
-=======
-                <div className="mt-6 flex justify-end">
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                     <button onClick={viewDetails} className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-all duration-300">
                         View Details
                     </button>

@@ -18,11 +18,7 @@ export const isUnauthenticatedAtom = atom((get) => get(authStatusAtom) === 'unau
 // User profile atoms
 export const userIdAtom = atom((get) => get(userAtom)?.id || null);
 export const userNameAtom = atom((get) => get(userAtom)?.username || '');
-<<<<<<< HEAD
 export const userProfilePictureAtom = atom((get) => get(userAtom)?.profilePictureUrl || null);
-=======
-export const userProfilePictureAtom = atom((get) => get(userAtom)?.profilePicture || null);
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 export const userPreferencesAtom = atom((get) => get(userAtom)?.preference || []);
 export const userWalletAtom = atom((get) => get(userAtom)?.wallet || 0);
 export const userRatingAtom = atom((get) => get(userAtom)?.rating || 0);

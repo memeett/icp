@@ -47,14 +47,9 @@ import { User } from '../shared/types/User';
 import { formatDate } from '../utils/dateUtils';
 import { RcFile } from 'antd/es/upload';
 import { createSubmission, getUserSubmissionsByJobId, getSubmissionByJobId, updateSubmissionStatus } from '../controller/submissionController';
-<<<<<<< HEAD
 import JobChatButton from '../components/chat/JobChatButton';
 
 import type { Submission } from '../../../declarations/projcet_backend_single/projcet_backend_single.did';
-=======
-
-import type { Submission } from '../../../declarations/submission/submission.did';
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 import { getUserById, getUserByName } from '../controller/userController';
 import { getStatusColor } from '../utils/JobStatusCololer';
 
@@ -157,7 +152,6 @@ const JobDetailPage: React.FC = () => {
   const getTimeAgo = (dateString: string) => {
     const now = new Date();
     const posted = new Date(dateString);
-<<<<<<< HEAD
     const diffInSeconds = Math.floor((now.getTime() - posted.getTime()) / 1000);
 
     if (diffInSeconds < 60) return "Just now";
@@ -167,16 +161,6 @@ const JobDetailPage: React.FC = () => {
     if (diffInHours < 24) return `${diffInHours} hours ago`;
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays} days ago`;
-=======
-    const diffInHours = Math.floor((now.getTime() - posted.getTime()) / (1000 * 60 * 60));
-
-    if (diffInHours < 24) {
-      return `${diffInHours} hours ago`;
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays} days ago`;
-    }
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
   };
 
 
@@ -217,11 +201,7 @@ const JobDetailPage: React.FC = () => {
                   <Tag color={getStatusColor(job.jobStatus)}>{job!.jobStatus}</Tag>
                   <Text type="secondary">
                     <ClockCircleOutlined className="mr-1" />
-<<<<<<< HEAD
                     Posted {getTimeAgo(new Date(Number(job!.createdAt) / 1_000_000).toISOString())}
-=======
-                    Posted {getTimeAgo(new Date(Number(job!.createdAt) / 1000000).toISOString())}
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                   </Text>
                 </Space>
               </div>
@@ -245,17 +225,11 @@ const JobDetailPage: React.FC = () => {
                 <div className="text-center p-4 bg-background rounded-lg">
                   <UserOutlined className="text-2xl text-purple-500 mb-2" />
                   <div className="font-semibold">
-<<<<<<< HEAD
                     {job.jobStatus !== 'Finished'
                       ? (Number(job!.jobSlots) - acceptedFreelancers.length > 0
                         ? `${Number(job!.jobSlots) - acceptedFreelancers.length}`
                         : "No Slots")
                       : "Closed"}
-=======
-                    {Number(job!.jobSlots) - acceptedFreelancers.length > 0
-                      ? Number(job!.jobSlots) - acceptedFreelancers.length
-                      : "No Slots Available"}
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                   </div>
                   <Text type="secondary">Available Slots</Text>
                 </div>
@@ -293,11 +267,7 @@ const JobDetailPage: React.FC = () => {
             </div>
 
             {user && job!.jobStatus === 'Open' && !isJobOwner && (
-<<<<<<< HEAD
               <div className="text-center space-x-4">
-=======
-              <div className="text-center">
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                 {Number(job!.jobSlots) - acceptedFreelancers.length <= 0 ? (
                   <Button size="large" disabled className="px-8">
                     All Slots Filled
@@ -319,7 +289,6 @@ const JobDetailPage: React.FC = () => {
                 )}
               </div>
             )}
-<<<<<<< HEAD
             
             {/* Chat button for anyone (client or accepted freelancer) when job is Ongoing/Finished */}
             {user && (job!.jobStatus === 'Ongoing' || job!.jobStatus === 'Finished') && (
@@ -332,8 +301,6 @@ const JobDetailPage: React.FC = () => {
                 />
               </div>
             )}
-=======
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 
             {isJobOwner && (
               <div className="text-center space-x-4">
@@ -397,13 +364,7 @@ const JobDetailPage: React.FC = () => {
                               <div className="flex-1">
                                 <Text strong>{f.username}</Text>
                                 <div className="text-xs text-gray-500">
-<<<<<<< HEAD
                                   Current: {(Number(f.rating) / 10).toFixed(1)}
-=======
-                                  Current: {f.rating?.toFixed
-                                    ? f.rating.toFixed(1)
-                                    : Number(f.rating || 0).toFixed(1)}
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                                 </div>
                               </div>
                               <Rate
@@ -481,11 +442,7 @@ const JobDetailPage: React.FC = () => {
               <Text strong>{record.user.username}</Text>
               <div className="flex items-center space-x-1">
                 <Text type="secondary" className="text-sm">Rating: </Text>
-<<<<<<< HEAD
                 <Text className="text-sm">{(Number(record.user.rating) / 10).toFixed(1)}</Text>
-=======
-                <Text className="text-sm">{record.user.rating.toFixed(1)}</Text>
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
               </div>
             </div>
           </div>
@@ -564,7 +521,6 @@ const JobDetailPage: React.FC = () => {
               <Form
                 form={form}
                 layout="vertical"
-<<<<<<< HEAD
                 onFinish={async () => {
                   const success = await handleAcceptApplicant(record.user.id, form.getFieldsValue());
                   if (success) {
@@ -574,9 +530,6 @@ const JobDetailPage: React.FC = () => {
                     message.error("Failed to accept applicant.");
                   }
                 }}
-=======
-                onFinish={() => handleAcceptApplicant(record.user.id, form.getFieldsValue())}
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
               >
                 <Form.Item
                   name="acceptancereason"
@@ -681,11 +634,7 @@ const JobDetailPage: React.FC = () => {
               <Text strong>{record.username}</Text>
               <div className="flex items-center space-x-1">
                 <Text type="secondary" className="text-sm">Rating: </Text>
-<<<<<<< HEAD
                 <Text className="text-sm">{(Number(record.rating) / 10).toFixed(1)}</Text>
-=======
-                <Text className="text-sm">{record.rating.toFixed(1)}</Text>
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
               </div>
             </div>
           </div>
@@ -803,11 +752,7 @@ const JobDetailPage: React.FC = () => {
                     />
                     <div>
                       <Text strong>{selectedUser.username}</Text>
-<<<<<<< HEAD
                       <div className="text-sm text-gray-500">Rating: {(Number(selectedUser.rating) / 10).toFixed(1)}</div>
-=======
-                      <div className="text-sm text-gray-500">Rating: {selectedUser.rating.toFixed(1)}</div>
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                     </div>
                   </div>
                 </Col>
@@ -1021,22 +966,13 @@ const JobDetailPage: React.FC = () => {
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                   {submissionHistory.length > 0 ? (
                     submissionHistory.map((sub) => {
-<<<<<<< HEAD
                       const filePath = sub.submissionFilePath || '';
-=======
-                      const filePath = sub.submissionFile || '';
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                       const fileName = (filePath.split('/').pop() || 'file.zip');
                       return (
                         <Card key={sub.id} type="inner">
                           <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
-<<<<<<< HEAD
                           <Tag color={sub.status === 'Accept' ? 'green' : sub.status === 'Reject' ? 'red' : 'blue'}>
                             {sub.status}
-=======
-                          <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
-                            {sub.submissionStatus}
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                           </Tag>
                           <br />
                           <Text type="secondary">File: {fileName}</Text>
@@ -1067,7 +1003,6 @@ const JobDetailPage: React.FC = () => {
     }
 
     // UI for Job Owner
-<<<<<<< HEAD
     const SubmitterInfo = ({ sub }: { sub: Submission }) => {
       const [submitter, setSubmitter] = useState<User | null>(null);
 
@@ -1157,94 +1092,11 @@ const JobDetailPage: React.FC = () => {
       );
     }
 
-=======
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
     const submissions = ownerSubmissions;
 
     return (
       <Space direction="vertical" size="large" className="w-full">
-<<<<<<< HEAD
         {submissions.map(sub => <SubmitterInfo key={sub.id} sub={sub} />)}
-=======
-        {submissions
-          .map(sub => {
-            const filePath = sub.submissionFile || '';
-            const fileName = (filePath.split('/').pop() || 'file.zip');
-            return (
-              <Card key={sub.id} title={`Submission from ${sub.user.username}`}>
-                <Row gutter={[16, 16]}>
-                  <Col span={24}>
-                    <div className="flex items-center space-x-3">
-                      <Avatar icon={<UserOutlined />} />
-                      <div>
-                        <Text strong>{sub.user.username}</Text>
-                        <br />
-                        <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
-                          {sub.submissionStatus}
-                        </Tag>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col span={24}>
-                    <Title level={5}>Message:</Title>
-                    <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
-                  </Col>
-                  <Col span={24}>
-                    {filePath ? (
-                      <Button href={`/api/download-file?path=${encodeURIComponent(filePath)}`} download icon={<PaperClipOutlined />}>
-                        Download Submission ({fileName})
-                      </Button>
-                    ) : (
-                      <Text type="secondary">No file attached</Text>
-                    )}
-                  </Col>
-                  <Col span={24}>
-                    {sub.submissionStatus === 'Waiting' && (
-                      <Space>
-                        <Button
-                          type="primary"
-                          icon={<CheckOutlined />}
-                          onClick={async () => {
-                            try {
-                              const res = await updateSubmissionStatus(sub.id, 'Accept', sub.submissionMessage || '');
-                              if (res[0] === 'Ok') {
-                                message.success('Submission accepted');
-                                const listOwner = await getSubmissionByJobId(jobId!);
-                                setOwnerSubmissions(listOwner);
-                              }
-                            } catch (e) {
-                              message.error('Failed to accept submission');
-                            }
-                          }}
-                        >
-                          Accept
-                        </Button>
-                        <Button
-                          danger
-                          icon={<CloseOutlined />}
-                          onClick={async () => {
-                            try {
-                              const res = await updateSubmissionStatus(sub.id, 'Reject', sub.submissionMessage || '');
-                              if (res[0] === 'Ok') {
-                                message.success('Submission rejected');
-                                const listOwner = await getSubmissionByJobId(jobId!);
-                                setOwnerSubmissions(listOwner);
-                              }
-                            } catch (e) {
-                              message.error('Failed to reject submission');
-                            }
-                          }}
-                        >
-                          Decline
-                        </Button>
-                      </Space>
-                    )}
-                  </Col>
-                </Row>
-              </Card>
-            );
-          })}
->>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
         {submissions.length === 0 && <Text>No submissions yet.</Text>}
       </Space>
     );

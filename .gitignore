@@ -25,10 +25,6 @@ dist/
 src/**/*.js
 src/**/*.jsx
 
-# Compiled JavaScript files
-src/**/*.js
-src/**/*.jsx
-
 # environment variables
 .env
 .env.local

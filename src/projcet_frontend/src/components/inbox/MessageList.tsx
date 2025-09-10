@@ -49,7 +49,11 @@ export const MessageList: React.FC<MessageListProps> = ({
       dataSource={messages}
       renderItem={(message) => (
         <motion.div
+<<<<<<< HEAD
           whileHover={{ backgroundColor: 'hsla(220, 14.3%, 95.9%, 0.5)' }}
+=======
+          whileHover={{ backgroundColor: 'hsl(var(--muted) / 0.5)' }}
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
           transition={{ duration: 0.2 }}
         >
           <List.Item

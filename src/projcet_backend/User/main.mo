@@ -1,0 +1,688 @@
+import User "./model";
+import HashMap "mo:base/HashMap";
+import Text "mo:base/Text";
+import Iter "mo:base/Iter";
+import Result "mo:base/Result";
+import Time "mo:base/Time";
+import Option "mo:base/Option";
+import Float "mo:base/Float";
+import Array "mo:base/Array";
+import Int "mo:base/Int";
+import Blob "mo:base/Blob";
+import Principal "mo:base/Principal";
+import Debug "mo:base/Debug";
+import Job "../Job/model";
+import Bool "mo:base/Bool";
+
+actor UserModel {
+
+    private stable var usersEntries : [(Text, User.User)] = [];
+
+    private var users = HashMap.fromIter<Text, User.User>( // Marked as transient
+        usersEntries.vals(),
+        0,
+        Text.equal,
+        Text.hash,
+    );
+
+    // Save state before upgrade
+    system func preupgrade() {
+        usersEntries := Iter.toArray(users.entries());
+    };
+
+    // Restore state after upgrade
+    system func postupgrade() {
+        users := HashMap.fromIter<Text, User.User>(
+            usersEntries.vals(),
+            0,
+            Text.equal,
+            Text.hash,
+        );
+        usersEntries := [];
+    };
+
+
+    stable var cashFlowHistories: [User.CashFlowHistory] = [];
+
+    // Function to add a transaction record
+    private func addTransaction(transaction: User.CashFlowHistory) {
+        cashFlowHistories := Array.append(cashFlowHistories, [transaction]);
+    };
+
+    func newSubaccount(userId: Text): [Nat8] {
+        let base = Blob.toArray(Text.encodeUtf8(userId));
+        var sub = Array.tabulate<Nat8>(32, func (i) {
+            if (i < base.size()) base[i] else 0
+        });
+        return sub;
+    };
+
+    public func deleteAllUser() : async () {
+        for (key in users.keys()) {
+            ignore users.remove(key);
+        };
+    };
+
+    public func getBalance(userId: Text, ledger_canister: Text) : async Result.Result<User.Token, Text> {
+        switch (await getUserById(userId)) {
+            case (#err(errMsg)) {
+                return #err("Failed to get user: " # errMsg);
+            };
+            case (#ok(user)) {
+                let ledger = actor (ledger_canister) : actor {
+                    icrc1_balance_of : ({ owner : Principal; subaccount : ?[Nat8] }) -> async Nat;
+                    icrc1_name: () -> async Text;
+                    icrc1_symbol: () -> async Text;
+                    icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
+                };
+
+                let mintingAccountOpt = await ledger.icrc1_minting_account();
+
+                // Unwrap optional minting account
+                if (mintingAccountOpt == null) {
+                    return #err("No minting account set");
+                };
+
+                let mintingAccount = switch (mintingAccountOpt) {
+                    case (?acc) { acc }; // unwrap here
+                };
+
+                // Use user's subaccount if it exists, otherwise null
+                let subAcc : ?[Nat8] = switch (user.subAccount) {
+                    case null { null };
+                    case (?v) { ?v };
+                };
+
+                let balance = await ledger.icrc1_balance_of({
+                    owner = mintingAccount.owner;
+                    subaccount = subAcc;
+                });
+                let token_name = await ledger.icrc1_name();
+                let token_symbol = await ledger.icrc1_symbol();
+
+                return #ok({
+                    token_name = token_name;
+                    token_symbol = token_symbol;
+                    token_value = balance;
+                });
+            };
+        };
+    };
+
+    // public func topupBalance(
+    //     userId: Text,
+    //     amount: Nat,
+    //     ledger_canister: Text
+    // ) : async Result.Result<Text, Text> {
+
+    //     switch (await getUserById(userId)) {
+    //         case (#err(errMsg)) {
+    //             return #err("Failed to get user: " # errMsg);
+    //         };
+    //         case (#ok(user)) {
+    //             type Account = {
+    //                 owner : Principal;
+    //                 subaccount : ?[Nat8];
+    //             };
+
+    //             type TransferArgs = {
+    //                 to : Account;
+    //                 fee : ?Nat;
+    //                 memo : ?[Nat8];
+    //                 from_subaccount : ?[Nat8];
+    //                 created_at_time : ?Nat64;
+    //                 amount : Nat;
+    //             };
+
+    //             type TransferError = {
+    //                 #GenericError : { message : Text; error_code : Nat };
+    //                 #BadBurn : { min_burn_amount : Nat };
+    //                 #Duplicate : { duplicate_of : Nat };
+    //                 #BadFee : { expected_fee : Nat };
+    //                 #CreatedInFuture : { ledger_time : Nat64 };
+    //                 #InsufficientFunds : { balance : Nat };
+    //             };
+
+    //             type TransferResult = {
+    //                 #Ok : Nat;
+    //                 #Err : TransferError;
+    //             };
+
+    //             let ledger = actor (ledger_canister) : actor {
+    //                 icrc1_transfer : (TransferArgs) -> async TransferResult;
+    //                 icrc1_minting_account : () -> async ?{ owner: Principal; subaccount: ?[Nat8] };
+    //             };
+
+    //             let mintingAccountOpt = await ledger.icrc1_minting_account();
+
+    //             // Unwrap optional minting account
+    //             if (mintingAccountOpt == null) {
+    //                 return #err("No minting account set");
+    //             };
+
+    //             let mintingAccount = switch (mintingAccountOpt) {
+    //                 case (?acc) { acc }; // unwrap here
+    //             };
+
+    //             // Use user's subaccount if it exists, otherwise null
+    //             let subAcc : ?[Nat8] = switch (user.subAccount) {
+    //                 case null { null };
+    //                 case (?v) { ?v };
+    //             };
+
+    //             let transferArgs = {
+    //                 to = {
+    //                     owner = mintingAccount.owner;
+    //                     subaccount = subAcc; // or null if no subaccount
+    //                 };
+    //                 amount = amount;
+    //                 fee = null;
+    //                 memo = null;
+    //                 from_subaccount = null;
+    //                 created_at_time = null;
+    //             };
+
+    //             let transferResult = await ledger.icrc1_transfer(transferArgs);
+
+    //             switch (transferResult) {
+    //                 case (#Ok(blockIndex)) {
+    //                     return #ok("Transfer succeeded. Block index: ");
+    //                 };
+    //                 case (#Err(#GenericError e)) {
+    //                     return #err("Generic error ("  );
+    //                 };
+    //                 case (#Err(#BadBurn e)) {
+    //                     return #err("Bad burn. Minimum burn amount: " );
+    //                 };
+    //                 case (#Err(#Duplicate e)) {
+    //                     return #err("Duplicate transaction. Original block index: " );
+    //                 };
+    //                 case (#Err(#BadFee e)) {
+    //                     return #err("Bad fee. Expected: " );
+    //                 };
+    //                 case (#Err(#CreatedInFuture e)) {
+    //                     return #err("Created in future. Ledger time: ");
+    //                 };
+    //                 case (#Err(#InsufficientFunds e)) {
+    //                     return #err("Insufficient funds. Balance: ");
+    //                 };
+    //             };
+    //         };
+    //     };
+    // };
+
+    public func addBalanceTransaction(userId: Text, amount: Float) : async Result.Result<Text, Text> {
+        Debug.print("Adding balance transaction for user: " # userId);
+        switch (users.get(userId)) {
+            case (?user) {
+
+                addTransaction({
+                    fromId = userId;
+                    transactionAt = Time.now();
+                    amount = amount;
+                    transactionType = #topUp; // Assuming this is a top-up
+                    toId = null; // No recipient for top-ups
+                });
+
+                return #ok("Balance added successfully");
+            };
+            case null {
+                return #err("User not found");
+            };
+        };
+    };
+
+
+    public func createUser(newid : Text, profilePic : Blob) : async User.User {
+        let timestamp = Time.now();
+        let sub = newSubaccount(newid);
+
+        let newUser : User.User = {
+            id = newid;
+            profilePicture = profilePic;
+            username = "";
+            dob = "";
+            preference = [];
+            description = "";
+            wallet = 0.0;
+            rating = 0.0;
+            createdAt = timestamp;
+            updatedAt = timestamp;
+            isFaceRecognitionOn = false;
+            isProfileCompleted = false;
+            subAccount = ?sub; // Initialize subAccount as null
+        };
+
+        users.put(newid, newUser);
+        newUser;
+    };
+
+    public query func getAllUsers() : async [User.User] {
+        return Iter.toArray(users.vals());
+    };
+
+    public func getUserById(userId : Text) : async Result.Result<User.User, Text> {
+        switch (users.get(userId)) {
+            case (?user) { #ok(user) };
+            case null { #err("User not found") };
+        };
+    };
+
+    public func login(id : Text, profilePic : Blob, session_canister: Text) : async Text {
+        let session = actor (session_canister) : actor {
+            createSession : (userid : Text) -> async Text;
+        };
+        let currUser = switch (users.get(id)) {
+            case (?user) user;
+            case null {
+                let newUser = await createUser(id, profilePic);
+                newUser;
+            };
+        };
+
+        let sessionId = await session.createSession(currUser.id);
+
+        return sessionId;
+    };
+
+    public func updateUser(sessionid : Text, payload : User.UpdateUserPayload, session_canister: Text) : async Result.Result<User.User, Text> {
+        let session = actor (session_canister) : actor {
+            getUserIdBySession : (sessionId : Text) -> async Result.Result<Text, Text>;
+        };
+        let userIdResult = await session.getUserIdBySession(sessionid);
+        switch (userIdResult) {
+            case (#ok(userId)) {
+                switch (users.get(userId)) {
+                    case (?currUser) {
+                        let timestamp = Time.now();
+                        let updatedUser : User.User = {
+                            id = currUser.id;
+                            profilePicture = Option.get(payload.profilePicture, currUser.profilePicture);
+                            username = Option.get(payload.username, currUser.username);
+                            dob = Option.get(payload.dob, currUser.dob);
+                            description = Option.get(payload.description, currUser.description);
+                            preference = Option.get(payload.preference, currUser.preference);
+                            wallet = currUser.wallet;
+                            rating = currUser.rating;
+                            createdAt = currUser.createdAt;
+                            updatedAt = timestamp;
+                            isFaceRecognitionOn = currUser.isFaceRecognitionOn;
+                            isProfileCompleted = Option.get(payload.isProfileCompleted, currUser.isProfileCompleted);
+                            subAccount = currUser.subAccount; // Keep subAccount unchanged
+                        };
+                        users.put(userId, updatedUser);
+                        #ok(updatedUser);
+                    };
+                    case null { #err("User not found") };
+                };
+            };
+            case (#err(msg)) { #err(msg) };
+        };
+    };
+
+    public func deleteUser(userID : Text) : async () {
+        switch (users.get(userID)) {
+            case (?_user) {
+                users.delete(userID);
+            };
+            case null {
+
+            };
+        };
+    };
+
+    public func workerPaymentTransfer(from_job_id: Text, to_user_id: Text, amount: Float, job_canister: Text) : async Result.Result<Text, Text> {
+
+        // Dynamically create the job actor
+        let jobActor = actor(job_canister) : actor {
+            getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
+        };
+
+        // Step 1: Fetch the job's wallet balance
+        let jobResult = await jobActor.getJob(from_job_id);
+        switch (jobResult) {
+            case (#ok(jobData)) {
+
+                // Step 3: Fetch the recipient user's details
+                switch (users.get(to_user_id)) {
+                    case (?toUser) {
+
+                        addTransaction({
+                            fromId = from_job_id; // Job ID as the sender
+                            transactionAt = Time.now();
+                            amount = amount;
+                            transactionType = #transfer;
+                            toId = ?to_user_id;
+                        });
+
+                        // Debug: Print success message
+
+                        return #ok("Transferred ICP from job to user successfully");
+                    };
+                    case null {
+                        return #err("Recipient user not found");
+                    };
+                };
+            };
+            case (#err(errMsg)) {
+                return #err("Failed to fetch job details: " # errMsg);
+            };
+        };
+    };
+
+    public func jobPaymentTranfer(user_id: Text, job_id: Text, amount: Float, job_canister: Text): async Result.Result<Text, Text> {
+        let jobActor = actor(job_canister) : actor {
+            getJob: (jobId : Text) -> async Result.Result<Job.Job, Text>;
+            putJob: (job_id: Text, job: Job.Job) -> async ();
+        };
+        
+        switch (users.get(user_id)) {
+            case (?fromUser) {
+   
+                // Fetch job details from the jobs canister
+                let jobResult = await jobActor.getJob(job_id);
+                switch (jobResult) {
+                    case (#ok(jobData)) {
+
+                        // Record the transaction
+                        addTransaction({
+                            fromId = user_id;
+                            transactionAt = Time.now();
+                            amount = amount;
+                            transactionType = #transferToJob;
+                            toId = ?job_id;
+                        });
+
+                        return #ok("Transferred to job successfully");
+                    };
+                    case (#err(errMsg)) {
+                        return #err("Failed to fetch job details in user: " # errMsg);
+                    };
+                };
+            };
+            case null {
+                return #err("Sender not found");
+            };
+        };
+    };
+
+    public func getAllFaceRecogUser() : async [User.User] {
+        Iter.toArray(
+            Iter.filter(
+                users.vals(),
+                func(user : User.User) : Bool {
+                    user.isFaceRecognitionOn;
+                },
+            )
+        );
+    };
+
+    public func getUserByName(username : Text) : async Result.Result<User.User, Text> {
+        for (user in users.vals()) {
+            if (user.username == username) {
+                return #ok(user);
+            };
+        };
+        #err("User not found");
+    };
+
+    public func isUsernameAvailable(username : Text) : async Bool {
+        for (user in users.vals()) {
+            if (user.username == username) {
+                return false;
+            };
+        };
+        true;
+    };
+
+    // public shared query func estimate_withdrawal_fee(args : { amount : ?Nat64 }) : async {
+    //     minter_fee : Nat64;
+    //     bitcoin_fee : Nat64;
+    // } {
+    //     { minter_fee = 1000; bitcoin_fee = 2000 };
+    // };
+
+    public query func getUserTransactions(userId: Text): async [User.CashFlowHistory] {
+        return Array.filter<User.CashFlowHistory>(cashFlowHistories, func(t: User.CashFlowHistory): Bool {
+            t.fromId == userId or (switch (t.toId) { 
+                case (?to) to == userId;
+                case (_) false;
+            })
+        });
+    };
+
+    public query func getUsernameById(userId: Text): async Text {
+        switch (users.get(userId)) {
+            case (?user) {
+                return user.username;
+            };
+            case null {
+                return "";
+            };
+        };
+    };
+
+        // ----- HTTP Interface Implementation -----
+
+    // Tipe data standar untuk HTTP request & response
+    type HeaderField = (Text, Text);
+    
+    type HttpRequest = {
+        method : Text;
+        url : Text;
+        headers : [HeaderField];
+        body : Blob;
+        certificate_version : ?Nat16;
+    };
+
+    type HttpResponse = {
+        status_code : Nat16;
+        headers : [HeaderField];
+        body : Blob;
+        streaming_strategy : ?StreamingCallbackStrategy;
+        upgrade: ?Bool;
+    };
+
+    type StreamingCallback = query (StreamingCallbackToken) -> async StreamingCallbackResponse;
+    
+    type StreamingCallbackToken = {
+        key: Text;
+        content_encoding: Text;
+        index: Nat;
+        sha256: ?[Nat8];
+    };
+    
+    type StreamingCallbackResponse = {
+        body: Blob;
+        token: ?StreamingCallbackToken;
+    };
+
+    type StreamingCallbackStrategy = {
+        #Callback: {
+            token: StreamingCallbackToken;
+            callback: StreamingCallback;
+        };
+    };
+
+    // Fungsi pembantu untuk membuat respons JSON
+    private func makeJsonResponse(statusCode : Nat16, jsonContent : Text) : HttpResponse {
+        {
+            status_code = statusCode;
+            headers = [
+                ("Content-Type", "application/json"),
+                ("Access-Control-Allow-Origin", "*"),
+                ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                ("Access-Control-Allow-Headers", "Content-Type")
+            ];
+            body = Text.encodeUtf8(jsonContent);
+            streaming_strategy = null;
+            upgrade = null;
+        };
+    };
+
+    // Fungsi untuk mengubah satu objek User menjadi string JSON
+    private func userToJsonString(user : User.User) : Text {
+
+        let prefItems = Array.map<Job.JobCategory, Text>(
+            user.preference,
+            func (p : Job.JobCategory) : Text {
+                "{\"id\":\"" # p.id # "\",\"jobCategoryName\":\"" # p.jobCategoryName # "\"}"
+            }
+        );
+        let preferenceJson = "[" # Text.join(",", Iter.fromArray(prefItems)) # "]";
+
+        "{" #
+        "\"id\":\"" # user.id # "\"," #
+        "\"username\":\"" # user.username # "\"," #
+        "\"dob\":\"" # user.dob # "\"," #
+        "\"preference\":" # preferenceJson # "," #
+        "\"description\":\"" # user.description # "\"," #
+        "\"wallet\":" # Float.toText(user.wallet) # "," #
+        "\"rating\":" # Float.toText(user.rating) # "," #
+        "\"createdAt\":" # Int.toText(user.createdAt) # "," #
+        "\"updatedAt\":" # Int.toText(user.updatedAt) # "," #
+        "\"isFaceRecognitionOn\":" # Bool.toText(user.isFaceRecognitionOn) # "," #
+        "\"isProfileCompleted\":" # Bool.toText(user.isProfileCompleted) #
+        "}"
+    };
+
+    // Fungsi untuk mengubah array User menjadi array JSON
+    private func usersToJsonArray(userList : [User.User]) : Text {
+        let userJsonArray = Array.map<User.User, Text>(
+            userList,
+            func (user : User.User) : Text = userToJsonString(user)
+        );
+        "[" # Text.join(",", Iter.fromArray(userJsonArray)) # "]"
+    };
+
+    // Handler utama untuk HTTP query (read-only)
+    public query func http_request(req : HttpRequest) : async HttpResponse {
+        let path = req.url;
+        let method = req.method;
+
+        // Routing berdasarkan method dan path
+        Debug.print("http_request called for User canister. Method: " # method # ", Path: " # path);
+        
+        if (method == "POST" and path == "/getAllUsers") {
+            return {
+                status_code = 200;
+                headers = [
+                    ("Access-Control-Allow-Origin", "*"),
+                    ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                    ("Access-Control-Allow-Headers", "Content-Type")
+                ];
+                body = Text.encodeUtf8("");
+                streaming_strategy = null;
+                upgrade = ?true;
+            };
+        };
+
+        switch (method, path) {
+            case ("GET", "/getAllUsers") {
+                Debug.print("Handling GET /getAllUsers in User canister.");
+                // 1. Panggil fungsi yang sudah ada
+                let allUsers = Iter.toArray(users.vals());
+                // 2. Ubah hasilnya menjadi JSON
+                let jsonResponse = usersToJsonArray(allUsers);
+                // 3. Buat dan kembalikan HttpResponse
+                return makeJsonResponse(200, jsonResponse);
+            };
+            case ("OPTIONS", _) {
+                Debug.print("Handling OPTIONS request in User canister.");
+                // Menangani CORS preflight request dari browser
+                return {
+                    status_code = 200;
+                    headers = [
+                        ("Access-Control-Allow-Origin", "*"),
+                        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                        ("Access-Control-Allow-Headers", "Content-Type")
+                    ];
+                    body = Text.encodeUtf8("");
+                    streaming_strategy = null;
+                    upgrade = null;
+                };
+            };
+            case _ {
+                Debug.print("Unhandled HTTP GET/OPTIONS request in User canister. Path: " # path);
+                // Jika path tidak ditemukan
+                return makeJsonResponse(404, "{\"error\": \"Not Found\"}");
+            };
+        };
+    };
+
+    // Handler untuk HTTP update (jika diperlukan untuk request yang mengubah data)
+    public func http_request_update(req : HttpRequest) : async HttpResponse {
+        let path = req.url;
+        let method = req.method;
+        Debug.print("http_request_update called for User canister. Method: " # method # ", Path: " # path);
+
+        // Handle only specific paths that match our pattern
+        if (method == "POST" and path == "/getAllUsers") {
+            Debug.print("Handling POST /getAllUsers in User canister.");
+            let allUsers = Iter.toArray(users.vals());
+            let jsonResponse = usersToJsonArray(allUsers);
+            return makeJsonResponse(200, jsonResponse);
+        };
+
+        switch(method, path) {
+            case ("OPTIONS", _) {
+                Debug.print("Handling OPTIONS request in User canister (update call).");
+                 // Menangani CORS preflight request dari browser
+                return {
+                    status_code = 200;
+                    headers = [
+                        ("Access-Control-Allow-Origin", "*"),
+                        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                        ("Access-Control-Allow-Headers", "Content-Type")
+                    ];
+                    body = Text.encodeUtf8("");
+                    streaming_strategy = null;
+                    upgrade = null;
+                };
+            };
+            case _ {
+                Debug.print("Unhandled HTTP POST/OPTIONS request in User canister (update call). Path: " # path);
+                 // Jika path tidak ditemukan
+                return makeJsonResponse(404, "{\"error\": \"Not Found in update call\"}");
+            }
+        }
+    };
+
+
+    public func updateUserRating(userId: Text, newRating: Float) : async Result.Result<Text, Text> {
+    // Step 1: Retrieve the user by userId
+        switch (users.get(userId)) {
+            case (?user) {
+                // Step 2: Update the user's rating
+                let updatedUser : User.User = {
+                    id = user.id;
+                    profilePicture = user.profilePicture;
+                    username = user.username;
+                    dob = user.dob;
+                    preference = user.preference;
+                    description = user.description;
+                    wallet = user.wallet;
+                    rating = newRating; // Update the rating
+                    createdAt = user.createdAt;
+                    updatedAt = Time.now(); // Update the timestamp
+                    isFaceRecognitionOn = user.isFaceRecognitionOn;
+                    isProfileCompleted = user.isProfileCompleted;
+                    subAccount = user.subAccount; // Keep subAccount unchanged
+                };
+
+                // Step 3: Save the updated user back to the HashMap
+                users.put(userId, updatedUser);
+
+                // Step 4: Return success message
+                #ok("User rating updated successfully");
+            };
+            case null {
+                // Step 4: Return error if user not found
+                #err("User not found");
+            };
+        };
+    };
+
+
+    
+};

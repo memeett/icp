@@ -2,7 +2,11 @@ import { JobCategory } from './Job';
 
 export interface User {
   id: string;
+<<<<<<< HEAD
   profilePictureUrl: string | null;
+=======
+  profilePicture: Blob | null;
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
   username: string;
   dob: string;
   preference: JobCategory[];

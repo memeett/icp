@@ -20,7 +20,10 @@
     "@headlessui/react": "^2.2.0",
     "@radix-ui/react-slot": "^1.2.3",
     "@react-oauth/google": "^0.12.1",
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.57.3",
+=======
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
     "@tailwindcss/vite": "^4.0.8",
     "@types/react-router-dom": "^5.3.3",
     "@types/styled-components": "^5.1.34",

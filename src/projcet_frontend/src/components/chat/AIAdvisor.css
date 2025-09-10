@@ -1,0 +1,7 @@
+.ai-advisor-fab .ant-float-btn-body {
+    background: linear-gradient(135deg, hsl(var(--primary)), #9333ea) !important;
+    color: white !important;
+}
+.no-horizontal-scroll {
+    overflow-x: hidden;
+}

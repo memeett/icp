@@ -14,9 +14,13 @@ const replacer = (key: string, value: any) => {
 export const storage = {
   setUser: (user: any) => {
     try {
+<<<<<<< HEAD
       // Hapus gambar profil sebelum menyimpan untuk menghindari penyimpanan data biner
       const { profilePicture, ...userToStore } = user;
       const userString = JSON.stringify(userToStore, replacer);
+=======
+      const userString = JSON.stringify(user, replacer);
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
       localStorage.setItem(CURRENT_USER_KEY, userString);
     } catch (error) {
       console.error("Failed to set user in localStorage:", error);
@@ -27,6 +31,7 @@ export const storage = {
       const userString = localStorage.getItem(CURRENT_USER_KEY);
       if (!userString) return null;
       
+<<<<<<< HEAD
       const userData = JSON.parse(userString);
       
       // Kembalikan data pengguna tanpa gambar profil; ini akan diambil secara terpisah
@@ -36,6 +41,41 @@ export const storage = {
         createdAt: BigInt(userData.createdAt || '0'),
         updatedAt: BigInt(userData.updatedAt || '0'),
         profilePicture: null, // Selalu null dari localStorage
+=======
+      console.log('Raw user string from localStorage:', userString);
+      
+      const parsed = JSON.parse(userString);
+      console.log('Parsed user data:', parsed);
+      
+      // Handle different possible structures
+      const userData = parsed.ok || parsed;
+      console.log('User data after ok check:', userData);
+      
+      // Ensure the id field exists
+      if (!userData.id) {
+        console.error('User data is missing id field:', userData);
+        
+        // Try to get the ID from another field or path
+        if (userData.userId) {
+          userData.id = userData.userId;
+        } else if (userData.principal) {
+          userData.id = userData.principal;
+        } else if (userData.user && userData.user.id) {
+          userData.id = userData.user.id;
+        }
+        
+        if (!userData.id) {
+          return null;
+        }
+      }
+      
+      return {
+        ...userData,
+        id: String(userData.id), // Ensure ID is a string
+        createdAt: BigInt(userData.createdAt || '0'),
+        updatedAt: BigInt(userData.updatedAt || '0'),
+        profilePicture: null,
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
       };
     } catch (error) {
       console.error("Failed to get user from localStorage:", error);

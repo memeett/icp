@@ -3,7 +3,11 @@ import { Routes, Route } from 'react-router-dom';
 import { Spin } from 'antd';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from '../../shared/components/ErrorFallback';
+<<<<<<< HEAD
 import AuthGuard from '../../shared/components/AuthGuard';
+=======
+import ProfileCompletionGuard from '../../shared/components/ProfileCompletionGuard';
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 import BalanceTransactionPage from '../../pages/BalanceTransactionPage';
 
 const LandingPage = lazy(() => import('../../pages/LandingPage'));
@@ -17,8 +21,11 @@ const BrowseFreelancerPage = lazy(() => import('../../pages/BrowseFreelancerPage
 const CompleteProfilePage = lazy(() => import('../../pages/CompleteProfilePage'));
 const AccountPage = lazy(() => import('../../pages/AccountPage'));
 const AdminPage = lazy(() => import('../../pages/AdminPage'));
+<<<<<<< HEAD
 const ChatPage = lazy(() => import('../../pages/ChatPage'));
 const ChatWithAIPage = lazy(() => import('../../pages/ChatWithAIPage'));
+=======
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 
 const PageLoader: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -35,11 +42,19 @@ const RouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 );
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+<<<<<<< HEAD
   <AuthGuard>
     <RouteWrapper>
       {children}
     </RouteWrapper>
   </AuthGuard>
+=======
+  <ProfileCompletionGuard>
+    <RouteWrapper>
+      {children}
+    </RouteWrapper>
+  </ProfileCompletionGuard>
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 );
 
 export const AppRouter: React.FC = () => {
@@ -138,6 +153,7 @@ export const AppRouter: React.FC = () => {
           </ProtectedRoute>
         }
       />
+<<<<<<< HEAD
        <Route
         path="/chat"
         element={
@@ -154,6 +170,8 @@ export const AppRouter: React.FC = () => {
           </ProtectedRoute>
         }
       />
+=======
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
       
       {/* Admin Route */}
       <Route

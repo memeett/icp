@@ -3,7 +3,11 @@ import Webcam from "react-webcam";
 import { Modal, Button, Progress, Typography, Space } from "antd";
 import { CameraOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
+<<<<<<< HEAD
 import { loginWithInternetIdentity } from "../controller/userController";
+=======
+import { login } from "../controller/userController";
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
@@ -140,7 +144,11 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
               message: result.message,
             });
             if (purpose === "login") { // Only login if purpose is login
+<<<<<<< HEAD
               await loginWithInternetIdentity(); // Await the login call
+=======
+              await login(result.principal_id); // Await the login call
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
               window.location.reload(); // Reload the page after successful login
             }
             onClose();
@@ -153,7 +161,11 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
               // If this was the 3rd capture (0-indexed)
               onSuccess();
               if (purpose === "login") { // Only login if purpose is login
+<<<<<<< HEAD
                 await loginWithInternetIdentity(); // Use the provided principalId for login, await the call
+=======
+                await login(principalId); // Use the provided principalId for login, await the call
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
                 window.location.reload(); // Reload the page after successful login
               }
               onClose();

@@ -25,8 +25,11 @@ import { get } from "http";
 import { InboxResponse } from "../types/Inbox";
 import { send } from "vite";
 import { createRating } from "../../controller/ratingController";
+<<<<<<< HEAD
 import { ApplierPayload } from "../types/Applier";
 import ChatService from "../../services/chatService";
+=======
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 
 interface ApplicantData {
   user: User;
@@ -87,6 +90,7 @@ export const useJobDetails = (
     if (!jobId) return;
 
     setLoading(true);
+<<<<<<< HEAD
     // Reset states to prevent stale data
     setApplicants([]);
     setAcceptedFreelancers([]);
@@ -95,6 +99,14 @@ export const useJobDetails = (
 
     try {
       const jobData = await getJobById(jobId);
+=======
+    try {
+      const [jobData, allJobsData] = await Promise.all([
+        getJobById(jobId),
+        viewAllJobs(),
+      ]);
+
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
       if (!jobData) {
         throw new Error("Job not found");
       }
@@ -113,6 +125,7 @@ export const useJobDetails = (
         updatedAt: BigInt((jobData as any).updatedAt),
       };
       setJob(convertedJob);
+<<<<<<< HEAD
 
       const isOwner = user?.id === (jobData as any).userId;
       setIsJobOwner(isOwner);
@@ -155,12 +168,50 @@ export const useJobDetails = (
         updatedAt: new Date(Number(u.updatedAt) / 1000000),
         profilePicture: u.profilePicture?.[0] ? new Blob([u.profilePicture[0]]) : null,
       }));
+=======
+      const isOwner = user?.id === (jobData as any).userId;
+      setIsJobOwner(isOwner);
+
+      // Parallel fetch for user-specific data
+      const promises: Promise<any>[] = [];
+
+      // Check if user has applied (only if user exists and is not owner)
+      if (user && !isOwner) {
+        promises.push(hasUserApplied(user.id, jobId));
+        promises.push(isFreelancerRegistered(jobId, user.id));
+      }
+
+      // Fetch applicants and accepted freelancers (only if user is owner)
+      if (user) {
+        promises.push(getJobApplier(jobId), getAcceptedFreelancer(jobId));
+      }
+
+      const results = await Promise.all(promises);
+
+      let resultIndex = 0;
+      if (user && !isOwner) {
+        setHasApplied(results[resultIndex++]);
+        const freelancerStatus = results[resultIndex++];
+        console.log('Hi '+freelancerStatus)
+        if (freelancerStatus[0] === "succ") {
+          if (freelancerStatus[1] === "true") setisJobFreelancer(true);
+          else setisJobFreelancer(false);
+        }
+      }
+
+      const applicantsData = results[resultIndex++];
+      const acceptedData = results[resultIndex++];
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 
       const acceptedUserIds = new Set(
         acceptedData.map((user: User) => user.id)
       );
 
+<<<<<<< HEAD
       const mappedData = (applicantsData || []).map((app: any) => ({
+=======
+      const mappedData = applicantsData.map((app: any) => ({
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
         user: app.user,
         appliedAt: new Date(Number(app.appliedAt) / 1000000).toISOString(),
       }));
@@ -174,7 +225,11 @@ export const useJobDetails = (
 
       // Logic for similar jobs
       if (convertedJob && allJobsData) {
+<<<<<<< HEAD
         const convertedAllJobs: Job[] = (allJobsData || []).map((jobData: any) => ({
+=======
+        const convertedAllJobs: Job[] = allJobsData.map((jobData: any) => ({
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
           ...jobData,
           jobTags: jobData.jobTags?.map((t: any) => ({
             id: t.id?.toString?.() ?? String(t.id),
@@ -272,10 +327,21 @@ export const useJobDetails = (
             "application",
             values.acceptancereason
           );
+<<<<<<< HEAD
           await fetchJobDetails(); // Refresh data
           return true;
         }
         return false;
+=======
+
+          message.success("Applicant accepted successfully!");
+          await fetchJobDetails(); // Refresh data
+          return true;
+        } else {
+          message.error("Failed to accept applicant.");
+          return false;
+        }
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
       } catch (error) {
         console.error("Error accepting applicant:", error);
         message.error("Failed to accept applicant.");
@@ -332,6 +398,7 @@ export const useJobDetails = (
       if (result.jobStarted) {
         message.success("Job started successfully!");
         await fetchJobDetails();
+<<<<<<< HEAD
         
         // Create chat rooms for each accepted freelancer
         console.log('🚀 Creating chat rooms for accepted freelancers...');
@@ -358,6 +425,8 @@ export const useJobDetails = (
           console.log(`🎉 Created ${acceptedFreelancers.length} chat room(s) for job ${job.id}`);
         }
         
+=======
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
         return true;
       } else {
         message.error(result.message);
@@ -367,7 +436,11 @@ export const useJobDetails = (
       message.error("Failed to start job.");
       return false;
     }
+<<<<<<< HEAD
   }, [job, user, isJobOwner, acceptedFreelancers, fetchJobDetails]);
+=======
+  }, [job, user, fetchJobDetails]);
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
 
   // Handle job finish
   const handleFinishJob = useCallback(async (): Promise<boolean> => {
@@ -421,11 +494,15 @@ export const useJobDetails = (
             (msg) => msg.senderId === applicantId
           );
           
+<<<<<<< HEAD
           if (filteredMessages.length > 0) {
             // Mengembalikan pesan pertama yang cocok secara keseluruhan
             return filteredMessages[0].message;
           }
           return "Cover letter not found."; // Pesan jika tidak ada
+=======
+          return filteredMessages[0]?.message.split("\n")[1];
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848
         }
       } catch (error) {
         console.error("Error submitting cover letter:", error);
@@ -474,4 +551,7 @@ export const useJobDetails = (
     refreshData,
   };
 };
+<<<<<<< HEAD
 
+=======
+>>>>>>> 45d171cc3544073d4127467998b52eb6a1ef0848

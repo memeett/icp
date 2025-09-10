@@ -47,6 +47,7 @@ import { User } from '../shared/types/User';
 import { formatDate } from '../utils/dateUtils';
 import { RcFile } from 'antd/es/upload';
 import { createSubmission, getUserSubmissionsByJobId, getSubmissionByJobId, updateSubmissionStatus } from '../controller/submissionController';
+import JobChatButton from '../components/chat/JobChatButton';
 
 import type { Submission } from '../../../declarations/projcet_backend_single/projcet_backend_single.did';
 import { getUserById, getUserByName } from '../controller/userController';
@@ -266,7 +267,7 @@ const JobDetailPage: React.FC = () => {
             </div>
 
             {user && job!.jobStatus === 'Open' && !isJobOwner && (
-              <div className="text-center">
+              <div className="text-center space-x-4">
                 {Number(job!.jobSlots) - acceptedFreelancers.length <= 0 ? (
                   <Button size="large" disabled className="px-8">
                     All Slots Filled
@@ -286,6 +287,18 @@ const JobDetailPage: React.FC = () => {
                     Apply for this Job
                   </Button>
                 )}
+              </div>
+            )}
+            
+            {/* Chat button for anyone (client or accepted freelancer) when job is Ongoing/Finished */}
+            {user && (job!.jobStatus === 'Ongoing' || job!.jobStatus === 'Finished') && (
+              <div className="text-center mt-4">
+                <JobChatButton
+                  jobId={job!.id}
+                  jobStatus={job!.jobStatus}
+                  clientId={job!.userId}
+                  freelancerId={job!.acceptedFreelancerId}
+                />
               </div>
             )}
 

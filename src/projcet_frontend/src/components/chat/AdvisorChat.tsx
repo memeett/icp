@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { askAdvisor } from '../../controller/advisorController';
-import { motion } from 'framer-motion';
-import { Input, Button, Avatar, Typography, Spin } from 'antd';
-import { SendOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Input, Button, Avatar, Typography, Spin, Empty } from 'antd';
+import { SendOutlined, RobotOutlined, UserOutlined, BulbOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 
 const { Text } = Typography;
@@ -12,12 +12,18 @@ interface Message {
     sender: 'user' | 'ai';
 }
 
-const AdvisorChat: React.FC = () => {
+interface AdvisorChatProps {
+    initialMessage?: string;
+    onFirstMessage?: () => void;
+}
+
+const AdvisorChat: React.FC<AdvisorChatProps> = ({ initialMessage, onFirstMessage }) => {
     const [messages, setMessages] = useState<Message[]>([
-        { text: "Hello! How can I help you find the perfect job or talent today?", sender: 'ai' }
+        { text: "Hello! I'm your AI Freelance Assistant. How can I help you succeed in your freelancing journey today?", sender: 'ai' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -28,20 +34,36 @@ const AdvisorChat: React.FC = () => {
         scrollToBottom();
     }, [messages]);
 
-    const handleSend = async () => {
-        if (input.trim() === '') return;
+    useEffect(() => {
+        if (initialMessage && !hasStarted) {
+            handleSend(initialMessage);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialMessage, hasStarted]);
 
-        const userMessage: Message = { text: input, sender: 'user' };
+    const handleSend = async (messageText?: string) => {
+        const textToSend = messageText || input.trim();
+        if (textToSend === '') return;
+
+        if (!hasStarted) {
+            setHasStarted(true);
+            onFirstMessage?.();
+        }
+
+        const userMessage: Message = { text: textToSend, sender: 'user' };
         setMessages(prev => [...prev, userMessage]);
-        setInput('');
+        if (!messageText) setInput('');
         setIsLoading(true);
 
         try {
-            const aiResponse = await askAdvisor(input);
+            const aiResponse = await askAdvisor(textToSend);
             const aiMessage: Message = { text: aiResponse, sender: 'ai' };
             setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
-            const errorMessage: Message = { text: 'Sorry, something went wrong.', sender: 'ai' };
+            const errorMessage: Message = { 
+                text: 'Sorry, I\'m having trouble connecting to my AI brain right now. Please try again later.', 
+                sender: 'ai' 
+            };
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
@@ -55,99 +77,237 @@ const AdvisorChat: React.FC = () => {
         }
     };
 
-    return (
-        <div className="flex flex-col h-[400px] w-full bg-background border border-border rounded-lg z-50">
-            {/* Header */}
-            <div className="flex items-center p-3 border-b border-border bg-card rounded-t-lg">
-                <RobotOutlined className="text-primary mr-2" />
-                <Text strong className="text-foreground">AI Job Advisor</Text>
-            </div>
+    const quickQuestions = [
+        "How can I improve my freelancer profile?",
+        "What skills are in high demand right now?",
+        "How should I price my services?",
+        "Tips for finding good clients?",
+        "How to write a compelling cover letter?",
+        "Best practices for client communication?",
+        "How to handle difficult clients?",
+        "Strategies for getting repeat clients?",
+        "Time management tips for freelancers?",
+        "How to build a strong portfolio?",
+        "Negotiation tactics for better rates?",
+        "Marketing yourself as a freelancer?"
+    ];
 
-            {/* Messages */}
-            <div className="flex-1 p-3 overflow-y-auto bg-background no-horizontal-scroll">
-                {messages.map((msg, index) => (
-                    <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex items-start gap-2 mb-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}
-                    >
-                        {msg.sender === 'ai' && (
-                            <Avatar
-                                size="small"
-                                icon={<RobotOutlined />}
-                                className="bg-primary/10 text-primary border-primary/20 flex-shrink-0"
-                            />
-                        )}
-                        <div
-                            className={`px-3 py-2 rounded-lg max-w-[80%] ${
-                                msg.sender === 'user'
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted text-muted-foreground'
-                            }`}
-                        >
-                            <div className="prose prose-sm max-w-full text-inherit">
-                                <ReactMarkdown
-                                    components={{
-                                        p: ({ children }) => <p className="mb-1 last:mb-0 text-inherit">{children}</p>,
-                                        strong: ({ children }) => <strong className="text-inherit">{children}</strong>,
-                                        em: ({ children }) => <em className="text-inherit">{children}</em>,
-                                    }}
+    return (
+        <div className="flex h-full w-full bg-background">
+            {/* Main Chat Area */}
+            <div className="flex-1 flex flex-col">
+                {/* Messages */}
+                <div className="flex-1 p-4 lg:p-8 overflow-y-auto chat-messages-container">
+                    <div className="max-w-none mx-auto px-2 lg:px-8">
+                        <AnimatePresence>
+                            {messages.map((msg, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className={`flex items-start gap-4 mb-6 ${msg.sender === 'user' ? 'justify-end' : ''}`}
                                 >
-                                    {msg.text}
-                                </ReactMarkdown>
-                            </div>
-                        </div>
-                        {msg.sender === 'user' && (
-                            <Avatar
-                                size="small"
-                                icon={<UserOutlined />}
-                                className="bg-muted text-muted-foreground flex-shrink-0"
-                            />
+                                    {msg.sender === 'ai' && (
+                                        <div className="flex-shrink-0">
+                                            <Avatar
+                                                size={40}
+                                                icon={<RobotOutlined />}
+                                                className="bg-gradient-to-br from-primary to-purple-600 text-white border-0"
+                                            />
+                                        </div>
+                                    )}
+                                    <div
+                                        className={`max-w-[85%] lg:max-w-[75%] xl:max-w-[70%] ${
+                                            msg.sender === 'user'
+                                                ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md px-6 py-4'
+                                                : 'bg-card border border-border rounded-2xl rounded-bl-md px-6 py-4 shadow-sm'
+                                        }`}
+                                    >
+                                    <div className={`prose prose-sm max-w-full ${
+                                        msg.sender === 'user' ? 'text-primary-foreground' : 'text-foreground'
+                                    }`}>
+                                        <ReactMarkdown
+                                            components={{
+                                                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                                                em: ({ children }) => <em className="italic">{children}</em>,
+                                                ul: ({ children }) => <ul className="list-disc list-inside my-2">{children}</ul>,
+                                                li: ({ children }) => <li className="mb-1">{children}</li>,
+                                            }}
+                                        >
+                                            {msg.text}
+                                        </ReactMarkdown>
+                                    </div>
+                                </div>
+                                    {msg.sender === 'user' && (
+                                        <div className="flex-shrink-0">
+                                            <Avatar
+                                                size={40}
+                                                icon={<UserOutlined />}
+                                                className="bg-muted text-muted-foreground border border-border"
+                                            />
+                                        </div>
+                                    )}
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    
+                        {isLoading && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-start gap-4 mb-6"
+                            >
+                                <div className="flex-shrink-0">
+                                    <Avatar
+                                        size={40}
+                                        icon={<RobotOutlined />}
+                                        className="bg-gradient-to-br from-primary to-purple-600 text-white border-0"
+                                    />
+                                </div>
+                                <div className="bg-card border border-border rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
+                                    <div className="flex items-center space-x-2">
+                                        <div className="typing-dots">
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                        </div>
+                                        <Text className="text-muted-foreground ml-2">AI is thinking...</Text>
+                                    </div>
+                                </div>
+                            </motion.div>
                         )}
-                    </motion.div>
-                ))}
-                {isLoading && (
-                    <div className="flex items-center gap-2 mb-3">
-                        <Avatar
-                            size="small"
-                            icon={<RobotOutlined />}
-                            className="bg-primary/10 text-primary border-primary/20"
-                        />
-                        <div className="bg-muted px-3 py-2 rounded-lg">
-                            <Spin size="small" />
-                            <Text className="ml-2 text-muted-foreground">Thinking...</Text>
+
+                        {/* Mobile Quick Questions - Show only if conversation just started and on mobile/tablet */}
+                        {messages.length === 1 && !isLoading && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                                className="mt-8 mobile-suggestions lg:hidden"
+                            >
+                                <div className="flex items-center gap-2 mb-6">
+                                    <BulbOutlined className="text-primary text-lg" />
+                                    <Text className="text-base text-muted-foreground font-medium">Quick questions to get started:</Text>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {quickQuestions.slice(0, 6).map((question, index) => (
+                                        <motion.button
+                                            key={index}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.6 + index * 0.1 }}
+                                            onClick={() => handleSend(question)}
+                                            className="text-left p-4 bg-card border border-border rounded-xl hover:bg-muted/50 hover:border-primary/50 hover:shadow-md transition-all duration-200 text-sm group"
+                                            disabled={isLoading}
+                                        >
+                                            <div className="flex items-start gap-2">
+                                                <div className="w-2 h-2 bg-primary/60 rounded-full mt-2 group-hover:bg-primary transition-colors flex-shrink-0"></div>
+                                                <span className="flex-1 leading-relaxed">{question}</span>
+                                            </div>
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    
+                        <div ref={messagesEndRef} />
+                    </div>
+                </div>
+
+                {/* Input */}
+                <div className="p-4 lg:p-8 border-t border-border bg-card/50 backdrop-blur-sm">
+                    <div className="max-w-none mx-auto px-2 lg:px-8">
+                        <div className="flex gap-4 items-end">
+                            <div className="flex-1">
+                                <Input.TextArea
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onPressEnter={handleKeyPress}
+                                    disabled={isLoading}
+                                    placeholder="Ask me anything about freelancing..."
+                                    autoSize={{ minRows: 1, maxRows: 4 }}
+                                    className="rounded-xl resize-none text-base"
+                                    style={{
+                                        backgroundColor: 'hsl(var(--background))',
+                                        borderColor: 'hsl(var(--border))',
+                                        color: 'hsl(var(--foreground))',
+                                        fontSize: '16px',
+                                        padding: '12px 16px'
+                                    }}
+                                />
+                            </div>
+                            <Button
+                                type="primary"
+                                icon={<SendOutlined />}
+                                onClick={() => handleSend()}
+                                disabled={isLoading || !input.trim()}
+                                loading={isLoading}
+                                size="large"
+                                className="h-auto px-6 py-3 rounded-xl text-base font-medium"
+                            >
+                                Send
+                            </Button>
                         </div>
                     </div>
-                )}
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="p-3 border-t border-border bg-card rounded-b-lg">
-                <div className="flex gap-2">
-                    <Input
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onPressEnter={handleKeyPress}
-                        disabled={isLoading}
-                        placeholder="Ask the AI Advisor..."
-                        className="flex-1"
-                        style={{
-                            backgroundColor: 'hsl(var(--background))',
-                            borderColor: 'hsl(var(--border))',
-                            color: 'hsl(var(--foreground))'
-                        }}
-                    />
-                    <Button
-                        type="primary"
-                        icon={<SendOutlined />}
-                        onClick={handleSend}
-                        disabled={isLoading || !input.trim()}
-                        loading={isLoading}
-                    />
                 </div>
             </div>
+
+            {/* Suggestions Sidebar */}
+            <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+                className="hidden lg:flex flex-col w-80 xl:w-96 border-l border-border bg-card/30 backdrop-blur-sm suggestions-sidebar"
+            >
+                {/* Sidebar Header */}
+                <div className="p-6 border-b border-border">
+                    <div className="flex items-center gap-3">
+                        <BulbOutlined className="text-primary text-xl" />
+                        <div>
+                            <h3 className="font-semibold text-foreground">Quick Suggestions</h3>
+                            <p className="text-sm text-muted-foreground">Click to ask instantly</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Suggestions List */}
+                <div className="flex-1 p-6 overflow-y-auto">
+                    <div className="space-y-3">
+                        {quickQuestions.map((question, index) => (
+                            <motion.button
+                                key={index}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.5 + index * 0.1 }}
+                                onClick={() => handleSend(question)}
+                                className="w-full text-left p-4 bg-card border border-border rounded-xl hover:bg-muted/50 hover:border-primary/50 hover:shadow-md transition-all duration-200 text-sm group suggestions-sidebar-button"
+                                disabled={isLoading}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className="w-2 h-2 bg-primary/60 rounded-full mt-2 group-hover:bg-primary transition-colors flex-shrink-0"></div>
+                                    <span className="flex-1 leading-relaxed">{question}</span>
+                                </div>
+                            </motion.button>
+                        ))}
+                    </div>
+
+                    {/* Additional helpful tips */}
+                    <div className="mt-8 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                        <h4 className="font-medium text-foreground mb-2 flex items-center gap-2">
+                            <RobotOutlined className="text-primary" />
+                            Tips for better results
+                        </h4>
+                        <ul className="text-sm text-muted-foreground space-y-2">
+                            <li>• Be specific about your freelance niche</li>
+                            <li>• Ask about real scenarios you're facing</li>
+                            <li>• Request step-by-step guidance</li>
+                            <li>• Mention your experience level</li>
+                        </ul>
+                    </div>
+                </div>
+            </motion.div>
         </div>
     );
 };

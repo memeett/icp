@@ -1,9 +1,16 @@
+import { storage } from '../utils/storage';
+
 const ADVISOR_API_URL = "http://127.0.0.1:8002/api/chat";
 
 export const askAdvisor = async (prompt: string): Promise<string> => {
     try {
+        // Get current user from storage
+        const currentUser = storage.getUser();
+        const userId = currentUser?.id || null;
+
         const payload = {
-            message: prompt
+            message: prompt,
+            userId: userId  // Include user ID in the request
         };
 
         console.log('Sending message to advisor via REST:', JSON.stringify(payload, null, 2));

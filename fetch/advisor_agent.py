@@ -48,6 +48,7 @@ _CACHE_TTL = 60.0  # detik
 # --------------------------
 class ChatRequest(Model):
     message: str
+    userId: str | None = None  # Optional user ID from frontend session
 
 class ChatResponse(Model):
     response: str
@@ -129,7 +130,7 @@ tools = [
     "type": "function",
     "function": {
         "name": "jobRecommendation",
-        "description": "Memberikan rekomendasi pekerjaan kepada user sesuai dengan user preferences",
+        "description": "Memberikan rekomendasi pekerjaan kepada user yang sedang login sesuai dengan user preferences dan skills. Otomatis menggunakan profil user yang sedang login.",
         "parameters": {
             "type": "object",
             "properties": {},
@@ -194,13 +195,11 @@ tools = [
     "type": "function",
     "function": {
         "name": "get_project_reminders",
-        "description": "Dapatkan ringkasan status proyek dan pengingat untuk seorang pengguna. Berguna untuk memeriksa pekerjaan yang sedang berjalan, submission yang tertunda, dan deadline yang mendekat.",
+        "description": "Dapatkan ringkasan status proyek dan pengingat untuk pengguna yang sedang login. Berguna untuk memeriksa pekerjaan yang sedang berjalan, submission yang tertunda, dan deadline yang mendekat. Tidak perlu mengirim user_id karena otomatis menggunakan user yang sedang login.",
         "parameters": {
             "type": "object",
-            "properties": {
-                "user_id": {"type": "string", "description": "ID unik dari pengguna."}
-            },
-            "required": ["user_id"],
+            "properties": {},
+            "required": [],
         },
         "strict": True,
     },
@@ -209,13 +208,11 @@ tools = [
     "type": "function",
     "function": {
         "name": "get_financial_summary",
-        "description": "Dapatkan ringkasan keuangan (pemasukan, pengeluaran, jumlah transaksi) untuk seorang pengguna.",
+        "description": "Dapatkan ringkasan keuangan (pemasukan, pengeluaran, jumlah transaksi) untuk pengguna yang sedang login. Tidak perlu mengirim user_id karena otomatis menggunakan user yang sedang login.",
         "parameters": {
             "type": "object",
-            "properties": {
-                "user_id": {"type": "string", "description": "ID unik dari pengguna."}
-            },
-            "required": ["user_id"],
+            "properties": {},
+            "required": [],
         },
         "strict": True,
     },
@@ -295,7 +292,55 @@ async def fetch_users(ctx: Context) -> List[Dict[str, Any]]:
     return await _fetch_canister_data(ctx, _USERS_CACHE, "getAllUsers", BACKEND_CANISTER_ID)
 
 # --------------------------
-# TF-IDF logic has been removed as requested.
+# TF-IDF functions for job recommendation
+# --------------------------
+
+def tokenize(text: str) -> List[str]:
+    """Simple tokenization"""
+    import re
+    return re.findall(r'\b\w+\b', text.lower())
+
+def build_doc(job: Dict[str, Any]) -> str:
+    """Build document string from job"""
+    parts = []
+    parts.append(job.get("jobName", ""))
+    parts.extend(job.get("jobDescription", []))
+    for tag in (job.get("jobTags", []) or []):
+        parts.append(tag.get("jobCategoryName", ""))
+    parts.extend(job.get("jobRequirementSkills", []) or [])
+    return " ".join(str(p) for p in parts)
+
+def tf(tokens: List[str]) -> Dict[str, float]:
+    """Term frequency"""
+    counter = Counter(tokens)
+    total = len(tokens)
+    return {term: count / total for term, count in counter.items()}
+
+def compute_idf(token_lists: List[List[str]]) -> Dict[str, float]:
+    """Inverse document frequency"""
+    n_docs = len(token_lists)
+    if n_docs == 0:
+        return {}
+    
+    df = defaultdict(int)
+    for tokens in token_lists:
+        for token in set(tokens):
+            df[token] += 1
+    
+    return {term: math.log(n_docs / count) for term, count in df.items()}
+
+def vec(tf_map: Dict[str, float], idf_map: Dict[str, float]) -> Dict[str, float]:
+    """TF-IDF vector"""
+    return {term: tf_val * idf_map.get(term, 0.0) for term, tf_val in tf_map.items()}
+
+def cosine(v1: Dict[str, float], v2: Dict[str, float]) -> float:
+    """Cosine similarity"""
+    dot = sum(v1.get(k, 0.0) * v2.get(k, 0.0) for k in set(v1.keys()) | set(v2.keys()))
+    norm1 = math.sqrt(sum(v ** 2 for v in v1.values()))
+    norm2 = math.sqrt(sum(v ** 2 for v in v2.values()))
+    if norm1 == 0.0 or norm2 == 0.0:
+        return 0.0
+    return dot / (norm1 * norm2)
 
 # --------------------------
 # Tool handlers (local compute)
@@ -330,7 +375,7 @@ async def tool_recommend_jobs_by_skills(ctx: Context, args: Dict[str, Any]):
         score = cosine(q_vec, v)
         scored.append({"job": j, "score": round(float(score), 4)})
 
-    scored.sort(key=lambda x: x["scores"]["final"], reverse=True)
+    scored.sort(key=lambda x: x["score"], reverse=True)
     return scored[:top_n]
 
 async def tool_budget_advice(ctx: Context, args: Dict[str, Any]):
@@ -460,9 +505,10 @@ async def tool_find_talent(ctx: Context, args: Dict[str, Any]):
     }
 
 async def tool_get_project_reminders(ctx: Context, args: Dict[str, Any]):
-    user_id = args.get("user_id")
+    # Get user_id from args first, then fallback to context
+    user_id = args.get("user_id") or getattr(ctx, 'user_id', None)
     if not user_id:
-        return {"error": "user_id is required"}
+        return {"error": "User not logged in. Please login to access project reminders."}
     
     jobs = await fetch_jobs(ctx)
     
@@ -484,9 +530,10 @@ async def tool_get_project_reminders(ctx: Context, args: Dict[str, Any]):
     }
 
 async def tool_get_financial_summary(ctx: Context, args: Dict[str, Any]):
-    user_id = args.get("user_id")
+    # Get user_id from args first, then fallback to context
+    user_id = args.get("user_id") or getattr(ctx, 'user_id', None)
     if not user_id:
-        return {"error": "user_id is required"}
+        return {"error": "User not logged in. Please login to access financial summary."}
 
     users = await fetch_users(ctx)
     user = next((u for u in users if u.get("id") == user_id), None)
@@ -500,6 +547,71 @@ async def tool_get_financial_summary(ctx: Context, args: Dict[str, Any]):
         "totalIncome": user.get("wallet", 0.0),
         "totalExpense": 0.0, # Cannot be calculated from user data
         "transactionCount": 0 # Cannot be calculated from user data
+    }
+
+async def tool_jobRecommendation(ctx: Context, args: Dict[str, Any]):
+    # Get user_id from context
+    user_id = getattr(ctx, 'user_id', None)
+    if not user_id:
+        return {"error": "User not logged in. Please login to get personalized job recommendations."}
+    
+    # Fetch user data and jobs
+    users = await fetch_users(ctx)
+    jobs = await fetch_jobs(ctx)
+    
+    # Find current user
+    current_user = next((u for u in users if u.get("id") == user_id), None)
+    if not current_user:
+        return {"error": "User profile not found."}
+    
+    # Get user preferences (skills/categories)
+    user_preferences = current_user.get("preference", [])
+    if not user_preferences:
+        return {
+            "message": "Untuk mendapatkan rekomendasi pekerjaan yang lebih baik, silakan lengkapi preferensi skill Anda di profil.",
+            "available_jobs_count": len([j for j in jobs if j.get("jobStatus") == "Open"]),
+            "recommendations": []
+        }
+    
+    # Extract skill names from preferences
+    user_skills = [pref.get("jobCategoryName", "") for pref in user_preferences if pref.get("jobCategoryName")]
+    ctx.logger.info(f"User skills from preferences: {user_skills}")
+    
+    # Filter open jobs and score them based on matching skills
+    open_jobs = [j for j in jobs if j.get("jobStatus") == "Open"]
+    scored_jobs = []
+    
+    for job in open_jobs:
+        job_tags = job.get("jobTags", []) or []
+        job_categories = [tag.get("jobCategoryName", "").lower() for tag in job_tags if tag.get("jobCategoryName")]
+        
+        # Calculate skill match score
+        skill_matches = 0
+        for skill in user_skills:
+            if skill.lower() in job_categories:
+                skill_matches += 1
+        
+        match_percentage = (skill_matches / len(user_skills)) * 100 if user_skills else 0
+        
+        if skill_matches > 0:  # Only include jobs with at least one skill match
+            scored_jobs.append({
+                "job": job,
+                "skill_matches": skill_matches,
+                "match_percentage": round(match_percentage, 1),
+                "matching_skills": [skill for skill in user_skills if skill.lower() in job_categories]
+            })
+    
+    # Sort by skill matches (descending) and then by salary (descending)
+    scored_jobs.sort(key=lambda x: (x["skill_matches"], x["job"]["jobSalary"]), reverse=True)
+    
+    # Return top 5 recommendations
+    top_recommendations = scored_jobs[:5]
+    
+    return {
+        "user_skills": user_skills,
+        "total_matching_jobs": len(scored_jobs),
+        "recommendations": top_recommendations,
+        "message": f"Ditemukan {len(scored_jobs)} pekerjaan yang cocok dengan skill Anda: {', '.join(user_skills)}"
     }
 
 
@@ -528,6 +640,8 @@ async def execute_tool(func_name: str, arguments: dict, ctx: Context):
         return await tool_get_project_reminders(ctx, arguments)
     if func_name == "get_financial_summary":
         return await tool_get_financial_summary(ctx, arguments)
+    if func_name == "jobRecommendation":
+        return await tool_jobRecommendation(ctx, arguments)
     
     ctx.logger.error(f"Unsupported function call: {func_name}")
     raise ValueError(f"Unsupported function call: {func_name}")
@@ -536,12 +650,15 @@ async def execute_tool(func_name: str, arguments: dict, ctx: Context):
 # Orkestrasi: sama pola dengan agent.py
 # --------------------------
 
-async def process_query(query: str, ctx: Context) -> str:
+async def process_query(query: str, ctx: Context, user_id: str = None) -> str:
     ctx.logger.info(f"--- Starting new query processing for: '{query}' ---")
+    # Store user_id in context for tools to access
+    ctx.user_id = user_id
+    ctx.logger.info(f"User ID from session: {user_id}")
     try:
         system_message = {
             "role": "system",
-            "content": "Anda adalah asisten yang membantu pengguna menemukan talenta dan informasi pekerjaan. Selalu prioritaskan penggunaan 'tools' yang tersedia untuk menjawab pertanyaan secara akurat. Jika permintaan pengguna cocok dengan deskripsi sebuah tool, panggil tool tersebut."
+            "content": "Anda adalah AI Freelance Assistant yang HARUS menggunakan tools yang tersedia. WAJIB gunakan tools untuk: 1) financial summary - panggil get_financial_summary, 2) project reminders - panggil get_project_reminders, 3) job recommendations - panggil jobRecommendation, 4) mencari jobs - panggil getAllJobs, 5) mencari talenta - panggil find_talent. SELALU panggil tool yang sesuai dengan permintaan user!"
         }
         initial_message = {"role": "user", "content": query}
         payload = {
@@ -643,13 +760,14 @@ async def handle_chat_rest(ctx: Context, req: ChatRequest) -> ChatResponse:
     """
     REST endpoint untuk menerima chat dari frontend
     POST http://localhost:8002/api/chat
-    Body: {"message": "your message here"}
+    Body: {"message": "your message here", "userId": "optional_user_id"}
     """
     try:
         ctx.logger.info(f"Received REST chat request: {req.message}")
+        ctx.logger.info(f"User ID from request: {req.userId}")
         
-        # Gunakan fungsi process_query yang sudah ada
-        response = await process_query(req.message, ctx)
+        # Gunakan fungsi process_query yang sudah ada dengan user_id
+        response = await process_query(req.message, ctx, req.userId)
         
         return ChatResponse(
             response=response,

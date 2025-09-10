@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import './Navbar.css';
 import {
   Button,
   Avatar,
@@ -114,11 +115,18 @@ const Navbar: React.FC = () => {
 
   const handleLoginSuccess = () => {
     setIsModalOpen(false);
+    setActiveTab('icp'); // Reset to default tab
   };
 
   const handleLoginError = (error: string) => {
     console.error(error);
     setIsModalOpen(false);
+    setActiveTab('icp'); // Reset to default tab
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setActiveTab('icp'); // Reset to default tab when modal is closed
   };
 
   const handleLogout = async () => {
@@ -273,7 +281,10 @@ const Navbar: React.FC = () => {
     { key: 'post', label: 'Post Job', path: '/post' },
     { key: 'browse', label: 'Browse Freelancers', path: '/browse' },
     { key: 'manage', label: 'Manage Jobs', path: '/manage' },
+    { key: 'chat', label: 'Chat', path: '/chat' },
   ];
+
+  const aiChatItem = { key: 'chat-ai', label: 'Chat with AI', path: '/chat-ai' };
 
   const isActivePath = (path: string) => location.pathname === path;
 
@@ -334,6 +345,27 @@ const Navbar: React.FC = () => {
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
+              {/* AI Chat Button - Next to Theme Toggle */}
+              {isAuthenticated && (
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="hidden md:block"
+                >
+                  <Button
+                    type="primary"
+                    onClick={() => navigate(aiChatItem.path)}
+                    className="shadow-lg"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>🤖</span>
+                      {aiChatItem.label}
+                      <span>✨</span>
+                    </span>
+                  </Button>
+                </motion.div>
+              )}
+
               {/* Theme Toggle */}
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                 <Button
@@ -385,7 +417,7 @@ const Navbar: React.FC = () => {
                       <div className="flex items-center space-x-6 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors">
                         <Avatar
                           size={32}
-                          src={user ? `/api/users/${user.id}/profile-picture` : undefined}
+                          src={user?.profilePictureUrl || undefined}
                           icon={<UserOutlined />}
                           className="border-2 border-primary/30"
                         />
@@ -459,7 +491,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-lg">
               <Avatar
                 size={40}
-                src={user ? `/api/users/${user.id}/profile-picture` : undefined}
+                src={user?.profilePictureUrl || undefined}
                 icon={<UserOutlined />}
               />
               <div>
@@ -477,24 +509,49 @@ const Navbar: React.FC = () => {
 
           <Divider />
 
-          {/* Navigation Items */}
-          <Menu
-            mode="vertical"
-            selectedKeys={[location.pathname]}
-            className="border-0"
-          >
-            {navigationItems.map((item) => (
-              <Menu.Item
-                key={item.path}
+          {/* Special AI Chat Button for Mobile */}
+          {isAuthenticated && (
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="mx-2 mb-4"
+            >
+              <Button
+                type="primary"
+                block
                 onClick={() => {
-                  navigate(item.path);
+                  navigate(aiChatItem.path);
                   setMobileMenuOpen(false);
                 }}
+                className="shadow-lg py-3 h-12"
               >
-                {item.label}
-              </Menu.Item>
+                <span className="flex items-center justify-center gap-2">
+                  <span>🤖</span>
+                  {aiChatItem.label}
+                  <span>✨</span>
+                </span>
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Navigation Items */}
+          <div className="space-y-2">
+            {navigationItems.map((item) => (
+              <div key={item.key} className="mx-2">
+                <Button
+                  block
+                  type={location.pathname === item.path ? 'primary' : 'text'}
+                  onClick={() => {
+                    navigate(item.path);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-left h-10"
+                >
+                  {item.label}
+                </Button>
+              </div>
             ))}
-          </Menu>
+          </div>
 
           <Divider />
 
@@ -548,7 +605,7 @@ const Navbar: React.FC = () => {
       <Modal
         title={<Typography.Title level={3} style={{ margin: 0 }}>Login</Typography.Title>}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={handleModalClose}
         footer={null}
         width={500}
         centered
@@ -570,7 +627,7 @@ const Navbar: React.FC = () => {
                     onClick={async () => {
                       try {
                         await loginWithInternetIdentity();
-                        setIsModalOpen(false);
+                        handleModalClose();
                       } catch (error) {
                         console.error('Login failed:', error);
                       }
@@ -591,7 +648,7 @@ const Navbar: React.FC = () => {
                   onSuccess={handleLoginSuccess}
                   onError={handleLoginError}
                   isOpen={isModalOpen && activeTab === 'face'}
-                  onClose={() => setIsModalOpen(false)}
+                  onClose={handleModalClose}
                   purpose="login"
                 />
               ),

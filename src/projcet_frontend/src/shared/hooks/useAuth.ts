@@ -109,21 +109,25 @@ export const useAuth = (): UseAuthReturn => {
 
   const updateProfile = useCallback(async (payload: Partial<User>): Promise<boolean> => {
     try {
+      console.log('updateProfile hook called with:', payload);
       const success = await controllerUpdateProfile(payload);
       if (success) {
+        console.log('Profile update successful, refreshing user data...');
         // Refetch user data to ensure consistency
         const updatedUserData = await fetchUserBySession();
         if (updatedUserData) {
+          console.log('Updated user data fetched:', updatedUserData);
           authActions({ type: 'LOGIN', user: updatedUserData, session: localStorage.getItem('session') || undefined });
+        } else {
+          console.error('Failed to fetch updated user data');
         }
-        message.success('Profile updated successfully!');
+        // Don't show success message here - let the calling component handle it
       } else {
-        message.error('Failed to update profile.');
+        console.error('Failed to update profile - backend returned error');
       }
       return success;
     } catch (error) {
       console.error('Failed to update profile:', error);
-      message.error('An unexpected error occurred.');
       return false;
     }
   }, [authActions]);
@@ -149,7 +153,12 @@ export const useAuth = (): UseAuthReturn => {
         const sessionToken = localStorage.getItem('session');
         if (sessionToken) {
           console.log('Session token found, validating...');
-          const authClient = await AuthClient.create();
+          const authClient = await AuthClient.create({
+            idleOptions: {
+              idleTimeout: 1000 * 60 * 60 * 8, // 8 hours session
+              disableDefaultIdleCallback: true,
+            },
+          });
           const isValid = await authClient.isAuthenticated();
           if (isValid) {
             console.log('Session is valid, fetching user data...');

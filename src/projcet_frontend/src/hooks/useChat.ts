@@ -1,0 +1,342 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useAtom } from 'jotai';
+import { ChatRoom, Message } from '../config/supabase';
+import ChatService from '../services/chatService';
+import { useAuth } from '../shared/hooks/useAuth';
+import { currentChatRoomAtom } from '../app/store/chat';
+
+interface UseChatReturn {
+  rooms: ChatRoom[];
+  currentRoom: ChatRoom | null;
+  messages: Message[];
+  loading: boolean;
+  sending: boolean;
+  typingUsers: string[];
+  setCurrentRoom: (room: ChatRoom | null) => void;
+  sendMessage: (content: string) => Promise<boolean>;
+  sendPhotoMessage: (file: File, caption?: string) => Promise<boolean>;
+  setTyping: (isTyping: boolean) => void;
+  loadMoreMessages: () => Promise<void>;
+  markAsRead: () => Promise<void>;
+  canAccessJob: (jobId: string) => Promise<boolean>;
+  initializeChatForJob: (jobId: string, clientId: string, freelancerId: string) => Promise<ChatRoom | null>;
+}
+
+export const useChat = (): UseChatReturn => {
+  const { user } = useAuth();
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [currentRoom, setCurrentRoom] = useAtom(currentChatRoomAtom);
+  
+  // Debug current room changes
+  useEffect(() => {
+    console.log('🏠 useChat - currentRoom changed:', currentRoom?.id);
+  }, [currentRoom]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [messageOffset, setMessageOffset] = useState(0);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Initialize chat service with user context
+  useEffect(() => {
+    if (user?.id) {
+      try {
+        ChatService.initializeUser(user.id);
+        loadUserRooms();
+      } catch (error) {
+        console.warn('Chat service initialization failed. This is expected if Supabase is not configured yet.');
+      }
+    }
+  }, [user?.id]);
+
+  // Load user's chat rooms
+  const loadUserRooms = useCallback(async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      const userRooms = await ChatService.getUserChatRooms(user.id);
+      setRooms(userRooms);
+    } catch (error) {
+      console.error('Error loading chat rooms:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  // Load messages for current room
+  useEffect(() => {
+    console.log('🔄 useChat useEffect triggered:', { 
+      currentRoom: currentRoom?.id, 
+      user: user?.id,
+      hasCurrentRoom: !!currentRoom,
+      hasUser: !!user
+    });
+    
+    if (currentRoom && user?.id) {
+      console.log('✅ Both currentRoom and user exist, setting up subscription...');
+      console.log('🧹 Force cleanup any existing subscriptions first...');
+      
+      loadMessages();
+      
+      // Subscribe to real-time message updates
+      console.log('🔔 Setting up real-time subscription for room:', currentRoom.id);
+      console.log('🔔 Current user:', user?.id);
+      console.log('🔔 Room details:', { roomId: currentRoom.id, clientId: currentRoom.client_id, freelancerId: currentRoom.freelancer_id });
+      
+      const messageSubscription = ChatService.subscribeToMessages(
+        currentRoom.id,
+        (newMessage) => {
+          console.log('📨 Real-time message received:', newMessage);
+          console.log('📨 Message details:', { 
+            messageId: newMessage.id, 
+            senderId: newMessage.sender_id, 
+            roomId: newMessage.room_id,
+            currentUserId: user?.id,
+            isMyMessage: newMessage.sender_id === user?.id
+          });
+          
+          setMessages(prev => {
+            // 🚀 PERFORMANCE: Check if this is replacing an optimistic message first
+            const optimisticIndex = prev.findIndex(msg => msg.isOptimistic && msg.sender_id === newMessage.sender_id);
+            if (optimisticIndex !== -1) {
+              console.log('🔄 Replacing optimistic message with real one:', newMessage.id);
+              const newMessages = [...prev];
+              newMessages[optimisticIndex] = { ...newMessage, sender_name: newMessage.sender_name || prev[optimisticIndex].sender_name };
+              return newMessages;
+            }
+            
+            // Prevent duplicates for non-optimistic messages
+            const exists = prev.some(msg => msg.id === newMessage.id);
+            if (exists) {
+              console.log('🔄 Duplicate message ignored:', newMessage.id);
+              return prev;
+            }
+            
+            console.log('✅ Adding new real-time message:', newMessage.id);
+            // 🚀 PERFORMANCE: Just append, don't sort (messages come in order)
+            return [...prev, newMessage];
+          });
+        },
+        user?.id // Add userId parameter for unique channel names
+      );
+
+      // Note: Typing indicators disabled per user request
+      
+      return () => {
+        console.log('🔌 Unsubscribing from real-time messages for room:', currentRoom.id);
+        console.log('🔌 Current user:', user?.id);
+        messageSubscription.unsubscribe();
+      };
+    } else {
+      console.log('🏠 Missing requirements for subscription:', {
+        hasCurrentRoom: !!currentRoom,
+        hasUser: !!user?.id,
+        currentRoomId: currentRoom?.id,
+        userId: user?.id
+      });
+      setMessages([]);
+      setMessageOffset(0);
+      setTypingUsers([]);
+    }
+  }, [currentRoom?.id, user?.id]); // Changed dependency to be more specific
+
+  const loadMessages = async (offset = 0) => {
+    if (!currentRoom) return;
+
+    try {
+      const roomMessages = await ChatService.getMessages(currentRoom.id, 50, offset);
+      if (offset === 0) {
+        setMessages(roomMessages);
+      } else {
+        setMessages(prev => [...roomMessages, ...prev]);
+      }
+      setMessageOffset(offset + roomMessages.length);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const loadMoreMessages = useCallback(async () => {
+    await loadMessages(messageOffset);
+  }, [messageOffset, currentRoom]);
+
+  const sendMessage = useCallback(async (content: string): Promise<boolean> => {
+    console.log('🔥 sendMessage called in useChat with:', {
+      content,
+      currentRoom: currentRoom?.id,
+      userId: user?.id,
+      contentTrimmed: content.trim(),
+      currentMessagesCount: messages.length
+    });
+    
+    if (!currentRoom) {
+      console.log('❌ sendMessage failed: no currentRoom');
+      return false;
+    }
+    
+    if (!user?.id) {
+      console.log('❌ sendMessage failed: no user.id');
+      return false;
+    }
+    
+    if (!content.trim()) {
+      console.log('❌ sendMessage failed: empty content');
+      return false;
+    }
+
+    setSending(true);
+    
+    // 🚀 OPTIMISTIC UI UPDATE - Show message immediately for better UX
+    const optimisticMessage: Message = {
+      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      content: content.trim(),
+      sender_id: user.id,
+      room_id: currentRoom.id,
+      message_type: 'text' as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sender_name: 'User',
+      isOptimistic: true // Flag to identify optimistic messages
+    };
+    
+    console.log('🚀 Adding optimistic message immediately:', optimisticMessage.id);
+    setMessages(prev => [...prev, optimisticMessage]);
+    
+    try {
+      // Note: Typing indicators disabled per user request
+
+      console.log('📤 Sending message to server:', {
+        roomId: currentRoom.id,
+        senderId: user.id,
+        content: content.trim(),
+        timestamp: new Date().toISOString()
+      });
+
+      const serverMessage = await ChatService.sendMessage(
+        currentRoom.id,
+        user.id,
+        content.trim(),
+        'text' // Add explicit message type
+      );
+      
+      if (serverMessage) {
+        console.log('✅ Message sent successfully, replacing optimistic with real...');
+        // Replace optimistic message with real one
+        setMessages(prev => prev.map(msg => 
+          msg.id === optimisticMessage.id ? { ...serverMessage, sender_name: msg.sender_name } : msg
+        ));
+        return true;
+      } else {
+        // Remove optimistic message if send failed
+        console.log('❌ Message send failed, removing optimistic message');
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      }
+      return false;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Remove optimistic message if send failed
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      return false;
+    } finally {
+      setSending(false);
+    }
+  }, [currentRoom, user?.id]);
+
+  const sendPhotoMessage = useCallback(async (file: File, caption?: string): Promise<boolean> => {
+    if (!currentRoom || !user?.id) return false;
+
+    setSending(true);
+    try {
+      console.log('📸 Sending photo message...');
+      
+      const message = await ChatService.sendPhotoMessage(
+        currentRoom.id,
+        user.id,
+        file,
+        caption || ''
+      );
+      
+      if (message) {
+        console.log('✅ Photo message sent successfully');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('❌ Error sending photo message:', error);
+      return false;
+    } finally {
+      setSending(false);
+    }
+  }, [currentRoom, user?.id]);
+
+  const setTyping = useCallback(async (isTyping: boolean) => {
+    // Note: Typing indicators disabled per user request
+    console.log('⌨️ setTyping called (disabled):', isTyping);
+  }, []);
+
+  const markAsRead = useCallback(async () => {
+    if (!currentRoom || !user?.id) return;
+
+    try {
+      await ChatService.markMessagesAsRead(currentRoom.id, user.id);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  }, [currentRoom, user?.id]);
+
+  const canAccessJob = useCallback(async (jobId: string): Promise<boolean> => {
+    if (!user?.id) return false;
+    return await ChatService.canAccessChat(user.id, jobId);
+  }, [user?.id]);
+
+  const initializeChatForJob = useCallback(async (
+    jobId: string, 
+    clientId: string, 
+    freelancerId: string
+  ): Promise<ChatRoom | null> => {
+    if (!user?.id) return null;
+
+    // Check access first
+    const hasAccess = await canAccessJob(jobId);
+    if (!hasAccess) return null;
+
+    try {
+      const room = await ChatService.getOrCreateChatRoom(jobId, clientId, freelancerId);
+      if (room) {
+        await loadUserRooms(); // Refresh rooms list
+        setCurrentRoom(room);
+      }
+      return room;
+    } catch (error) {
+      console.error('Error initializing chat for job:', error);
+      return null;
+    }
+  }, [user?.id, canAccessJob, loadUserRooms]);
+
+  // Wrapper untuk debug setCurrentRoom
+  const setCurrentRoomWithDebug = (room: ChatRoom | null) => {
+    console.log('🔄 useChat - setCurrentRoom called with:', room?.id);
+    setCurrentRoom(room);
+  };
+
+  return {
+    rooms,
+    currentRoom,
+    messages,
+    loading,
+    sending,
+    typingUsers,
+    setCurrentRoom: setCurrentRoomWithDebug,
+    sendMessage,
+    sendPhotoMessage,
+    setTyping,
+    loadMoreMessages,
+    markAsRead,
+    canAccessJob,
+    initializeChatForJob
+  };
+};
+
+export default useChat;

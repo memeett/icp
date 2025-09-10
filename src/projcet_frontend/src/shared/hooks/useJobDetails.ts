@@ -26,6 +26,7 @@ import { InboxResponse } from "../types/Inbox";
 import { send } from "vite";
 import { createRating } from "../../controller/ratingController";
 import { ApplierPayload } from "../types/Applier";
+import ChatService from "../../services/chatService";
 
 interface ApplicantData {
   user: User;
@@ -331,6 +332,32 @@ export const useJobDetails = (
       if (result.jobStarted) {
         message.success("Job started successfully!");
         await fetchJobDetails();
+        
+        // Create chat rooms for each accepted freelancer
+        console.log('🚀 Creating chat rooms for accepted freelancers...');
+        for (const freelancer of acceptedFreelancers) {
+          try {
+            console.log(`📨 Creating chat room for job ${job.id} with freelancer ${freelancer.id}`);
+            const chatRoom = await ChatService.getOrCreateChatRoom(
+              job.id,
+              user.id, // client_id
+              freelancer.id // freelancer_id
+            );
+            
+            if (chatRoom) {
+              console.log(`✅ Chat room created: ${chatRoom.id}`);
+            } else {
+              console.warn(`⚠️ Failed to create chat room for freelancer ${freelancer.id}`);
+            }
+          } catch (error) {
+            console.error(`❌ Error creating chat room for freelancer ${freelancer.id}:`, error);
+          }
+        }
+        
+        if (acceptedFreelancers.length > 0) {
+          console.log(`🎉 Created ${acceptedFreelancers.length} chat room(s) for job ${job.id}`);
+        }
+        
         return true;
       } else {
         message.error(result.message);
@@ -340,7 +367,7 @@ export const useJobDetails = (
       message.error("Failed to start job.");
       return false;
     }
-  }, [job, user, fetchJobDetails]);
+  }, [job, user, isJobOwner, acceptedFreelancers, fetchJobDetails]);
 
   // Handle job finish
   const handleFinishJob = useCallback(async (): Promise<boolean> => {

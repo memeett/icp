@@ -4,6 +4,7 @@ import { ChatRoom, Message } from '../config/supabase';
 import ChatService from '../services/chatService';
 import { useAuth } from '../shared/hooks/useAuth';
 import { currentChatRoomAtom } from '../app/store/chat';
+import { supabase } from '../config/supabase';
 
 interface UseChatReturn {
   rooms: ChatRoom[];
@@ -20,6 +21,11 @@ interface UseChatReturn {
   markAsRead: () => Promise<void>;
   canAccessJob: (jobId: string) => Promise<boolean>;
   initializeChatForJob: (jobId: string, clientId: string, freelancerId: string) => Promise<ChatRoom | null>;
+  // AI Assistant features
+  aiAssistActive: boolean;
+  setAiAssistActive: (active: boolean) => void;
+  aiSuggestions: Array<{preview: string, text: string}>;
+  getAiSuggestions: (draftText: string) => Promise<void>;
 }
 
 export const useChat = (): UseChatReturn => {
@@ -37,6 +43,10 @@ export const useChat = (): UseChatReturn => {
   const [messageOffset, setMessageOffset] = useState(0);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  
+  // AI Assistant state
+  const [aiAssistActive, setAiAssistActive] = useState<boolean>(false);
+  const [aiSuggestions, setAiSuggestions] = useState<Array<{preview: string, text: string}>>([]);
 
   // Initialize chat service with user context
   useEffect(() => {
@@ -321,6 +331,93 @@ export const useChat = (): UseChatReturn => {
     setCurrentRoom(room);
   };
 
+  // Function to get AI suggestions
+  const getAiSuggestions = useCallback(async (draftText: string) => {
+    if (!user?.id || !currentRoom) {
+      setAiSuggestions([]);
+      return;
+    }
+    
+    try {
+      console.log('🤖 Requesting AI suggestions for draft:', draftText);
+      
+      // Get other user ID
+      const otherUserId = currentRoom.client_id === user.id 
+        ? currentRoom.freelancer_id 
+        : currentRoom.client_id;
+      
+      // Get last 10 messages for context
+      const recentMessages = messages.slice(-10).map(msg => ({
+        sender_id: msg.sender_id,
+        message: msg.content,
+        timestamp: msg.created_at,
+        is_read: msg.read_at !== null,
+        message_type: msg.message_type
+      }));
+      
+      // Get job context if available
+      let jobContext = null;
+      if (currentRoom.job_id) {
+        try {
+          const { data: jobData } = await supabase
+            .from('jobs')
+            .select('*')
+            .eq('id', currentRoom.job_id)
+            .single();
+            
+          if (jobData) {
+            jobContext = {
+              job_id: jobData.id,
+              job_name: jobData.jobName,
+              job_status: jobData.jobStatus,
+              deadline: jobData.jobDeadline,
+              client_id: jobData.userId
+            };
+          }
+        } catch (error) {
+          console.error('Error fetching job context:', error);
+        }
+      }
+      
+      // Send to advisor agent
+      const response = await fetch('http://127.0.0.1:8002/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: JSON.stringify({
+            action: 'chat_assistant',
+            chat_history: recentMessages,
+            current_draft: draftText,
+            user_id: user.id,
+            recipient_id: otherUserId,
+            job_context: jobContext,
+            assistance_type: 'suggest_reply'
+          }),
+          userId: user.id
+        })
+      });
+      
+      // Process response
+      const data = await response.json();
+      console.log('🤖 AI suggestions response:', data);
+      
+      if (data && data.response) {
+        try {
+          const suggestions = JSON.parse(data.response);
+          setAiSuggestions(suggestions);
+        } catch (error) {
+          console.error('Error parsing AI suggestions:', error);
+          setAiSuggestions([]);
+        }
+      } else {
+        setAiSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Error getting AI suggestions:', error);
+      setAiSuggestions([]);
+    }
+  }, [user?.id, currentRoom, messages]);
+
   return {
     rooms,
     currentRoom,
@@ -335,7 +432,12 @@ export const useChat = (): UseChatReturn => {
     loadMoreMessages,
     markAsRead,
     canAccessJob,
-    initializeChatForJob
+    initializeChatForJob,
+    // AI Assistant
+    aiAssistActive,
+    setAiAssistActive,
+    aiSuggestions,
+    getAiSuggestions
   };
 };
 

@@ -14,7 +14,10 @@ import {
   CheckCircleOutlined,
   CameraOutlined,
   LoadingOutlined,
-  EyeOutlined
+  EyeOutlined,
+  BulbOutlined,
+  TranslationOutlined,
+  RobotOutlined
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAtom } from 'jotai';
@@ -31,7 +34,21 @@ const { TextArea } = Input;
 
 const ChatWindow: React.FC = () => {
   const { user } = useAuth();
-  const { messages, sending, sendMessage, sendPhotoMessage, setTyping, typingUsers, markAsRead, loadMoreMessages } = useChat();
+  const { 
+    messages, 
+    sending, 
+    sendMessage, 
+    sendPhotoMessage, 
+    setTyping, 
+    typingUsers, 
+    markAsRead, 
+    loadMoreMessages,
+    // AI Assistant features
+    aiAssistActive,
+    setAiAssistActive,
+    aiSuggestions,
+    getAiSuggestions
+  } = useChat();
   const [selectedContact] = useAtom(selectedContactAtom);
   const [currentRoom] = useAtom(currentChatRoomAtom);
   
@@ -81,6 +98,7 @@ const ChatWindow: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const debounceSuggestionsRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load other user and job data
   useEffect(() => {
@@ -182,6 +200,18 @@ const ChatWindow: React.FC = () => {
     console.log('⌨️ Input changed:', value);
     setNewMessage(value);
     // Note: Typing indicators disabled per user request
+    
+    // Get AI suggestions if AI assistant is active and we have some text
+    if (aiAssistActive && value.length > 0) {
+      // Debounce the suggestions request
+      if (debounceSuggestionsRef.current) {
+        clearTimeout(debounceSuggestionsRef.current);
+      }
+      
+      debounceSuggestionsRef.current = setTimeout(() => {
+        getAiSuggestions(value);
+      }, 500);
+    }
   };
 
   const handleSend = async () => {
@@ -470,6 +500,14 @@ const ChatWindow: React.FC = () => {
 
         <div className="flex items-end space-x-2">
           <div className="flex space-x-1">
+            <Tooltip title="AI Assistant">
+              <Button
+                type="text"
+                icon={<BulbOutlined />}
+                className={`text-muted-foreground hover:text-primary ai-assist-btn ${aiAssistActive ? 'active' : ''}`}
+                onClick={() => setAiAssistActive(!aiAssistActive)}
+              />
+            </Tooltip>
             <Tooltip title="Send Photo">
               <Button
                 type="text"
@@ -497,6 +535,31 @@ const ChatWindow: React.FC = () => {
                 autoSize={{ minRows: 1, maxRows: 4 }}
                 className="resize-none"
               />
+              
+              {/* AI Suggestions Panel */}
+              {aiAssistActive && aiSuggestions.length > 0 && (
+                <AnimatePresence>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="ai-suggestions-panel mt-2"
+                  >
+                    {aiSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="ai-suggestion"
+                        onClick={() => {
+                          setNewMessage(suggestion.text);
+                          setAiSuggestions([]);
+                        }}
+                      >
+                        {suggestion.preview}
+                      </div>
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
+              )}
             </div>
           )}
 

@@ -137,59 +137,137 @@ const FindJobPage: React.FC = memo(() => {
 
   // Memoized filter content
   const filterContent = useMemo(() => (
-    <div className="space-y-6">
-      {/* Categories */}
-      <div>
-        <Title level={5} className="mb-3">Job Categories</Title>
-        <Checkbox.Group
-          value={selectedCategories}
-          onChange={handleCategoryChange}
-          className="flex flex-col space-y-2"
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <Title level={4} className="mb-0 text-gray-800">Filters</Title>
+        <Button 
+          type="text" 
+          size="small" 
+          onClick={clearFilters}
+          className="text-blue-600 hover:text-blue-800"
         >
-          {jobCategories.map(category => (
-            <Checkbox key={category.id} value={category.jobCategoryName}>
-              {category.jobCategoryName}
-            </Checkbox>
-          ))}
-        </Checkbox.Group>
+          Clear All
+        </Button>
+      </div>
+
+      {/* Categories */}
+      <div className="space-y-4">
+        <Title level={5} className="mb-3 text-gray-700 font-semibold">
+          Job Categories
+        </Title>
+        <div className="max-h-48 overflow-y-auto">
+          <Checkbox.Group
+            value={selectedCategories}
+            onChange={handleCategoryChange}
+            className="flex flex-col space-y-3"
+          >
+            {jobCategories.map(category => (
+              <Checkbox 
+                key={category.id} 
+                value={category.jobCategoryName}
+                className="hover:bg-gray-50 p-2 rounded-lg transition-colors"
+              >
+                <span className="text-sm font-medium">{category.jobCategoryName}</span>
+              </Checkbox>
+            ))}
+          </Checkbox.Group>
+        </div>
       </div>
 
       {/* Price Ranges */}
-      <div>
-        <Title level={5} className="mb-3">Budget Range</Title>
-        <Checkbox.Group
-          value={selectedPriceRanges}
-          onChange={handlePriceRangeChange}
-          className="flex flex-col space-y-2"
-        >
+      <div className="space-y-4">
+        <Title level={5} className="mb-3 text-gray-700 font-semibold">
+          Budget Range
+        </Title>
+        <div className="space-y-3">
           {PRICE_RANGES.map(range => (
-            <Checkbox key={range.value} value={range.value}>
-              {range.label}
+            <Checkbox 
+              key={range.value} 
+              value={range.value}
+              className="hover:bg-gray-50 p-2 rounded-lg transition-colors w-full"
+            >
+              <div className="flex justify-between items-center w-full">
+                <span className="text-sm font-medium">{range.label}</span>
+                <span className="text-xs text-gray-500">
+                  {range.min === 0 ? 'Any' : `$${range.min}+`}
+                </span>
+              </div>
             </Checkbox>
           ))}
-        </Checkbox.Group>
+        </div>
       </div>
 
       {/* Salary Slider */}
-      <div>
-        <Title level={5} className="mb-3">
-          Salary Range: ${salaryRange[0]} - ${salaryRange[1]}
-        </Title>
-        <Slider
-          range
-          min={0}
-          max={5000}
-          step={100}
-          value={salaryRange}
-          onChange={handleSalaryRangeChange}
-          tooltip={{ formatter: (value) => `$${value}` }}
-        />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Title level={5} className="mb-0 text-gray-700 font-semibold">
+            Salary Range
+          </Title>
+          <div className="text-sm font-medium text-blue-600">
+            ${salaryRange[0]} - ${salaryRange[1]}
+          </div>
+        </div>
+        <div className="px-2">
+          <Slider
+            range
+            min={0}
+            max={5000}
+            step={100}
+            value={salaryRange}
+            onChange={handleSalaryRangeChange}
+            tooltip={{ 
+              formatter: (value) => `$${value}`,
+              placement: 'top'
+            }}
+            trackStyle={[{ backgroundColor: '#6366f1' }]}
+            handleStyle={[
+              { borderColor: '#6366f1' },
+              { borderColor: '#6366f1' }
+            ]}
+            railStyle={{ backgroundColor: '#e5e7eb' }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-gray-500">
+          <span>$0</span>
+          <span>$5,000+</span>
+        </div>
       </div>
 
-      {/* Clear Filters */}
-      <Button block onClick={clearFilters}>
-        Clear All Filters
-      </Button>
+      {/* Active Filters Summary */}
+      {(selectedCategories.length > 0 || selectedPriceRanges.length > 0) && (
+        <div className="space-y-3">
+          <Title level={5} className="mb-2 text-gray-700 font-semibold">
+            Active Filters
+          </Title>
+          <div className="flex flex-wrap gap-2">
+            {selectedCategories.map(category => (
+              <Tag
+                key={category}
+                closable
+                onClose={() => handleCategoryChange(
+                  selectedCategories.filter(c => c !== category)
+                )}
+                className="bg-blue-100 text-blue-800 border-blue-200"
+              >
+                {category}
+              </Tag>
+            ))}
+            {selectedPriceRanges.map(range => (
+              <Tag
+                key={range}
+                closable
+                onClose={() => handlePriceRangeChange(
+                  selectedPriceRanges.filter(r => r !== range)
+                )}
+                className="bg-green-100 text-green-800 border-green-200"
+              >
+                {PRICE_RANGES.find(p => p.value === range)?.label}
+              </Tag>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   ), [
     jobCategories,
@@ -376,7 +454,32 @@ const FindJobPage: React.FC = memo(() => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <Card title="Filters" className="sticky">
+                <Card 
+                  title={
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-semibold text-gray-800">Filters</span>
+                      <Button 
+                        type="text" 
+                        size="small" 
+                        onClick={clearFilters}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  }
+                  className="sticky top-4 shadow-lg border-0 bg-white"
+                  styles={{
+                    header: {
+                      borderBottom: '1px solid #f0f0f0',
+                      paddingBottom: '16px',
+                      marginBottom: '0'
+                    },
+                    body: {
+                      padding: '24px'
+                    }
+                  }}
+                >
                   {filterContent}
                 </Card>
               </motion.div>

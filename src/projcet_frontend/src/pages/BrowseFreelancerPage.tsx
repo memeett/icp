@@ -53,8 +53,6 @@ const BrowseFreelancerPage: React.FC = () => {
   const { data } = useJobCategories()
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  console.log("user di page",allUsers)
-
   const filterFreelancers = useCallback((users: User[]) => {
     return users.filter(user => {
       const searchMatch = !debouncedSearchTerm ||

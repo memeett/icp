@@ -2,7 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { FloatButton } from 'antd';
 import { useAtom } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { isAdvisorChatOpenAtom } from '../../app/store/ui';
+import { useAuth } from '../../shared/hooks/useAuth';
 import AdvisorChat from './AdvisorChat';
 import { Bot, X } from 'lucide-react';
 import './AIAdvisor.css';
@@ -11,6 +13,20 @@ const AIAdvisor: React.FC = () => {
     const [isOpen, setIsOpen] = useAtom(isAdvisorChatOpenAtom);
     const chatRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLDivElement>(null);
+    const location = useLocation();
+    const { isAuthenticated } = useAuth();
+
+    // Pages where AI advisor should be hidden
+    const hiddenPages = [
+        '/complete-profile',
+        '/face-recognition/login',
+        '/face-recognition/register',
+        '/login',
+        '/register'
+    ];
+
+    // Check if current page should hide AI advisor
+    const shouldHideAI = !isAuthenticated || hiddenPages.includes(location.pathname);
 
     const handleToggle = () => {
         setIsOpen(!isOpen);
@@ -35,6 +51,11 @@ const AIAdvisor: React.FC = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [isOpen, setIsOpen]);
+
+    // Don't render AI advisor on inappropriate pages
+    if (shouldHideAI) {
+        return null;
+    }
 
     return (
         <>

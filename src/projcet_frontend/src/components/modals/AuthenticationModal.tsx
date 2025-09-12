@@ -4,24 +4,18 @@ import { ModalBody, ModalContent, ModalFooter } from "../ui/animated-modal";
 import { motion } from "framer-motion";
 import { GlobeIcon } from "lucide-react";
 import { useModal } from "../../contexts/modal-context";
-import { loginWithInternetIdentity } from "../../controller/userController";
-import LoadingOverlay from "../ui/loading-animation";
+import { useAuth } from "../../shared/hooks/useAuth";
 
 export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   const { open, setOpen, closeModal } = useModal();
-  const [loading, setLoading] = useState<boolean>(false);
+  const { loginWithInternetIdentity, isLoading } = useAuth();
 
   const handleInternetIdentityLogin = async () => {
-    setLoading(true);
     try {
-      const success = await loginWithInternetIdentity();
-      if (success) {
-        setOpen(false);
-      }
+      await loginWithInternetIdentity();
+      setOpen(false);
     } catch (error) {
       console.error("Login failed:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -37,7 +31,6 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
 
   return (
     <div className="hidden md:flex flex-column items-center space-x-4">
-      {loading && <LoadingOverlay message="Connecting to Internet Identity..." />}
       <ModalBody className="flex flex-column items-center space-x-4">
         <ModalContent className="max-w-lg mx-auto bg-[#F9F7F7]">
           <div className="space-y-6 px-6 pt-6 pb-4">
@@ -58,11 +51,11 @@ export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
                 <button
                   className="w-full flex items-center justify-center space-x-3 bg-[#112D4E] text-white px-6 py-3 text-base font-medium rounded-xl transition-all hover:bg-[#0f2741] focus:outline-none focus:ring-2 focus:ring-[#112D4E] focus:ring-offset-2 disabled:opacity-50"
                   onClick={handleInternetIdentityLogin}
-                  disabled={loading}
+                  disabled={isLoading}
                 >
                   <GlobeIcon className="w-5 h-5" />
                   <span>
-                    {loading ? "Connecting..." : "Continue with Internet Identity"}
+                    {isLoading ? "Connecting..." : "Continue with Internet Identity"}
                   </span>
                 </button>
               </motion.div>

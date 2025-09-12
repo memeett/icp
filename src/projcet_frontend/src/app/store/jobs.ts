@@ -31,7 +31,7 @@ export const filteredJobsAtom = atom((get) => {
   const searchQuery = get(jobSearchQueryAtom);
   const filters = get(jobFiltersAtom);
 
-  let filtered = jobs.filter(job => job.status !== 'finished');
+  let filtered = jobs.filter(job => job.jobStatus !== 'Finished');
 
 
   // Apply search filter

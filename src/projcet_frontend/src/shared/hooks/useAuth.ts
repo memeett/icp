@@ -14,6 +14,7 @@ import {
   isProfileCompletedAtom
 } from '../../app/store/auth';
 import { notificationActionsAtom } from '../../app/store/ui';
+import { useGlobalLoading } from './useGlobalLoading';
 import { User } from '../types/User';
 import {
   loginWithInternetIdentity as controllerLogin,
@@ -51,12 +52,14 @@ export const useAuth = (): UseAuthReturn => {
   
   const [, authActions] = useAtom(authActionsAtom);
   const [, notificationActions] = useAtom(notificationActionsAtom);
+  const { showLoading, hideLoading } = useGlobalLoading();
   
   const navigate = useNavigate();
   const isInitializing = useRef(false);
 
   const loginWithInternetIdentity = useCallback(async () => {
     try {
+      showLoading('Connecting to Internet Identity...');
       authActions({ type: 'SET_LOADING' });
       const result = await controllerLogin();
       if (result.success && result.user) {
@@ -93,22 +96,28 @@ export const useAuth = (): UseAuthReturn => {
     } catch (error) {
       console.error('Login failed:', error);
       authActions({ type: 'LOGOUT' });
+    } finally {
+      hideLoading();
     }
-  }, [authActions]);
+  }, [authActions, showLoading, hideLoading]);
 
   const logout = useCallback(async () => {
     try {
+      showLoading('Signing out...');
       await controllerLogout();
       authActions({ type: 'LOGOUT' });
       navigate('/');
     } catch (error) {
       console.error('Logout failed:', error);
       authActions({ type: 'LOGOUT' });
+    } finally {
+      hideLoading();
     }
-  }, [authActions, navigate]);
+  }, [authActions, navigate, showLoading, hideLoading]);
 
   const updateProfile = useCallback(async (payload: Partial<User>): Promise<boolean> => {
     try {
+      showLoading('Updating profile...');
       const success = await controllerUpdateProfile(payload);
       if (success) {
         // Refetch user data to ensure consistency
@@ -125,8 +134,10 @@ export const useAuth = (): UseAuthReturn => {
       console.error('Failed to update profile:', error);
       message.error('An unexpected error occurred.');
       return false;
+    } finally {
+      hideLoading();
     }
-  }, [authActions]);
+  }, [authActions, showLoading, hideLoading]);
 
   useEffect(() => {
     const initializeAuth = async () => {

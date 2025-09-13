@@ -337,6 +337,7 @@ export const useChat = (): UseChatReturn => {
       setAiSuggestions([]);
       return;
     }
+
     
     try {
       console.log('🤖 Requesting AI suggestions for draft:', draftText);

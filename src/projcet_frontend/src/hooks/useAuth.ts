@@ -37,6 +37,7 @@ export interface UseAuthReturn {
   loginWithInternetIdentity: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (payload: Partial<User>) => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
 export const useAuth = (): UseAuthReturn => {
@@ -128,6 +129,19 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [authActions]);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      if (isAuthenticated) {
+        const updatedUserData = await fetchUserBySession();
+        if (updatedUserData) {
+          authActions({ type: 'LOGIN', user: updatedUserData, session: localStorage.getItem('session') || undefined });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  }, [authActions, isAuthenticated]);
+
   useEffect(() => {
     const initializeAuth = async () => {
       // Prevent multiple simultaneous initializations
@@ -203,5 +217,6 @@ export const useAuth = (): UseAuthReturn => {
     loginWithInternetIdentity,
     logout,
     updateProfile,
+    refreshUser,
   };
 };

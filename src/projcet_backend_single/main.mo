@@ -80,6 +80,11 @@ persistent actor SingleBackend {
         submissionsEntries.vals(), 0, Text.equal, Text.hash
     );
 
+    // Chat Token System Constants
+    private let DAILY_FREE_TOKENS : Nat = 10;
+    private let ONE_DAY_IN_NANO : Nat = 86400000000000; // 24 hours in nanoseconds
+
+
 
     // =================================================================================
     // Upgrade Hooks - preupgrade & postupgrade
@@ -133,6 +138,153 @@ persistent actor SingleBackend {
         invitationsEntries := [];
         ratingsEntries := [];
         submissionsEntries := [];
+    };
+
+
+    // =================================================================================
+    // Chat Token System Functions
+    // =================================================================================
+
+    private func resetDailyTokensIfNeeded(user: Model.User): Model.User {
+        let now = Time.now();
+        
+        // Check if 24 hours have passed since last reset
+        if (now - user.chatTokens.lastTokenReset >= ONE_DAY_IN_NANO) {
+            let updatedChatTokens: Model.ChatTokenBalance = {
+                availableTokens = user.chatTokens.availableTokens + DAILY_FREE_TOKENS;
+                dailyFreeRemaining = DAILY_FREE_TOKENS;
+                lastTokenReset = now;
+                totalTokensEarned = user.chatTokens.totalTokensEarned + DAILY_FREE_TOKENS;
+                totalTokensSpent = user.chatTokens.totalTokensSpent;
+            };
+            
+            return {
+                id = user.id;
+                profilePicture = user.profilePicture;
+                username = user.username;
+                dob = user.dob;
+                preference = user.preference;
+                description = user.description;
+                wallet = user.wallet;
+                rating = user.rating;
+                createdAt = user.createdAt;
+                updatedAt = now;
+                isFaceRecognitionOn = user.isFaceRecognitionOn;
+                isProfileCompleted = user.isProfileCompleted;
+                subAccount = user.subAccount;
+                chatTokens = updatedChatTokens;
+            };
+        } else {
+            return user;
+        };
+    };
+
+    public func useChatToken(userId: Text): async Result.Result<Model.ChatTokenResponse, Text> {
+        switch (users.get(userId)) {
+            case (?user) {
+                let updatedUser = resetDailyTokensIfNeeded(user);
+                users.put(userId, updatedUser);
+                
+                if (updatedUser.chatTokens.availableTokens > 0) {
+                    let newChatTokens: Model.ChatTokenBalance = {
+                        availableTokens = updatedUser.chatTokens.availableTokens - 1;
+                        dailyFreeRemaining = updatedUser.chatTokens.dailyFreeRemaining;
+                        lastTokenReset = updatedUser.chatTokens.lastTokenReset;
+                        totalTokensEarned = updatedUser.chatTokens.totalTokensEarned;
+                        totalTokensSpent = updatedUser.chatTokens.totalTokensSpent + 1;
+                    };
+                    
+                    let finalUser: Model.User = {
+                        id = updatedUser.id;
+                        profilePicture = updatedUser.profilePicture;
+                        username = updatedUser.username;
+                        dob = updatedUser.dob;
+                        preference = updatedUser.preference;
+                        description = updatedUser.description;
+                        wallet = updatedUser.wallet;
+                        rating = updatedUser.rating;
+                        createdAt = updatedUser.createdAt;
+                        updatedAt = Time.now();
+                        isFaceRecognitionOn = updatedUser.isFaceRecognitionOn;
+                        isProfileCompleted = updatedUser.isProfileCompleted;
+                        subAccount = updatedUser.subAccount;
+                        chatTokens = newChatTokens;
+                    };
+                    
+                    users.put(userId, finalUser);
+                    
+                    return #ok({
+                        success = true;
+                        message = "Token used successfully";
+                        tokensUsed = 1;
+                        tokensRemaining = newChatTokens.availableTokens;
+                    });
+                } else {
+                    return #err("Insufficient tokens");
+                };
+            };
+            case null { return #err("User not found") };
+        };
+    };
+
+    public func getTokenBalance(userId: Text): async Result.Result<Model.TokenBalanceResponse, Text> {
+        switch (users.get(userId)) {
+            case (?user) {
+                let updatedUser = resetDailyTokensIfNeeded(user);
+                users.put(userId, updatedUser);
+                
+                return #ok({
+                    availableTokens = updatedUser.chatTokens.availableTokens;
+                    dailyFreeRemaining = updatedUser.chatTokens.dailyFreeRemaining;
+                    dailyFreeLimit = DAILY_FREE_TOKENS;
+                    lastTokenReset = updatedUser.chatTokens.lastTokenReset;
+                });
+            };
+            case null { return #err("User not found") };
+        };
+    };
+
+    public func addFreeTokens(userId: Text, amount: Nat): async Result.Result<Model.ChatTokenResponse, Text> {
+        switch (users.get(userId)) {
+            case (?user) {
+                let updatedUser = resetDailyTokensIfNeeded(user);
+                
+                let newChatTokens: Model.ChatTokenBalance = {
+                    availableTokens = updatedUser.chatTokens.availableTokens + amount;
+                    dailyFreeRemaining = updatedUser.chatTokens.dailyFreeRemaining;
+                    lastTokenReset = updatedUser.chatTokens.lastTokenReset;
+                    totalTokensEarned = updatedUser.chatTokens.totalTokensEarned + amount;
+                    totalTokensSpent = updatedUser.chatTokens.totalTokensSpent;
+                };
+                
+                let finalUser: Model.User = {
+                    id = updatedUser.id;
+                    profilePicture = updatedUser.profilePicture;
+                    username = updatedUser.username;
+                    dob = updatedUser.dob;
+                    preference = updatedUser.preference;
+                    description = updatedUser.description;
+                    wallet = updatedUser.wallet;
+                    rating = updatedUser.rating;
+                    createdAt = updatedUser.createdAt;
+                    updatedAt = Time.now();
+                    isFaceRecognitionOn = updatedUser.isFaceRecognitionOn;
+                    isProfileCompleted = updatedUser.isProfileCompleted;
+                    subAccount = updatedUser.subAccount;
+                    chatTokens = newChatTokens;
+                };
+                
+                users.put(userId, finalUser);
+                
+                return #ok({
+                    success = true;
+                    message = "Free tokens added successfully";
+                    tokensUsed = 0;
+                    tokensRemaining = newChatTokens.availableTokens;
+                });
+            };
+            case null { return #err("User not found") };
+        };
     };
 
     // =================================================================================
@@ -241,6 +393,14 @@ persistent actor SingleBackend {
             isFaceRecognitionOn = false;
             isProfileCompleted = false;
             subAccount = ?sub;
+            // Initialize chat token system
+            chatTokens = {
+                availableTokens = DAILY_FREE_TOKENS;
+                dailyFreeRemaining = DAILY_FREE_TOKENS;
+                lastTokenReset = timestamp;
+                totalTokensEarned = DAILY_FREE_TOKENS;
+                totalTokensSpent = 0;
+            };
         };
 
         users.put(newid, newUser);
@@ -253,7 +413,12 @@ persistent actor SingleBackend {
 
     public func getUserById(userId : Text) : async Result.Result<Model.User, Text> {
         switch (users.get(userId)) {
-            case (?user) { return #ok(user) };
+            case (?user) { 
+                // Auto reset daily tokens if needed
+                let updatedUser = resetDailyTokensIfNeeded(user);
+                users.put(userId, updatedUser);
+                return #ok(updatedUser);
+            };
             case null { return #err("User not found") };
         };
     };
@@ -276,6 +441,8 @@ persistent actor SingleBackend {
                     isFaceRecognitionOn = currUser.isFaceRecognitionOn;
                     isProfileCompleted = Option.get(payload.isProfileCompleted, currUser.isProfileCompleted);
                     subAccount = currUser.subAccount;
+                    // Keep existing chat token data
+                    chatTokens = currUser.chatTokens;
                 };
                 users.put(userId, updatedUser);
                 return #ok(updatedUser);
@@ -1201,7 +1368,14 @@ persistent actor SingleBackend {
         "\"createdAt\":" # Int.toText(user.createdAt) # "," #
         "\"updatedAt\":" # Int.toText(user.updatedAt) # "," #
         "\"isFaceRecognitionOn\":" # Bool.toText(user.isFaceRecognitionOn) # "," #
-        "\"isProfileCompleted\":" # Bool.toText(user.isProfileCompleted) #
+        "\"isProfileCompleted\":" # Bool.toText(user.isProfileCompleted) # "," #
+        "\"chatTokens\":" # "{" #
+            "\"availableTokens\":" # Nat.toText(user.chatTokens.availableTokens) # "," #
+            "\"dailyFreeRemaining\":" # Nat.toText(user.chatTokens.dailyFreeRemaining) # "," #
+            "\"lastTokenReset\":" # Int.toText(user.chatTokens.lastTokenReset) # "," #
+            "\"totalTokensEarned\":" # Nat.toText(user.chatTokens.totalTokensEarned) # "," #
+            "\"totalTokensSpent\":" # Nat.toText(user.chatTokens.totalTokensSpent) #
+        "}" # "," #
         "}"
     };
 

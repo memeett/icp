@@ -9,15 +9,15 @@ import { storage } from "../utils/storage";
 // Helper untuk membuat URL gambar dan menyimpannya di objek pengguna
 const processProfilePicture = (picture: BackendUser['profilePicture']): string | null => {
   try {
-    if (picture && picture.length > 0) {
+  if (picture && picture.length > 0) {
       console.log('Processing profile picture, size:', picture.length);
       
-      // Konversi eksplisit ke ArrayBuffer yang kompatibel
-      const buffer = new ArrayBuffer(picture.length);
-      const view = new Uint8Array(buffer);
-      for (let i = 0; i < picture.length; i++) {
-          view[i] = picture[i];
-      }
+    // Konversi eksplisit ke ArrayBuffer yang kompatibel
+    const buffer = new ArrayBuffer(picture.length);
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < picture.length; i++) {
+        view[i] = picture[i];
+    }
       
       // Detect image type from header bytes
       let mimeType = 'image/jpeg'; // default
@@ -59,7 +59,46 @@ const processProfilePicture = (picture: BackendUser['profilePicture']): string |
 export const getProfilePictureUrl = processProfilePicture;
 
 const convertBackendUserToFrontend = (userData: BackendUser): User => {
-    return {
+
+    // Handle Motoko record format
+    const chatTokens = (userData as any).chatTokens;
+    let tokensData: any = {
+        availableTokens: 5,
+        dailyFreeRemaining: 5,
+        lastTokenReset: Date.now(),
+        totalTokensEarned: 5,
+        totalTokensSpent: 0,
+    };
+
+    if (chatTokens) {
+        // Handle different possible formats
+        if (typeof chatTokens === 'object') {
+            // If it's a record/object
+            tokensData.availableTokens = chatTokens.availableTokens ?? chatTokens['availableTokens'] ?? 5;
+            tokensData.dailyFreeRemaining = chatTokens.dailyFreeRemaining ?? chatTokens['dailyFreeRemaining'] ?? 5;
+            tokensData.lastTokenReset = chatTokens.lastTokenReset ?? chatTokens['lastTokenReset'] ?? Date.now();
+            tokensData.totalTokensEarned = chatTokens.totalTokensEarned ?? chatTokens['totalTokensEarned'] ?? 5;
+            tokensData.totalTokensSpent = chatTokens.totalTokensSpent ?? chatTokens['totalTokensSpent'] ?? 0;
+        } else if (Array.isArray(chatTokens)) {
+            // If it's an array format, use defaults
+            tokensData = {
+                availableTokens: 5,
+                dailyFreeRemaining: 5,
+                lastTokenReset: Date.now(),
+                totalTokensEarned: 5,
+                totalTokensSpent: 0,
+            };
+        }
+    }
+
+    // Convert to proper number format
+    Object.keys(tokensData).forEach(key => {
+        if (typeof tokensData[key] === 'bigint' || typeof tokensData[key] === 'string') {
+            tokensData[key] = Number(tokensData[key]);
+        }
+    });
+
+    const finalUserData = {
         id: userData.id,
         profilePictureUrl: processProfilePicture(userData.profilePicture),
         username: userData.username,
@@ -75,9 +114,29 @@ const convertBackendUserToFrontend = (userData: BackendUser): User => {
         updatedAt: BigInt(userData.updatedAt),
         isFaceRecognitionOn: userData.isFaceRecognitionOn,
         isProfileCompleted: userData.isProfileCompleted,
-        subAccount: userData.subAccount[0] ? [new Uint8Array(userData.subAccount[0])] : [],
+        subAccount: userData.subAccount[0] ? [new Uint8Array(userData.subAccount[0])] as [Uint8Array] : [] as [],
+        chatTokens: tokensData,
     };
+
+    // Final user data converted
+
+    return finalUserData;
 }
+
+// Force refresh user data from backend
+export const forceRefreshUserData = async (): Promise<User | null> => {
+    try {
+        const result = await fetchUserBySession();
+        if (result) {
+            storage.setUser(result);
+            return result;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error refreshing user data:', error);
+        return null;
+    }
+};
 
 export const getCookie = (name: string): string | null => {
     const cookies = document.cookie.split("; ");
@@ -132,7 +191,7 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
         if ("ok" in userDetailResult) {
             const userData = userDetailResult.ok;
             const convertedUser = convertBackendUserToFrontend(userData);
-            
+
             storage.clear();
             storage.setUser(convertedUser);
             // Simulasikan sesi sederhana
@@ -203,7 +262,14 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
             return false;
         }
 
-        const updatePayload: UpdateUserPayload = {};
+        const updatePayload: UpdateUserPayload = {
+            username: [],
+            dob: [],
+            description: [],
+            preference: [],
+            isProfileCompleted: [],
+            profilePicture: []
+        };
         
         if (payload.username !== undefined) {
             updatePayload.username = [payload.username];
@@ -236,9 +302,9 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
         }
 
         // Handle profile picture if provided
-        if (payload.profilePicture) {
+        if (payload.profilePictureUrl) {
             try {
-                const arrayBuffer = await (payload.profilePicture as any).arrayBuffer();
+                const arrayBuffer = await (payload.profilePictureUrl as any).arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
                 updatePayload.profilePicture = [Array.from(uint8Array)];
                 console.log('Profile picture processed, size:', uint8Array.length);
@@ -265,7 +331,7 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
             const updatedUser = convertBackendUserToFrontend(result.ok);
             storage.setUser(updatedUser);
             
-            return true;
+    return true;
         } else {
             console.error('Backend update failed:', result.err);
             return false;
@@ -309,7 +375,7 @@ export const getUserById = async (userId: string): Promise<{ ok: User } | { err:
         }
     } catch (error) {
         console.error('❌ Error fetching user by ID:', error);
-        return null;
+    return null;
     }
 }
 export const getUserByName = async (username: string): Promise<User | null> => {

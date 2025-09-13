@@ -36,6 +36,13 @@ export const storage = {
         createdAt: BigInt(userData.createdAt || '0'),
         updatedAt: BigInt(userData.updatedAt || '0'),
         profilePicture: null, // Selalu null dari localStorage
+        chatTokens: userData.chatTokens || {
+          availableTokens: 0,
+          dailyFreeRemaining: 0,
+          lastTokenReset: 0,
+          totalTokensEarned: 0,
+          totalTokensSpent: 0,
+        },
       };
     } catch (error) {
       console.error("Failed to get user from localStorage:", error);

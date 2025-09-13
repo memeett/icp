@@ -13,19 +13,29 @@ import {
 } from '@ant-design/icons';
 import { useAtom } from 'jotai';
 import { breadcrumbsAtom } from '../app/store/ui';
-import { useAuth } from '../shared/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import Navbar from '../ui/components/Navbar';
 import AdvisorChat from '../components/chat/AdvisorChat';
+import TokenBalance from '../components/shared/TokenBalance';
 
 const { Title, Text, Paragraph } = Typography;
 
 const suggestedQuestions = [
-  "How can I improve my freelancer profile?",
-  "What skills are most in demand right now?",
-  "How should I price my services?",
-  "Tips for writing a compelling cover letter?",
-  "How to find high-quality clients?",
-  "Best practices for project management?"
+  // Kategori 2: Job & Career Help
+  "Rekomendasikan pekerjaan dengan skill [masukkan skill Anda]",
+  "Berikan saran budget untuk [deskripsikan proyek Anda]",
+  "Buatkan template proposal untuk pekerjaan [masukkan deskripsi pekerjaan]",
+  "Tampilkan pekerjaan terbaru yang tersedia",
+  // Kategori 3: Talent Search
+
+  "Carikan saya talent untuk [masukkan bidang keahlian]",
+  "Temukan freelancer terbaik untuk [masukkan skill atau teknologi]",
+  "Cari kandidat yang ahli di [masukkan teknologi/framework]",
+  "Tampilkan beberapa freelancer aktif di platform",
+  // Kategori 5: Financial Overview
+  "Berikan ringkasan keuangan saya bulan ini",
+  "Tampilkan semua transaksi saya",
+  "Tampilkan pemasukan dari semua proyek saya"
 ];
 
 const features = [
@@ -156,6 +166,12 @@ const ChatWithAIPage: React.FC = () => {
                   <Text className="text-muted-foreground">
                     Welcome back, <span className="font-semibold text-foreground">{user.username}</span>!
                   </Text>
+                  
+                  {/* Chat Token Balance */}
+                  <TokenBalance 
+                    key={`welcome-token-${user?.chatTokens?.availableTokens || 0}`}
+                    tokenCount={user?.chatTokens?.availableTokens ? Number(user.chatTokens.availableTokens) : 0}
+                  />
                 </motion.div>
               )}
 
@@ -276,6 +292,14 @@ const ChatWithAIPage: React.FC = () => {
                       Here to help you succeed as a freelancer
                     </Text>
                   </div>
+                  
+                  {/* Chat Token Balance */}
+                  {user && (
+                    <TokenBalance 
+                      key={`header-token-${user?.chatTokens?.availableTokens || 0}`}
+                      tokenCount={user?.chatTokens?.availableTokens ? Number(user.chatTokens.availableTokens) : 0}
+                    />
+                  )}
                 </div>
                 
                 <Button

@@ -1,5 +1,13 @@
 import { JobCategory } from './Job';
 
+export interface ChatTokenBalance {
+  availableTokens: number;
+  dailyFreeRemaining: number;
+  lastTokenReset: number;
+  totalTokensEarned: number;
+  totalTokensSpent: number;
+}
+
 export interface User {
   id: string;
   profilePictureUrl: string | null;
@@ -14,6 +22,7 @@ export interface User {
   isFaceRecognitionOn: boolean;
   isProfileCompleted: boolean;
   subAccount: [Uint8Array] | [];
+  chatTokens: ChatTokenBalance;
 }
 
 export interface UserProfile extends User {

@@ -24,7 +24,6 @@ ASI1_HEADERS = {
     "Content-Type": "application/json"
 }
 
-# ICP HTTP routing
 BACKEND_CANISTER_ID = "uzt4z-lp777-77774-qaabq-cai"
 
 BASE_URL = "http://127.0.0.1:4943"
@@ -863,12 +862,47 @@ async def prevent_misunderstandings(ctx: Context, message, chat_history):
 
 async def tool_getAllJobs(ctx: Context, args: Dict[str, Any]):
     jobs = await fetch_jobs(ctx)
-    return jobs
 
-# BAGIAN 4: Handler untuk tool 'getAllUsers', sama seperti 'tool_getAllJobs'
+    # Limit to latest 20 jobs for performance and UX
+    limited_jobs = jobs[-20:] if len(jobs) > 20 else jobs
+
+    # Sort by creation date (newest first) - assuming jobs have timestamp
+    # For now, just return limited results
+    result = {
+        "jobs": limited_jobs,
+        "total_count": len(jobs),
+        "shown_count": len(limited_jobs),
+        "message": f"Menampilkan {len(limited_jobs)} pekerjaan terbaru dari {len(jobs)} total pekerjaan yang tersedia."
+    }
+
+    return result
+
+# BAGIAN 4: Handler untuk tool 'getAllUsers' - DENGAN LIMITASI PRIVASI
 async def tool_getAllUsers(ctx: Context, args: Dict[str, Any]):
     users = await fetch_users(ctx)
-    return users
+
+    # PRIVACY PROTECTION: Only show limited public information
+    # Don't expose sensitive data like emails, full profiles, etc.
+    safe_users = []
+    for user in users[:10]:  # Limit to first 10 users only
+        safe_user = {
+            "id": user.get("id"),
+            "username": user.get("username", "Anonymous"),
+            "profilePictureUrl": user.get("profilePictureUrl"),
+            "isProfileCompleted": user.get("isProfileCompleted", False),
+            # DON'T expose: email, wallet, phone, full profile details
+        }
+        safe_users.append(safe_user)
+
+    result = {
+        "users": safe_users,
+        "total_count": len(users),
+        "shown_count": len(safe_users),
+        "message": f"Menampilkan {len(safe_users)} pengguna dari {len(users)} total pengguna. Data sensitif disembunyikan untuk privasi.",
+        "privacy_note": "Untuk alasan privasi, hanya informasi publik yang ditampilkan."
+    }
+
+    return result
 
 async def tool_recommend_jobs_by_skills(ctx: Context, args: Dict[str, Any]):
     skills: List[str] = args.get("skills", [])
@@ -1012,11 +1046,27 @@ async def tool_find_talent(ctx: Context, args: Dict[str, Any]):
     active_users = [u for u in users if u.get("isProfileCompleted")]
     ctx.logger.info(f"Found {len(active_users)} active users with completed profiles.")
 
-    # 4. Return the raw data for the LLM to process
-    # LLM akan menerima pekerjaan target "virtual" dan daftar kandidat potensial
+    # 4. PRIVACY PROTECTION: Limit and sanitize user data
+    limited_candidates = active_users[:15]  # Limit to top 15 candidates
+    safe_candidates = []
+    for user in limited_candidates:
+        safe_candidate = {
+            "id": user.get("id"),
+            "username": user.get("username", "Anonymous"),
+            "profilePictureUrl": user.get("profilePictureUrl"),
+            "isProfileCompleted": user.get("isProfileCompleted", False),
+            # DON'T expose sensitive data
+        }
+        safe_candidates.append(safe_candidate)
+
+    # 5. Return sanitized data for the LLM to process
     return {
         "target_job": target_job,
-        "potential_candidates": active_users
+        "potential_candidates": safe_candidates,
+        "total_candidates": len(active_users),
+        "shown_candidates": len(safe_candidates),
+        "message": f"Ditemukan {len(active_users)} kandidat potensial. Menampilkan {len(safe_candidates)} kandidat teratas.",
+        "privacy_note": "Data kandidat dibatasi untuk alasan privasi."
     }
 
 async def tool_get_project_reminders(ctx: Context, args: Dict[str, Any]):

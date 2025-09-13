@@ -317,7 +317,7 @@ const ChatWindow: React.FC = () => {
             icon={<UserOutlined />}
             className="border-2 border-primary/20"
           />
-          <div>
+        <div>
             <Title level={5} className="!mb-0 text-foreground">
               {otherUser?.username || 'Unknown User'}
             </Title>
@@ -527,12 +527,12 @@ const ChatWindow: React.FC = () => {
 
           {!photoPreview && (
             <div className="flex-1">
-              <TextArea
+          <TextArea
                 value={newMessage}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyPress}
-                placeholder="Type a message..."
-                autoSize={{ minRows: 1, maxRows: 4 }}
+            placeholder="Type a message..."
+            autoSize={{ minRows: 1, maxRows: 4 }}
                 className="resize-none"
               />
               

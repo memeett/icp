@@ -67,6 +67,8 @@ module {
         isFaceRecognitionOn: Bool;
         isProfileCompleted: Bool;
         subAccount: ?[Nat8];
+        // Chat Token System
+        chatTokens: ChatTokenBalance;
     };
 
     public type UpdateUserPayload = {
@@ -161,4 +163,28 @@ module {
         status: Text; // "Waiting", "Accept", "Reject"
         createdAt: Int;
     };
-};
+
+    // Chat Token System Types
+    public type ChatTokenBalance = {
+        availableTokens: Nat;
+        dailyFreeRemaining: Nat;
+        lastTokenReset: Int;
+        totalTokensEarned: Nat;
+        totalTokensSpent: Nat;
+    };
+
+    public type ChatTokenResponse = {
+        success: Bool;
+        message: Text;
+        tokensUsed: Nat;
+        tokensRemaining: Nat;
+    };
+
+    public type TokenBalanceResponse = {
+        availableTokens: Nat;
+        dailyFreeRemaining: Nat;
+        dailyFreeLimit: Nat;
+        lastTokenReset: Int;
+    };
+
+}

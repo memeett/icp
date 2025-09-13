@@ -49,6 +49,7 @@ interface UseJobDetailsReturn {
   isAccepting: boolean;
   isRejecting: boolean;
   isFetchingLetter: boolean;
+  isStartingJob: boolean;
 
   // Actions
   fetchJobDetails: () => Promise<void>;
@@ -81,6 +82,7 @@ export const useJobDetails = (
   const [isAccepting, setIsAccepting] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [isFetchingLetter, setIsFetchingLetter] = useState(false);
+  const [isStartingJob, setIsStartingJob] = useState(false);
 
   // Fetch all job-related data in a single optimized call
   const fetchJobDetails = useCallback(async () => {
@@ -327,6 +329,8 @@ export const useJobDetails = (
   const handleStartJob = useCallback(async (): Promise<boolean> => {
     if (!job || !user || !isJobOwner) return false;
 
+    setIsStartingJob(true);
+
     try {
       const result = await startJob(job.id, user);
       if (result.jobStarted) {
@@ -366,6 +370,8 @@ export const useJobDetails = (
     } catch (error) {
       message.error("Failed to start job.");
       return false;
+    } finally {
+      setIsStartingJob(false);
     }
   }, [job, user, isJobOwner, acceptedFreelancers, fetchJobDetails]);
 
@@ -462,6 +468,7 @@ export const useJobDetails = (
     isAccepting,
     isRejecting,
     isFetchingLetter,
+    isStartingJob,
 
     // Actions
     fetchJobDetails,

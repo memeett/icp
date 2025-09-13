@@ -296,15 +296,21 @@ export const startJob = async (
     const curr_job = await getJobById(job_id);
 
     if(curr_job){
-      const result = await projcet_backend_single.startJob(job_id);
-      if ("ok" in result) {
-          const creator_token = await getBalanceController(curr_user);
-          if(creator_token.token_value < curr_job.jobSalary) {
-            return {
-                jobStarted: false,
-                message: "Insufficient Balance.",
-              };
-          }
+
+      const creator_token = await getBalanceController(curr_user);
+      console.log("Creator token balance:", creator_token.token_value);
+      if(creator_token.token_value < curr_job.jobSalary) {
+        return {
+            jobStarted: false,
+            message: "Insufficient Balance.",
+          };
+      }
+      const result = await job.startJob(job_id);
+      if (result) {
+
+          const obj = curr_job.subAccount[0]!;
+          const uint8 = new Uint8Array(Object.values(obj));
+
           
           const transferResult = await transferToJobController(
             curr_user,

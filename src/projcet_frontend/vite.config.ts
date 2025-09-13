@@ -108,15 +108,22 @@ export default defineConfig({
             }
 
             const filename = path.basename(absPath);
+            const stat = fs.statSync(absPath);
+
             res.setHeader('Content-Type', 'application/octet-stream');
             res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            res.setHeader('Content-Length', stat.size);
+
             const readStream = fs.createReadStream(absPath);
             readStream.pipe(res);
+
             readStream.on('error', (err) => {
+              console.error("Stream error:", err);
               res.statusCode = 500;
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({ error: err.message }));
             });
+
           } catch (err: any) {
             res.statusCode = 500;
             res.setHeader('Content-Type', 'application/json');

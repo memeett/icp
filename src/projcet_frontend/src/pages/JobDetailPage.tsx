@@ -37,7 +37,8 @@ import {
   CheckOutlined,
   CloseOutlined,
   PlayCircleOutlined,
-  StopOutlined
+  StopOutlined,
+  MailOutlined
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -52,6 +53,12 @@ import JobChatButton from '../components/chat/JobChatButton';
 import type { Submission } from '../../../declarations/projcet_backend_single/projcet_backend_single.did';
 import { getUserById, getUserByName } from '../controller/userController';
 import { getStatusColor } from '../utils/JobStatusCololer';
+import { useWallet } from '../hooks/useWallet';
+import { Select } from "antd";
+import dayjs from "dayjs";
+
+
+const { Option } = Select;
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -80,6 +87,7 @@ const JobDetailPage: React.FC = () => {
     isAccepting,
     isRejecting,
     isFetchingLetter,
+    isStartingJob,
     similarJobs,
     handleApply,
     handleAcceptApplicant,
@@ -88,6 +96,10 @@ const JobDetailPage: React.FC = () => {
     handleFinishJob,
     handleCoverLetter
   } = useJobDetails(jobId, user);
+
+  const {
+    walletSymbol
+  } = useWallet();
 
   const {
     allUsers,
@@ -101,14 +113,36 @@ const JobDetailPage: React.FC = () => {
   const [isAcceptModalVisible, setIsAcceptModalVisible] = useState(false);
   const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
   const [isCoverModalVisible, setIsCoverModalVisible] = useState(false);
+  const [isStartJobModalVisible, setIsStartJobModalVisible] = useState(false);
+  const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
 
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
-
   const [form] = Form.useForm();
   const [inviteForm] = Form.useForm();
 
   const [coverLetter, setCoverLetter] = useState<string>("");
+  const [selectedWalletSymbol, setSelectedWalletSymbol] = useState(walletSymbol);
+
+
+  const columns = [
+    {
+      title: "Freelancer",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: `Amount (${walletSymbol})`,
+      dataIndex: "amount",
+      key: "amount",
+    },
+  ];
+
+  const data = acceptedFreelancers.map((f, index) => ({
+    key: index,
+    name: f.username || `Freelancer ${index + 1}`,
+    amount: job ? (job.jobSalary).toLocaleString() : 'N/A',
+  }));
 
 
   // Handle user invitation
@@ -241,8 +275,19 @@ const JobDetailPage: React.FC = () => {
                   <Text type="secondary">Applicants</Text>
                 </div>
               </Col>
+              <Col xs={12} sm={6}>
+                <div
+                  className="text-center p-4 bg-background rounded-lg cursor-pointer hover:shadow-md transition"
+                  onClick={() => setIsInvoiceModalVisible(true)}
+                >
+                  <MailOutlined className="text-2xl text-orange-500 mb-2" />
+                  <div className="font-semibold">{acceptedFreelancers.length}</div>
+                  <Text type="secondary">Invoice</Text>
+                </div>
+              </Col>
 
-            </Row>  
+
+            </Row>
 
             <Divider />
 
@@ -309,10 +354,12 @@ const JobDetailPage: React.FC = () => {
                     type="primary"
                     size="large"
                     icon={<PlayCircleOutlined />}
-                    onClick={handleStartJob}
+                    onClick={() => setIsStartJobModalVisible(true)}
+                    loading={isStartingJob}
                   >
                     Start Job
                   </Button>
+
                 )}
                 {job!.jobStatus === 'Open' && acceptedFreelancers.length == 0 && (
                   <Button
@@ -338,7 +385,85 @@ const JobDetailPage: React.FC = () => {
               </div>
             )}
 
-            {/* UI-only: Freelancer Ratings Section */}
+            <Modal
+              title="Start Job"
+              open={isStartJobModalVisible}
+              onCancel={() => setIsStartJobModalVisible(false)}
+              width={600}
+              footer={null}
+            >
+              <div>
+                <Paragraph>
+                  Are you sure you want to start this job? Once started, your wallet will be
+                  charged {job.jobSalary * acceptedFreelancers.length}{" "}
+                  <strong>{selectedWalletSymbol}</strong>, the job status will change to
+                  "Ongoing" and freelancers can begin their work.
+                </Paragraph>
+
+                <div className="mb-4">
+                  <span className="mr-2 font-semibold">Choose Wallet:</span>
+                  <Select
+                    value={selectedWalletSymbol}
+                    style={{ width: 160 }}
+                    onChange={(value) => setSelectedWalletSymbol(value)}
+                  >
+                    <Option value={walletSymbol}>{walletSymbol}</Option>
+                  </Select>
+                </div>
+
+                <div className="text-right">
+                  <Button
+                    type="primary"
+                    onClick={async () => {
+                      setIsStartJobModalVisible(false);
+                      await handleStartJob();
+                      setIsInvoiceModalVisible(false);
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                </div>
+              </div>
+            </Modal>
+
+            <Modal
+              title="Invoice"
+              open={isInvoiceModalVisible}
+              onCancel={() => setIsInvoiceModalVisible(false)}
+              width={700}
+              footer={null}
+            >
+              <div className="space-y-6">
+                <div className="flex justify-between items-center border-b pb-3">
+                  <Paragraph className="m-0">
+                    <strong>Status:</strong>{" "}
+                    <Tag color="green" className="ml-2">PAID</Tag>
+                  </Paragraph>
+                  <Paragraph className="m-0 text-gray-500">
+                    <strong>Date:</strong> {dayjs().format("YYYY-MM-DD HH:mm:ss")}
+                  </Paragraph>
+                </div>
+
+                <div>
+                  <Title level={5} className="mb-3">Freelancers</Title>
+                  <Table
+                    columns={columns}
+                    dataSource={data}
+                    pagination={false}
+                    bordered
+                    size="middle"
+                  />
+                </div>
+
+                <div className="flex justify-end border-t pt-3">
+                  <Paragraph className="text-lg font-semibold m-0">
+                    Total: {job.jobSalary * acceptedFreelancers.length} {walletSymbol}
+                  </Paragraph>
+                </div>
+              </div>
+            </Modal>
+
+
             {isJobOwner && job!.jobStatus === 'Finished' && (
               <>
                 <Divider />
@@ -1154,7 +1279,7 @@ const JobDetailPage: React.FC = () => {
               {isJobFreelancer && job.jobStatus === "Ongoing" && (
                 <TabPane tab="Submission Upload" key="submission">
                   <SubmissionContent />
-                  
+
                 </TabPane>
               )}
             </Tabs>

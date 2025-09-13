@@ -27,6 +27,7 @@ import type { UploadFile, UploadProps } from 'antd/es/upload/interface';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../shared/hooks/useAuth';
+import { useGlobalLoading } from '../shared/hooks/useGlobalLoading';
 import { JobCategory } from '../shared/types/Job';
 import dayjs from 'dayjs';
 
@@ -59,6 +60,7 @@ const mockJobCategories: JobCategory[] = [
 const CompleteProfilePage: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const { showLoading, hideLoading } = useGlobalLoading();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { updateProfile, user } = useAuth();
@@ -94,6 +96,7 @@ const CompleteProfilePage: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     try {
+      showLoading('Updating profile...');
       setLoading(true);
       console.log('Form values received:', values);
 
@@ -130,6 +133,7 @@ const CompleteProfilePage: React.FC = () => {
       console.error('Profile completion error:', error);
       message.error('An error occurred while completing your profile.');
     } finally {
+      hideLoading();
       setLoading(false);
     }
   };

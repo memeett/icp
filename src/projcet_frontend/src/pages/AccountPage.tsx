@@ -188,25 +188,6 @@ const AccountPage: React.FC = () => {
                   </div>
 
                   <Divider />
-
-                  {/* Future Settings Placeholder */}
-                  <div>
-                    <Title level={5}>Job History</Title>
-                    <Paragraph type="secondary">
-                      View your completed jobs and application history.
-                    </Paragraph>
-                    <Button disabled>Coming Soon</Button>
-                  </div>
-
-                  <Divider />
-
-                  <div>
-                    <Title level={5}>Application History</Title>
-                    <Paragraph type="secondary">
-                      Track all your job applications and their status.
-                    </Paragraph>
-                    <Button disabled>Coming Soon</Button>
-                  </div>
                 </div>
               </Card>
             </Col>

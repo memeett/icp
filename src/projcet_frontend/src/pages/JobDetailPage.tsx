@@ -113,8 +113,12 @@ const JobDetailPage: React.FC = () => {
   const [isAcceptModalVisible, setIsAcceptModalVisible] = useState(false);
   const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
   const [isCoverModalVisible, setIsCoverModalVisible] = useState(false);
+<<<<<<< HEAD
+  const [localLoading, setlocalLoading] = useState<boolean>(false);
+=======
   const [isStartJobModalVisible, setIsStartJobModalVisible] = useState(false);
   const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
+>>>>>>> master
 
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
@@ -150,6 +154,7 @@ const JobDetailPage: React.FC = () => {
     if (!user || !jobId || !values.userId) return;
 
     try {
+      setlocalLoading(true);
       const success = await sendInvitation(values.userId, user.id, jobId);
       if (success) {
         message.success('Invitation sent successfully');
@@ -159,6 +164,7 @@ const JobDetailPage: React.FC = () => {
       } else {
         message.error('Failed to send invitation');
       }
+      setlocalLoading(false)
     } catch (error) {
       console.error('Error sending invitation:', error);
       message.error('Error sending invitation');
@@ -1235,7 +1241,7 @@ const JobDetailPage: React.FC = () => {
     );
   };
 
-  if (loading || !job) {
+  if (loading || localLoading ||!job) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -1268,13 +1274,22 @@ const JobDetailPage: React.FC = () => {
               <TabPane tab={`Accepted (${acceptedFreelancers.length})`} key="accepted">
                 <AcceptedContent />
               </TabPane>
+<<<<<<< HEAD
+=======
               <TabPane tab="Submission Answer" key="submission">
                 <SubmissionContent />
               </TabPane>
               {job!.jobStatus === "Open" && (
+>>>>>>> master
 
+              {job.jobStatus === "Open" && (
                 <TabPane tab="Invite Users" key="invite">
                   <InviteContent />
+                </TabPane>
+              )}
+              {job.jobStatus === "Ongoing" && (
+                <TabPane tab="Submission Answer" key="submission">
+                  <SubmissionContent />
                 </TabPane>
               )}
             </Tabs>

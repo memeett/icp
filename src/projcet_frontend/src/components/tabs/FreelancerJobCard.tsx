@@ -57,14 +57,14 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
 
 
     return (
-        <div className="bg-white rounded-lg shadow p-6 border border-purple-50 hover:border-purple-200 transition-all">
-            <h3 className="font-semibold text-lg text-gray-800">{job?.jobName}</h3>
-            <div className="mt-2 text-sm text-gray-600">
+        <div className="bg-background rounded-lg shadow p-6 border border-foreground hover:border-purple-200 transition-all">
+            <h2 className="font-semibold text-xl">{job?.jobName}</h2>
+            <div className="mt-2 text-sm">
                 <p>
                     <span className="font-medium">Created At:</span> {date}
                 </p>
                 <div className="mt-3 flex items-center">
-                    <span className="font-medium mr-2">Status:</span>
+                    <span className="font-medium text-text mr-2">Status:</span>
                     {job?.jobStatus && (
                         <Tag color={getStatusColor(job.jobStatus)} className="text-xs">
                             {job.jobStatus}
@@ -73,6 +73,15 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
                 </div>
             </div>
             <div className="mt-4">
+<<<<<<< HEAD
+                <button
+                    onClick={viewDetail}
+                    className="text-sm bg-[#6366f1] text-text px-3 py-1.5 rounded-md hover:bg-[#4f46e5] transition-all duration-300 font-medium shadow-sm"
+                >
+                    View Details
+                </button>
+
+=======
                 <Space>
                     <button
                         onClick={viewDetail}
@@ -90,6 +99,7 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
                         />
                     )}
                 </Space>
+>>>>>>> master
             </div>
         </div>
     );

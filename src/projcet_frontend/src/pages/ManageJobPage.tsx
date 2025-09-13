@@ -233,16 +233,7 @@ const ManageJobPage: React.FC = () => {
   const getFilteredJobsByTab = () => {
     if (activeTab === 'all') return filteredJobs;
     return filteredJobs.filter(job => {
-      switch (activeTab) {
-        case 'open':
-          return job.jobStatus === 'Open';
-        case 'in_progress':
-          return job.jobStatus === 'Ongoing';
-        case 'completed':
-          return job.jobStatus === 'Finished';
-        default:
-          return true;
-      }
+      return job.jobStatus.toLowerCase() === activeTab.toLowerCase()
     });
   };
 
@@ -250,14 +241,15 @@ const ManageJobPage: React.FC = () => {
 
   const stats = {
     total: jobs.length,
-    open: jobs.filter(job => job.jobStatus === 'Open').length,
-    inProgress: jobs.filter(job => job.jobStatus === 'Ongoing').length,
-    completed: jobs.filter(job => job.jobStatus === 'Finished').length,
+    open: jobs.filter(job => job.jobStatus.toLowerCase() === 'open').length,
+    inProgress: jobs.filter(job => job.jobStatus.toLowerCase() === 'ongoing').length,
+    completed: jobs.filter(job => job.jobStatus.toLowerCase() === 'finished').length,
     totalSlots: jobs.reduce((sum, job) => sum + Number(job.jobSlots), 0)
   };
+  useEffect(() => {
+    console.log(jobs);
 
-  console.log('Jobs:', jobs);
-
+  }, [jobs])
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -369,8 +361,8 @@ const ManageJobPage: React.FC = () => {
             <Tabs activeKey={activeTab} onChange={setActiveTab}>
               <TabPane tab={`All Jobs (${stats.total})`} key="all" />
               <TabPane tab={`Open (${stats.open})`} key="open" />
-              <TabPane tab={`Ongoing (${stats.inProgress})`} key="in_progress" />
-              <TabPane tab={`Completed (${stats.completed})`} key="completed" />
+              <TabPane tab={`Ongoing (${stats.inProgress})`} key="ongoing" />
+              <TabPane tab={`Finished (${stats.completed})`} key="finished" />
             </Tabs>
 
             {tabFilteredJobs.length === 0 ? (

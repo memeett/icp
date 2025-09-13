@@ -332,9 +332,11 @@ export const useJobDetails = (
     setIsStartingJob(true);
 
     try {
+      setLoading(true);
       const result = await startJob(job.id, user);
       if (result.jobStarted) {
         message.success("Job started successfully!");
+        setLoading(false);
         await fetchJobDetails();
         
         // Create chat rooms for each accepted freelancer
@@ -365,6 +367,7 @@ export const useJobDetails = (
         return true;
       } else {
         message.error(result.message);
+        setLoading(false);
         return false;
       }
     } catch (error) {
@@ -380,6 +383,7 @@ export const useJobDetails = (
     if (!job) return false;
 
     try {
+      setLoading(true);
       const result = await finishJob(job.id);
       if (result.jobFinished) {
         message.success("Job finished successfully!");
@@ -399,12 +403,15 @@ export const useJobDetails = (
         }
 
         await fetchJobDetails();
+        setLoading(false);
         return true;
       } else {
+        setLoading(false);
         message.error(result.message);
         return false;
       }
     } catch (error) {
+      setLoading(false);
       console.error("Error finishing job:", error);
       message.error("Failed to finish job.");
       return false;

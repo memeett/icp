@@ -195,20 +195,23 @@ const ProfilePage: React.FC = () => {
               <TabPane tab="Overview" key="overview">
                 <Row gutter={[24, 24]}>
                   <Col xs={24} lg={16}>
-                    <Card title="About Me" className="mb-6">
-                      <Paragraph>{user.description || 'No description provided.'}</Paragraph>
-                    </Card>
-                    <Card title="Skills">
-                      <Space wrap>
-                        {user.preference?.length > 0 ? (
-                          user.preference.map(skill => (
-                            <Tag key={skill.id} color="blue">{skill.jobCategoryName}</Tag>
-                          ))
-                        ) : (
-                          <Text type="secondary">No skills listed.</Text>
-                        )}
-                      </Space>
-                    </Card>
+                    <div className="space-y-6">
+                      <Card title="About Me">
+                        <Paragraph>{user.description || 'No description provided.'}</Paragraph>
+                      </Card>
+                      <div></div>
+                      <Card title="Skills">
+                        <Space wrap>
+                          {user.preference?.length > 0 ? (
+                            user.preference.map(skill => (
+                              <Tag key={skill.id} color="blue">{skill.jobCategoryName}</Tag>
+                            ))
+                          ) : (
+                            <Text type="secondary">No skills listed.</Text>
+                          )}
+                        </Space>
+                      </Card>
+                    </div>
                   </Col>
                   <Col xs={24} lg={8}>
                     <Card title="Details">

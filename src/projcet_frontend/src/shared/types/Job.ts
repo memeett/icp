@@ -4,31 +4,31 @@ export interface JobCategory {
 }
 
 export interface Job {
-  id: string;
-  jobName: string;
-  jobDescription: string[];
-  jobTags: JobCategory[];
-  jobSalary: number;
-  jobSlots: bigint;
-  jobStatus: 'Open' | 'Ongoing' | 'Finished' | 'Cancelled';
-  jobRating: number;
-  userId: string;
-  wallet: number;
-  createdAt: bigint;
-  updatedAt: bigint;
-  subAccount: [] | [Uint8Array];
+    id: string;
+    jobName: string;
+    jobDescription: string[];
+    jobTags: JobCategory[];
+    jobSalary: number;
+    jobSlots: bigint;
+    jobStatus: 'Open' | 'Ongoing' | 'Finished' | 'Cancelled';
+    jobRating: number;
+    userId: string;
+    wallet: number;
+    createdAt: bigint;
+    updatedAt: bigint;
+    subAccount: [] | [Uint8Array];
 
-  // Legacy properties for compatibility
-  title?: string;
-  description?: string;
-  category?: JobCategory;
-  budget?: number;
-  deadline?: string;
-  status?: 'open' | 'in_progress' | 'completed' | 'cancelled';
-  clientId?: string;
-  freelancerId?: string;
-  experienceLevel?: string;
-  jobType?: string;
+    // Legacy properties for compatibility
+    title?: string;
+    description?: string;
+    category?: JobCategory;
+    budget?: number;
+    deadline?: string;
+    status?: 'open' | 'ongoing' | 'finished' | 'cancelled';
+    clientId?: string;
+    freelancerId?: string;
+    experienceLevel?: string;
+    jobType?: string;
 }
 
 export interface JobPayload {

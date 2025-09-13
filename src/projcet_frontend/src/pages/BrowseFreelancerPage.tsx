@@ -53,8 +53,6 @@ const BrowseFreelancerPage: React.FC = () => {
   const { data } = useJobCategories()
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  console.log("user di page",allUsers)
-
   const filterFreelancers = useCallback((users: User[]) => {
     return users.filter(user => {
       const searchMatch = !debouncedSearchTerm ||
@@ -211,8 +209,8 @@ const BrowseFreelancerPage: React.FC = () => {
         </Button>
 
         {/* Filter Results Info */}
-        <div className="text-center p-3 bg-gray-50 rounded">
-          <Text type="secondary" className="text-sm">
+        <div className="text-center p-3 rounded">
+          <Text type="secondary" className="text-sm underline bg-foreground">
             {filteredAndSortedFreelancers.length} of {allUsers.length} freelancers
           </Text>
         </div>
@@ -243,7 +241,7 @@ const BrowseFreelancerPage: React.FC = () => {
             </div>
 
             {/* Search Bar */}
-            <Card className="mb-6">
+            <Card style={{marginBottom: '2rem'}}>
               <Row gutter={[16, 16]} align="middle">
                 <Col xs={24} sm={12} md={8}>
                   <Input

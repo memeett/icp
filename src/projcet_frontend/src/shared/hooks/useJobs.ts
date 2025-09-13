@@ -71,25 +71,20 @@ export const useJobs = (): UseJobsReturn => {
   const [, jobActions] = useAtom(jobActionsAtom);
   const [, notificationActions] = useAtom(notificationActionsAtom);
 
-  // Helper function to convert backend status to frontend status
-  const convertJobStatus = (backendStatus: string): 'open' | 'in_progress' | 'completed' | 'cancelled' => {
-    switch (backendStatus.toLowerCase()) {
-      case 'start':
-      case 'open':
+  const convertBackendStatusType = (backendStatus: string): 'open' | 'ongoing' | 'finished' | 'cancelled' => {
+    switch (backendStatus) {
+      case 'Open':
         return 'open';
-      case 'ongoing':
-      case 'in_progress':
-        return 'in_progress';
-      case 'finished':
-      case 'completed':
-        return 'completed';
-      case 'cancelled':
+      case 'Ongoing':
+        return 'ongoing';
+      case 'Finished':
+        return 'finished';
+      case 'Cancelled':
         return 'cancelled';
       default:
-        return 'open';
+        throw new Error(`Unknown status: ${backendStatus}`);
     }
-  };
-
+  }
   // Fetch all jobs
   const fetchJobs = useCallback(async () => {
     try {
@@ -102,12 +97,13 @@ export const useJobs = (): UseJobsReturn => {
           title: backendJob.jobName,
           description: backendJob.jobDescription.join(' '),
           budget: backendJob.jobSalary,
-          status: convertJobStatus(backendJob.jobStatus),
+          status: backendJob.jobStatus,
           clientId: backendJob.userId,
           category: backendJob.jobTags[0] || { id: '', jobCategoryName: 'General' },
           deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Default 30 days
         }));
         jobActions({ type: 'SET_JOBS', jobs: convertedJobs });
+        console.log(convertedJobs);
       }
     } catch (error) {
       console.error('Failed to fetch jobs:', error);
@@ -121,7 +117,6 @@ export const useJobs = (): UseJobsReturn => {
       });
     }
   }, [jobActions, notificationActions]);
-
   // Fetch job categories
   const fetchJobCategories = useCallback(async () => {
     try {
@@ -158,7 +153,7 @@ export const useJobs = (): UseJobsReturn => {
             title: jobData.jobName,
             description: jobData.jobDescription.join(' '),
             budget: jobData.jobSalary,
-            status: convertJobStatus(jobData.jobStatus),
+            jobStatus: convertBackendStatusType(jobData.jobStatus),
             clientId: jobData.userId,
             category: jobData.jobTags[0] || { id: '', jobCategoryName: 'General' },
             deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),

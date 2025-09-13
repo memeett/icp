@@ -31,7 +31,7 @@ export const filteredJobsAtom = atom((get) => {
   const searchQuery = get(jobSearchQueryAtom);
   const filters = get(jobFiltersAtom);
 
-  let filtered = jobs.filter(job => job.status !== 'completed');
+  let filtered = jobs.filter(job => job.jobStatus !== 'Finished');
 
 
   // Apply search filter
@@ -118,12 +118,12 @@ export const paginatedJobsAtom = atom((get) => {
 // Job statistics atoms
 export const jobStatsAtom = atom((get) => {
   const jobs = get(jobsAtom);
-  
+  console.log(jobs);
   return {
     total: jobs.length,
-    open: jobs.filter(job => job.jobStatus === 'open').length,
-    inProgress: jobs.filter(job => job.jobStatus === 'in_progress').length,
-    completed: jobs.filter(job => job.jobStatus === 'completed').length,
+    open: jobs.filter(job => job.jobStatus.toLowerCase() === 'open').length,
+    inProgress: jobs.filter(job => job.jobStatus.toLowerCase() === 'ongoing').length,
+    completed: jobs.filter(job => job.jobStatus.toLowerCase() === 'finished').length,
     totalValue: jobs.reduce((sum, job) => sum + job.jobSalary, 0),
   };
 });

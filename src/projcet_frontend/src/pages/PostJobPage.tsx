@@ -33,6 +33,7 @@ import Navbar from '../ui/components/Navbar';
 import { useJobs } from '../shared/hooks/useJobs';
 import { createJob } from '../controller/jobController';
 import { useAuth } from '../shared/hooks/useAuth';
+import { useGlobalLoading } from '../shared/hooks/useGlobalLoading';
 import { storage } from '../utils/storage';
 import { ensureUserData } from '../utils/sessionUtils';
 import { JobPayload } from '../shared/types/Job';
@@ -66,7 +67,7 @@ const PostJobPage: React.FC = () => {
   const [formData, setFormData] = useState<Partial<JobFormData>>({});
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { showLoading, hideLoading } = useGlobalLoading();
 
   useEffect(() => {
     const checkUserData = async () => {
@@ -180,9 +181,6 @@ const PostJobPage: React.FC = () => {
   }, [skills, form]);
 
   const handleSubmit = useCallback(async () => {
-
-    setLoading(true);
-
     // Check if user is authenticated
     if (!isAuthenticated) {
       Modal.confirm({
@@ -201,6 +199,7 @@ const PostJobPage: React.FC = () => {
     }
 
     try {
+      showLoading('Creating job...');
       const values = await form.validateFields();
       const allFormData = { ...formData, ...values, skills };
 
@@ -223,19 +222,18 @@ const PostJobPage: React.FC = () => {
 
       console.log(result);
       if (result[0] === 'Success') {
-        setLoading(false)
         message.success(`Job published successfully!`);
         navigate('/manage');
       } else {
         message.error(result[1] || 'Failed to create job. Please try again.');
-        setLoading(false)
       }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       messageApi.error('Please fill out all required fields before submitting.');
-      setLoading(false)
+    } finally {
+      hideLoading();
     }
-  }, [form, formData, skills, navigate, messageApi, isAuthenticated, loginWithInternetIdentity]);
+  }, [form, formData, skills, navigate, messageApi, isAuthenticated, loginWithInternetIdentity, showLoading, hideLoading]);
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -535,12 +533,7 @@ const PostJobPage: React.FC = () => {
 
       <div className="min-h-screen bg-background">
         <Navbar />
-        {loading ? (
-          <div className="flex justify-center items-center min-h-screen">
-            <Spin size="large" tip="Loading..." />
-          </div>
-        ) : (
-          <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -558,46 +551,46 @@ const PostJobPage: React.FC = () => {
                   <Steps current={currentStep} items={steps} />
                 </Card>
 
-                <Card>
+                <Card style={{marginTop: '2rem'}}>
                   <Form
-                    form={form}
-                    layout="vertical"
-                    initialValues={formData}
-                    onValuesChange={(_, allValues) => setFormData(prev => ({ ...prev, ...allValues }))}
+                  form={form}
+                  layout="vertical"
+                  initialValues={formData}
+                  onValuesChange={(_, allValues) => setFormData(prev => ({ ...prev, ...allValues }))}
                   >
-                    {renderStepContent()}
+                  {renderStepContent()}
 
-                    <Divider />
+                  <Divider />
 
-                    <div className="flex justify-between">
+                  <div className="flex justify-between">
+                    <Button
+                    onClick={handlePrev}
+                    disabled={currentStep === 0}
+                    size="large"
+                    >
+                    Previous
+                    </Button>
+
+                    <Space>
+                    {currentStep < steps.length - 1 ? (
                       <Button
-                        onClick={handlePrev}
-                        disabled={currentStep === 0}
-                        size="large"
+                      type="primary"
+                      onClick={handleNext}
+                      size="large"
                       >
-                        Previous
+                      Next
                       </Button>
-
-                      <Space>
-                        {currentStep < steps.length - 1 ? (
-                          <Button
-                            type="primary"
-                            onClick={handleNext}
-                            size="large"
-                          >
-                            Next
-                          </Button>
-                        ) : (
-                          <Button
-                            type="primary"
-                            onClick={() => {
-                              console.log('Publish Job button clicked!');
-                              handleSubmit();
-                            }}
-                            loading={isLoading}
-                            size="large"
-                            icon={<SendOutlined />}
-                          >
+                    ) : (
+                      <Button
+                      type="primary"
+                      onClick={() => {
+                        console.log('Publish Job button clicked!');
+                        handleSubmit();
+                      }}
+                      loading={isLoading}
+                      size="large"
+                      icon={<SendOutlined />}
+                      >
                             Publish Job
                           </Button>
                         )}
@@ -608,8 +601,7 @@ const PostJobPage: React.FC = () => {
                 </Card>
               </div>
             </motion.div>
-          </div>
-        )}
+        </div>
       </div>
     </>
   );

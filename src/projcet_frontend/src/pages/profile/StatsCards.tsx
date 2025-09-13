@@ -34,7 +34,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ user, jobsCompleted }) => {
     fetchUserWallet();
   }, [user]);
   return (
-    <Row gutter={[16, 16]} className="mb-6">
+    <Row gutter={[16, 16]} className="my-4">
       <Col xs={12} sm={8}>
         <Card className="text-center">
           <DollarOutlined className="text-2xl text-green-500 mb-2" />

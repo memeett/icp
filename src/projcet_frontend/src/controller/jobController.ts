@@ -296,44 +296,86 @@ export const startJob = async (
     const curr_job = await getJobById(job_id);
 
     if(curr_job){
+      console.log('Current job found:', curr_job.id, curr_job.jobStatus);
+      
+      // Check if job is in correct status
+      if (curr_job.jobStatus !== 'Open') {
+        return {
+          jobStarted: false,
+          message: `Job status is '${curr_job.jobStatus}', must be 'Open' to start.`,
+        };
+      }
 
       const creator_token = await getBalanceController(curr_user);
       console.log("Creator token balance:", creator_token.token_value);
+      console.log("Job salary required:", curr_job.jobSalary);
+      
       if(creator_token.token_value < curr_job.jobSalary) {
         return {
             jobStarted: false,
-            message: "Insufficient Balance.",
+            message: `Insufficient Balance. Required: ${curr_job.jobSalary}, Available: ${creator_token.token_value}`,
           };
       }
-      const result = await job.startJob(job_id);
-      if (result) {
+      const result = await projcet_backend_single.startJob(job_id);
+      console.log('Start job backend result:', result);
+      
+      if ('ok' in result && result.ok) {
 
-          const obj = curr_job.subAccount[0]!;
-          const uint8 = new Uint8Array(Object.values(obj));
+          // Handle subAccount safely
+          const subAccountData = curr_job.subAccount && curr_job.subAccount.length > 0 ? curr_job.subAccount[0] : null;
+          if (!subAccountData) {
+            console.warn('No subAccount data found for job:', job_id);
+          }
 
           
-          const transferResult = await transferToJobController(
-            curr_user,
-            curr_job as unknown as JobShared,
-            curr_job.jobSalary
-          );
-          console.log("Transfer result:", transferResult);
-          if ("ok" in transferResult) {
-            return {
-                jobStarted: true,
-                message: "Job started successfully.",
+          try {
+            const transferResult = await transferToJobController(
+              curr_user,
+              curr_job as unknown as JobShared,
+              curr_job.jobSalary
+            );
+            console.log("Transfer result:", transferResult);
+            
+            if ("ok" in transferResult) {
+              return {
+                  jobStarted: true,
+                  message: "Job started successfully.",
+                };
+            } else {
+              // Revert job status back to Open if transfer fails
+              try {
+                await projcet_backend_single.updateJobStatus(job_id, 'Open');
+              } catch (revertError) {
+                console.error('Failed to revert job status:', revertError);
+              }
+              
+              const errorMsg = 'err' in transferResult ? transferResult.err : 'Transfer failed';
+              return {
+                jobStarted: false,
+                message: `Payment transfer failed: ${errorMsg}`,
               };
-          } else {
+            }
+          } catch (transferError) {
+            console.error('Transfer error:', transferError);
+            
+            // Revert job status back to Open if transfer fails
+            try {
+              await projcet_backend_single.updateJobStatus(job_id, 'Open');
+            } catch (revertError) {
+              console.error('Failed to revert job status:', revertError);
+            }
+            
             return {
               jobStarted: false,
-              message: "Job started unsuccessfully.",
+              message: `Payment transfer error: ${String(transferError)}`,
             };
           }
       
-      }else{
+      } else {
+        const errorMessage = 'err' in result ? result.err : 'Unknown error';
         return {
           jobStarted: false,
-          message: "Failed to start job: " + JSON.stringify(result),
+          message: "Failed to start job: " + errorMessage,
         };
       }
     } else {

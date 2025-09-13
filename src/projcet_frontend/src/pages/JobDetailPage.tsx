@@ -232,7 +232,7 @@ const JobDetailPage: React.FC = () => {
                 <Title level={2} className="mb-2">{job!.jobName}</Title>
                 <Space size="middle" wrap>
                   <Tag color="blue">{job!.jobTags[0]?.jobCategoryName || 'General'}</Tag>
-                  <Tag color={getStatusColor(job.jobStatus)}>{job!.jobStatus}</Tag>
+                  <Tag color={getStatusColor(job!.jobStatus)}>{job!.jobStatus}</Tag>
                   <Text type="secondary">
                     <ClockCircleOutlined className="mr-1" />
                     Posted {getTimeAgo(new Date(Number(job!.createdAt) / 1_000_000).toISOString())}
@@ -259,7 +259,7 @@ const JobDetailPage: React.FC = () => {
                 <div className="text-center p-4 bg-background rounded-lg">
                   <UserOutlined className="text-2xl text-purple-500 mb-2" />
                   <div className="font-semibold">
-                    {job.jobStatus !== 'Finished'
+                    {job!.jobStatus !== 'Finished'
                       ? (Number(job!.jobSlots) - acceptedFreelancers.length > 0
                         ? `${Number(job!.jobSlots) - acceptedFreelancers.length}`
                         : "No Slots")
@@ -342,7 +342,7 @@ const JobDetailPage: React.FC = () => {
                   jobId={job!.id}
                   jobStatus={job!.jobStatus}
                   clientId={job!.userId}
-                  freelancerId={job!.acceptedFreelancerId}
+                  freelancerId={user?.id}
                 />
               </div>
             )}
@@ -392,13 +392,14 @@ const JobDetailPage: React.FC = () => {
               width={600}
               footer={null}
             >
-              <div>
-                <Paragraph>
-                  Are you sure you want to start this job? Once started, your wallet will be
-                  charged {job.jobSalary * acceptedFreelancers.length}{" "}
-                  <strong>{selectedWalletSymbol}</strong>, the job status will change to
-                  "Ongoing" and freelancers can begin their work.
-                </Paragraph>
+              {job && (
+                <div>
+                  <Paragraph>
+                    Are you sure you want to start this job? Once started, your wallet will be
+                    charged {job.jobSalary * acceptedFreelancers.length}{" "}
+                    <strong>{selectedWalletSymbol}</strong>, the job status will change to
+                    "Ongoing" and freelancers can begin their work.
+                  </Paragraph>
 
                 <div className="mb-4">
                   <span className="mr-2 font-semibold">Choose Wallet:</span>
@@ -415,6 +416,12 @@ const JobDetailPage: React.FC = () => {
                   <Button
                     type="primary"
                     onClick={async () => {
+                      console.log('🚀 Start Job clicked. Job data:', job);
+                      if (!job) {
+                        console.error('❌ Job is null when trying to start job');
+                        message.error('Job data not loaded. Please refresh the page.');
+                        return;
+                      }
                       setIsStartJobModalVisible(false);
                       await handleStartJob();
                       setIsInvoiceModalVisible(false);
@@ -423,7 +430,8 @@ const JobDetailPage: React.FC = () => {
                     Confirm
                   </Button>
                 </div>
-              </div>
+                </div>
+              )}
             </Modal>
 
             <Modal
@@ -433,7 +441,8 @@ const JobDetailPage: React.FC = () => {
               width={700}
               footer={null}
             >
-              <div className="space-y-6">
+              {job && (
+                <div className="space-y-6">
                 <div className="flex justify-between items-center border-b pb-3">
                   <Paragraph className="m-0">
                     <strong>Status:</strong>{" "}
@@ -460,7 +469,8 @@ const JobDetailPage: React.FC = () => {
                     Total: {job.jobSalary * acceptedFreelancers.length} {walletSymbol}
                   </Paragraph>
                 </div>
-              </div>
+                </div>
+              )}
             </Modal>
 
 
@@ -479,11 +489,7 @@ const JobDetailPage: React.FC = () => {
                           <Card size="small" className="hover:shadow">
                             <div className="flex items-center gap-3">
                               <Avatar
-                                src={
-                                  f.profilePicture
-                                    ? URL.createObjectURL(f.profilePicture)
-                                    : undefined
-                                }
+                                src={f.profilePictureUrl || undefined}
                                 icon={<UserOutlined />}
                               />
                               <div className="flex-1">
@@ -562,7 +568,7 @@ const JobDetailPage: React.FC = () => {
         key: 'freelancer',
         render: (_: any, record: ApplicantData) => (
           <div className="flex items-center space-x-3">
-            <Avatar src={record.user.profilePicture ? URL.createObjectURL(record.user.profilePicture) : undefined} icon={<UserOutlined />} />
+            <Avatar src={record.user.profilePictureUrl || undefined} icon={<UserOutlined />} />
             <div>
               <Text strong>{record.user.username}</Text>
               <div className="flex items-center space-x-1">
@@ -754,7 +760,7 @@ const JobDetailPage: React.FC = () => {
         key: 'freelancer',
         render: (_: any, record: User) => (
           <div className="flex items-center space-x-3">
-            <Avatar src={record.profilePicture ? URL.createObjectURL(record.profilePicture) : undefined} icon={<UserOutlined />} />
+            <Avatar src={record.profilePictureUrl || undefined} icon={<UserOutlined />} />
             <div>
               <Text strong>{record.username}</Text>
               <div className="flex items-center space-x-1">
@@ -856,7 +862,7 @@ const JobDetailPage: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Avatar
                       size="small"
-                      src={u.profilePicture ? URL.createObjectURL(u.profilePicture) : undefined}
+                      src={u.profilePictureUrl || undefined}
                       icon={<UserOutlined />}
                     />
                     <span>{u.username}</span>
@@ -872,7 +878,7 @@ const JobDetailPage: React.FC = () => {
                 <Col span={24}>
                   <div className="flex items-center space-x-3">
                     <Avatar
-                      src={selectedUser.profilePicture ? URL.createObjectURL(selectedUser.profilePicture) : undefined}
+                      src={selectedUser.profilePictureUrl || undefined}
                       icon={<UserOutlined />}
                     />
                     <div>
@@ -1133,8 +1139,10 @@ const JobDetailPage: React.FC = () => {
 
       useEffect(() => {
         const fetchSubmitter = async () => {
-          const user = await getUserById(sub.userId);
-          setSubmitter(user);
+          const result = await getUserById(sub.userId);
+          if (result && 'ok' in result) {
+            setSubmitter(result.ok);
+          }
         };
         fetchSubmitter();
       }, [sub.userId]);
@@ -1263,7 +1271,7 @@ const JobDetailPage: React.FC = () => {
               <TabPane tab="Submission Answer" key="submission">
                 <SubmissionContent />
               </TabPane>
-              {job.jobStatus === "Open" && (
+              {job!.jobStatus === "Open" && (
 
                 <TabPane tab="Invite Users" key="invite">
                   <InviteContent />
@@ -1276,7 +1284,7 @@ const JobDetailPage: React.FC = () => {
               <TabPane tab="Job Details" key="details">
                 <JobDetailsContent />
               </TabPane>
-              {isJobFreelancer && job.jobStatus === "Ongoing" && (
+              {isJobFreelancer && job!.jobStatus === "Ongoing" && (
                 <TabPane tab="Submission Upload" key="submission">
                   <SubmissionContent />
 

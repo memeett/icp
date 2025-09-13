@@ -20,8 +20,7 @@ export const pageLoadingAtom = atom(false);
 export const activeModalAtom = atom<string | null>(null);
 export const modalDataAtom = atom<any>(null);
 
-// AI Advisor Chat state
-export const isAdvisorChatOpenAtom = atom(false);
+// AI Advisor state - removed floating chat, now uses dedicated page
 
 // Notification states
 export interface Notification {

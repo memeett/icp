@@ -1,12 +1,10 @@
-import { AuthClient } from "@dfinity/auth-client";
-import { job_transaction } from "../../../declarations/job_transaction";
-import { HttpAgent } from "@dfinity/agent";
+import { projcet_backend_single } from "../../../declarations/projcet_backend_single";
 import { agentService } from "../singleton/agentService";
 
 export const appendFreelancers = async (jobId: string, newFreelancerId: string): Promise<string[]> => {
     const agent = await agentService.getAgent();
     try {
-        const result = await job_transaction.appendFreelancers(jobId, newFreelancerId);
+        const result = await projcet_backend_single.appendFreelancers(jobId, newFreelancerId);
 
         if ("ok" in result) {
             return ["ok", "Success"]; 
@@ -23,7 +21,7 @@ export const isFreelancerRegistered = async (jobId: string, freelancerId: string
     const agent = await agentService.getAgent();
 
     try {
-        const result = await job_transaction.isFreelancerRegistered(jobId, freelancerId);
+        const result = await projcet_backend_single.isFreelancerRegistered(jobId, freelancerId);
         return ["succ", String(result)]
     } catch (error) {
         return ["err", "error"]

@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useAtom } from 'jotai';
-import { authStatusAtom, userAtom } from '../store/authAtoms';
+import { authStatusAtom, userAtom } from '../app/store/auth';
 import { fetchUserBySession } from '../controller/userController';
+import { storage } from '../utils/storage';
 
 export const useAuthInitializer = () => {
     const [, setAuthStatus] = useAtom(authStatusAtom);
@@ -10,23 +11,25 @@ export const useAuthInitializer = () => {
     useEffect(() => {
         const initializeAuth = async () => {
             console.log('AuthInitializer - Starting auth initialization');
+            
+            // 1. Coba muat dari localStorage terlebih dahulu untuk pemuatan UI yang cepat
+            // Logika inisialisasi yang disederhanakan: Cukup verifikasi sesi.
+            // `storage.getUser` akan dipanggil di dalam `fetchUserBySession` jika diperlukan.
             try {
-                // Try to get user from session/localStorage
                 const user = await fetchUserBySession();
-                
                 if (user) {
-                    console.log('AuthInitializer - User found:', user);
                     setUser(user);
                     setAuthStatus('authenticated');
                 } else {
-                    console.log('AuthInitializer - No user found');
                     setUser(null);
                     setAuthStatus('unauthenticated');
+                    storage.clear();
                 }
             } catch (error) {
                 console.error('AuthInitializer - Error initializing auth:', error);
                 setUser(null);
                 setAuthStatus('unauthenticated');
+                storage.clear();
             }
         };
 

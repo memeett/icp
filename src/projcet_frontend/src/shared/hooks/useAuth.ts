@@ -1,3 +1,4 @@
+import { AuthClient } from '@dfinity/auth-client';
 import { message } from 'antd';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
@@ -17,7 +18,6 @@ import { notificationActionsAtom } from '../../app/store/ui';
 import { User } from '../types/User';
 import {
   loginWithInternetIdentity as controllerLogin,
-  validateCookie,
   fetchUserBySession,
   logout as controllerLogout,
   updateUserProfile as controllerUpdateProfile,
@@ -109,21 +109,25 @@ export const useAuth = (): UseAuthReturn => {
 
   const updateProfile = useCallback(async (payload: Partial<User>): Promise<boolean> => {
     try {
+      console.log('updateProfile hook called with:', payload);
       const success = await controllerUpdateProfile(payload);
       if (success) {
+        console.log('Profile update successful, refreshing user data...');
         // Refetch user data to ensure consistency
         const updatedUserData = await fetchUserBySession();
         if (updatedUserData) {
+          console.log('Updated user data fetched:', updatedUserData);
           authActions({ type: 'LOGIN', user: updatedUserData, session: localStorage.getItem('session') || undefined });
+        } else {
+          console.error('Failed to fetch updated user data');
         }
-        message.success('Profile updated successfully!');
+        // Don't show success message here - let the calling component handle it
       } else {
-        message.error('Failed to update profile.');
+        console.error('Failed to update profile - backend returned error');
       }
       return success;
     } catch (error) {
       console.error('Failed to update profile:', error);
-      message.error('An unexpected error occurred.');
       return false;
     }
   }, [authActions]);
@@ -149,12 +153,21 @@ export const useAuth = (): UseAuthReturn => {
         const sessionToken = localStorage.getItem('session');
         if (sessionToken) {
           console.log('Session token found, validating...');
-          const isValid = await validateCookie();
+          const authClient = await AuthClient.create({
+            idleOptions: {
+              idleTimeout: 1000 * 60 * 60 * 8, // 8 hours session
+              disableDefaultIdleCallback: true,
+            },
+          });
+          const isValid = await authClient.isAuthenticated();
           if (isValid) {
             console.log('Session is valid, fetching user data...');
             const userData = await fetchUserBySession();
             if (userData) {
-              console.log('User data fetched successfully, logging in...');
+              console.log('User data fetched successfully with chat tokens:', userData.chatTokens?.availableTokens ? Number(userData.chatTokens.availableTokens) : 0);
+            console.log('Full user data:', userData);
+            console.log('Full chat tokens:', userData.chatTokens);
+            console.log('Available tokens (number):', userData.chatTokens?.availableTokens ? Number(userData.chatTokens.availableTokens) : 0);
               authActions({ type: 'LOGIN', user: userData, session: sessionToken });
             } else {
               console.log('Failed to fetch user data, logging out...');
@@ -168,8 +181,28 @@ export const useAuth = (): UseAuthReturn => {
           console.log('No session token found, checking stored user...');
           const storedUser = storage.getUser();
           if (storedUser && controllerIsAuthenticated()) {
-            console.log('Stored user found and authenticated, logging in...');
-            authActions({ type: 'LOGIN', user: storedUser });
+            console.log('Stored user found and authenticated, checking for chat tokens...');
+
+            // Check if user has chat tokens, if not, refresh from backend
+            if (!storedUser.chatTokens || storedUser.chatTokens.availableTokens === undefined || storedUser.chatTokens.availableTokens === 0) {
+              console.log('Chat tokens missing or zero, refreshing user data from backend...');
+              try {
+                const freshUserData = await fetchUserBySession();
+                if (freshUserData) {
+                  console.log('Fresh user data with chat tokens fetched:', freshUserData.chatTokens);
+                  authActions({ type: 'LOGIN', user: freshUserData });
+                } else {
+                  console.log('Failed to refresh user data, using stored data...');
+                  authActions({ type: 'LOGIN', user: storedUser });
+                }
+              } catch (error) {
+                console.error('Error refreshing user data:', error);
+                authActions({ type: 'LOGIN', user: storedUser });
+              }
+            } else {
+              console.log('Chat tokens found, logging in with stored user...');
+              authActions({ type: 'LOGIN', user: storedUser });
+            }
           } else {
             console.log('No valid stored user, logging out...');
             authActions({ type: 'LOGOUT' });

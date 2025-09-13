@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Spin } from 'antd';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from '../../shared/components/ErrorFallback';
-import ProfileCompletionGuard from '../../shared/components/ProfileCompletionGuard';
+import AuthGuard from '../../shared/components/AuthGuard';
 import BalanceTransactionPage from '../../pages/BalanceTransactionPage';
 
 const LandingPage = lazy(() => import('../../pages/LandingPage'));
@@ -17,6 +17,8 @@ const BrowseFreelancerPage = lazy(() => import('../../pages/BrowseFreelancerPage
 const CompleteProfilePage = lazy(() => import('../../pages/CompleteProfilePage'));
 const AccountPage = lazy(() => import('../../pages/AccountPage'));
 const AdminPage = lazy(() => import('../../pages/AdminPage'));
+const ChatPage = lazy(() => import('../../pages/ChatPage'));
+const ChatWithAIPage = lazy(() => import('../../pages/ChatWithAIPage'));
 
 const PageLoader: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -33,11 +35,11 @@ const RouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 );
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ProfileCompletionGuard>
+  <AuthGuard>
     <RouteWrapper>
       {children}
     </RouteWrapper>
-  </ProfileCompletionGuard>
+  </AuthGuard>
 );
 
 export const AppRouter: React.FC = () => {
@@ -133,6 +135,22 @@ export const AppRouter: React.FC = () => {
         element={
           <ProtectedRoute>
             <AccountPage />
+          </ProtectedRoute>
+        }
+      />
+       <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat-ai"
+        element={
+          <ProtectedRoute>
+            <ChatWithAIPage />
           </ProtectedRoute>
         }
       />

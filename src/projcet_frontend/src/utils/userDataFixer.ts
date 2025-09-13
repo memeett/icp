@@ -6,7 +6,7 @@ import { storage } from "./storage";
  * 
  * @returns The fixed user object or null if unable to fix
  */
-export function fixUserData(): User | null {
+export async function fixUserData(): Promise<User | null> {
   try {
     console.log('Attempting to fix user data...');
     
@@ -67,7 +67,7 @@ export function fixUserData(): User | null {
     };
     
     // Save the fixed user data
-    storage.setUser(user);
+    await storage.setUser(user);
     console.log('User data fixed and saved:', user);
     
     return user;

@@ -1,12 +1,25 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from 'antd';
 import { ArrowRight, Briefcase, Users, Award, DollarSign, Sparkles, Zap, Globe } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../shared/hooks/useAuth';
 import Navbar from '../ui/components/Navbar';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    // If user is authenticated and came from a protected route, redirect them back
+    if (isAuthenticated && !isLoading) {
+      const from = (location.state as any)?.from;
+      if (from && from !== '/') {
+        navigate(from, { replace: true });
+      }
+    }
+  }, [isAuthenticated, isLoading, location.state, navigate]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

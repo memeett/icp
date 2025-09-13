@@ -1,18 +1,13 @@
-import { AuthClient } from "@dfinity/auth-client";
-import { applier } from "../../../declarations/applier";
-import { ApplyPayload, UserApplyJobPayload } from "../../../declarations/applier/applier.did";
-import { Job } from "../../../declarations/job/job.did";
-import { User } from "../../../declarations/user/user.did";
+import { projcet_backend_single } from "../../../declarations/projcet_backend_single";
+import { Job, User } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { ApplierPayload } from "../shared/types/Applier";
-import { HttpAgent } from "@dfinity/agent";
 import { agentService } from "../singleton/agentService";
 
 
 export const applyJob = async (userId: string, jobId : string): Promise<boolean> => {
     const agent = await agentService.getAgent();
     try {
-        const payload: ApplyPayload = { userId, jobId };
-        const result = await applier.applyJob(payload, process.env.CANISTER_ID_JOB!);
+        const result = await projcet_backend_single.applyJob(userId, jobId);
         
         if ("ok" in result) {
             console.log("Applied for job:", result.ok);
@@ -29,9 +24,8 @@ export const applyJob = async (userId: string, jobId : string): Promise<boolean>
 
 export const acceptApplier = async (userId: string, jobId: string): Promise<boolean> => {
     const agent = await agentService.getAgent();
-    const payload: ApplyPayload = { userId, jobId };
     try {
-        const result = await applier.acceptApplier(payload, process.env.CANISTER_ID_JOB_TRANSACTION!);
+        const result = await projcet_backend_single.acceptApplier(userId, jobId);
         if ("ok" in result) {
             return true; // Success: Applier was accepted
         } else {
@@ -47,9 +41,8 @@ export const acceptApplier = async (userId: string, jobId: string): Promise<bool
 export const rejectApplier = async (userId: string, jobId: string): Promise<boolean> => {
     const agent = await agentService.getAgent();
     
-    const payload: ApplyPayload = { userId, jobId };
     try {
-        const result = await applier.rejectApplier(payload);
+        const result = await projcet_backend_single.rejectApplier(userId, jobId);
         if ("ok" in result) {
             return true; // Success: Applier was rejected
         } else {
@@ -65,9 +58,9 @@ export const rejectApplier = async (userId: string, jobId: string): Promise<bool
 export const getUserApply = async (userId: string): Promise<Job[] | null> => {
     const agent = await agentService.getAgent();
     try {
-        const result = await applier.getUserApply(userId, process.env.CANISTER_ID_JOB!);
+        const result = await projcet_backend_single.getUserApply(userId);
         console.log("User applied jobs:", result);
-        return result.map((job: any) => job.job);
+        return result;
     } catch (error) {
         console.error("Failed to get user applied jobs:", error);
         return null;
@@ -76,6 +69,6 @@ export const getUserApply = async (userId: string): Promise<Job[] | null> => {
 
 
 export const hasUserApplied = async (userId: string, jobId: string): Promise<boolean> => {
-    const result = await applier.hasUserApplied(userId, jobId);
+    const result = await projcet_backend_single.hasUserApplied(userId, jobId);
     return result;
 }

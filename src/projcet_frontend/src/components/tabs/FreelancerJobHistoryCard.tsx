@@ -28,11 +28,13 @@ export default function FreelancerJobHistoryCard({ jobId, isLoading }: { jobId: 
                 const freelancerId = parsedData.ok?.id;
                 const res = await getRatingByUserIdJobId(jobId!, freelancerId!);
                 if (typeof res !== "string") {
-                    setJob(res.job);
-                    setDate(formatDate(res.job.createdAt));
-                    setRating(res.rating);
-                    setIsEdit(res.isEdit)
-                    console.log(res.isEdit)
+                    // The backend now returns a Rating object, not a Job.
+                    // We need to fetch the job separately.
+                    // This is a placeholder until the job fetching logic is added.
+                    // setJob(res.job);
+                    // setDate(formatDate(res.job.createdAt));
+                    setRating(Number(res.rating));
+                    setIsEdit(res.rating !== 0n)
                 } else {
                     setError("Job not found");
                 }

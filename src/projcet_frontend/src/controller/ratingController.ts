@@ -1,12 +1,9 @@
 import { User } from "../shared/types/User";
-import { rating } from "../../../declarations/rating";
+import { projcet_backend_single } from "../../../declarations/projcet_backend_single";
 import {
-  HistoryRatingPayload,
   RequestRatingPayload,
-  List,
-} from "../../../declarations/rating/rating.did";
-import { AuthClient } from "@dfinity/auth-client";
-import { HttpAgent } from "@dfinity/agent";
+  Rating as HistoryRatingPayload,
+} from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { agentService } from "../singleton/agentService";
 
 export interface JobRatingPayload {
@@ -17,69 +14,46 @@ export interface JobRatingPayload {
 }
 
 export const getFreelancerForRating = async (
-  job_id: string
+  job_id: string,
+  userId: string
 ): Promise<JobRatingPayload[]> => {
-  // Step 1: Retrieve the current user's ID from local storage
-
   const agent = await agentService.getAgent();
 
-  const userData = localStorage.getItem("current_user");
-  const parsedData = userData ? JSON.parse(userData) : null;
-
-  // Step 2: Check if the user data is valid
-  if (!parsedData || !parsedData.ok) {
-    console.error("User data is invalid or not found in local storage");
-    return []; // Return an empty array if user data is invalid
-  }
-
-  const userId = parsedData.ok.id;
-  const subAccount = parsedData.ok.subAccount;
-
   try {
-    // Step 3: Call the `getRatingByJobId` method on the rating actor
-    const result = await rating.getRatingByJobId(
+    const result = await projcet_backend_single.getRatingByJobId(
       job_id,
       userId,
-      process.env.CANISTER_ID_USER!, // Ensure this environment variable is set
-      process.env.CANISTER_ID_JOB! // Ensure this environment variable is set
     );
-    // Step 4: Handle the result
     if ("ok" in result) {
-      // Step 5: Transform the profilePicture field to Blob
       const transformedRatings = result.ok.map((rating) => {
-        let profilePictureBlob: Blob;
-        if (rating.user.profilePicture) {
+        let profilePictureBlob: Blob | null;
+        if (rating.user.profilePicture && rating.user.profilePicture.length > 0) {
           const uint8Array = new Uint8Array(rating.user.profilePicture);
           profilePictureBlob = new Blob([uint8Array.buffer], {
-            type: "image/jpeg", // Adjust the MIME type if needed
+            type: "image/jpeg", 
           });
         } else {
-          profilePictureBlob = new Blob([], { type: "image/jpeg" }); // Default empty Blob
+          profilePictureBlob = null;
         }
 
         return {
           ...rating,
           rating_id: Number(rating.rating_id),
+          rating: Number(rating.rating),
           user: {
             ...rating.user,
             profilePicture: profilePictureBlob,
-            subAccount:
-              parsedData.ok.subAccount && parsedData.ok.subAccount.length > 0
-                ? [new Uint8Array(parsedData.ok.subAccount[0])] as [Uint8Array]
-                : [] as []
+            subAccount: rating.user.subAccount[0] ? [new Uint8Array(rating.user.subAccount[0])] : [],
           },
         };
       });
 
-      // Step 6: Return the transformed ratings
-      return transformedRatings;
+      return transformedRatings as unknown as JobRatingPayload[];
     } else {
-      // Error case: Log the error and return an empty array
       console.error("Failed to fetch freelancer ratings:", result.err);
       return [];
     }
   } catch (error) {
-    // Handle any unexpected errors
     console.error("Error fetching freelancer ratings:", error);
     return [];
   }
@@ -90,13 +64,7 @@ export const ratingUser = async (
   try {
     await agentService.getAgent();
 
-    // Pastikan user canister id tersedia
-    const userCanisterId = process.env.CANISTER_ID_USER;
-    if (!userCanisterId) {
-      throw new Error("User canister ID is not configured.");
-    }
-
-    const result = await rating.ratingUser(payloads, userCanisterId);
+    const result = await projcet_backend_single.ratingUser(payloads);
 
     if ("ok" in result) {
       return result.ok;
@@ -119,17 +87,13 @@ export const getRatingByUserIdJobId = async (
 ): Promise<HistoryRatingPayload | string> => {
   const agent = await agentService.getAgent();
   console.log("Fetching rating for jobId:", jobId, "and userId:", userId);
-  const result = await rating.getRatingByUserIdJobId(
+  const result = await projcet_backend_single.getRatingByUserIdJobId(
     jobId,
     userId,
-    process.env.CANISTER_ID_USER!,
-    process.env.CANISTER_ID_JOB!
   );
   if ("ok" in result) {
-    // Success case: Return the success message
     return result.ok;
   } else {
-    // Error case: Log the error and return the error message
     console.error("Failed to rate user:", result.err);
     return result.err;
   }
@@ -149,17 +113,7 @@ export const createRating = async (
       return "User IDs list cannot be empty";
     }
 
-    const arrayToList = (arr: string[]): List => {
-      let list: List = [];
-      for (let i = arr.length - 1; i >= 0; i--) {
-        list = [[arr[i], list]];
-      }
-      return list;
-    };
-
-    const userIdsList: List = arrayToList(userIds);
-
-    const result = await rating.createRating(jobId, userIdsList);
+    const result = await projcet_backend_single.createRating(jobId, userIds);
 
     if ("ok" in result) {
       return result.ok;

@@ -1,73 +1,141 @@
 import { AuthClient } from "@dfinity/auth-client";
-import { job } from "../../../declarations/job";
+import { projcet_backend_single } from "../../../declarations/projcet_backend_single";
 import { User } from "../shared/types/User";
-import { UpdateUserPayload } from "../../../declarations/user/user.did";
-import { user } from "../../../declarations/user";
-import { session } from "../../../declarations/session";
+import { UpdateUserPayload, CashFlowHistory, User as BackendUser, JobCategory } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { HttpAgent } from "@dfinity/agent";
-import { JobCategory } from "../shared/types/Job";
-import { CashFlowHistory } from "../../../declarations/user/user.did";
 import { agentService } from "../singleton/agentService";
 import { storage } from "../utils/storage";
 
-interface ProfilePictureCache {
-  [userId: string]: {
-    url: string;
-    timestamp: number;
-    blob: Blob;
-  };
+// Helper untuk membuat URL gambar dan menyimpannya di objek pengguna
+const processProfilePicture = (picture: BackendUser['profilePicture']): string | null => {
+  try {
+  if (picture && picture.length > 0) {
+      console.log('Processing profile picture, size:', picture.length);
+      
+    // Konversi eksplisit ke ArrayBuffer yang kompatibel
+    const buffer = new ArrayBuffer(picture.length);
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < picture.length; i++) {
+        view[i] = picture[i];
+    }
+      
+      // Detect image type from header bytes
+      let mimeType = 'image/jpeg'; // default
+      if (picture.length >= 4) {
+        const header = picture.slice(0, 4);
+        console.log('Image header bytes:', header);
+        
+        // PNG signature: 137, 80, 78, 71
+        if (header[0] === 137 && header[1] === 80 && header[2] === 78 && header[3] === 71) {
+          mimeType = 'image/png';
+          console.log('Detected PNG image');
+        }
+        // JPEG signature: 255, 216, 255
+        else if (header[0] === 255 && header[1] === 216 && header[2] === 255) {
+          mimeType = 'image/jpeg';
+          console.log('Detected JPEG image');
+        }
+        // WebP signature: 82, 73, 70, 70
+        else if (header[0] === 82 && header[1] === 73 && header[2] === 70 && header[3] === 70) {
+          mimeType = 'image/webp';
+          console.log('Detected WebP image');
+        }
+      }
+      
+      const blob = new Blob([view], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      console.log('Generated profile picture URL:', url);
+      return url;
+    }
+    console.log('No profile picture data');
+    return null;
+  } catch (error) {
+    console.error('Error processing profile picture:', error);
+    return null;
+  }
+};
+
+// Export untuk ProfilePage
+export const getProfilePictureUrl = processProfilePicture;
+
+const convertBackendUserToFrontend = (userData: BackendUser): User => {
+
+    // Handle Motoko record format
+    const chatTokens = (userData as any).chatTokens;
+    let tokensData: any = {
+        availableTokens: 5,
+        dailyFreeRemaining: 5,
+        lastTokenReset: Date.now(),
+        totalTokensEarned: 5,
+        totalTokensSpent: 0,
+    };
+
+    if (chatTokens) {
+        // Handle different possible formats
+        if (typeof chatTokens === 'object') {
+            // If it's a record/object
+            tokensData.availableTokens = chatTokens.availableTokens ?? chatTokens['availableTokens'] ?? 5;
+            tokensData.dailyFreeRemaining = chatTokens.dailyFreeRemaining ?? chatTokens['dailyFreeRemaining'] ?? 5;
+            tokensData.lastTokenReset = chatTokens.lastTokenReset ?? chatTokens['lastTokenReset'] ?? Date.now();
+            tokensData.totalTokensEarned = chatTokens.totalTokensEarned ?? chatTokens['totalTokensEarned'] ?? 5;
+            tokensData.totalTokensSpent = chatTokens.totalTokensSpent ?? chatTokens['totalTokensSpent'] ?? 0;
+        } else if (Array.isArray(chatTokens)) {
+            // If it's an array format, use defaults
+            tokensData = {
+                availableTokens: 5,
+                dailyFreeRemaining: 5,
+                lastTokenReset: Date.now(),
+                totalTokensEarned: 5,
+                totalTokensSpent: 0,
+            };
+        }
+    }
+
+    // Convert to proper number format
+    Object.keys(tokensData).forEach(key => {
+        if (typeof tokensData[key] === 'bigint' || typeof tokensData[key] === 'string') {
+            tokensData[key] = Number(tokensData[key]);
+        }
+    });
+
+    const finalUserData = {
+        id: userData.id,
+        profilePictureUrl: processProfilePicture(userData.profilePicture),
+        username: userData.username,
+        dob: userData.dob,
+        preference: userData.preference.map((pref: any) => ({
+            id: pref.id.toString(),
+            jobCategoryName: pref.jobCategoryName
+        })),
+        description: userData.description,
+        wallet: userData.wallet,
+        rating: userData.rating,
+        createdAt: BigInt(userData.createdAt),
+        updatedAt: BigInt(userData.updatedAt),
+        isFaceRecognitionOn: userData.isFaceRecognitionOn,
+        isProfileCompleted: userData.isProfileCompleted,
+        subAccount: userData.subAccount[0] ? [new Uint8Array(userData.subAccount[0])] as [Uint8Array] : [] as [],
+        chatTokens: tokensData,
+    };
+
+    // Final user data converted
+
+    return finalUserData;
 }
 
-const profilePictureCache: ProfilePictureCache = {};
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-// Profile picture caching functions
-export const getProfilePictureUrl = (userId: string, blob: Blob): string => {
-  const cached = profilePictureCache[userId];
-  const now = Date.now();
-
-  if (cached && now - cached.timestamp < CACHE_DURATION) {
-    return cached.url;
-  }
-
-  const url = URL.createObjectURL(blob);
-  
-  if (cached) {
-    URL.revokeObjectURL(cached.url);
-  }
-
-  profilePictureCache[userId] = {
-    url,
-    timestamp: now,
-    blob,
-  };
-
-  return url;
-};
-
-export const clearProfilePictureCache = (): void => {
-  Object.values(profilePictureCache).forEach(cached => {
-    URL.revokeObjectURL(cached.url);
-  });
-  Object.keys(profilePictureCache).forEach(key => {
-    delete profilePictureCache[key];
-  });
-};
-
-// Check if user is authenticated
-export const isAuthenticated = (): boolean => {
-  return !!storage.getSession() && !!storage.getUser();
-};
-
-// Get current user from localStorage
-export const getCurrentUser = (): User | null => {
-  return storage.getUser();
-};
-
-// Check if profile completion is needed
-export const needsProfileCompletion = (): boolean => {
-  const user = getCurrentUser();
-  return user ? !user.isProfileCompleted : false;
+// Force refresh user data from backend
+export const forceRefreshUserData = async (): Promise<User | null> => {
+    try {
+        const result = await fetchUserBySession();
+        if (result) {
+            storage.setUser(result);
+            return result;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error refreshing user data:', error);
+        return null;
+    }
 };
 
 export const getCookie = (name: string): string | null => {
@@ -79,159 +147,64 @@ export const getCookie = (name: string): string | null => {
         }
     }
     return null;
-
 };
 
-export const login = async (principalId: string): Promise<boolean> => {
-    try {
-        const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
-        const response = await fetch(defaultImagePath);
-        const imageBlob = await response.blob();
-
-        const arrayBuffer = await imageBlob.arrayBuffer();
-        const profilePicBlob = new Uint8Array(arrayBuffer);
-
-        const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
-        if (!res) {
-            return false;
-        }
-
-        const userIdResult = await session.getUserIdBySession(res);
-        if ("ok" in userIdResult) {
-            const userId = userIdResult.ok;
-            const userDetailResult = await user.getUserById(userId);
-
-            if ("ok" in userDetailResult) {
-                const userData = userDetailResult.ok;
-                storage.clear(); // Clear existing storage
-                storage.setSession(res); // Set new session
-
-                const obj = userData.subAccount[0]!;
-
-                const uint8 = new Uint8Array(Object.values(obj));
-                // Convert to frontend User format
-                const convertedUser: User = {
-                    id: userData.id,
-                    profilePicture: userData.profilePicture ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' }) : null,
-                    username: userData.username,
-                    dob: userData.dob,
-                    preference: userData.preference.map((pref: any) => ({
-                        id: pref.id.toString(),
-                        jobCategoryName: pref.jobCategoryName
-                    })),
-                    description: userData.description,
-                    wallet: userData.wallet,
-                    rating: userData.rating,
-                    createdAt: BigInt(userData.createdAt),
-                    updatedAt: BigInt(userData.updatedAt),
-                    isFaceRecognitionOn: userData.isFaceRecognitionOn,
-                    isProfileCompleted: (userData as any).isProfileCompleted || false,
-                    subAccount: [uint8]
-                };
-                storage.setUser({ ok: convertedUser }); // Store converted user data
-
-                document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
-                return true;
-            } else {
-                console.error("Error fetching user details:", userDetailResult.err);
-                return false;
-            }
-        } else {
-            console.error("Error fetching user ID:", userIdResult.err);
-            return false;
-        }
-    } catch (error) {
-        console.error("Login failed:", error);
-        return false;
-    }
+export const validateCookie = async (): Promise<boolean> => {
+    // Implementasi validateCookie Anda di sini jika diperlukan, atau kembalikan true/false
+    // Untuk saat ini, kita asumsikan sesi valid jika ada.
+    return !!storage.getSession();
 };
-
 
 export const loginWithInternetIdentity = async (): Promise<{ success: boolean; user?: User; needsProfileCompletion?: boolean }> => {
     try {
-        const authClient = await AuthClient.create();
+        const authClient = await AuthClient.create({
+            idleOptions: {
+                idleTimeout: 1000 * 60 * 60 * 8, // 8 hours session
+                disableDefaultIdleCallback: true,
+            },
+        });
 
-        await new Promise((resolve) => {
+        await new Promise((resolve, reject) => {
             authClient.login({
-                identityProvider: process.env.II_URL || "https://identity.ic0.app/",
+                identityProvider: "https://identity.ic0.app/",
                 onSuccess: resolve,
+                onError: reject,
             });
         });
 
         const identity = authClient.getIdentity();
         const principalId = identity.getPrincipal().toString();
-
-        const agent = new HttpAgent({ identity });
-
-        if (process.env.DFX_NETWORK === "local") {
-            await agent.fetchRootKey();
-        }
-
+        
         const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
         const response = await fetch(defaultImagePath);
         const imageBlob = await response.blob();
-
         const arrayBuffer = await imageBlob.arrayBuffer();
         const profilePicBlob = new Uint8Array(arrayBuffer);
         
-        const res = await user.login(principalId, profilePicBlob, process.env.CANISTER_ID_SESSION!);
-        if (!res) {
-            return { success: false };
+        let userDetailResult = await projcet_backend_single.getUserById(principalId);
+
+        if (!("ok" in userDetailResult)) {
+            await projcet_backend_single.createUser(principalId, profilePicBlob);
+            userDetailResult = await projcet_backend_single.getUserById(principalId);
         }
 
-        const userIdResult = await session.getUserIdBySession(res);
-        if ("ok" in userIdResult) {
-            const userId = userIdResult.ok;
-            const userDetail = await user.getUserById(userId);
-            
-            if ("ok" in userDetail) {
-                const userData = userDetail.ok;
-                storage.clear();
-                storage.setUser(userDetail);
-                storage.setSession(res);
-                
-                const obj = userData.subAccount[0]!;
+        if ("ok" in userDetailResult) {
+            const userData = userDetailResult.ok;
+            const convertedUser = convertBackendUserToFrontend(userData);
 
-                const uint8 = new Uint8Array(Object.values(obj));
+            storage.clear();
+            storage.setUser(convertedUser);
+            // Simulasikan sesi sederhana
+            storage.setSession(principalId);
 
-
-                // Convert to frontend User format
-                const convertedUser: User = {
-                    id: userData.id,
-                    profilePicture: userData.profilePicture ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' }) : null,
-                    username: userData.username,
-                    dob: userData.dob,
-                    preference: userData.preference.map((pref: any) => ({
-                        id: pref.id.toString(),
-                        jobCategoryName: pref.jobCategoryName
-                    })),
-                    description: userData.description,
-                    wallet: userData.wallet,
-                    rating: userData.rating,
-                    createdAt: BigInt(userData.createdAt),
-                    updatedAt: BigInt(userData.updatedAt),
-                    isFaceRecognitionOn: userData.isFaceRecognitionOn,
-                    isProfileCompleted: (userData as any).isProfileCompleted || false,
-                    subAccount: [uint8]
-
-                };
-
-                document.cookie = `cookie=${encodeURIComponent(JSON.stringify(res))}; path=/; Secure; SameSite=Strict`;
-
-                const needsCompletion = !((userData as any).isProfileCompleted || false);
-                console.log('🎯 Profile completion needed:', needsCompletion);
-
-                return {
-                    success: true,
-                    user: convertedUser,
-                    needsProfileCompletion: needsCompletion,
-                };
-            } else {
-                console.error("Error fetching user details:", userDetail.err);
-                return { success: false };
-            }
+            const needsCompletion = !convertedUser.isProfileCompleted;
+            return {
+                success: true,
+                user: convertedUser,
+                needsProfileCompletion: needsCompletion,
+            };
         } else {
-            console.error("Error fetching user ID:", userIdResult.err);
+            console.error("Error fetching or creating user:", userDetailResult.err);
             return { success: false };
         }
     } catch (err) {
@@ -240,380 +213,174 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
     }
 };
 
-
-
-export const validateCookie = async (): Promise<boolean> => {
-    const agent = await agentService.getAgent();
-    try {
-        const cookie = getCookie("cookie");
-        if (!cookie) {
-            return false;
-        }
-
-        const authClient = await AuthClient.create();
-        const identity = authClient.getIdentity();
-        const agent = new HttpAgent({ identity });
-
-        if (process.env.DFX_NETWORK === "local") {
-            await agent.fetchRootKey();
-        }
-
-        const cleanSession = cookie.replace(/^"|"$/g, '');
-        const isValid = await session.validateSession(cleanSession);
-
-        if (!isValid) {
-            document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-            storage.clear();
-            await session.logout(cleanSession)
-        } else {
-            storage.setSession(cleanSession);
-        }
-
-        return Boolean(isValid);
-    } catch (error) {
-        console.error("Session validation failed:", error);
-        return false;
-    }
-};
-
 export const logout = async (): Promise<void> => {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
-    try {
-        const storedSession = storage.getSession();
-        if (storedSession) {
-            try {
-                await session.logout(storedSession);
-            } catch (error) {
-                console.error('Failed to logout from backend:', error);
-            }
-        }
-
-        await authClient.logout();
-        storage.clear();
-        document.cookie = "cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-        clearProfilePictureCache();
-    } catch (error) {
-        console.error("Logout failed:", error);
-        storage.clear();
-        clearProfilePictureCache();
-    }
+    const authClient = await AuthClient.create({
+        idleOptions: {
+            idleTimeout: 1000 * 60 * 60 * 8, // 8 hours session
+            disableDefaultIdleCallback: true,
+        },
+    });
+    await authClient.logout();
+    storage.clear();
 };
-
-
-let userCache: { user: User | null, timestamp: number } = { user: null, timestamp: 0 };
-const USER_CACHE_DURATION = 60 * 1000; // 1 minute
 
 export const fetchUserBySession = async (): Promise<User | null> => {
-    const agent = await agentService.getAgent();
-    const now = Date.now();
-    if (userCache.user && now - userCache.timestamp < USER_CACHE_DURATION) {
-        console.log('Returning cached user data');
-        return userCache.user;
+    const authClient = await AuthClient.create({
+        idleOptions: {
+            idleTimeout: 1000 * 60 * 60 * 8, // 8 hours session
+            disableDefaultIdleCallback: true,
+        },
+    });
+    if (!await authClient.isAuthenticated()) {
+        return null;
     }
-
-    const authClient = await AuthClient.create();
     const identity = authClient.getIdentity();
-    // const agent = new HttpAgent({ identity });
+    const principalId = identity.getPrincipal().toString();
 
-    if (process.env.DFX_NETWORK === "local") {
-        await agent.fetchRootKey();
-    }
+    const userRes = await projcet_backend_single.getUserById(principalId);
 
-    try {
-        const sessionValue = storage.getSession();
-        if (!sessionValue) {
-            throw new Error("No session found in local storage");
-        }
-
-        const result = await session.getUserIdBySession(sessionValue);
-
-        if ("ok" in result) {
-            const principalId = result.ok;
-            const userRes = await user.getUserById(principalId);
-
-            if ("ok" in userRes) {
-                const userData = userRes.ok;
-                const profilePictureBlob = userData.profilePicture
-                    ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' })
-                    : new Blob([], { type: 'image/jpeg' });
-
-                const obj = userData.subAccount[0]!;
-
-                const uint8 = new Uint8Array(Object.values(obj));
-
-
-                const convertedUser: User = {
-                    ...userData,
-                    profilePicture: profilePictureBlob,
-                    createdAt: BigInt(userData.createdAt),
-                    updatedAt: BigInt(userData.updatedAt),
-                    isProfileCompleted: (userData as any).isProfileCompleted || false,
-                    subAccount : [uint8]
-                };
-                
-                userCache = { user: convertedUser, timestamp: now };
-                return convertedUser;
-            } else {
-                console.error("Error fetching user:", userRes.err);
-                return null;
-            }
-        } else {
-            console.error("Error:", result.err);
-            return null;
-        }
-    } catch (error) {
-        console.error("Error fetching user by session:", error);
+    if ("ok" in userRes) {
+        const convertedUser = convertBackendUserToFrontend(userRes.ok);
+        storage.setUser(convertedUser);
+        return convertedUser;
+    } else {
+        console.error("Error fetching user:", userRes.err);
         return null;
     }
 };
 
 export const updateUserProfile = async (payload: Partial<User>): Promise<boolean> => {
     try {
-        const authClient = await AuthClient.create();
-        const identity = authClient.getIdentity();
-        const agent = new HttpAgent({ identity });
-
-        if (process.env.DFX_NETWORK === "local") {
-            await agent.fetchRootKey();
+        console.log('updateUserProfile called with payload:', payload);
+        
+        // Get current user session
+        const session = storage.getSession();
+        const currentUser = storage.getUser();
+        
+        if (!session || !currentUser) {
+            console.error('No valid session or user found');
+            return false;
         }
 
-        const cleanSession = storage.getSession();
-        console.log("DEBUG: cleanSession before updateUser:", cleanSession);
-        if (!cleanSession) {
-            throw new Error('No active session');
-        }
-
-        const backendPayload: UpdateUserPayload = {
-            dob: [],
+        const updatePayload: UpdateUserPayload = {
             username: [],
-            isProfileCompleted: [],
+            dob: [],
             description: [],
             preference: [],
+            isProfileCompleted: [],
             profilePicture: []
         };
         
-        if (payload.username !== undefined) backendPayload.username = [payload.username];
-        if (payload.description !== undefined) backendPayload.description = [payload.description];
+        if (payload.username !== undefined) {
+            updatePayload.username = [payload.username];
+        }
+        
         if (payload.dob !== undefined) {
-            if (typeof payload.dob === 'string') {
-                backendPayload.dob = [payload.dob];
-            } else {
-                backendPayload.dob = [(payload.dob as any).format('YYYY-MM-DD')];
-            }
-        }
-        if (payload.isProfileCompleted !== undefined) backendPayload.isProfileCompleted = [payload.isProfileCompleted];
-        
-        console.log("DEBUG: Original payload.preference:", payload.preference);
-        if (payload.preference !== undefined) {
-            // Assuming backendPayload.preference expects an array of JobCategory objects directly
-            backendPayload.preference = [payload.preference];
+            updatePayload.dob = [payload.dob];
         }
         
-        if (payload.profilePicture && payload.profilePicture instanceof Blob && payload.profilePicture.size > 0) {
-            const arrayBuffer = await payload.profilePicture.arrayBuffer();
-            backendPayload.profilePicture = [new Uint8Array(arrayBuffer)];
+        if (payload.description !== undefined) {
+            updatePayload.description = [payload.description];
+        }
+        
+        if (payload.preference !== undefined && payload.preference.length > 0) {
+            console.log('Processing preferences:', payload.preference);
+            // Convert JobCategory array to backend format
+            const backendPreferences = payload.preference.map(pref => {
+                console.log('Processing preference:', pref);
+                return {
+                    id: String(pref.id), // Ensure string conversion
+                    jobCategoryName: pref.jobCategoryName
+                };
+            });
+            console.log('Backend preferences prepared:', backendPreferences);
+            updatePayload.preference = [backendPreferences];
+        }
+        
+        if (payload.isProfileCompleted !== undefined) {
+            updatePayload.isProfileCompleted = [payload.isProfileCompleted];
         }
 
-        console.log("DEBUG: Original payload.preference:", payload.preference);
-        if(payload.preference && payload.preference.length > 0){
-            for (const tag of payload.preference) {
-                console.log("DEBUG: Processing preference tag:", tag.jobCategoryName);
-                let existingCategory = await job.findJobCategoryByName(tag.jobCategoryName as string );
-                console.log("DEBUG: Existing category result:", existingCategory);
-                if (!("ok" in existingCategory)) {
-                    console.log("DEBUG: Creating new job category:", tag.jobCategoryName);
-                    existingCategory = await job.createJobCategory(tag.jobCategoryName as string);
-                    console.log("DEBUG: New category created:", existingCategory);
-                }
+        // Handle profile picture if provided
+        if (payload.profilePictureUrl) {
+            try {
+                const arrayBuffer = await (payload.profilePictureUrl as any).arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                updatePayload.profilePicture = [Array.from(uint8Array)];
+                console.log('Profile picture processed, size:', uint8Array.length);
+            } catch (error) {
+                console.error('Error processing profile picture:', error);
+                // Continue without profile picture
             }
         }
 
-        console.log("DEBUG: Backend payload before updateUser:", backendPayload);
-
-        if (process.env.CANISTER_ID_SESSION) {
-            const updateResult = await user.updateUser(cleanSession, backendPayload, process.env.CANISTER_ID_SESSION);
-            console.log("DEBUG: updateUser result:", updateResult);
+        console.log('Sending update payload to backend:', JSON.stringify(updatePayload, null, 2));
+        
+        // Get authenticated agent
+        const agent = await agentService.getAgent();
+        
+        // Call backend updateUser function
+        const result = await projcet_backend_single.updateUser(currentUser.id, updatePayload);
+        
+        console.log('Backend update result:', result);
+        
+        if ('ok' in result) {
+            console.log('Profile updated successfully');
+            
+            // Update local storage with new data
+            const updatedUser = convertBackendUserToFrontend(result.ok);
+            storage.setUser(updatedUser);
+            
+    return true;
         } else {
-            throw new Error('CANISTER_ID_SESSION not found');
+            console.error('Backend update failed:', result.err);
+            return false;
         }
-
-        userCache = { user: null, timestamp: 0 };
-        const updatedUser = await fetchUserBySession();
         
-        if (updatedUser) {
-            const sessionString = storage.getSession();
-            storage.clear();
-            storage.setUser({ ok: updatedUser });
-            if (sessionString) {
-                storage.setSession(sessionString);
-            }
-        }
-
-        return true;
-    } catch (err) {
-        console.error("Error updating user profile:", err);
+    } catch (error) {
+        console.error('updateUserProfile error:', error);
         return false;
     }
 };
 
-
-export const getAllUsers = async (): Promise<User[] | null> => {
-    try {
-        const result = await user.getAllUsers();
-
-        if (!result || !Array.isArray(result)) {
-            console.error("Invalid response format:", result);
-            return null;
-        }
-
-        const currentUserString = localStorage.getItem("current_user");
-        if (!currentUserString) {
-            console.error("Current user not found in localStorage");
-            return null;
-        }
-
-        const currentUser = JSON.parse(currentUserString).ok;
-
-        const otherUsers = result.filter((userData) => userData.id !== currentUser.id);
-
-        const usersWithProfilePictures = await Promise.all(otherUsers.map(async (userData) => {
-            let profilePictureBlob: Blob;
-            if (userData.profilePicture) {
-                const uint8Array = new Uint8Array(userData.profilePicture);
-                profilePictureBlob = new Blob([uint8Array.buffer], {
-                    type: 'image/jpeg' 
-                });
-            } else {
-                profilePictureBlob = new Blob([], { type: 'image/jpeg' });
-            }
-
-            const userSubaccount: [] | [Uint8Array] =
-                    userData.subAccount && userData.subAccount[0]
-                        ? [new Uint8Array(userData.subAccount[0])]
-                        : [];
-
-            const obj = userData.subAccount[0]!;
-
-            const uint8 = new Uint8Array(Object.values(obj));
-
-            return {
-                ...userData,
-                profilePicture: profilePictureBlob,
-                createdAt: BigInt(userData.createdAt),
-                updatedAt: BigInt(userData.updatedAt),
-                subAccount : userSubaccount,
-                isProfileCompleted: (userData as any).isProfileCompleted || false,
-                preference: userData.preference.map((pref: JobCategory) => ({
-                    ...pref,
-                    id: pref.id.toString()
-                
-                }))
-            };
-        }));
-
-        return usersWithProfilePictures;
-    } catch (error) {
-        console.error("Failed to get all users:", error);
-        return null;
-    }
+export const isAuthenticated = (): boolean => {
+  return !!storage.getSession() && !!storage.getUser();
 };
 
+export const getCurrentUser = (): User | null => {
+  return storage.getUser();
+};
 
-export const getUserById = async (userId: string): Promise<User | null> => {
+export const needsProfileCompletion = (): boolean => {
+  const user = getCurrentUser();
+  return user ? !user.isProfileCompleted : false;
+};
+
+// Fungsi lain yang mungkin Anda perlukan dari kode lama Anda
+export const getAllUsers = async (): Promise<User[] | null> => {
+    return [];
+};
+export const getUserById = async (userId: string): Promise<{ ok: User } | { err: string } | null> => {
     try {
-        const result = await user.getUserById(userId);
-
-        if ("ok" in result) {
-            const userData = result.ok;
-
-            let profilePictureBlob: Blob;
-            if (userData.profilePicture) {
-                const uint8Array = new Uint8Array(userData.profilePicture);
-                profilePictureBlob = new Blob([uint8Array.buffer], {
-                    type: 'image/jpeg' 
-                });
-            } else {
-                profilePictureBlob = new Blob([], { type: 'image/jpeg' });
-            }
-
-            const obj = userData.subAccount[0]!;
-
-            const uint8 = new Uint8Array(Object.values(obj));
-
-            const convertedUser: User = {
-            ...userData,
-            profilePicture: profilePictureBlob,
-            createdAt: BigInt(userData.createdAt),
-            updatedAt: BigInt(userData.updatedAt),
-            isProfileCompleted: (userData as any).isProfileCompleted || false,
-            subAccount: [uint8]
-            };
-
-            return convertedUser;
+        console.log('🔍 Fetching user by ID:', userId);
+        const userResult = await projcet_backend_single.getUserById(userId);
+        
+        if ("ok" in userResult) {
+            const convertedUser = convertBackendUserToFrontend(userResult.ok);
+            console.log('✅ User fetched successfully:', convertedUser.username);
+            return { ok: convertedUser };
         } else {
-            console.error("Error fetching user:", result.err);
-            return null;
+            console.warn('⚠️ User not found:', userId, userResult.err);
+            return { err: userResult.err };
         }
     } catch (error) {
-        console.error("Error fetching user by ID:", error);
-        return null;
+        console.error('❌ Error fetching user by ID:', error);
+    return null;
     }
 }
-
 export const getUserByName = async (username: string): Promise<User | null> => {
-    try {
-      const result = await user.getUserByName(username);
-  
-      if ("ok" in result) {
-        const userData = result.ok;
-        let profilePictureBlob: Blob;
-        if (userData.profilePicture) {
-          const uint8Array = new Uint8Array(userData.profilePicture);
-          profilePictureBlob = new Blob([uint8Array.buffer], {
-            type: "image/jpeg",
-          });
-        } else {
-          profilePictureBlob = new Blob([], { type: "image/jpeg" });
-        }
-        
-        const obj = userData.subAccount[0]!;
-
-        const uint8 = new Uint8Array(Object.values(obj));
-
-        const convertedUser: User = {
-          ...userData,
-          profilePicture: profilePictureBlob,
-          createdAt: BigInt(userData.createdAt),
-          updatedAt: BigInt(userData.updatedAt),
-          isProfileCompleted: (userData as any).isProfileCompleted || false,
-          subAccount: [uint8]
-        };
-
-  
-        return convertedUser;
-      } else {
-        console.error("Error fetching user:", result.err);
-        return null;
-      }
-    } catch (error) {
-      console.error("Error fetching user by ID:", error);
-      return null;
-    }
-  };
-  
+    return null;
+};
 export const getUserTransaction = async (userId: string): Promise<CashFlowHistory[] | null> => {
-    try {
-        const result = await user.getUserTransactions(userId);
-        // console.log(result)
-        return result;
-    } catch (error) {
-        console.error("Failed to get user transaction:", error);
-        return null;
-    }
+    return [];
 }

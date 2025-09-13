@@ -1,25 +1,22 @@
-import { AuthClient, LocalStorage } from "@dfinity/auth-client";
-import { job } from "../../../declarations/job";
+import { AuthClient } from "@dfinity/auth-client";
+import { projcet_backend_single } from "../../../declarations/projcet_backend_single";
 import {
   Job,
   CreateJobPayload,
   UpdateJobPayload,
   JobCategory,
-} from "../../../declarations/job/job.did";
+  User as BackendUser,
+} from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { User } from "../shared/types/User";
-import { HttpAgent } from "@dfinity/agent";
-import { applier } from "../../../declarations/applier";
-import { job_transaction } from "../../../declarations/job_transaction";
 import { ApplierPayload } from "../shared/types/Applier";
-import { Wallet } from "lucide-react";
 import { agentService } from "../singleton/agentService";
 import { storage } from "../utils/storage";
 import { ensureUserData } from "../utils/sessionUtils";
 import { debugUserData } from "../utils/debugUtils";
 import { fixUserData } from "../utils/userDataFixer";
 import { Job as JobShared, JobPayload } from "../shared/types/Job";
-import { user } from "../../../declarations/user";
 import { getBalanceController, transferToJobController, transfertoWorkerController } from "./tokenController";
+import { HttpAgent } from "@dfinity/agent";
 
 export const createJob = async (payload: JobPayload): Promise<string[]> => {
   const agent = await agentService.getAgent();
@@ -63,16 +60,13 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
     }
 
 
-    
-
-
     const newJobTags: JobCategory[] = [];
 
     for (const tag of payload.jobTags) {
-      let existingCategory = await job.findJobCategoryByName(tag);
+      let existingCategory = await projcet_backend_single.findJobCategoryByName(tag);
 
       if (!("ok" in existingCategory)) {
-        existingCategory = await job.createJobCategory(tag);
+        existingCategory = await projcet_backend_single.createJobCategory(tag);
       }
 
       if ("ok" in existingCategory) {
@@ -81,21 +75,6 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
     }
 
     if (currentUser) {
-
-      const new_curr_user = currentUser as User;
-      const obj = currentUser.subAccount[0]!;
-
-      const uint8 = new Uint8Array(Object.values(obj));
-      const converted_user: User = {
-        ...new_curr_user,
-        subAccount: [uint8], // Convert subAccount to Uint8Array
-      }
-      console.log("lanjutt euy")
-      // Debug the user data structure
-      console.log("User ID:", currentUser.id);
-      console.log("User structure type:", typeof currentUser);
-      console.log("User keys:", Object.keys(currentUser));
-      console.log("User data:", currentUser);
 
       // Make sure the ID is a string
       const userId = String(currentUser.id);
@@ -123,11 +102,7 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
         userId: createJobPayload.userId,
       });
 
-      const result = await job.createJob(
-        createJobPayload,
-        process.env.CANISTER_ID_JOB_TRANSACTION!,
-        process.env.CANISTER_ID_JOB!
-      );
+      const result = await projcet_backend_single.createJob(createJobPayload);
       if ("ok" in result) {
    
 
@@ -163,7 +138,7 @@ export const updateJob = async (
         jobDeadline: jobDeadline,
       };
 
-      const result = await job.updateJob(jobId, payload);
+      const result = await projcet_backend_single.updateJob(jobId, payload);
 
       if ("ok" in result) {
         return ["Success", "Successfully updated the job"];
@@ -175,7 +150,7 @@ export const updateJob = async (
 export const viewAllJobs = async (): Promise<Job[] | null> => {
   const agent = await agentService.getAgent();
   try {
-    const result = await job.getAllJobs();
+    const result = await projcet_backend_single.getAllJobs();
     return result;
   } catch (error) {
     return null;
@@ -185,7 +160,7 @@ export const viewAllJobs = async (): Promise<Job[] | null> => {
 export const getJobDetail = async (jobId: string): Promise<Job | null> => {
   const agent = await agentService.getAgent();
 
-  const result = await job.getJob(jobId);
+  const result = await projcet_backend_single.getJob(jobId);
   if ("ok" in result) {
     return result.ok;
   }
@@ -196,7 +171,7 @@ export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
   const agent = await agentService.getAgent();
 
   try {
-    const result = await job.getAllJobCategories();
+    const result = await projcet_backend_single.getAllJobCategories();
     // console.log("Jobs:", result);
     return result;
   } catch (error) {
@@ -207,7 +182,7 @@ export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
 export const getJobById = async (jobId: string): Promise<Job | null> => {
   const agent = await agentService.getAgent();
   try {
-    const result = await job.getJob(jobId);
+    const result = await projcet_backend_single.getJob(jobId);
     if ("ok" in result) {
       return result.ok;
     } else {
@@ -221,7 +196,7 @@ export const getJobById = async (jobId: string): Promise<Job | null> => {
 export const getUserJobs = async (userId: string): Promise<Job[] | null> => {
   const agent = await agentService.getAgent();
   try {
-    const result = await job.getUserJob(userId);
+    const result = await projcet_backend_single.getUserJob(userId);
     return result;
   } catch (error) {
     return null;
@@ -231,7 +206,7 @@ export const getUserJobs = async (userId: string): Promise<Job[] | null> => {
 export const deleteJob = async (jobId: string): Promise<string[]> => {
   const agent = await agentService.getAgent();
   try {
-    const result = await job.deleteJob(jobId);
+    const result = await projcet_backend_single.deleteJob(jobId);
     if ("ok" in result) {
       return ["Success", "Success delete job"];
     } else {
@@ -247,47 +222,33 @@ export const getJobApplier = async (
 ): Promise<ApplierPayload[]> => {
   const agent = await agentService.getAgent();
   try {
-    const result = await applier.getJobApplier(
-      jobId,
-      process.env.CANISTER_ID_USER!
-    );
-    if (!result || !("ok" in result)) {
-      return [];
+    const result = await projcet_backend_single.getJobAppliers(jobId);
+    if ("ok" in result) {
+        const appliers = result.ok;
+        const processedUsers: ApplierPayload[] = appliers.map((applierData: { user: BackendUser; appliedAt: bigint; }) => {
+            const userData = applierData.user;
+            const profilePictureBlob = userData.profilePicture && userData.profilePicture.length > 0
+                ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' })
+                : null;
+            
+            return {
+                user: {
+                    ...userData,
+                    profilePicture: profilePictureBlob,
+                    createdAt: BigInt(userData.createdAt),
+                    updatedAt: BigInt(userData.updatedAt),
+                    preference: userData.preference.map((pref: any) => ({
+                      ...pref,
+                      id: pref.id.toString(),
+                    })),
+                    subAccount: userData.subAccount[0] ? [new Uint8Array(userData.subAccount[0])] : [],
+                },
+                appliedAt: BigInt(applierData.appliedAt),
+            };
+        });
+        return processedUsers;
     }
-    const appliers = result.ok; // This is the array of users from the canister
-
-    const processedUsers = await Promise.all(
-      appliers.map(async (applierData) => {
-        let userData = applierData.user;
-        let profilePictureBlob: Blob;
-
-        if (userData.profilePicture) {
-          const uint8Array = new Uint8Array(userData.profilePicture);
-          profilePictureBlob = new Blob([uint8Array.buffer], {
-            type: "image/jpeg",
-          });
-        } else {
-          profilePictureBlob = new Blob([], { type: "image/jpeg" });
-        }
-
-        // Make sure to return an object that matches the `ApplierPayload` structure
-        return {
-          user: {
-            ...userData,
-            profilePicture: profilePictureBlob,
-            createdAt: BigInt(userData.createdAt),
-            updatedAt: BigInt(userData.updatedAt),
-            preference: userData.preference.map((pref: JobCategory) => ({
-              ...pref,
-              id: pref.id.toString(),
-            })),
-          },
-          appliedAt: BigInt(applierData.appliedAt), // Ensure this field is included
-        } as ApplierPayload; // Assert that this matches the ApplierPayload type
-      })
-    );
-
-    return processedUsers;
+    return [];
   } catch (error) {
     return [];
   }
@@ -298,47 +259,28 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
 
   console.log("Getting accepted freelancers for job:", jobId);
   try {
-    const result = await job_transaction.getAcceptedFreelancers(
-      jobId,
-      process.env.CANISTER_ID_USER!
-    );
-    if (!result || !("ok" in result)) {
-      return [];
+    const result = await projcet_backend_single.getAcceptedFreelancer(jobId);
+    if (result) {
+        return result.map((backendUser: BackendUser) => {
+            const profilePictureBlob = backendUser.profilePicture && backendUser.profilePicture.length > 0
+                ? new Blob([new Uint8Array(backendUser.profilePicture[0])], { type: 'image/jpeg' })
+                : null;
+
+            return {
+                ...backendUser,
+                id: backendUser.id.toString(),
+                profilePicture: profilePictureBlob,
+                createdAt: BigInt(backendUser.createdAt),
+                updatedAt: BigInt(backendUser.updatedAt),
+                preference: backendUser.preference.map((pref: any) => ({
+                  ...pref,
+                  id: pref.id.toString(),
+                })),
+                subAccount: backendUser.subAccount[0] ? [new Uint8Array(backendUser.subAccount[0])] : [],
+            };
+        });
     }
-    const users = result.ok;
-
-    const processedUsers = await Promise.all(
-      users.map(async (userData) => {
-        let profilePictureBlob: Blob;
-        if (userData.profilePicture) {
-          // Convert the returned profilePicture (a Uint8Array or number[]) into a Blob.
-          const uint8Array = new Uint8Array(userData.profilePicture);
-          profilePictureBlob = new Blob([uint8Array.buffer], {
-            type: "image/jpeg",
-          });
-        } else {
-          profilePictureBlob = new Blob([], { type: "image/jpeg" });
-        }
-
-        const userSubaccount: [] | [Uint8Array] =
-                    userData.subAccount && userData.subAccount[0]
-                        ? [new Uint8Array(userData.subAccount[0])]
-                        : [];
-        return {
-          ...userData,
-          profilePicture: profilePictureBlob,
-          createdAt: BigInt(userData.createdAt),
-          updatedAt: BigInt(userData.updatedAt),
-          preference: userData.preference.map((pref: JobCategory) => ({
-            ...pref,
-            id: pref.id.toString(),
-          })),
-          subAccount:  userSubaccount, // Ensure subAccount is included
-        };
-      })
-    );
-
-    return processedUsers;
+    return [];
   } catch (error) {
     return [];
   }
@@ -353,50 +295,87 @@ export const startJob = async (
     const agent = await agentService.getAgent();
     const curr_job = await getJobById(job_id);
 
-    
-
     if(curr_job){
-      const result = await job.startJob(job_id);
-      if (result) {
+      console.log('Current job found:', curr_job.id, curr_job.jobStatus);
+      
+      // Check if job is in correct status
+      if (curr_job.jobStatus !== 'Open') {
+        return {
+          jobStarted: false,
+          message: `Job status is '${curr_job.jobStatus}', must be 'Open' to start.`,
+        };
+      }
 
-          const creator_token = await getBalanceController(curr_user);
-          console.log("Creator token balance:", creator_token.token_value);
-          if(creator_token.token_value < curr_job.jobSalary) {
-            return {
-                jobStarted: false,
-                message: "Insufficient Balance.",
-              };
+      const creator_token = await getBalanceController(curr_user);
+      console.log("Creator token balance:", creator_token.token_value);
+      console.log("Job salary required:", curr_job.jobSalary);
+      
+      if(creator_token.token_value < curr_job.jobSalary) {
+        return {
+            jobStarted: false,
+            message: `Insufficient Balance. Required: ${curr_job.jobSalary}, Available: ${creator_token.token_value}`,
+          };
+      }
+      const result = await projcet_backend_single.startJob(job_id);
+      console.log('Start job backend result:', result);
+      
+      if ('ok' in result && result.ok) {
+
+          // Handle subAccount safely
+          const subAccountData = curr_job.subAccount && curr_job.subAccount.length > 0 ? curr_job.subAccount[0] : null;
+          if (!subAccountData) {
+            console.warn('No subAccount data found for job:', job_id);
           }
-          const obj = curr_job.subAccount[0]!;
-          const uint8 = new Uint8Array(Object.values(obj));
 
           
-          const transferResult = await transferToJobController(
-            curr_user,
-            {
-              ...curr_job,
-              jobStatus: curr_job.jobStatus as "Open" | "Ongoing" | "Finished" | "Cancelled",
-              subAccount: [uint8],
-            },
-            curr_job.jobSalary
-          );
-          console.log("Transfer result:", transferResult);
-          if ("ok" in transferResult) {
-            return {
-                jobStarted: true,
-                message: "Job started successfully.",
+          try {
+            const transferResult = await transferToJobController(
+              curr_user,
+              curr_job as unknown as JobShared,
+              curr_job.jobSalary
+            );
+            console.log("Transfer result:", transferResult);
+            
+            if ("ok" in transferResult) {
+              return {
+                  jobStarted: true,
+                  message: "Job started successfully.",
+                };
+            } else {
+              // Revert job status back to Open if transfer fails
+              try {
+                await projcet_backend_single.updateJobStatus(job_id, 'Open');
+              } catch (revertError) {
+                console.error('Failed to revert job status:', revertError);
+              }
+              
+              const errorMsg = 'err' in transferResult ? transferResult.err : 'Transfer failed';
+              return {
+                jobStarted: false,
+                message: `Payment transfer failed: ${errorMsg}`,
               };
-          } else {
+            }
+          } catch (transferError) {
+            console.error('Transfer error:', transferError);
+            
+            // Revert job status back to Open if transfer fails
+            try {
+              await projcet_backend_single.updateJobStatus(job_id, 'Open');
+            } catch (revertError) {
+              console.error('Failed to revert job status:', revertError);
+            }
+            
             return {
               jobStarted: false,
-              message: "Job started unsuccessfully.",
+              message: `Payment transfer error: ${String(transferError)}`,
             };
           }
       
-      }else{
+      } else {
+        const errorMessage = 'err' in result ? result.err : 'Unknown error';
         return {
           jobStarted: false,
-          message: "Failed to start job: " + JSON.stringify(result),
+          message: "Failed to start job: " + errorMessage,
         };
       }
     } else {
@@ -418,7 +397,7 @@ export const getUserJobByStatusFinished = async (
 ): Promise<Job[] | null> => {
   const agent = await agentService.getAgent();
   try {
-    const result = await job.getUserJobByStatusFinished(userId);
+    const result = await projcet_backend_single.getUserJobByStatusFinished(userId);
     return result;
   } catch (error) {
     return null;
@@ -429,15 +408,8 @@ export const finishJob = async (
   job_id: string
 ): Promise<{ jobFinished: boolean; message: string }> => {
   try {
-    const authClient = await AuthClient.create();
-    const identity = authClient.getIdentity();
-    const agent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-      await agent.fetchRootKey();
-    }
-
-    const result = await job.finishJob(
+    const agent = await agentService.getAgent();
+    const result = await projcet_backend_single.finishJob(
       job_id
     );
 
@@ -452,7 +424,7 @@ export const finishJob = async (
     } else {
       return {
         jobFinished: false,
-        message: result.err || "Failed to finish job.",
+        message: result.err?.toString() || "Failed to finish job.",
       };
     }
   } catch (error) {

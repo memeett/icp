@@ -3,8 +3,9 @@ import { getJobById } from "../../controller/jobController";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/dateUtils";
 import { Job } from "../../shared/types/Job";
-import { Tag } from "antd";
+import { Tag, Space } from "antd";
 import { getStatusColor } from "../../utils/JobStatusCololer";
+import JobChatButton from "../chat/JobChatButton";
 
 export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string; isLoading : () => void }) {
     const [job, setJob] = useState<Job | null>(null);
@@ -72,6 +73,7 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
                 </div>
             </div>
             <div className="mt-4">
+<<<<<<< HEAD
                 <button
                     onClick={viewDetail}
                     className="text-sm bg-[#6366f1] text-text px-3 py-1.5 rounded-md hover:bg-[#4f46e5] transition-all duration-300 font-medium shadow-sm"
@@ -79,6 +81,25 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
                     View Details
                 </button>
 
+=======
+                <Space>
+                    <button
+                        onClick={viewDetail}
+                        className="text-sm bg-[#6366f1] text-white px-3 py-1.5 rounded-md hover:bg-[#4f46e5] transition-all duration-300 font-medium shadow-sm"
+                    >
+                        View Details
+                    </button>
+                    
+                    {job && (
+                        <JobChatButton
+                            jobId={job.id}
+                            jobStatus={job.jobStatus}
+                            clientId={job.userId}
+                            freelancerId={job.acceptedFreelancerId}
+                        />
+                    )}
+                </Space>
+>>>>>>> master
             </div>
         </div>
     );

@@ -25,6 +25,8 @@ import { get } from "http";
 import { InboxResponse } from "../types/Inbox";
 import { send } from "vite";
 import { createRating } from "../../controller/ratingController";
+import { ApplierPayload } from "../types/Applier";
+import ChatService from "../../services/chatService";
 
 interface ApplicantData {
   user: User;
@@ -47,6 +49,7 @@ interface UseJobDetailsReturn {
   isAccepting: boolean;
   isRejecting: boolean;
   isFetchingLetter: boolean;
+  isStartingJob: boolean;
 
   // Actions
   fetchJobDetails: () => Promise<void>;
@@ -79,18 +82,21 @@ export const useJobDetails = (
   const [isAccepting, setIsAccepting] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [isFetchingLetter, setIsFetchingLetter] = useState(false);
+  const [isStartingJob, setIsStartingJob] = useState(false);
 
   // Fetch all job-related data in a single optimized call
   const fetchJobDetails = useCallback(async () => {
     if (!jobId) return;
 
     setLoading(true);
-    try {
-      const [jobData, allJobsData] = await Promise.all([
-        getJobById(jobId),
-        viewAllJobs(),
-      ]);
+    // Reset states to prevent stale data
+    setApplicants([]);
+    setAcceptedFreelancers([]);
+    setHasApplied(false);
+    setisJobFreelancer(false);
 
+    try {
+      const jobData = await getJobById(jobId);
       if (!jobData) {
         throw new Error("Job not found");
       }
@@ -109,44 +115,54 @@ export const useJobDetails = (
         updatedAt: BigInt((jobData as any).updatedAt),
       };
       setJob(convertedJob);
+
       const isOwner = user?.id === (jobData as any).userId;
       setIsJobOwner(isOwner);
 
-      // Parallel fetch for user-specific data
-      const promises: Promise<any>[] = [];
-
-      // Check if user has applied (only if user exists and is not owner)
-      if (user && !isOwner) {
-        promises.push(hasUserApplied(user.id, jobId));
-        promises.push(isFreelancerRegistered(jobId, user.id));
-      }
-
-      // Fetch applicants and accepted freelancers (only if user is owner)
+      // Fetch all other data in parallel
+      const promises = [];
       if (user) {
-        promises.push(getJobApplier(jobId), getAcceptedFreelancer(jobId));
+        if (!isOwner) {
+          promises.push(hasUserApplied(user.id, jobId));
+          promises.push(isFreelancerRegistered(jobId, user.id));
+        }
+        // Always fetch applicants and accepted freelancers
+        promises.push(getJobApplier(jobId));
+        promises.push(getAcceptedFreelancer(jobId));
       }
+      promises.push(viewAllJobs());
+
 
       const results = await Promise.all(promises);
-
       let resultIndex = 0;
+
       if (user && !isOwner) {
-        setHasApplied(results[resultIndex++]);
-        const freelancerStatus = results[resultIndex++];
-        console.log('Hi '+freelancerStatus)
-        if (freelancerStatus[0] === "succ") {
-          if (freelancerStatus[1] === "true") setisJobFreelancer(true);
-          else setisJobFreelancer(false);
+        setHasApplied(results[resultIndex++] as boolean);
+        const freelancerStatus = results[resultIndex++] as [string, string];
+        if (freelancerStatus?.[0] === "succ") {
+          setisJobFreelancer(freelancerStatus[1] === "true");
         }
       }
 
-      const applicantsData = results[resultIndex++];
-      const acceptedData = results[resultIndex++];
+      const applicantsData = (user ? results[resultIndex++] : []) as ApplierPayload[];
+      const acceptedDataResult = (user ? results[resultIndex++] : []) as User[];
+      const allJobsData = results[resultIndex++] as Job[];
+
+      const acceptedData: User[] = (acceptedDataResult || []).map((u: any) => ({
+        ...u,
+        id: u.id.toString(),
+        rating: Number(u.rating) / 10,
+        wallet: Number(u.wallet),
+        createdAt: new Date(Number(u.createdAt) / 1000000),
+        updatedAt: new Date(Number(u.updatedAt) / 1000000),
+        profilePicture: u.profilePicture?.[0] ? new Blob([u.profilePicture[0]]) : null,
+      }));
 
       const acceptedUserIds = new Set(
         acceptedData.map((user: User) => user.id)
       );
 
-      const mappedData = applicantsData.map((app: any) => ({
+      const mappedData = (applicantsData || []).map((app: any) => ({
         user: app.user,
         appliedAt: new Date(Number(app.appliedAt) / 1000000).toISOString(),
       }));
@@ -160,7 +176,7 @@ export const useJobDetails = (
 
       // Logic for similar jobs
       if (convertedJob && allJobsData) {
-        const convertedAllJobs: Job[] = allJobsData.map((jobData: any) => ({
+        const convertedAllJobs: Job[] = (allJobsData || []).map((jobData: any) => ({
           ...jobData,
           jobTags: jobData.jobTags?.map((t: any) => ({
             id: t.id?.toString?.() ?? String(t.id),
@@ -258,14 +274,10 @@ export const useJobDetails = (
             "application",
             values.acceptancereason
           );
-
-          message.success("Applicant accepted successfully!");
           await fetchJobDetails(); // Refresh data
           return true;
-        } else {
-          message.error("Failed to accept applicant.");
-          return false;
         }
+        return false;
       } catch (error) {
         console.error("Error accepting applicant:", error);
         message.error("Failed to accept applicant.");
@@ -317,6 +329,8 @@ export const useJobDetails = (
   const handleStartJob = useCallback(async (): Promise<boolean> => {
     if (!job || !user || !isJobOwner) return false;
 
+    setIsStartingJob(true);
+
     try {
       setLoading(true);
       const result = await startJob(job.id, user);
@@ -324,6 +338,32 @@ export const useJobDetails = (
         message.success("Job started successfully!");
         setLoading(false);
         await fetchJobDetails();
+        
+        // Create chat rooms for each accepted freelancer
+        console.log('🚀 Creating chat rooms for accepted freelancers...');
+        for (const freelancer of acceptedFreelancers) {
+          try {
+            console.log(`📨 Creating chat room for job ${job.id} with freelancer ${freelancer.id}`);
+            const chatRoom = await ChatService.getOrCreateChatRoom(
+              job.id,
+              user.id, // client_id
+              freelancer.id // freelancer_id
+            );
+            
+            if (chatRoom) {
+              console.log(`✅ Chat room created: ${chatRoom.id}`);
+            } else {
+              console.warn(`⚠️ Failed to create chat room for freelancer ${freelancer.id}`);
+            }
+          } catch (error) {
+            console.error(`❌ Error creating chat room for freelancer ${freelancer.id}:`, error);
+          }
+        }
+        
+        if (acceptedFreelancers.length > 0) {
+          console.log(`🎉 Created ${acceptedFreelancers.length} chat room(s) for job ${job.id}`);
+        }
+        
         return true;
       } else {
         message.error(result.message);
@@ -333,8 +373,10 @@ export const useJobDetails = (
     } catch (error) {
       message.error("Failed to start job.");
       return false;
+    } finally {
+      setIsStartingJob(false);
     }
-  }, [job, user, fetchJobDetails]);
+  }, [job, user, isJobOwner, acceptedFreelancers, fetchJobDetails]);
 
   // Handle job finish
   const handleFinishJob = useCallback(async (): Promise<boolean> => {
@@ -392,7 +434,11 @@ export const useJobDetails = (
             (msg) => msg.senderId === applicantId
           );
           
-          return filteredMessages[0]?.message.split("\n")[1];
+          if (filteredMessages.length > 0) {
+            // Mengembalikan pesan pertama yang cocok secara keseluruhan
+            return filteredMessages[0].message;
+          }
+          return "Cover letter not found."; // Pesan jika tidak ada
         }
       } catch (error) {
         console.error("Error submitting cover letter:", error);
@@ -429,6 +475,7 @@ export const useJobDetails = (
     isAccepting,
     isRejecting,
     isFetchingLetter,
+    isStartingJob,
 
     // Actions
     fetchJobDetails,
@@ -441,3 +488,4 @@ export const useJobDetails = (
     refreshData,
   };
 };
+

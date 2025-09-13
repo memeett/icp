@@ -1,5 +1,5 @@
-import { UserInvitationPayload } from "../../../declarations/invitation/invitation.did";
-import { invitation } from "../../../declarations/invitation";
+import { projcet_backend_single } from "../../../declarations/projcet_backend_single";
+import { Invitation } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 
 export const createInvitation = async (
   job_id: string,
@@ -7,14 +7,13 @@ export const createInvitation = async (
   currentUserId: string
 ):  Promise<string[]> => {
     
-      const checkInvitation = await invitation.getInvitationByUserIdAndJobId(currentUserId, job_id)
-      if(checkInvitation == null) return ["Failed", "Error creating invitation."];
+      const checkInvitation = await projcet_backend_single.getInvitationByUserIdAndJobId(currentUserId, job_id)
+      if(checkInvitation.length > 0) return ["Failed", "Invitation already exists."];
 
-      const result = await invitation.createInvitation(
+      const result = await projcet_backend_single.createInvitation(
         String(currentUserId),
         job_id,
         freelancer_id,
-        process.env.CANISTER_ID_JOB!
       );
 
       if ("err" in result) {
@@ -27,10 +26,9 @@ export const createInvitation = async (
 
 export const getInvitationByUserId = async (
   userId: string
-): Promise<UserInvitationPayload[]> => {
-  const result = await invitation.getInvitationByUserID(
+): Promise<Invitation[]> => {
+  const result = await projcet_backend_single.getInvitationByUserID(
     userId,
-    process.env.CANISTER_ID_JOB!
   );
 
   return result;
@@ -40,12 +38,9 @@ export const acceptInvitation = async (
   userId: string,
   invitationId: bigint
 ): Promise<boolean> => {
-  const result = await invitation.acceptInvitation(
+  const result = await projcet_backend_single.acceptInvitation(
     userId,
     invitationId,
-    process.env.CANISTER_ID_JOB!,
-    process.env.CANISTER_ID_JOB_TRANSACTION!,
-    process.env.CANISTER_ID_USER!
   );
 
   return result;
@@ -55,7 +50,7 @@ export const rejectInvitation = async (
   userId: string,
   invitationId: bigint
 ): Promise<boolean> => {
-  const result = await invitation.rejectInvitation(userId, invitationId);
+  const result = await projcet_backend_single.rejectInvitation(userId, invitationId);
 
   return result;
 };

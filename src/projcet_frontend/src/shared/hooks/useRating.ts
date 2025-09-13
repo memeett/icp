@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { message } from 'antd';
 import { getFreelancerForRating, ratingUser, JobRatingPayload } from '../../controller/ratingController';
-import { RequestRatingPayload } from '../../../../declarations/rating/rating.did';
+import { storage } from '../../utils/storage';
 
 export const useRating = (jobId: string | undefined, isJobOwner: boolean) => {
     const [ratingRecords, setRatingRecords] = useState<JobRatingPayload[]>([]);
@@ -14,12 +14,15 @@ export const useRating = (jobId: string | undefined, isJobOwner: boolean) => {
         if (isJobOwner && jobId) {
             setLoading(true);
             try {
-                const ratings = await getFreelancerForRating(jobId);
+                const user = storage.getUser();
+                if (!user) return;
+                const ratings = await getFreelancerForRating(jobId, user.id);
                 console.log(ratings)
                 setRatingRecords(ratings);
                 const initialRatings: Record<string, number> = {};
                 ratings.forEach(r => {
-                    initialRatings[r.user.id] = r.rating;
+                    // Backend stores rating as Nat (e.g., 45 for 4.5), so we convert it back for display
+                    initialRatings[r.user.id] = r.rating / 10;
                 });
                 setLocalRatings(initialRatings);
                 const allRated = ratings.every(r => r.isEdit);
@@ -45,18 +48,20 @@ export const useRating = (jobId: string | undefined, isJobOwner: boolean) => {
 
     const handleFinalizeRatings = useCallback(async () => {
         setIsSubmittingRating(true);
-        const payloads: RequestRatingPayload[] = Object.entries(localRatings)
+        const payloads = Object.entries(localRatings)
             .map(([userId, rating]) => {
                 const record = ratingRecords.find(r => r.user.id === userId);
                 if (record && !record.isEdit) {
                     return {
-                        rating_id: record.rating_id.toString(),
-                        rating: rating,
+                        rating_id: BigInt(record.rating_id),
+                        // Multiply by 10 to store one decimal place as an integer (e.g., 4.5 -> 45)
+                        rating: BigInt(Math.round(rating * 10)),
+                        userId: userId
                     };
                 }
                 return null;
             })
-            .filter((p): p is RequestRatingPayload => p !== null);
+            .filter((p): p is { rating_id: bigint; rating: bigint; userId: string } => p !== null);
 
         if (payloads.length === 0) {
             message.info("No new ratings to submit or all ratings are final.");

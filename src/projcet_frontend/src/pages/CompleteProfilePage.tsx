@@ -94,32 +94,38 @@ const CompleteProfilePage: React.FC = () => {
     return true;
   };
 
-  const handleSubmit = async (values: CompleteProfileFormData) => {
+  const handleSubmit = async (values: any) => {
     try {
       showLoading('Updating profile...');
       setLoading(true);
+      console.log('Form values received:', values);
 
       // Convert form data to update payload
       const updatePayload: any = {
         username: values.username,
-        dob: values.dob,
+        dob: values.dob ? values.dob.format('YYYY-MM-DD') : '', // Convert dayjs to string
         description: values.description,
-        preference: values.preference.map(id =>
-          mockJobCategories.find(cat => cat.id === id)
-        ).filter(Boolean),
+        preference: values.preference.map((id: string) => {
+          const category = mockJobCategories.find(cat => cat.id === id);
+          console.log('Selected category for ID', id, ':', category);
+          return category;
+        }).filter(Boolean),
         isProfileCompleted: true,
       };
 
       // Add profile picture if uploaded
       if (uploadedFile) {
-        updatePayload.profilePicture = new Blob([uploadedFile], { type: uploadedFile.type });
+        updatePayload.profilePicture = uploadedFile; // Pass File directly
       }
+
+      console.log('Update payload prepared:', updatePayload);
 
       const success = await updateProfile(updatePayload);
 
       if (success) {
         message.success('Profile completed successfully!');
-        navigate('/profile');
+        // Navigate to home page instead of profile page for better UX
+        navigate('/');
       } else {
         message.error('Failed to complete profile. Please try again.');
       }
@@ -185,6 +191,7 @@ const CompleteProfilePage: React.FC = () => {
                 onFinish={handleSubmit}
                 initialValues={{
                   username: user?.username || '',
+                  dob: user?.dob ? dayjs(user.dob) : undefined,
                   description: user?.description || '',
                   preference: user?.preference?.map(p => p.id) || [],
                 }}

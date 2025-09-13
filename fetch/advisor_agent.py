@@ -16,7 +16,6 @@ from uagents import Agent, Context, Protocol, Model
 from datetime import datetime, timezone
 from uuid import uuid4
 
-# NOTE: mengikuti pola agent.py: gunakan ASI1 + tools; backend hanya sebagai data source via /getAllJobs
 
 ASI1_API_KEY = "sk_e6ca5699fe394c2ea28f700c1a1eac6de6f7e4f8a5fd404d97c625a387f3df1e"  # sama pola dengan agent.py (hardcoded)
 ASI1_BASE_URL = "https://api.asi1.ai/v1"
@@ -25,10 +24,7 @@ ASI1_HEADERS = {
     "Content-Type": "application/json"
 }
 
-# ICP HTTP routing
-JOB_CANISTER_ID = "ucwa4-rx777-77774-qaada-cai"
-USER_CANISTER_ID = "vu5yx-eh777-77774-qaaga-cai"
-RATING_CANISTER_ID = "vg3po-ix777-77774-qaafa-cai"
+BACKEND_CANISTER_ID = "uzt4z-lp777-77774-qaabq-cai"
 
 BASE_URL = "http://127.0.0.1:4943"
 HEADERS = {
@@ -51,6 +47,7 @@ _CACHE_TTL = 60.0  # detik
 # --------------------------
 class ChatRequest(Model):
     message: str
+    userId: str | None = None  # Optional user ID from frontend session
 
 class ChatResponse(Model):
     response: str
@@ -75,6 +72,57 @@ class JobsResponse(Model):
 # Semua tools hanya membaca data dari getAllJobs
 
 tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "chat_assistant",
+            "description": "Generate context-aware message suggestions, translations, and communication improvements based on chat history",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "chat_history": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "sender_id": {"type": "string"},
+                                "message": {"type": "string"},
+                                "timestamp": {"type": "string"},
+                                "is_read": {"type": "boolean"},
+                                "message_type": {"type": "string"}
+                            }
+                        },
+                        "description": "Recent chat history for context"
+                    },
+                    "current_draft": {
+                        "type": "string",
+                        "description": "User's current message draft if any"
+                    },
+                    "user_id": {"type": "string"},
+                    "recipient_id": {"type": "string"},
+                    "job_context": {
+                        "type": "object",
+                        "properties": {
+                            "job_id": {"type": "string"},
+                            "job_name": {"type": "string"},
+                            "job_status": {"type": "string"},
+                            "deadline": {"type": "string"},
+                            "client_id": {"type": "string"}
+                        }
+                    },
+                    "assistance_type": {
+                        "type": "string", 
+                        "enum": ["suggest_reply", "translate", "optimize_tone", "explain_technical", "prevent_misunderstanding"],
+                        "description": "Type of assistance requested"
+                    },
+                    "source_language": {"type": "string"},
+                    "target_language": {"type": "string"}
+                },
+                "required": ["chat_history", "user_id", "assistance_type"]
+            },
+            "strict": True,
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -124,7 +172,6 @@ tools = [
     "function": {
         "name": "getAllUsers",
         "description": "Mengambil dan menampilkan daftar lengkap semua pengguna (users) yang terdaftar di platform. Gunakan fungsi ini jika diminta untuk 'list semua user', 'tampilkan pengguna', 'berikan data user', atau permintaan sejenisnya.",
-        
         "parameters": {"type": "object", "properties": {}, "required": []},
         "strict": True,
     },
@@ -133,7 +180,7 @@ tools = [
     "type": "function",
     "function": {
         "name": "jobRecommendation",
-        "description": "Memberikan rekomendasi pekerjaan kepada user sesuai dengan user preferences",
+        "description": "Memberikan rekomendasi pekerjaan kepada user yang sedang login sesuai dengan user preferences dan skills. Otomatis menggunakan profil user yang sedang login.",
         "parameters": {
             "type": "object",
             "properties": {},
@@ -193,8 +240,33 @@ tools = [
         },
         "strict": True,
     },
-}
-
+},
+{
+    "type": "function",
+    "function": {
+        "name": "get_project_reminders",
+        "description": "Dapatkan ringkasan status proyek dan pengingat untuk pengguna yang sedang login. Berguna untuk memeriksa pekerjaan yang sedang berjalan, submission yang tertunda, dan deadline yang mendekat. Tidak perlu mengirim user_id karena otomatis menggunakan user yang sedang login.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        "strict": True,
+    },
+},
+{
+    "type": "function",
+    "function": {
+        "name": "get_financial_summary",
+        "description": "Dapatkan ringkasan keuangan (pemasukan, pengeluaran, jumlah transaksi) untuk pengguna yang sedang login. Tidak perlu mengirim user_id karena otomatis menggunakan user yang sedang login.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        "strict": True,
+    },
+},
 ]
 
 # --------------------------
@@ -210,10 +282,7 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
     headers_with_host = with_host(HEADERS, canister_id)
     url = f"{BASE_URL}/{endpoint}"
 
-    # Explicitly log headers to ensure visibility
-    ctx.logger.error(f"DEBUG_HEADERS: Attempting to fetch from {endpoint} at URL: {url} with headers: {headers_with_host}")
 
-    # Coba POST dulu karena beberapa query butuh body
     try:
         ctx.logger.debug(f"Trying POST request to {url}")
         resp = requests.post(url, headers=headers_with_host, json={}, timeout=15)
@@ -265,28 +334,575 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
     raise RuntimeError(f"Failed to fetch from {endpoint}: " + " | ".join(errors))
 
 async def fetch_jobs(ctx: Context) -> List[Dict[str, Any]]:
-    return await _fetch_canister_data(ctx, _JOBS_CACHE, "getAllJobs", JOB_CANISTER_ID)
+    return await _fetch_canister_data(ctx, _JOBS_CACHE, "getAllJobs", BACKEND_CANISTER_ID)
 
 # BAGIAN 3: Fungsi fetch untuk users, sama seperti fetch_jobs
 async def fetch_users(ctx: Context) -> List[Dict[str, Any]]:
     # Asumsi canister User punya endpoint /getAllUsers
-    return await _fetch_canister_data(ctx, _USERS_CACHE, "getAllUsers", USER_CANISTER_ID)
+    return await _fetch_canister_data(ctx, _USERS_CACHE, "getAllUsers", BACKEND_CANISTER_ID)
 
 # --------------------------
-# TF-IDF logic has been removed as requested.
+# Helper functions for chat analysis
+# --------------------------
+
+def detect_languages(chat_history):
+    """
+    Detect languages used in chat history.
+    Returns list of languages sorted by frequency.
+    """
+    # Simple language detection based on common words
+    language_markers = {
+        "English": ["the", "is", "and", "to", "of", "a", "in", "that", "have", "for"],
+        "Indonesian": ["yang", "dan", "ini", "itu", "dengan", "untuk", "tidak", "akan", "pada", "saya"],
+        "Spanish": ["el", "la", "de", "que", "y", "en", "un", "ser", "se", "no"],
+        "French": ["le", "la", "de", "et", "un", "être", "que", "à", "avoir", "ne"]
+    }
+    
+    # Count language markers in messages
+    language_counts = {lang: 0 for lang in language_markers}
+    
+    for msg in chat_history:
+        message = msg.get("message", "").lower()
+        words = message.split()
+        
+        for lang, markers in language_markers.items():
+            for word in words:
+                if word in markers:
+                    language_counts[lang] += 1
+    
+    # Sort languages by count
+    sorted_languages = sorted(language_counts.items(), key=lambda x: x[1], reverse=True)
+    
+    # Return languages that have at least one marker
+    return [lang for lang, count in sorted_languages if count > 0]
+
+def analyze_formality(chat_history):
+    """
+    Analyze formality level of conversation.
+    Returns: "formal", "neutral", or "casual"
+    """
+    formal_markers = ["would", "could", "may", "kindly", "please", "thank you", "regards", "sincerely", "dear"]
+    casual_markers = ["hey", "hi", "yeah", "cool", "sure", "ok", "lol", "haha", "btw", "gonna", "wanna"]
+    
+    formal_count = 0
+    casual_count = 0
+    
+    for msg in chat_history:
+        message = msg.get("message", "").lower()
+        
+        for marker in formal_markers:
+            if marker in message:
+                formal_count += 1
+        
+        for marker in casual_markers:
+            if marker in message:
+                casual_count += 1
+    
+    if formal_count > casual_count * 2:
+        return "formal"
+    elif casual_count > formal_count * 2:
+        return "casual"
+    else:
+        return "neutral"
+
+def extract_topics(chat_history):
+    """
+    Extract main topics from conversation.
+    Returns list of topic keywords.
+    """
+    # Combine all messages
+    all_text = " ".join([msg.get("message", "") for msg in chat_history])
+    
+    # Simple keyword extraction (could be improved with NLP)
+    common_words = ["the", "and", "to", "of", "a", "in", "is", "that", "it", "for", 
+                   "yang", "dan", "ini", "itu", "dengan", "untuk", "tidak", "akan"]
+    
+    words = all_text.lower().split()
+    word_counts = Counter(words)
+    
+    # Filter out common words and short words
+    topics = [word for word, count in word_counts.most_common(10) 
+              if word not in common_words and len(word) > 3]
+    
+    return topics[:5]  # Return top 5 topics
+
+def parse_suggestions(suggestions_text):
+    """
+    Parse suggestions from LLM response.
+    Returns list of suggestion texts.
+    """
+    # Try to find numbered suggestions (1., 2., 3.)
+    import re
+    suggestions = []
+    
+    # Look for numbered patterns like "1.", "2.", "3."
+    matches = re.findall(r'(?:\d+\.\s*)([^\n]+(?:\n(?!\d+\.).+)*)', suggestions_text)
+    
+    if matches and len(matches) >= 2:
+        return matches[:3]  # Return up to 3 suggestions
+    
+    # Fallback: split by double newlines
+    parts = suggestions_text.split('\n\n')
+    if len(parts) >= 2:
+        return parts[:3]
+    
+    # Last resort: just return the whole text as one suggestion
+    return [suggestions_text]
+
+# --------------------------
+# TF-IDF functions for job recommendation
+# --------------------------
+
+def tokenize(text: str) -> List[str]:
+    """Simple tokenization"""
+    import re
+    return re.findall(r'\b\w+\b', text.lower())
+
+def build_doc(job: Dict[str, Any]) -> str:
+    """Build document string from job"""
+    parts = []
+    parts.append(job.get("jobName", ""))
+    parts.extend(job.get("jobDescription", []))
+    for tag in (job.get("jobTags", []) or []):
+        parts.append(tag.get("jobCategoryName", ""))
+    parts.extend(job.get("jobRequirementSkills", []) or [])
+    return " ".join(str(p) for p in parts)
+
+def tf(tokens: List[str]) -> Dict[str, float]:
+    """Term frequency"""
+    counter = Counter(tokens)
+    total = len(tokens)
+    return {term: count / total for term, count in counter.items()}
+
+def compute_idf(token_lists: List[List[str]]) -> Dict[str, float]:
+    """Inverse document frequency"""
+    n_docs = len(token_lists)
+    if n_docs == 0:
+        return {}
+    
+    df = defaultdict(int)
+    for tokens in token_lists:
+        for token in set(tokens):
+            df[token] += 1
+    
+    return {term: math.log(n_docs / count) for term, count in df.items()}
+
+def vec(tf_map: Dict[str, float], idf_map: Dict[str, float]) -> Dict[str, float]:
+    """TF-IDF vector"""
+    return {term: tf_val * idf_map.get(term, 0.0) for term, tf_val in tf_map.items()}
+
+def cosine(v1: Dict[str, float], v2: Dict[str, float]) -> float:
+    """Cosine similarity"""
+    dot = sum(v1.get(k, 0.0) * v2.get(k, 0.0) for k in set(v1.keys()) | set(v2.keys()))
+    norm1 = math.sqrt(sum(v ** 2 for v in v1.values()))
+    norm2 = math.sqrt(sum(v ** 2 for v in v2.values()))
+    if norm1 == 0.0 or norm2 == 0.0:
+        return 0.0
+    return dot / (norm1 * norm2)
 
 # --------------------------
 # Tool handlers (local compute)
 # --------------------------
 
+async def tool_chat_assistant(ctx: Context, args: Dict[str, Any]):
+    """
+    Generate context-aware message suggestions based on chat history.
+    """
+    ctx.logger.info(f"Processing chat_assistant request with args: {args}")
+    
+    chat_history = args.get("chat_history", [])
+    current_draft = args.get("current_draft", "")
+    user_id = args.get("user_id", "")
+    recipient_id = args.get("recipient_id", "")
+    job_context = args.get("job_context", None)
+    assistance_type = args.get("assistance_type", "suggest_reply")
+    source_language = args.get("source_language", "auto")
+    target_language = args.get("target_language", "en")
+    
+    ctx.logger.info(f"Chat assistant processing for user {user_id}, recipient {recipient_id}")
+    ctx.logger.info(f"Chat history length: {len(chat_history)}")
+    
+    try:
+        # Get user data for context
+        users_data = await fetch_users(ctx)
+        user = next((u for u in users_data if u.get("id") == user_id), None)
+        recipient = next((u for u in users_data if u.get("id") == recipient_id), None)
+        
+        # Build context for LLM
+        context_builder = []
+        
+        # Add user roles
+        if user and recipient and job_context:
+            user_role = "client" if job_context.get("client_id") == user_id else "freelancer"
+            recipient_role = "freelancer" if user_role == "client" else "client"
+            context_builder.append(f"You are assisting {user.get('username', 'a user')} who is the {user_role}.")
+            context_builder.append(f"They are talking to {recipient.get('username', 'another user')} who is the {recipient_role}.")
+        
+        # Add job context if available
+        if job_context:
+            context_builder.append(f"They are discussing a job: {job_context.get('job_name')}.")
+            context_builder.append(f"The job status is {job_context.get('job_status')}.")
+            if job_context.get('deadline'):
+                context_builder.append(f"The deadline is {job_context.get('deadline')}.")
+        
+        # Analyze conversation patterns if we have chat history
+        if chat_history:
+            # Detect language used
+            languages_used = detect_languages(chat_history)
+            primary_language = languages_used[0] if languages_used else "English"
+            
+            # Detect formality level
+            formality = analyze_formality(chat_history)
+            
+            # Detect topic clusters
+            topics = extract_topics(chat_history)
+            
+            if languages_used:
+                context_builder.append(f"The conversation is primarily in {primary_language}.")
+            context_builder.append(f"The conversation tone is {formality}.")
+            if topics:
+                context_builder.append(f"Main topics discussed: {', '.join(topics)}.")
+        
+        # Build final context string
+        context = "\n".join(context_builder)
+        
+        # Process based on assistance type
+        if assistance_type == "suggest_reply":
+            # Generate reply suggestions
+            return await generate_reply_suggestions(ctx, chat_history, current_draft, user, recipient, context)
+        elif assistance_type == "translate":
+            # Handle translation
+            return await translate_message(ctx, current_draft, source_language, target_language)
+        elif assistance_type == "optimize_tone":
+            # Optimize message tone
+            return await optimize_message_tone(ctx, current_draft, formality)
+        elif assistance_type == "explain_technical":
+            # Explain technical terms
+            return await explain_technical_terms(ctx, current_draft)
+        elif assistance_type == "prevent_misunderstanding":
+            # Prevent misunderstandings
+            return await prevent_misunderstandings(ctx, current_draft, chat_history)
+        else:
+            ctx.logger.error(f"Unknown assistance type: {assistance_type}")
+            return {"error": f"Unknown assistance type: {assistance_type}"}
+    
+    except Exception as e:
+        ctx.logger.error(f"Error in chat_assistant: {e}", exc_info=True)
+        return {"error": f"Error processing chat assistant request: {str(e)}"}
+
+async def generate_reply_suggestions(ctx: Context, chat_history, current_draft, user, recipient, context):
+    """
+    Generate reply suggestions based on chat history and context.
+    """
+    ctx.logger.info("Generating reply suggestions")
+    
+    # Format chat history for LLM
+    formatted_history = []
+    for msg in chat_history[-10:]:  # Use last 10 messages for context
+        sender_id = msg.get("sender_id", "")
+        is_user = sender_id == user.get("id") if user else False
+        role = "user" if is_user else "assistant"
+        formatted_history.append({
+            "role": role,
+            "content": msg.get("message", "")
+        })
+    
+    # System message with context
+    system_message = {
+        "role": "system",
+        "content": f"""You are an AI assistant helping with communication between a freelancer and client.
+{context}
+Your task is to suggest helpful, professional, and contextually appropriate responses.
+Generate 3 different response options with varying tones and approaches.
+Keep suggestions concise, helpful, and professional.
+IMPORTANT: Do NOT include labels, notes, or descriptions in your suggestions like "(Direct Approach)" or "(Formal Style)". 
+Only include the actual message content that the user would send.
+"""
+    }
+    
+    # Add current draft if any
+    if current_draft:
+        formatted_history.append({
+            "role": "user",
+            "content": f"I'm drafting this message: {current_draft}"
+        })
+    
+    # Add instruction for what we want
+    formatted_history.append({
+        "role": "user",
+        "content": "Please suggest 3 different ways I could respond or complete my message. Vary the tone and approach. Make each suggestion brief and to the point. Do NOT include labels or descriptions in your suggestions."
+    })
+    
+    # Call ASI1 API
+    payload = {
+        "model": "asi1-mini",
+        "messages": [system_message] + formatted_history,
+        "temperature": 0.7,
+        "max_tokens": 1024,
+    }
+    
+    try:
+        ctx.logger.info("Calling ASI1 API for suggestions")
+        r = requests.post(f"{ASI1_BASE_URL}/chat/completions", headers=ASI1_HEADERS, json=payload)
+        r.raise_for_status()
+        resp = r.json()
+        
+        # Parse suggestions
+        suggestions_text = resp["choices"][0]["message"]["content"]
+        ctx.logger.info(f"Raw suggestions: {suggestions_text}")
+        suggestions = parse_suggestions(suggestions_text)
+        
+        # Clean suggestions - remove any labels or notes in parentheses
+        cleaned_suggestions = []
+        for sugg in suggestions[:3]:
+            # Remove patterns like "Option 1: ", "1. ", "(Direct Approach)", etc.
+            cleaned = re.sub(r'^(Option \d+: |^\d+\.\s+)', '', sugg)
+            cleaned = re.sub(r'\([^)]*\)\*?\*?', '', cleaned)  # Remove anything in parentheses
+            cleaned = re.sub(r'\*\*[^*]*\*\*', '', cleaned)    # Remove anything in **bold**
+            cleaned = cleaned.strip()
+            cleaned_suggestions.append(cleaned)
+        
+        # Format for frontend with clean suggestions
+        formatted_suggestions = []
+        for i, sugg in enumerate(cleaned_suggestions):
+            if not sugg:  # Skip empty suggestions
+                continue
+            preview = sugg.split("\n")[0][:30] + "..." if len(sugg) > 30 else sugg
+            formatted_suggestions.append({
+                "preview": f"Opsi {i+1}: {preview}",
+                "text": sugg
+            })
+        
+        ctx.logger.info(f"Generated {len(formatted_suggestions)} cleaned suggestions")
+        return formatted_suggestions
+    
+    except Exception as e:
+        ctx.logger.error(f"Error generating suggestions: {e}", exc_info=True)
+        return [{"preview": "Error generating suggestions", "text": "Sorry, I couldn't generate suggestions at this time."}]
+
+async def translate_message(ctx: Context, message, source_language, target_language):
+    """
+    Translate a message from source language to target language.
+    """
+    ctx.logger.info(f"Translating from {source_language} to {target_language}")
+    
+    system_message = {
+        "role": "system",
+        "content": f"You are a professional translator. Translate the following text from {source_language} to {target_language}. Maintain the tone and meaning of the original text."
+    }
+    
+    user_message = {
+        "role": "user",
+        "content": message
+    }
+    
+    # Call ASI1 API
+    payload = {
+        "model": "asi1-mini",
+        "messages": [system_message, user_message],
+        "temperature": 0.3,
+        "max_tokens": 1024,
+    }
+    
+    try:
+        r = requests.post(f"{ASI1_BASE_URL}/chat/completions", headers=ASI1_HEADERS, json=payload)
+        r.raise_for_status()
+        resp = r.json()
+        
+        translation = resp["choices"][0]["message"]["content"]
+        
+        return [{
+            "preview": f"Translation to {target_language}",
+            "text": translation.strip(),
+            "original": message
+        }]
+    
+    except Exception as e:
+        ctx.logger.error(f"Error translating message: {e}", exc_info=True)
+        return [{"preview": "Error translating", "text": "Sorry, I couldn't translate this message."}]
+
+async def optimize_message_tone(ctx: Context, message, target_tone):
+    """
+    Optimize message tone (formal, neutral, casual).
+    """
+    ctx.logger.info(f"Optimizing message tone to {target_tone}")
+    
+    system_message = {
+        "role": "system",
+        "content": f"You are a communication expert. Rewrite the following message to make it more {target_tone} in tone. Maintain the core message and meaning."
+    }
+    
+    user_message = {
+        "role": "user",
+        "content": message
+    }
+    
+    # Call ASI1 API
+    payload = {
+        "model": "asi1-mini",
+        "messages": [system_message, user_message],
+        "temperature": 0.5,
+        "max_tokens": 1024,
+    }
+    
+    try:
+        r = requests.post(f"{ASI1_BASE_URL}/chat/completions", headers=ASI1_HEADERS, json=payload)
+        r.raise_for_status()
+        resp = r.json()
+        
+        optimized = resp["choices"][0]["message"]["content"]
+        
+        return [{
+            "preview": f"{target_tone.capitalize()} version",
+            "text": optimized.strip(),
+            "original": message
+        }]
+    
+    except Exception as e:
+        ctx.logger.error(f"Error optimizing message tone: {e}", exc_info=True)
+        return [{"preview": "Error optimizing tone", "text": "Sorry, I couldn't optimize this message."}]
+
+async def explain_technical_terms(ctx: Context, message):
+    """
+    Identify and explain technical terms in a message.
+    """
+    ctx.logger.info("Explaining technical terms")
+    
+    system_message = {
+        "role": "system",
+        "content": "You are a technical expert. Identify technical terms in the following message and provide simple explanations for each term. Format your response as a JSON object with term as key and explanation as value."
+    }
+    
+    user_message = {
+        "role": "user",
+        "content": message
+    }
+    
+    # Call ASI1 API
+    payload = {
+        "model": "asi1-mini",
+        "messages": [system_message, user_message],
+        "temperature": 0.3,
+        "max_tokens": 1024,
+    }
+    
+    try:
+        r = requests.post(f"{ASI1_BASE_URL}/chat/completions", headers=ASI1_HEADERS, json=payload)
+        r.raise_for_status()
+        resp = r.json()
+        
+        explanation_text = resp["choices"][0]["message"]["content"]
+        
+        # Try to parse JSON response
+        try:
+            import json
+            explanations = json.loads(explanation_text)
+            
+            # Format for frontend
+            result = {
+                "message": message,
+                "explanations": explanations
+            }
+            
+            return result
+        except:
+            # Fallback if not valid JSON
+            return {
+                "message": message,
+                "explanation": explanation_text
+            }
+    
+    except Exception as e:
+        ctx.logger.error(f"Error explaining technical terms: {e}", exc_info=True)
+        return {"error": "Sorry, I couldn't explain the technical terms."}
+
+async def prevent_misunderstandings(ctx: Context, message, chat_history):
+    """
+    Identify potential misunderstandings in a message.
+    """
+    ctx.logger.info("Checking for potential misunderstandings")
+    
+    # Get last few messages for context
+    recent_history = chat_history[-5:] if chat_history else []
+    history_text = "\n".join([f"Message: {msg.get('message', '')}" for msg in recent_history])
+    
+    system_message = {
+        "role": "system",
+        "content": "You are a communication expert. Review the draft message in the context of the conversation history and identify any potential misunderstandings, ambiguities, or phrases that could be interpreted negatively. Suggest clearer alternatives."
+    }
+    
+    user_message = {
+        "role": "user",
+        "content": f"Conversation history:\n{history_text}\n\nDraft message:\n{message}"
+    }
+    
+    # Call ASI1 API
+    payload = {
+        "model": "asi1-mini",
+        "messages": [system_message, user_message],
+        "temperature": 0.3,
+        "max_tokens": 1024,
+    }
+    
+    try:
+        r = requests.post(f"{ASI1_BASE_URL}/chat/completions", headers=ASI1_HEADERS, json=payload)
+        r.raise_for_status()
+        resp = r.json()
+        
+        analysis = resp["choices"][0]["message"]["content"]
+        
+        return {
+            "message": message,
+            "analysis": analysis
+        }
+    
+    except Exception as e:
+        ctx.logger.error(f"Error preventing misunderstandings: {e}", exc_info=True)
+        return {"error": "Sorry, I couldn't analyze for potential misunderstandings."}
+
 async def tool_getAllJobs(ctx: Context, args: Dict[str, Any]):
     jobs = await fetch_jobs(ctx)
-    return jobs
 
-# BAGIAN 4: Handler untuk tool 'getAllUsers', sama seperti 'tool_getAllJobs'
+    # Limit to latest 20 jobs for performance and UX
+    limited_jobs = jobs[-20:] if len(jobs) > 20 else jobs
+
+    # Sort by creation date (newest first) - assuming jobs have timestamp
+    # For now, just return limited results
+    result = {
+        "jobs": limited_jobs,
+        "total_count": len(jobs),
+        "shown_count": len(limited_jobs),
+        "message": f"Menampilkan {len(limited_jobs)} pekerjaan terbaru dari {len(jobs)} total pekerjaan yang tersedia."
+    }
+
+    return result
+
+# BAGIAN 4: Handler untuk tool 'getAllUsers' - DENGAN LIMITASI PRIVASI
 async def tool_getAllUsers(ctx: Context, args: Dict[str, Any]):
     users = await fetch_users(ctx)
-    return users
+
+    # PRIVACY PROTECTION: Only show limited public information
+    # Don't expose sensitive data like emails, full profiles, etc.
+    safe_users = []
+    for user in users[:10]:  # Limit to first 10 users only
+        safe_user = {
+            "id": user.get("id"),
+            "username": user.get("username", "Anonymous"),
+            "profilePictureUrl": user.get("profilePictureUrl"),
+            "isProfileCompleted": user.get("isProfileCompleted", False),
+            # DON'T expose: email, wallet, phone, full profile details
+        }
+        safe_users.append(safe_user)
+
+    result = {
+        "users": safe_users,
+        "total_count": len(users),
+        "shown_count": len(safe_users),
+        "message": f"Menampilkan {len(safe_users)} pengguna dari {len(users)} total pengguna. Data sensitif disembunyikan untuk privasi.",
+        "privacy_note": "Untuk alasan privasi, hanya informasi publik yang ditampilkan."
+    }
+
+    return result
 
 async def tool_recommend_jobs_by_skills(ctx: Context, args: Dict[str, Any]):
     skills: List[str] = args.get("skills", [])
@@ -308,7 +924,7 @@ async def tool_recommend_jobs_by_skills(ctx: Context, args: Dict[str, Any]):
         score = cosine(q_vec, v)
         scored.append({"job": j, "score": round(float(score), 4)})
 
-    scored.sort(key=lambda x: x["scores"]["final"], reverse=True)
+    scored.sort(key=lambda x: x["score"], reverse=True)
     return scored[:top_n]
 
 async def tool_budget_advice(ctx: Context, args: Dict[str, Any]):
@@ -430,11 +1046,137 @@ async def tool_find_talent(ctx: Context, args: Dict[str, Any]):
     active_users = [u for u in users if u.get("isProfileCompleted")]
     ctx.logger.info(f"Found {len(active_users)} active users with completed profiles.")
 
-    # 4. Return the raw data for the LLM to process
-    # LLM akan menerima pekerjaan target "virtual" dan daftar kandidat potensial
+    # 4. PRIVACY PROTECTION: Limit and sanitize user data
+    limited_candidates = active_users[:15]  # Limit to top 15 candidates
+    safe_candidates = []
+    for user in limited_candidates:
+        safe_candidate = {
+            "id": user.get("id"),
+            "username": user.get("username", "Anonymous"),
+            "profilePictureUrl": user.get("profilePictureUrl"),
+            "isProfileCompleted": user.get("isProfileCompleted", False),
+            # DON'T expose sensitive data
+        }
+        safe_candidates.append(safe_candidate)
+
+    # 5. Return sanitized data for the LLM to process
     return {
         "target_job": target_job,
-        "potential_candidates": active_users
+        "potential_candidates": safe_candidates,
+        "total_candidates": len(active_users),
+        "shown_candidates": len(safe_candidates),
+        "message": f"Ditemukan {len(active_users)} kandidat potensial. Menampilkan {len(safe_candidates)} kandidat teratas.",
+        "privacy_note": "Data kandidat dibatasi untuk alasan privasi."
+    }
+
+async def tool_get_project_reminders(ctx: Context, args: Dict[str, Any]):
+    # Get user_id from args first, then fallback to context
+    user_id = args.get("user_id") or getattr(ctx, 'user_id', None)
+    if not user_id:
+        return {"error": "User not logged in. Please login to access project reminders."}
+    
+    jobs = await fetch_jobs(ctx)
+    
+    ongoing_jobs = [j for j in jobs if j.get("userId") == user_id and j.get("jobStatus") == "Ongoing"]
+    pending_submissions = [j for j in jobs if j.get("userId") == user_id and j.get("jobStatus") == "Submitted"] # Assuming "Submitted" status
+    
+    now = int(time.time() * 1_000_000_000)
+    three_days_in_ns = 3 * 24 * 60 * 60 * 1_000_000_000
+    
+    near_deadline_jobs = [
+        j["jobName"] for j in ongoing_jobs 
+        if "jobDeadline" in j and (int(j["jobDeadline"]) - now) < three_days_in_ns
+    ]
+
+    return {
+        "ongoingJobs": len(ongoing_jobs),
+        "pendingSubmissions": len(pending_submissions),
+        "jobsNearDeadline": near_deadline_jobs
+    }
+
+async def tool_get_financial_summary(ctx: Context, args: Dict[str, Any]):
+    # Get user_id from args first, then fallback to context
+    user_id = args.get("user_id") or getattr(ctx, 'user_id', None)
+    if not user_id:
+        return {"error": "User not logged in. Please login to access financial summary."}
+
+    users = await fetch_users(ctx)
+    user = next((u for u in users if u.get("id") == user_id), None)
+
+    if not user:
+        return {"error": "User not found"}
+
+    # This is a simplification. A real implementation would need to fetch transactions.
+    # We will simulate this based on the user's wallet value.
+    return {
+        "totalIncome": user.get("wallet", 0.0),
+        "totalExpense": 0.0, # Cannot be calculated from user data
+        "transactionCount": 0 # Cannot be calculated from user data
+    }
+
+async def tool_jobRecommendation(ctx: Context, args: Dict[str, Any]):
+    # Get user_id from context
+    user_id = getattr(ctx, 'user_id', None)
+    if not user_id:
+        return {"error": "User not logged in. Please login to get personalized job recommendations."}
+    
+    # Fetch user data and jobs
+    users = await fetch_users(ctx)
+    jobs = await fetch_jobs(ctx)
+    
+    # Find current user
+    current_user = next((u for u in users if u.get("id") == user_id), None)
+    if not current_user:
+        return {"error": "User profile not found."}
+    
+    # Get user preferences (skills/categories)
+    user_preferences = current_user.get("preference", [])
+    if not user_preferences:
+        return {
+            "message": "Untuk mendapatkan rekomendasi pekerjaan yang lebih baik, silakan lengkapi preferensi skill Anda di profil.",
+            "available_jobs_count": len([j for j in jobs if j.get("jobStatus") == "Open"]),
+            "recommendations": []
+        }
+    
+    # Extract skill names from preferences
+    user_skills = [pref.get("jobCategoryName", "") for pref in user_preferences if pref.get("jobCategoryName")]
+    ctx.logger.info(f"User skills from preferences: {user_skills}")
+    
+    # Filter open jobs and score them based on matching skills
+    open_jobs = [j for j in jobs if j.get("jobStatus") == "Open"]
+    scored_jobs = []
+    
+    for job in open_jobs:
+        job_tags = job.get("jobTags", []) or []
+        job_categories = [tag.get("jobCategoryName", "").lower() for tag in job_tags if tag.get("jobCategoryName")]
+        
+        # Calculate skill match score
+        skill_matches = 0
+        for skill in user_skills:
+            if skill.lower() in job_categories:
+                skill_matches += 1
+        
+        match_percentage = (skill_matches / len(user_skills)) * 100 if user_skills else 0
+        
+        if skill_matches > 0:  # Only include jobs with at least one skill match
+            scored_jobs.append({
+                "job": job,
+                "skill_matches": skill_matches,
+                "match_percentage": round(match_percentage, 1),
+                "matching_skills": [skill for skill in user_skills if skill.lower() in job_categories]
+            })
+    
+    # Sort by skill matches (descending) and then by salary (descending)
+    scored_jobs.sort(key=lambda x: (x["skill_matches"], x["job"]["jobSalary"]), reverse=True)
+    
+    # Return top 5 recommendations
+    top_recommendations = scored_jobs[:5]
+    
+    return {
+        "user_skills": user_skills,
+        "total_matching_jobs": len(scored_jobs),
+        "recommendations": top_recommendations,
+        "message": f"Ditemukan {len(scored_jobs)} pekerjaan yang cocok dengan skill Anda: {', '.join(user_skills)}"
     }
 
 
@@ -446,6 +1188,8 @@ async def execute_tool(func_name: str, arguments: dict, ctx: Context):
     # Log eksekusi tool
     ctx.logger.info(f"Executing tool '{func_name}' with arguments: {arguments}")
     
+    if func_name == "chat_assistant":
+        return await tool_chat_assistant(ctx, arguments)
     if func_name == "getAllJobs":
         return await tool_getAllJobs(ctx, arguments)
     # BAGIAN 5: Dispatcher untuk 'getAllUsers', sama seperti 'getAllJobs'
@@ -459,6 +1203,12 @@ async def execute_tool(func_name: str, arguments: dict, ctx: Context):
         return await tool_proposal_template(ctx, arguments)
     if func_name == "find_talent":
         return await tool_find_talent(ctx, arguments)
+    if func_name == "get_project_reminders":
+        return await tool_get_project_reminders(ctx, arguments)
+    if func_name == "get_financial_summary":
+        return await tool_get_financial_summary(ctx, arguments)
+    if func_name == "jobRecommendation":
+        return await tool_jobRecommendation(ctx, arguments)
     
     ctx.logger.error(f"Unsupported function call: {func_name}")
     raise ValueError(f"Unsupported function call: {func_name}")
@@ -467,12 +1217,26 @@ async def execute_tool(func_name: str, arguments: dict, ctx: Context):
 # Orkestrasi: sama pola dengan agent.py
 # --------------------------
 
-async def process_query(query: str, ctx: Context) -> str:
+async def process_query(query: str, ctx: Context, user_id: str = None) -> str:
     ctx.logger.info(f"--- Starting new query processing for: '{query}' ---")
+    # Store user_id in context for tools to access
+    ctx.user_id = user_id
+    ctx.logger.info(f"User ID from session: {user_id}")
     try:
+        # Check if this is a chat_assistant request
+        try:
+            data = json.loads(query)
+            if isinstance(data, dict) and data.get("action") == "chat_assistant":
+                ctx.logger.info(f"Detected chat_assistant request, processing directly")
+                result = await tool_chat_assistant(ctx, data)
+                return json.dumps(result)
+        except:
+            # Not a JSON or not a chat_assistant request, continue with normal flow
+            pass
+            
         system_message = {
             "role": "system",
-            "content": "Anda adalah asisten yang membantu pengguna menemukan talenta dan informasi pekerjaan. Selalu prioritaskan penggunaan 'tools' yang tersedia untuk menjawab pertanyaan secara akurat. Jika permintaan pengguna cocok dengan deskripsi sebuah tool, panggil tool tersebut."
+            "content": "Anda adalah AI Freelance Assistant yang HARUS menggunakan tools yang tersedia. WAJIB gunakan tools untuk: 1) financial summary - panggil get_financial_summary, 2) project reminders - panggil get_project_reminders, 3) job recommendations - panggil jobRecommendation, 4) mencari jobs - panggil getAllJobs, 5) mencari talenta - panggil find_talent, 6) chat assistant - panggil chat_assistant. SELALU panggil tool yang sesuai dengan permintaan user!"
         }
         initial_message = {"role": "user", "content": query}
         payload = {
@@ -540,7 +1304,7 @@ async def process_query(query: str, ctx: Context) -> str:
 # uAgents bootstrap
 # --------------------------
 
-agent = Agent(name='advisor-agent', port=8002, mailbox=True,endpoint=["http://localhost:8002/submit"])
+agent = Agent(name='advisor-agent', port=8002, mailbox="efb08343-de5c-4a29-8a62-2535c43734a9")
 chat_proto = Protocol(spec=chat_protocol_spec)
 
 @chat_proto.on_message(model=ChatMessage)
@@ -574,13 +1338,14 @@ async def handle_chat_rest(ctx: Context, req: ChatRequest) -> ChatResponse:
     """
     REST endpoint untuk menerima chat dari frontend
     POST http://localhost:8002/api/chat
-    Body: {"message": "your message here"}
+    Body: {"message": "your message here", "userId": "optional_user_id"}
     """
     try:
         ctx.logger.info(f"Received REST chat request: {req.message}")
+        ctx.logger.info(f"User ID from request: {req.userId}")
         
-        # Gunakan fungsi process_query yang sudah ada
-        response = await process_query(req.message, ctx)
+        # Gunakan fungsi process_query yang sudah ada dengan user_id
+        response = await process_query(req.message, ctx, req.userId)
         
         return ChatResponse(
             response=response,

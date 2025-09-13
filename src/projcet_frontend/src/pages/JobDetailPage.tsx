@@ -37,7 +37,8 @@ import {
   CheckOutlined,
   CloseOutlined,
   PlayCircleOutlined,
-  StopOutlined
+  StopOutlined,
+  MailOutlined
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -47,10 +48,17 @@ import { User } from '../shared/types/User';
 import { formatDate } from '../utils/dateUtils';
 import { RcFile } from 'antd/es/upload';
 import { createSubmission, getUserSubmissionsByJobId, getSubmissionByJobId, updateSubmissionStatus } from '../controller/submissionController';
+import JobChatButton from '../components/chat/JobChatButton';
 
-import type { Submission } from '../../../declarations/submission/submission.did';
+import type { Submission } from '../../../declarations/projcet_backend_single/projcet_backend_single.did';
 import { getUserById, getUserByName } from '../controller/userController';
 import { getStatusColor } from '../utils/JobStatusCololer';
+import { useWallet } from '../hooks/useWallet';
+import { Select } from "antd";
+import dayjs from "dayjs";
+
+
+const { Option } = Select;
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -79,6 +87,7 @@ const JobDetailPage: React.FC = () => {
     isAccepting,
     isRejecting,
     isFetchingLetter,
+    isStartingJob,
     similarJobs,
     handleApply,
     handleAcceptApplicant,
@@ -87,6 +96,10 @@ const JobDetailPage: React.FC = () => {
     handleFinishJob,
     handleCoverLetter
   } = useJobDetails(jobId, user);
+
+  const {
+    walletSymbol
+  } = useWallet();
 
   const {
     allUsers,
@@ -100,15 +113,40 @@ const JobDetailPage: React.FC = () => {
   const [isAcceptModalVisible, setIsAcceptModalVisible] = useState(false);
   const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
   const [isCoverModalVisible, setIsCoverModalVisible] = useState(false);
+<<<<<<< HEAD
   const [localLoading, setlocalLoading] = useState<boolean>(false);
+=======
+  const [isStartJobModalVisible, setIsStartJobModalVisible] = useState(false);
+  const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
+>>>>>>> master
 
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
-
   const [form] = Form.useForm();
   const [inviteForm] = Form.useForm();
 
   const [coverLetter, setCoverLetter] = useState<string>("");
+  const [selectedWalletSymbol, setSelectedWalletSymbol] = useState(walletSymbol);
+
+
+  const columns = [
+    {
+      title: "Freelancer",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: `Amount (${walletSymbol})`,
+      dataIndex: "amount",
+      key: "amount",
+    },
+  ];
+
+  const data = acceptedFreelancers.map((f, index) => ({
+    key: index,
+    name: f.username || `Freelancer ${index + 1}`,
+    amount: job ? (job.jobSalary).toLocaleString() : 'N/A',
+  }));
 
 
   // Handle user invitation
@@ -154,14 +192,15 @@ const JobDetailPage: React.FC = () => {
   const getTimeAgo = (dateString: string) => {
     const now = new Date();
     const posted = new Date(dateString);
-    const diffInHours = Math.floor((now.getTime() - posted.getTime()) / (1000 * 60 * 60));
+    const diffInSeconds = Math.floor((now.getTime() - posted.getTime()) / 1000);
 
-    if (diffInHours < 24) {
-      return `${diffInHours} hours ago`;
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays} days ago`;
-    }
+    if (diffInSeconds < 60) return "Just now";
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays} days ago`;
   };
 
 
@@ -199,10 +238,10 @@ const JobDetailPage: React.FC = () => {
                 <Title level={2} className="mb-2">{job!.jobName}</Title>
                 <Space size="middle" wrap>
                   <Tag color="blue">{job!.jobTags[0]?.jobCategoryName || 'General'}</Tag>
-                  <Tag color={getStatusColor(job.jobStatus)}>{job!.jobStatus}</Tag>
+                  <Tag color={getStatusColor(job!.jobStatus)}>{job!.jobStatus}</Tag>
                   <Text type="secondary">
                     <ClockCircleOutlined className="mr-1" />
-                    Posted {getTimeAgo(new Date(Number(job!.createdAt) / 1000000).toISOString())}
+                    Posted {getTimeAgo(new Date(Number(job!.createdAt) / 1_000_000).toISOString())}
                   </Text>
                 </Space>
               </div>
@@ -226,9 +265,11 @@ const JobDetailPage: React.FC = () => {
                 <div className="text-center p-4 bg-background rounded-lg">
                   <UserOutlined className="text-2xl text-purple-500 mb-2" />
                   <div className="font-semibold">
-                    {Number(job!.jobSlots) - acceptedFreelancers.length > 0
-                      ? Number(job!.jobSlots) - acceptedFreelancers.length
-                      : "No Slots Available"}
+                    {job!.jobStatus !== 'Finished'
+                      ? (Number(job!.jobSlots) - acceptedFreelancers.length > 0
+                        ? `${Number(job!.jobSlots) - acceptedFreelancers.length}`
+                        : "No Slots")
+                      : "Closed"}
                   </div>
                   <Text type="secondary">Available Slots</Text>
                 </div>
@@ -240,8 +281,19 @@ const JobDetailPage: React.FC = () => {
                   <Text type="secondary">Applicants</Text>
                 </div>
               </Col>
+              <Col xs={12} sm={6}>
+                <div
+                  className="text-center p-4 bg-background rounded-lg cursor-pointer hover:shadow-md transition"
+                  onClick={() => setIsInvoiceModalVisible(true)}
+                >
+                  <MailOutlined className="text-2xl text-orange-500 mb-2" />
+                  <div className="font-semibold">{acceptedFreelancers.length}</div>
+                  <Text type="secondary">Invoice</Text>
+                </div>
+              </Col>
 
-            </Row>  
+
+            </Row>
 
             <Divider />
 
@@ -266,7 +318,7 @@ const JobDetailPage: React.FC = () => {
             </div>
 
             {user && job!.jobStatus === 'Open' && !isJobOwner && (
-              <div className="text-center">
+              <div className="text-center space-x-4">
                 {Number(job!.jobSlots) - acceptedFreelancers.length <= 0 ? (
                   <Button size="large" disabled className="px-8">
                     All Slots Filled
@@ -288,6 +340,18 @@ const JobDetailPage: React.FC = () => {
                 )}
               </div>
             )}
+            
+            {/* Chat button for anyone (client or accepted freelancer) when job is Ongoing/Finished */}
+            {user && (job!.jobStatus === 'Ongoing' || job!.jobStatus === 'Finished') && (
+              <div className="text-center mt-4">
+                <JobChatButton
+                  jobId={job!.id}
+                  jobStatus={job!.jobStatus}
+                  clientId={job!.userId}
+                  freelancerId={user?.id}
+                />
+              </div>
+            )}
 
             {isJobOwner && (
               <div className="text-center space-x-4">
@@ -296,10 +360,12 @@ const JobDetailPage: React.FC = () => {
                     type="primary"
                     size="large"
                     icon={<PlayCircleOutlined />}
-                    onClick={handleStartJob}
+                    onClick={() => setIsStartJobModalVisible(true)}
+                    loading={isStartingJob}
                   >
                     Start Job
                   </Button>
+
                 )}
                 {job!.jobStatus === 'Open' && acceptedFreelancers.length == 0 && (
                   <Button
@@ -325,7 +391,95 @@ const JobDetailPage: React.FC = () => {
               </div>
             )}
 
-            {/* UI-only: Freelancer Ratings Section */}
+            <Modal
+              title="Start Job"
+              open={isStartJobModalVisible}
+              onCancel={() => setIsStartJobModalVisible(false)}
+              width={600}
+              footer={null}
+            >
+              {job && (
+                <div>
+                  <Paragraph>
+                    Are you sure you want to start this job? Once started, your wallet will be
+                    charged {job.jobSalary * acceptedFreelancers.length}{" "}
+                    <strong>{selectedWalletSymbol}</strong>, the job status will change to
+                    "Ongoing" and freelancers can begin their work.
+                  </Paragraph>
+
+                <div className="mb-4">
+                  <span className="mr-2 font-semibold">Choose Wallet:</span>
+                  <Select
+                    value={selectedWalletSymbol}
+                    style={{ width: 160 }}
+                    onChange={(value) => setSelectedWalletSymbol(value)}
+                  >
+                    <Option value={walletSymbol}>{walletSymbol}</Option>
+                  </Select>
+                </div>
+
+                <div className="text-right">
+                  <Button
+                    type="primary"
+                    onClick={async () => {
+                      console.log('🚀 Start Job clicked. Job data:', job);
+                      if (!job) {
+                        console.error('❌ Job is null when trying to start job');
+                        message.error('Job data not loaded. Please refresh the page.');
+                        return;
+                      }
+                      setIsStartJobModalVisible(false);
+                      await handleStartJob();
+                      setIsInvoiceModalVisible(false);
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                </div>
+                </div>
+              )}
+            </Modal>
+
+            <Modal
+              title="Invoice"
+              open={isInvoiceModalVisible}
+              onCancel={() => setIsInvoiceModalVisible(false)}
+              width={700}
+              footer={null}
+            >
+              {job && (
+                <div className="space-y-6">
+                <div className="flex justify-between items-center border-b pb-3">
+                  <Paragraph className="m-0">
+                    <strong>Status:</strong>{" "}
+                    <Tag color="green" className="ml-2">PAID</Tag>
+                  </Paragraph>
+                  <Paragraph className="m-0 text-gray-500">
+                    <strong>Date:</strong> {dayjs().format("YYYY-MM-DD HH:mm:ss")}
+                  </Paragraph>
+                </div>
+
+                <div>
+                  <Title level={5} className="mb-3">Freelancers</Title>
+                  <Table
+                    columns={columns}
+                    dataSource={data}
+                    pagination={false}
+                    bordered
+                    size="middle"
+                  />
+                </div>
+
+                <div className="flex justify-end border-t pt-3">
+                  <Paragraph className="text-lg font-semibold m-0">
+                    Total: {job.jobSalary * acceptedFreelancers.length} {walletSymbol}
+                  </Paragraph>
+                </div>
+                </div>
+              )}
+            </Modal>
+
+
             {isJobOwner && job!.jobStatus === 'Finished' && (
               <>
                 <Divider />
@@ -341,19 +495,13 @@ const JobDetailPage: React.FC = () => {
                           <Card size="small" className="hover:shadow">
                             <div className="flex items-center gap-3">
                               <Avatar
-                                src={
-                                  f.profilePicture
-                                    ? URL.createObjectURL(f.profilePicture)
-                                    : undefined
-                                }
+                                src={f.profilePictureUrl || undefined}
                                 icon={<UserOutlined />}
                               />
                               <div className="flex-1">
                                 <Text strong>{f.username}</Text>
                                 <div className="text-xs text-gray-500">
-                                  Current: {f.rating?.toFixed
-                                    ? f.rating.toFixed(1)
-                                    : Number(f.rating || 0).toFixed(1)}
+                                  Current: {(Number(f.rating) / 10).toFixed(1)}
                                 </div>
                               </div>
                               <Rate
@@ -426,12 +574,12 @@ const JobDetailPage: React.FC = () => {
         key: 'freelancer',
         render: (_: any, record: ApplicantData) => (
           <div className="flex items-center space-x-3">
-            <Avatar src={record.user.profilePicture ? URL.createObjectURL(record.user.profilePicture) : undefined} icon={<UserOutlined />} />
+            <Avatar src={record.user.profilePictureUrl || undefined} icon={<UserOutlined />} />
             <div>
               <Text strong>{record.user.username}</Text>
               <div className="flex items-center space-x-1">
                 <Text type="secondary" className="text-sm">Rating: </Text>
-                <Text className="text-sm">{record.user.rating.toFixed(1)}</Text>
+                <Text className="text-sm">{(Number(record.user.rating) / 10).toFixed(1)}</Text>
               </div>
             </div>
           </div>
@@ -510,7 +658,15 @@ const JobDetailPage: React.FC = () => {
               <Form
                 form={form}
                 layout="vertical"
-                onFinish={() => handleAcceptApplicant(record.user.id, form.getFieldsValue())}
+                onFinish={async () => {
+                  const success = await handleAcceptApplicant(record.user.id, form.getFieldsValue());
+                  if (success) {
+                    message.success("Applicant accepted successfully!");
+                    setIsAcceptModalVisible(false);
+                  } else {
+                    message.error("Failed to accept applicant.");
+                  }
+                }}
               >
                 <Form.Item
                   name="acceptancereason"
@@ -610,12 +766,12 @@ const JobDetailPage: React.FC = () => {
         key: 'freelancer',
         render: (_: any, record: User) => (
           <div className="flex items-center space-x-3">
-            <Avatar src={record.profilePicture ? URL.createObjectURL(record.profilePicture) : undefined} icon={<UserOutlined />} />
+            <Avatar src={record.profilePictureUrl || undefined} icon={<UserOutlined />} />
             <div>
               <Text strong>{record.username}</Text>
               <div className="flex items-center space-x-1">
                 <Text type="secondary" className="text-sm">Rating: </Text>
-                <Text className="text-sm">{record.rating.toFixed(1)}</Text>
+                <Text className="text-sm">{(Number(record.rating) / 10).toFixed(1)}</Text>
               </div>
             </div>
           </div>
@@ -712,7 +868,7 @@ const JobDetailPage: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Avatar
                       size="small"
-                      src={u.profilePicture ? URL.createObjectURL(u.profilePicture) : undefined}
+                      src={u.profilePictureUrl || undefined}
                       icon={<UserOutlined />}
                     />
                     <span>{u.username}</span>
@@ -728,12 +884,12 @@ const JobDetailPage: React.FC = () => {
                 <Col span={24}>
                   <div className="flex items-center space-x-3">
                     <Avatar
-                      src={selectedUser.profilePicture ? URL.createObjectURL(selectedUser.profilePicture) : undefined}
+                      src={selectedUser.profilePictureUrl || undefined}
                       icon={<UserOutlined />}
                     />
                     <div>
                       <Text strong>{selectedUser.username}</Text>
-                      <div className="text-sm text-gray-500">Rating: {selectedUser.rating.toFixed(1)}</div>
+                      <div className="text-sm text-gray-500">Rating: {(Number(selectedUser.rating) / 10).toFixed(1)}</div>
                     </div>
                   </div>
                 </Col>
@@ -947,13 +1103,13 @@ const JobDetailPage: React.FC = () => {
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                   {submissionHistory.length > 0 ? (
                     submissionHistory.map((sub) => {
-                      const filePath = sub.submissionFile || '';
+                      const filePath = sub.submissionFilePath || '';
                       const fileName = (filePath.split('/').pop() || 'file.zip');
                       return (
                         <Card key={sub.id} type="inner">
                           <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
-                          <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
-                            {sub.submissionStatus}
+                          <Tag color={sub.status === 'Accept' ? 'green' : sub.status === 'Reject' ? 'red' : 'blue'}>
+                            {sub.status}
                           </Tag>
                           <br />
                           <Text type="secondary">File: {fileName}</Text>
@@ -984,88 +1140,102 @@ const JobDetailPage: React.FC = () => {
     }
 
     // UI for Job Owner
+    const SubmitterInfo = ({ sub }: { sub: Submission }) => {
+      const [submitter, setSubmitter] = useState<User | null>(null);
+
+      useEffect(() => {
+        const fetchSubmitter = async () => {
+          const result = await getUserById(sub.userId);
+          if (result && 'ok' in result) {
+            setSubmitter(result.ok);
+          }
+        };
+        fetchSubmitter();
+      }, [sub.userId]);
+
+      const filePath = sub.submissionFilePath || '';
+      const fileName = (filePath.split('/').pop() || 'file.zip');
+
+      return (
+        <Card key={sub.id} title={`Submission from ${submitter?.username || '...'}`}>
+          <Row gutter={[16, 16]}>
+            <Col span={24}>
+              <div className="flex items-center space-x-3">
+                <Avatar icon={<UserOutlined />} />
+                <div>
+                  <Text strong>{submitter?.username || '...'}</Text>
+                  <br />
+                  <Tag color={sub.status === 'Accept' ? 'green' : sub.status === 'Reject' ? 'red' : 'blue'}>
+                    {sub.status}
+                  </Tag>
+                </div>
+              </div>
+            </Col>
+            <Col span={24}>
+              <Title level={5}>Message:</Title>
+              <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
+            </Col>
+            <Col span={24}>
+              {filePath ? (
+                <Button href={`/api/download-file?path=${encodeURIComponent(filePath)}`} download icon={<PaperClipOutlined />}>
+                  Download Submission ({fileName})
+                </Button>
+              ) : (
+                <Text type="secondary">No file attached</Text>
+              )}
+            </Col>
+            <Col span={24}>
+              {sub.status === 'Waiting' && (
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={<CheckOutlined />}
+                    onClick={async () => {
+                      try {
+                        const res = await updateSubmissionStatus(sub.id, 'Accept', sub.submissionMessage || '');
+                        if (res[0] === 'Ok') {
+                          message.success('Submission accepted');
+                          const listOwner = await getSubmissionByJobId(jobId!);
+                          setOwnerSubmissions(listOwner);
+                        }
+                      } catch (e) {
+                        message.error('Failed to accept submission');
+                      }
+                    }}
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    danger
+                    icon={<CloseOutlined />}
+                    onClick={async () => {
+                      try {
+                        const res = await updateSubmissionStatus(sub.id, 'Reject', sub.submissionMessage || '');
+                        if (res[0] === 'Ok') {
+                          message.success('Submission rejected');
+                          const listOwner = await getSubmissionByJobId(jobId!);
+                          setOwnerSubmissions(listOwner);
+                        }
+                      } catch (e) {
+                        message.error('Failed to reject submission');
+                      }
+                    }}
+                  >
+                    Decline
+                  </Button>
+                </Space>
+              )}
+            </Col>
+          </Row>
+        </Card>
+      );
+    }
+
     const submissions = ownerSubmissions;
 
     return (
       <Space direction="vertical" size="large" className="w-full">
-        {submissions
-          .map(sub => {
-            const filePath = sub.submissionFile || '';
-            const fileName = (filePath.split('/').pop() || 'file.zip');
-            return (
-              <Card key={sub.id} title={`Submission from ${sub.user.username}`}>
-                <Row gutter={[16, 16]}>
-                  <Col span={24}>
-                    <div className="flex items-center space-x-3">
-                      <Avatar icon={<UserOutlined />} />
-                      <div>
-                        <Text strong>{sub.user.username}</Text>
-                        <br />
-                        <Tag color={sub.submissionStatus === 'Accept' ? 'green' : sub.submissionStatus === 'Reject' ? 'red' : 'blue'}>
-                          {sub.submissionStatus}
-                        </Tag>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col span={24}>
-                    <Title level={5}>Message:</Title>
-                    <Paragraph>{sub.submissionMessage || '-'}</Paragraph>
-                  </Col>
-                  <Col span={24}>
-                    {filePath ? (
-                      <Button href={`/api/download-file?path=${encodeURIComponent(filePath)}`} download icon={<PaperClipOutlined />}>
-                        Download Submission ({fileName})
-                      </Button>
-                    ) : (
-                      <Text type="secondary">No file attached</Text>
-                    )}
-                  </Col>
-                  <Col span={24}>
-                    {sub.submissionStatus === 'Waiting' && (
-                      <Space>
-                        <Button
-                          type="primary"
-                          icon={<CheckOutlined />}
-                          onClick={async () => {
-                            try {
-                              const res = await updateSubmissionStatus(sub.id, 'Accept', sub.submissionMessage || '');
-                              if (res[0] === 'Ok') {
-                                message.success('Submission accepted');
-                                const listOwner = await getSubmissionByJobId(jobId!);
-                                setOwnerSubmissions(listOwner);
-                              }
-                            } catch (e) {
-                              message.error('Failed to accept submission');
-                            }
-                          }}
-                        >
-                          Accept
-                        </Button>
-                        <Button
-                          danger
-                          icon={<CloseOutlined />}
-                          onClick={async () => {
-                            try {
-                              const res = await updateSubmissionStatus(sub.id, 'Reject', sub.submissionMessage || '');
-                              if (res[0] === 'Ok') {
-                                message.success('Submission rejected');
-                                const listOwner = await getSubmissionByJobId(jobId!);
-                                setOwnerSubmissions(listOwner);
-                              }
-                            } catch (e) {
-                              message.error('Failed to reject submission');
-                            }
-                          }}
-                        >
-                          Decline
-                        </Button>
-                      </Space>
-                    )}
-                  </Col>
-                </Row>
-              </Card>
-            );
-          })}
+        {submissions.map(sub => <SubmitterInfo key={sub.id} sub={sub} />)}
         {submissions.length === 0 && <Text>No submissions yet.</Text>}
       </Space>
     );
@@ -1104,6 +1274,13 @@ const JobDetailPage: React.FC = () => {
               <TabPane tab={`Accepted (${acceptedFreelancers.length})`} key="accepted">
                 <AcceptedContent />
               </TabPane>
+<<<<<<< HEAD
+=======
+              <TabPane tab="Submission Answer" key="submission">
+                <SubmissionContent />
+              </TabPane>
+              {job!.jobStatus === "Open" && (
+>>>>>>> master
 
               {job.jobStatus === "Open" && (
                 <TabPane tab="Invite Users" key="invite">
@@ -1122,10 +1299,10 @@ const JobDetailPage: React.FC = () => {
               <TabPane tab="Job Details" key="details">
                 <JobDetailsContent />
               </TabPane>
-              {isJobFreelancer && job.jobStatus === "Ongoing" && (
+              {isJobFreelancer && job!.jobStatus === "Ongoing" && (
                 <TabPane tab="Submission Upload" key="submission">
                   <SubmissionContent />
-                  
+
                 </TabPane>
               )}
             </Tabs>

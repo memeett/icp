@@ -9,7 +9,7 @@ class AgentService {
     if (!this.authClientInstance) {
       this.authClientInstance = await AuthClient.create({
         idleOptions: {
-          idleTimeout: 1000 * 60 * 30,
+          idleTimeout: 1000 * 60 * 60 * 8, // 8 hours instead of 30 minutes
           disableDefaultIdleCallback: true,
         },
       });

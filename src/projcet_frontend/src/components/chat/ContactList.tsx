@@ -4,7 +4,7 @@ import { UserOutlined, SearchOutlined, MessageOutlined, ArrowLeftOutlined } from
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAtom } from 'jotai';
 import { selectedContactAtom, currentChatRoomAtom } from '../../app/store/chat';
-import { useAuth } from '../../shared/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import useChat from '../../hooks/useChat';
 import { ChatRoom } from '../../config/supabase';
 import { getUserById } from '../../controller/userController';

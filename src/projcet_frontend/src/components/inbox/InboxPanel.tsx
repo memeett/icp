@@ -12,7 +12,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInbox } from '../../shared/hooks/useInbox';
 import { useInboxPanel } from '../../contexts/InboxPanelContext';
-import { useAuth } from '../../shared/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { InboxResponse } from '../../shared/types/Inbox';
 import { MessageDetail } from './MessageDetail';
 import { MessageList } from './MessageList';

@@ -24,7 +24,8 @@ import {
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
-import { useAuth, useWorkSubmission } from '../shared/hooks';
+import { useAuth } from '../hooks/useAuth';
+import { useWorkSubmission } from '../shared/hooks';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;

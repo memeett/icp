@@ -1,4 +1,3 @@
-export { useAuth } from './useAuth';
 export { useDebounce } from './useDebounce';
 export { useJobs } from './useJobs';
 export { useLocalStorage } from './useLocalStorage';

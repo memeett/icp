@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, message } from 'antd';
 import { MessageOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../shared/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import useChat from '../../hooks/useChat';
 
 interface JobChatButtonProps {

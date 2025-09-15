@@ -24,7 +24,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Job } from '../../shared/types/Job';
-import { useAuth } from '../../shared/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../shared/hooks/useNotifications';
 import { formatDate } from '../../utils/dateUtils';
 import { getStatusColor } from '../../utils/JobStatusCololer';

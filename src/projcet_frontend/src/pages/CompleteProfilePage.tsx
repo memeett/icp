@@ -26,7 +26,7 @@ import {
 import type { UploadFile, UploadProps } from 'antd/es/upload/interface';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../shared/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { useGlobalLoading } from '../shared/hooks/useGlobalLoading';
 import { JobCategory } from '../shared/types/Job';
 import dayjs from 'dayjs';

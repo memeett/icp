@@ -32,7 +32,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
 import { useJobs } from '../shared/hooks/useJobs';
 import { createJob } from '../controller/jobController';
-import { useAuth } from '../shared/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { useGlobalLoading } from '../shared/hooks/useGlobalLoading';
 import { storage } from '../utils/storage';
 import { ensureUserData } from '../utils/sessionUtils';

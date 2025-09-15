@@ -18,7 +18,7 @@ import {
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import Navbar from '../ui/components/Navbar';
-import { useAuth } from '../shared/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { getProfilePictureUrl } from '../controller/userController';
 import dayjs from 'dayjs';
 import { JobCategory } from '../shared/types/Job';

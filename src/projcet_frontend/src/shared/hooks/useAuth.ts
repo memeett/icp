@@ -117,11 +117,7 @@ export const useAuth = (): UseAuthReturn => {
 
   const updateProfile = useCallback(async (payload: Partial<User>): Promise<boolean> => {
     try {
-<<<<<<< HEAD
-      showLoading('Updating profile...');
-=======
       console.log('updateProfile hook called with:', payload);
->>>>>>> master
       const success = await controllerUpdateProfile(payload);
       if (success) {
         console.log('Profile update successful, refreshing user data...');

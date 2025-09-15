@@ -10,6 +10,8 @@ import { Job, JobCategory, JobApplication, JobSubmission } from '../../shared/ty
 export const jobsAtom = atom<Job[]>([]);
 export const jobCategoriesAtom = atom<JobCategory[]>([]);
 export const selectedJobAtom = atom<Job | null>(null);
+export const jobsLoadingAtom = atom<boolean>(false);
+export const jobCategoriesLoadingAtom = atom<boolean>(false);
 
 // Job filters atoms
 export const jobFiltersAtom = atom({
@@ -144,6 +146,8 @@ export const jobActionsAtom = atom(
     | { type: 'SET_SELECTED_JOB'; job: Job | null }
     | { type: 'SET_RECOMMENDATIONS'; jobs: Job[] }
     | { type: 'UPDATE_FILTERS'; filters: Partial<{ categories: string[]; priceRanges: string[]; experienceLevel: string[]; jobType: string[]; sortBy: 'newest' | 'oldest' | 'salary_high' | 'salary_low' | 'deadline'; }> }
+    | { type: 'SET_JOBS_LOADING'; loading: boolean }
+    | { type: 'SET_CATEGORIES_LOADING'; loading: boolean }
   ) => {
     switch (action.type) {
       case 'SET_JOBS':
@@ -173,6 +177,12 @@ export const jobActionsAtom = atom(
         break;
       case 'UPDATE_FILTERS':
         set(jobFiltersAtom, (prev) => ({ ...prev, ...action.filters }));
+        break;
+      case 'SET_JOBS_LOADING':
+        set(jobsLoadingAtom, action.loading);
+        break;
+      case 'SET_CATEGORIES_LOADING':
+        set(jobCategoriesLoadingAtom, action.loading);
         break;
     }
   }

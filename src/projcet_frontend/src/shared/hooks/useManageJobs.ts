@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { message } from 'antd';
 import { getUserJobs, deleteJob } from '../../controller/jobController';
 import { Job } from '../types/Job';
-import { useAuth } from './useAuth';
+import { useAuth } from '../../hooks/useAuth';
 
 interface UseManageJobsReturn {
   jobs: Job[];

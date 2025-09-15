@@ -5,7 +5,6 @@ import {
   jobCategoriesAtom,
   selectedJobAtom,
   filteredJobsAtom,
-
   jobFiltersAtom,
   jobSearchQueryAtom,
   jobsCurrentPageAtom,
@@ -14,7 +13,9 @@ import {
   savedJobsAtom,
   isSavedJobAtom,
   jobStatsAtom,
-  paginatedJobsAtom
+  paginatedJobsAtom,
+  jobsLoadingAtom,
+  jobCategoriesLoadingAtom
 } from '../../app/store/jobs';
 import { notificationActionsAtom } from '../../app/store/ui';
 import { Job, JobCategory } from '../types/Job';
@@ -61,6 +62,8 @@ export const useJobs = (): UseJobsReturn => {
   const [paginatedJobs] = useAtom(paginatedJobsAtom);
   const [recommendedJobs] = useAtom(recommendedJobsAtom);
   const [jobStats] = useAtom(jobStatsAtom);
+  const [jobsLoading] = useAtom(jobsLoadingAtom);
+  const [jobCategoriesLoading] = useAtom(jobCategoriesLoadingAtom);
   
   const [filters] = useAtom(jobFiltersAtom);
   const [searchQuery, setSearchQueryAtom] = useAtom(jobSearchQueryAtom);
@@ -88,6 +91,7 @@ export const useJobs = (): UseJobsReturn => {
   // Fetch all jobs
   const fetchJobs = useCallback(async () => {
     try {
+      jobActions({ type: 'SET_JOBS_LOADING', loading: true });
       const jobsData = await viewAllJobs();
       if (jobsData) {
         // Convert backend job format to frontend format
@@ -115,11 +119,14 @@ export const useJobs = (): UseJobsReturn => {
           message: 'Failed to load jobs. Please try again.',
         }
       });
+    } finally {
+      jobActions({ type: 'SET_JOBS_LOADING', loading: false });
     }
   }, [jobActions, notificationActions]);
   // Fetch job categories
   const fetchJobCategories = useCallback(async () => {
     try {
+      jobActions({ type: 'SET_CATEGORIES_LOADING', loading: true });
       const categories = await viewAllJobCategories();
       if (categories) {
         jobActions({ type: 'SET_CATEGORIES', categories });
@@ -134,6 +141,8 @@ export const useJobs = (): UseJobsReturn => {
           message: 'Failed to load job categories.',
         }
       });
+    } finally {
+      jobActions({ type: 'SET_CATEGORIES_LOADING', loading: false });
     }
   }, [jobActions, notificationActions]);
 
@@ -264,7 +273,7 @@ export const useJobs = (): UseJobsReturn => {
     filters,
     searchQuery,
     currentPage,
-    isLoading: false, // TODO: Add loading state
+    isLoading: jobsLoading || jobCategoriesLoading,
     
     // Actions
     fetchJobs,

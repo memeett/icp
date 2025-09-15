@@ -156,35 +156,32 @@ const CompleteProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8">
+    <div className="min-h-screen bg-background text-foreground relative">
+      {/* Grid Pattern Background */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.1)_1px,transparent_1px)] bg-[size:25px_25px]" />
+      
+      {/* Subtle Gradient Orbs */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-500/10 via-indigo-500/5 to-transparent rounded-full blur-3xl" />
+      
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-4xl mx-auto px-4"
+        className="max-w-4xl mx-auto px-4 py-12 relative z-10"
       >
-        <motion.div variants={itemVariants} className="text-center mb-8">
-          <Title level={1} className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Complete Your Profile
-          </Title>
-          <Paragraph className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Welcome to ERGASIA! Let's set up your profile to help you connect with the best opportunities.
-          </Paragraph>
-        </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="shadow-xl border-0 rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
-              <div className="flex items-center space-x-4">
-                <CheckCircleOutlined className="text-3xl" />
-                <div>
-                  <Title level={3} className="text-white mb-0">Profile Setup</Title>
-                  <Text className="text-blue-100">Fill in your details to get started</Text>
-                </div>
-              </div>
-            </div>
-
+          <Card className="shadow-lg border border-border rounded-xl overflow-hidden bg-card">
             <div className="p-8">
+              <motion.div variants={itemVariants} className="text-center mb-16">
+                <Title level={1} className="text-4xl font-bold text-foreground mb-6">
+                  Complete Your Profile
+                </Title>
+                <Paragraph className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                  Welcome to <span className="font-semibold text-primary">ERGASIA</span>! Let's set up your profile to help you connect with the best opportunities.
+                </Paragraph>
+              </motion.div>
               <Form
                 form={form}
                 layout="vertical"
@@ -201,33 +198,46 @@ const CompleteProfilePage: React.FC = () => {
                   {/* Profile Picture Section */}
                   <Col xs={24} md={8}>
                     <motion.div variants={itemVariants} className="text-center">
-                      <Title level={4} className="flex items-center justify-center mb-4">
-                        <CameraOutlined className="mr-2" />
+                      <Title level={4} className="flex items-center justify-center mb-6 text-card-foreground">
+                        <CameraOutlined className="mr-2 text-primary" />
                         Profile Picture
                       </Title>
 
-                      <div className="flex flex-col items-center space-y-4">
-                        <Avatar
-                          size={120}
-                          src={profileImage}
-                          icon={<UserOutlined />}
-                          className="border-4 border-blue-200 shadow-lg"
-                        />
+                      <div className="flex flex-col items-center space-y-6">
+                        <div className="relative">
+                          <Avatar
+                            size={120}
+                            src={profileImage}
+                            icon={<UserOutlined />}
+                            className="border-2 border-border shadow-lg"
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-md">
+                            <CameraOutlined className="text-primary-foreground text-xs" />
+                          </div>
+                        </div>
 
-                        <Upload
-                          customRequest={handleImageUpload}
-                          beforeUpload={beforeUpload}
-                          showUploadList={false}
-                          accept="image/*"
-                        >
-                          <Button icon={<CameraOutlined />} type="dashed" className="rounded-lg">
-                            Upload Photo
-                          </Button>
-                        </Upload>
+                        <div className="space-y-3">
+                          <Upload
+                            customRequest={handleImageUpload}
+                            beforeUpload={beforeUpload}
+                            showUploadList={false}
+                            accept="image/*"
+                          >
+                            <Button 
+                              icon={<CameraOutlined />} 
+                              type="primary" 
+                              className="rounded-lg"
+                            >
+                              Choose Photo
+                            </Button>
+                          </Upload>
 
-                        <Text type="secondary" className="text-sm">
-                          JPG or PNG, max 2MB
-                        </Text>
+                          <div className="text-center">
+                            <Text type="secondary" className="text-sm text-muted-foreground">
+                              JPG or PNG, max 2MB
+                            </Text>
+                          </div>
+                        </div>
                       </div>
                     </motion.div>
                   </Col>
@@ -239,8 +249,8 @@ const CompleteProfilePage: React.FC = () => {
                         <Form.Item
                           name="username"
                           label={
-                            <span className="flex items-center">
-                              <UserOutlined className="mr-2" />
+                            <span className="flex items-center text-card-foreground font-medium">
+                              <UserOutlined className="mr-2 text-primary" />
                               Username
                             </span>
                           }
@@ -262,8 +272,8 @@ const CompleteProfilePage: React.FC = () => {
                         <Form.Item
                           name="dob"
                           label={
-                            <span className="flex items-center">
-                              <CalendarOutlined className="mr-2" />
+                            <span className="flex items-center text-card-foreground font-medium">
+                              <CalendarOutlined className="mr-2 text-primary" />
                               Date of Birth
                             </span>
                           }
@@ -273,6 +283,7 @@ const CompleteProfilePage: React.FC = () => {
                             placeholder="Select your date of birth"
                             size="large"
                             className="w-full rounded-lg"
+                            suffixIcon={<CalendarOutlined className="text-muted-foreground" />}
                             disabledDate={(current) => current && current > dayjs().subtract(13, 'years')}
                           />
                         </Form.Item>
@@ -282,8 +293,8 @@ const CompleteProfilePage: React.FC = () => {
                         <Form.Item
                           name="preference"
                           label={
-                            <span className="flex items-center">
-                              <TagsOutlined className="mr-2" />
+                            <span className="flex items-center text-card-foreground font-medium">
+                              <TagsOutlined className="mr-2 text-primary" />
                               Skills & Preferences
                             </span>
                           }
@@ -299,6 +310,7 @@ const CompleteProfilePage: React.FC = () => {
                             className="rounded-lg"
                             maxTagCount={3}
                             maxTagTextLength={15}
+                            suffixIcon={<TagsOutlined className="text-muted-foreground" />}
                           >
                             {mockJobCategories.map(category => (
                               <Option key={category.id} value={category.id}>
@@ -313,8 +325,8 @@ const CompleteProfilePage: React.FC = () => {
                         <Form.Item
                           name="description"
                           label={
-                            <span className="flex items-center">
-                              <FileTextOutlined className="mr-2" />
+                            <span className="flex items-center text-card-foreground font-medium">
+                              <FileTextOutlined className="mr-2 text-primary" />
                               About You
                             </span>
                           }
@@ -345,7 +357,7 @@ const CompleteProfilePage: React.FC = () => {
                     htmlType="submit"
                     loading={loading}
                     size="large"
-                    className="px-12 py-2 h-auto rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 border-0 hover:from-blue-600 hover:to-purple-700 shadow-lg"
+                    className="px-12 py-2 h-auto rounded-lg"
                   >
                     <span className="flex items-center">
                       <CheckCircleOutlined className="mr-2" />
@@ -354,8 +366,8 @@ const CompleteProfilePage: React.FC = () => {
                   </Button>
 
                   <div className="mt-4">
-                    <Text type="secondary">
-                      By completing your profile, you agree to our Terms of Service and Privacy Policy
+                    <Text type="secondary" className="text-muted-foreground">
+                      By completing your profile, you agree to our <u>Terms of Service</u> and <u>Privacy Policy</u>
                     </Text>
                   </div>
                 </motion.div>

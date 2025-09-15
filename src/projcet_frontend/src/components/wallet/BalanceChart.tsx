@@ -123,7 +123,7 @@ const BalanceChart: React.FC<BalanceChartProps> = ({ loading, chartData, walletS
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ type: "spring", stiffness: 200 }}
-                                className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6"
+                                className="w-20 h-20 bg-background rounded-full flex items-center justify-center mb-6"
                             >
                                 <LineChartOutlined className="text-3xl text-gray-400" />
                             </motion.div>

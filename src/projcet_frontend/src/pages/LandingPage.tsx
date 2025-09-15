@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from 'antd';
 import { ArrowRight, Briefcase, Users, Award, DollarSign, Sparkles, Zap, Globe } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../shared/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import Navbar from '../ui/components/Navbar';
 
 const LandingPage: React.FC = () => {

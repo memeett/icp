@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { message } from 'antd';
 import dayjs from 'dayjs';
-import { useAuth } from '../shared/hooks/useAuth';
+import { useAuth } from './useAuth';
 import { getUserTransaction, getUserById } from '../controller/userController';
 import { getJobById } from '../controller/jobController';
 import {

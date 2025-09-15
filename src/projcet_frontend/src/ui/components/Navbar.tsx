@@ -30,7 +30,7 @@ import {
   MessageOutlined
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../shared/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { useAtom } from 'jotai';
 import { themeAtom } from '../../app/store/ui';
 import { getUserById } from '../../controller/userController';

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { ChatRoom, Message } from '../config/supabase';
 import ChatService from '../services/chatService';
-import { useAuth } from '../shared/hooks/useAuth';
+import { useAuth } from './useAuth';
 import { currentChatRoomAtom } from '../app/store/chat';
 import { supabase } from '../config/supabase';
 

@@ -19,7 +19,7 @@ import {
   SettingOutlined,
   SecurityScanOutlined
 } from '@ant-design/icons';
-import { useAuth } from '../shared/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import FaceRecognition from '../components/FaceRecognition';
 import Navbar from '../ui/components/Navbar';
 

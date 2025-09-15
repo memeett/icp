@@ -23,7 +23,8 @@ import {
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
-import { useAuth, useInbox } from '../shared/hooks';
+import { useAuth } from '../hooks/useAuth';
+import { useInbox } from '../shared/hooks';
 import { InboxResponse } from '../shared/types/Inbox';
 
 const { Title, Text } = Typography;

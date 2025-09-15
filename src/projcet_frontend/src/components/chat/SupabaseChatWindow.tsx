@@ -4,7 +4,7 @@ import { SendOutlined, UserOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { ChatRoom, Message } from '../../config/supabase';
 import useChat from '../../hooks/useChat';
-import { useAuth } from '../../shared/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { getUserById } from '../../controller/userController';
 
 const { Text } = Typography;

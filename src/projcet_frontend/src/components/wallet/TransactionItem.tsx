@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { CashFlowHistory } from '../../../../declarations/user/user.did';
-import { useAuth } from '../../shared/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 
 const { Text } = Typography;
 

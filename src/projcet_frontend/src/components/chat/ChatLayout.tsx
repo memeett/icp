@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom';
 import ContactList from './ContactList';
 import ChatWindow from './ChatWindow';
 import { selectedContactAtom } from '../../app/store/chat';
-import { useAuth } from '../../shared/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import useChat from '../../hooks/useChat';
 import { ChatRoom } from '../../config/supabase';
 import './ChatPages.css';

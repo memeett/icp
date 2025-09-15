@@ -18,7 +18,8 @@ import { Job } from '../../shared/types/Job';
 import { formatDate } from '../../utils/dateUtils';
 import { createInvitation } from '../../controller/invitationController';
 import { User } from '../../shared/types/User';
-import { useAuth, useUserManagement } from '../../shared/hooks';
+import { useAuth } from '../../hooks/useAuth';
+import { useUserManagement } from '../../shared/hooks';
 
 
 const { Option } = Select;

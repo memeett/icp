@@ -4,7 +4,7 @@ import { ModalBody, ModalContent, ModalFooter } from "../ui/animated-modal";
 import { motion } from "framer-motion";
 import { GlobeIcon } from "lucide-react";
 import { useModal } from "../../contexts/modal-context";
-import { useAuth } from "../../shared/hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 
 export function AuthenticationModal({ modalIndex }: { modalIndex?: number }) {
   const { open, setOpen, closeModal } = useModal();

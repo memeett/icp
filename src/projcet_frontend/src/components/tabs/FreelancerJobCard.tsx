@@ -73,15 +73,6 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
                 </div>
             </div>
             <div className="mt-4">
-<<<<<<< HEAD
-                <button
-                    onClick={viewDetail}
-                    className="text-sm bg-[#6366f1] text-text px-3 py-1.5 rounded-md hover:bg-[#4f46e5] transition-all duration-300 font-medium shadow-sm"
-                >
-                    View Details
-                </button>
-
-=======
                 <Space>
                     <button
                         onClick={viewDetail}
@@ -99,7 +90,6 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
                         />
                     )}
                 </Space>
->>>>>>> master
             </div>
         </div>
     );

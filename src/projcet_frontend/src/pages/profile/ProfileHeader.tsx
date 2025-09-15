@@ -25,6 +25,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, profileImage, onEdi
               icon={<EditOutlined />}
               onClick={onEdit}
               size="large"
+              className="mt-6"
             >
               Edit Profile
             </Button>
@@ -33,7 +34,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, profileImage, onEdi
       </Col>
       
       <Col xs={24} sm={18}>
-        <div className="space-y-6">
+        <div className="py-6">
           <div>
             <Title level={2} className="mb-3 text-3xl font-bold">
               {user.username || 'N/A'}

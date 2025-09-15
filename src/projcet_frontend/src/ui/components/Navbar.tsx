@@ -258,9 +258,6 @@ const Navbar: React.FC = () => {
       type: 'divider' as const,
     },
     {
-      type: 'divider' as const,
-    },
-    {
       key: 'account',
       icon: <SettingOutlined />,
       label: 'Account Settings',
@@ -278,7 +275,6 @@ const Navbar: React.FC = () => {
 
   const navigationItems = [
     { key: 'find', label: 'Find Jobs', path: '/find' },
-    { key: 'post', label: 'Post Job', path: '/post' },
     { key: 'browse', label: 'Browse Freelancers', path: '/browse' },
     { key: 'manage', label: 'Manage Jobs', path: '/manage' },
     { key: 'chat', label: 'Chat', path: '/chat' },

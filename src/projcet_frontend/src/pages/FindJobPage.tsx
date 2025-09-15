@@ -60,6 +60,7 @@ const FindJobPage: React.FC = memo(() => {
   // Add comprehensive loading state management
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
   
   const {
     jobs,
@@ -77,12 +78,28 @@ const FindJobPage: React.FC = memo(() => {
 
   // Handle initial loading state more carefully
   useEffect(() => {
-    // Only consider it loaded when we have actual data or confirmed empty state
-    if (!isLoading && jobCategories.length > 0) {
+    console.log('FindJobPage loading state:', { isLoading, jobCategories: jobCategories.length, jobs: jobs.length, hasInitiallyLoaded, isInitializing });
+    
+    // Consider it loaded when we're not loading anymore, regardless of data availability
+    if (!isLoading) {
       setHasInitiallyLoaded(true);
       setIsInitializing(false);
     }
-  }, [isLoading, jobCategories.length]);
+  }, [isLoading, jobCategories.length, jobs.length, hasInitiallyLoaded, isInitializing]);
+
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isInitializing) {
+        console.warn('Loading timeout reached, forcing initialization complete');
+        setLoadingTimeout(true);
+        setHasInitiallyLoaded(true);
+        setIsInitializing(false);
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [isInitializing]);
 
   // Additional check for when jobs data is available
   useEffect(() => {
@@ -282,10 +299,8 @@ const FindJobPage: React.FC = memo(() => {
 
   // Improved job grid rendering with proper loading sequence
   const renderJobGrid = () => {
-    // Determine if we should show loading
-    const shouldShowLoading = isInitializing || isLoading || (!hasInitiallyLoaded && jobs.length === 0);
-    
-    if (shouldShowLoading) {
+    // Show loading only when actually loading
+    if (isLoading || isInitializing) {
       return (
         <div className="flex justify-center items-center py-20">
           <Spin size="large" tip="Loading jobs..." />
@@ -293,7 +308,7 @@ const FindJobPage: React.FC = memo(() => {
       );
     }
 
-    // Show empty state only when fully loaded and no jobs found
+    // Show empty state when loaded but no jobs found
     if (hasInitiallyLoaded && !isLoading && paginatedJobs.length === 0) {
       return (
         <Empty

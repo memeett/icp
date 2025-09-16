@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
-import { UserInvitationPayload } from "../../../../declarations/invitation/invitation.did";
+import { UserInvitationPayload } from "../../shared/types/Invitation";
+import { Job } from "../../shared/types/Job";
 import { useState } from "react";
 import {
   acceptInvitation,
   rejectInvitation,
 } from "../../controller/invitationController";
 import { appendFreelancers } from "../../controller/jobTransactionController";
-import { Job } from "../../../../declarations/job/job.did";
 import { createInbox } from "../../controller/inboxController";
 import { formatDate } from "../../utils/dateUtils";
 

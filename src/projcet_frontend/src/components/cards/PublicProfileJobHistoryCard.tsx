@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getJobById } from "../../controller/jobController";
 import { getUserById } from "../../controller/userController";
-import { user } from "../../../../declarations/user";
 import { formatDate } from "../../utils/dateUtils";
 import { User } from "../../shared/types/User";
 import { Job } from "../../shared/types/Job";
@@ -21,8 +20,8 @@ export default function PublicProfileJobHistoryCard({ jobId, index, auroraColors
                     setJob(res);
                     setDate(formatDate(res.createdAt));
                     const user = await getUserById(res.userId)
-                    if(user){
-                        setClient(user)
+                    if(user && "ok" in user){
+                        setClient(user.ok)
                     }
                 } else {
                     setError("Job not found");

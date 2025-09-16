@@ -7,7 +7,7 @@ import {
     SwapOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { CashFlowHistory } from '../../../../declarations/user/user.did';
+import { CashFlowHistory } from '../../../declarations/projcet_backend_single/projcet_backend_single.did';
 import { useAuth } from '../../hooks/useAuth';
 
 const { Text } = Typography;

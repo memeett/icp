@@ -132,7 +132,7 @@ const WorkSubmissionPage: React.FC = () => {
                 <Space>
                   <Tag color="blue">{job.jobTags[0]?.jobCategoryName || 'General'}</Tag>
                   <Tag color="green">${job.jobSalary.toLocaleString()}</Tag>
-                  <Tag color={job.jobStatus === 'in_progress' ? 'processing' : 'default'}>
+                  <Tag color={job.jobStatus === 'Ongoing' ? 'processing' : 'default'}>
                     {job.jobStatus}
                   </Tag>
                 </Space>

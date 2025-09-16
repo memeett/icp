@@ -74,40 +74,15 @@ export const useJobs = (): UseJobsReturn => {
   const [, jobActions] = useAtom(jobActionsAtom);
   const [, notificationActions] = useAtom(notificationActionsAtom);
 
-  const convertBackendStatusType = (backendStatus: string): 'open' | 'ongoing' | 'finished' | 'cancelled' => {
-    switch (backendStatus) {
-      case 'Open':
-        return 'open';
-      case 'Ongoing':
-        return 'ongoing';
-      case 'Finished':
-        return 'finished';
-      case 'Cancelled':
-        return 'cancelled';
-      default:
-        throw new Error(`Unknown status: ${backendStatus}`);
-    }
-  }
   // Fetch all jobs
   const fetchJobs = useCallback(async () => {
     try {
       jobActions({ type: 'SET_JOBS_LOADING', loading: true });
       const jobsData = await viewAllJobs();
       if (jobsData) {
-        // Convert backend job format to frontend format
-        const convertedJobs = jobsData.map((backendJob: any) => ({
-          ...backendJob,
-          // Map backend properties to frontend properties
-          title: backendJob.jobName,
-          description: backendJob.jobDescription.join(' '),
-          budget: backendJob.jobSalary,
-          status: backendJob.jobStatus,
-          clientId: backendJob.userId,
-          category: backendJob.jobTags[0] || { id: '', jobCategoryName: 'General' },
-          deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Default 30 days
-        }));
-        jobActions({ type: 'SET_JOBS', jobs: convertedJobs });
-        console.log(convertedJobs);
+        // Jobs are already converted to frontend format in the controller
+        jobActions({ type: 'SET_JOBS', jobs: jobsData });
+        console.log(jobsData);
       }
     } catch (error) {
       console.error('Failed to fetch jobs:', error);
@@ -156,18 +131,8 @@ export const useJobs = (): UseJobsReturn => {
         // If not in current jobs list, fetch from API
         const jobData = await getJobById(jobId);
         if (jobData) {
-          // Convert backend job format to frontend format
-          const convertedJob = {
-            ...jobData,
-            title: jobData.jobName,
-            description: jobData.jobDescription.join(' '),
-            budget: jobData.jobSalary,
-            jobStatus: convertBackendStatusType(jobData.jobStatus),
-            clientId: jobData.userId,
-            category: jobData.jobTags[0] || { id: '', jobCategoryName: 'General' },
-            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          };
-          jobActions({ type: 'SET_SELECTED_JOB', job: convertedJob });
+          // Job is already in frontend format from controller
+          jobActions({ type: 'SET_SELECTED_JOB', job: jobData });
         }
       }
     } catch (error) {

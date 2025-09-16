@@ -5,6 +5,7 @@ import {
   Rating as HistoryRatingPayload,
 } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { agentService } from "../singleton/agentService";
+import { backendUserToFrontendUser } from "../utils/typeConverters";
 
 export interface JobRatingPayload {
   rating_id: number;
@@ -26,25 +27,11 @@ export const getFreelancerForRating = async (
     );
     if ("ok" in result) {
       const transformedRatings = result.ok.map((rating) => {
-        let profilePictureBlob: Blob | null;
-        if (rating.user.profilePicture && rating.user.profilePicture.length > 0) {
-          const uint8Array = new Uint8Array(rating.user.profilePicture);
-          profilePictureBlob = new Blob([uint8Array.buffer], {
-            type: "image/jpeg", 
-          });
-        } else {
-          profilePictureBlob = null;
-        }
-
         return {
           ...rating,
           rating_id: Number(rating.rating_id),
           rating: Number(rating.rating),
-          user: {
-            ...rating.user,
-            profilePicture: profilePictureBlob,
-            subAccount: rating.user.subAccount[0] ? [new Uint8Array(rating.user.subAccount[0])] : [],
-          },
+          user: backendUserToFrontendUser(rating.user),
         };
       });
 

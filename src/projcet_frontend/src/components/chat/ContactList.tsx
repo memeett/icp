@@ -60,7 +60,7 @@ const ContactList: React.FC<ContactListProps> = ({ isMobile = false }) => {
         // Get other user details
         const otherUserResult = await getUserById(otherUserId);
         console.log(`📋 User fetch result for ${otherUserId}:`, otherUserResult);
-        const otherUser = otherUserResult?.ok || null;
+        const otherUser = (otherUserResult && "ok" in otherUserResult) ? otherUserResult.ok : null;
         
         // Get job details
         const job = await getJobById(room.job_id);

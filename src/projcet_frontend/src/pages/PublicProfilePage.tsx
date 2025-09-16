@@ -52,7 +52,11 @@ const PublicProfilePage: React.FC = () => {
         setIsLoading(true);
         try {
           const fetchedUser = await getUserById(id);
-          setUser(fetchedUser);
+          if (fetchedUser && "ok" in fetchedUser) {
+            setUser(fetchedUser.ok);
+          } else {
+            setUser(null);
+          }
         } catch (error) {
           console.error("Failed to fetch user:", error);
           message.error("Failed to load user profile.");

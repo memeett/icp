@@ -1,36 +1,34 @@
 import { motion } from 'framer-motion';
 import { Download } from 'lucide-react';
-import { ResponseSubmission, Submission } from "../../../../declarations/submission/submission.did";
+import { Submission } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { useEffect, useState } from 'react';
 import { getFileSubmissionbyId } from '../../controller/submissionController';
 
-export default function HistorySubmissionCard({ submission }: { submission: ResponseSubmission }) {
-    const [fileBlob, setFileBlob] = useState<Blob | null>(null);    
+export default function HistorySubmissionCard({ submission }: { submission: Submission }) {
+    const [fileUrl, setFileUrl] = useState<string | null>(null);    
     useEffect(() => {
         getFileSubmissionbyId(submission.id).then((res) => {
             console.log(res)
-            setFileBlob(res)
+            setFileUrl(res)
         })
     }, [submission.id])
 
     const handleDownload = () => {
-        console.log(fileBlob)
-        if (fileBlob) {
-            const url = window.URL.createObjectURL(fileBlob);
+        console.log(fileUrl)
+        if (fileUrl) {
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `submission_${submission.id}.zip`; 
+            a.href = fileUrl;
+            a.download = `submission_${submission.id}.zip`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
         } else {
             alert('File not available for download.');
         }
     };
 
     const getStatusStyles = () => {
-        switch (submission.submissionStatus) {
+        switch (submission.status) {
             case "Accepted":
                 return "bg-green-100 text-green-800 border-green-200";
             case "Rejected":
@@ -54,7 +52,7 @@ export default function HistorySubmissionCard({ submission }: { submission: Resp
                 <span
                     className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusStyles()}`}
                 >
-                    {submission.submissionStatus}
+                    {submission.status}
                 </span>
             </div>
 

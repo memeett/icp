@@ -151,8 +151,8 @@ const Navbar: React.FC = () => {
     async (userId: string): Promise<string | null> => {
       try {
         const result = await getUserById(userId);
-        if (result) {
-          return result.username;
+        if (result && "ok" in result) {
+          return result.ok.username;
         }
         return null;
       } catch (error) {

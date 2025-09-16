@@ -17,6 +17,7 @@ import { fixUserData } from "../utils/userDataFixer";
 import { Job as JobShared, JobPayload } from "../shared/types/Job";
 import { getBalanceController, transferToJobController, transfertoWorkerController } from "./tokenController";
 import { HttpAgent } from "@dfinity/agent";
+import { backendJobToFrontendJob, backendJobsToFrontendJobs, backendUserToFrontendUser, backendUsersToFrontendUsers } from "../utils/typeConverters";
 
 export const createJob = async (payload: JobPayload): Promise<string[]> => {
   const agent = await agentService.getAgent();
@@ -49,7 +50,7 @@ export const createJob = async (payload: JobPayload): Promise<string[]> => {
     // If user data has issues, try to fix it
     if (!currentUser || !currentUser.id) {
       console.log("User data has issues, attempting to fix...");
-      currentUser = fixUserData();
+      currentUser = await fixUserData();
     }
     if (currentUser) {
       console.log("User ID:", currentUser.id);
@@ -147,22 +148,22 @@ export const updateJob = async (
       }
 };
 
-export const viewAllJobs = async (): Promise<Job[] | null> => {
+export const viewAllJobs = async (): Promise<JobShared[] | null> => {
   const agent = await agentService.getAgent();
   try {
     const result = await projcet_backend_single.getAllJobs();
-    return result;
+    return backendJobsToFrontendJobs(result);
   } catch (error) {
     return null;
   }
 };
 
-export const getJobDetail = async (jobId: string): Promise<Job | null> => {
+export const getJobDetail = async (jobId: string): Promise<JobShared | null> => {
   const agent = await agentService.getAgent();
 
   const result = await projcet_backend_single.getJob(jobId);
   if ("ok" in result) {
-    return result.ok;
+    return backendJobToFrontendJob(result.ok);
   }
   return null;
 };
@@ -179,12 +180,12 @@ export const viewAllJobCategories = async (): Promise<JobCategory[] | null> => {
   }
 };
 
-export const getJobById = async (jobId: string): Promise<Job | null> => {
+export const getJobById = async (jobId: string): Promise<JobShared | null> => {
   const agent = await agentService.getAgent();
   try {
     const result = await projcet_backend_single.getJob(jobId);
     if ("ok" in result) {
-      return result.ok;
+      return backendJobToFrontendJob(result.ok);
     } else {
       return null;
     }
@@ -193,11 +194,11 @@ export const getJobById = async (jobId: string): Promise<Job | null> => {
   }
 };
 
-export const getUserJobs = async (userId: string): Promise<Job[] | null> => {
+export const getUserJobs = async (userId: string): Promise<JobShared[] | null> => {
   const agent = await agentService.getAgent();
   try {
     const result = await projcet_backend_single.getUserJob(userId);
-    return result;
+    return backendJobsToFrontendJobs(result);
   } catch (error) {
     return null;
   }
@@ -226,24 +227,9 @@ export const getJobApplier = async (
     if ("ok" in result) {
         const appliers = result.ok;
         const processedUsers: ApplierPayload[] = appliers.map((applierData: { user: BackendUser; appliedAt: bigint; }) => {
-            const userData = applierData.user;
-            const profilePictureBlob = userData.profilePicture && userData.profilePicture.length > 0
-                ? new Blob([new Uint8Array(userData.profilePicture)], { type: 'image/jpeg' })
-                : null;
-            
             return {
-                user: {
-                    ...userData,
-                    profilePicture: profilePictureBlob,
-                    createdAt: BigInt(userData.createdAt),
-                    updatedAt: BigInt(userData.updatedAt),
-                    preference: userData.preference.map((pref: any) => ({
-                      ...pref,
-                      id: pref.id.toString(),
-                    })),
-                    subAccount: userData.subAccount[0] ? [new Uint8Array(userData.subAccount[0])] : [],
-                },
-                appliedAt: BigInt(applierData.appliedAt),
+                user: backendUserToFrontendUser(applierData.user),
+                appliedAt: applierData.appliedAt,
             };
         });
         return processedUsers;
@@ -262,22 +248,7 @@ export const getAcceptedFreelancer = async (jobId: string): Promise<User[]> => {
     const result = await projcet_backend_single.getAcceptedFreelancer(jobId);
     if (result) {
         return result.map((backendUser: BackendUser) => {
-            const profilePictureBlob = backendUser.profilePicture && backendUser.profilePicture.length > 0
-                ? new Blob([new Uint8Array(backendUser.profilePicture[0])], { type: 'image/jpeg' })
-                : null;
-
-            return {
-                ...backendUser,
-                id: backendUser.id.toString(),
-                profilePicture: profilePictureBlob,
-                createdAt: BigInt(backendUser.createdAt),
-                updatedAt: BigInt(backendUser.updatedAt),
-                preference: backendUser.preference.map((pref: any) => ({
-                  ...pref,
-                  id: pref.id.toString(),
-                })),
-                subAccount: backendUser.subAccount[0] ? [new Uint8Array(backendUser.subAccount[0])] : [],
-            };
+            return backendUserToFrontendUser(backendUser);
         });
     }
     return [];
@@ -342,13 +313,6 @@ export const startJob = async (
                   message: "Job started successfully.",
                 };
             } else {
-              // Revert job status back to Open if transfer fails
-              try {
-                await projcet_backend_single.updateJobStatus(job_id, 'Open');
-              } catch (revertError) {
-                console.error('Failed to revert job status:', revertError);
-              }
-              
               const errorMsg = 'err' in transferResult ? transferResult.err : 'Transfer failed';
               return {
                 jobStarted: false,
@@ -357,14 +321,7 @@ export const startJob = async (
             }
           } catch (transferError) {
             console.error('Transfer error:', transferError);
-            
-            // Revert job status back to Open if transfer fails
-            try {
-              await projcet_backend_single.updateJobStatus(job_id, 'Open');
-            } catch (revertError) {
-              console.error('Failed to revert job status:', revertError);
-            }
-            
+
             return {
               jobStarted: false,
               message: `Payment transfer error: ${String(transferError)}`,
@@ -394,11 +351,11 @@ export const startJob = async (
 
 export const getUserJobByStatusFinished = async (
   userId: string
-): Promise<Job[] | null> => {
+): Promise<JobShared[] | null> => {
   const agent = await agentService.getAgent();
   try {
     const result = await projcet_backend_single.getUserJobByStatusFinished(userId);
-    return result;
+    return backendJobsToFrontendJobs(result);
   } catch (error) {
     return null;
   }

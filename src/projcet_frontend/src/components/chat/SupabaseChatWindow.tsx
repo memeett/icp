@@ -41,11 +41,11 @@ const SupabaseChatWindow: React.FC<SupabaseChatWindowProps> = ({
       
       try {
         const userResult = await getUserById(otherUserId);
-        if (userResult) {
+        if (userResult && "ok" in userResult) {
           setOtherUser({
-            id: userResult.id,
-            username: userResult.username,
-            profilePictureUrl: userResult.profilePictureUrl || undefined
+            id: userResult.ok.id,
+            username: userResult.ok.username,
+            profilePictureUrl: userResult.ok.profilePictureUrl || undefined
           });
         }
       } catch (error) {

@@ -25,6 +25,7 @@ interface UseChatReturn {
   aiAssistActive: boolean;
   setAiAssistActive: (active: boolean) => void;
   aiSuggestions: Array<{preview: string, text: string}>;
+  setAiSuggestions: (suggestions: Array<{preview: string, text: string}>) => void;
   getAiSuggestions: (draftText: string) => Promise<void>;
 }
 
@@ -438,6 +439,7 @@ export const useChat = (): UseChatReturn => {
     aiAssistActive,
     setAiAssistActive,
     aiSuggestions,
+    setAiSuggestions,
     getAiSuggestions
   };
 };

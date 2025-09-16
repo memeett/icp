@@ -86,7 +86,7 @@ export default function FreelancerJobCard({ jobId, isLoading }: { jobId: string;
                             jobId={job.id}
                             jobStatus={job.jobStatus}
                             clientId={job.userId}
-                            freelancerId={job.acceptedFreelancerId}
+                            freelancerId={undefined} // TODO: Fetch accepted freelancer separately
                         />
                     )}
                 </Space>

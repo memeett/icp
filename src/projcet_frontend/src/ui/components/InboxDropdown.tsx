@@ -3,7 +3,6 @@ import React from "react";
 import { List, Avatar, Badge, Typography } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { InboxResponse } from "../../shared/types/Inbox";
-import { user } from "../../../../declarations/user";
 
 const { Text } = Typography;
 

@@ -3,6 +3,7 @@ import { getJobById } from '../controller/jobController';
 import { isFreelancerRegistered } from '../controller/jobTransactionController';
 
 export class ChatService {
+  static supabase = supabase;
   
   // Initialize user context for RLS
   static async initializeUser(userId: string) {

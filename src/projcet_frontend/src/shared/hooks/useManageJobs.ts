@@ -30,12 +30,7 @@ export const useManageJobs = (): UseManageJobsReturn => {
     try {
       const userJobs = await getUserJobs(user.id);
       if (userJobs) {
-        const convertedJobs = userJobs.map((job) => ({
-          ...job,
-          createdAt: BigInt(job.createdAt),
-          updatedAt: BigInt(job.updatedAt),
-        }));
-        setJobs(convertedJobs);
+        setJobs(userJobs);
       }
     } catch (err) {
       console.error('Error fetching jobs:', err);

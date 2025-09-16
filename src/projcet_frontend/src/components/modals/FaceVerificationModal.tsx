@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { CameraIcon } from "lucide-react";
 import { useModal } from "../../contexts/modal-context";
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../controller/userController';
+import { loginWithInternetIdentity } from '../../controller/userController';
 
 export function FaceVerificationModal({ parentIndex, index }: { parentIndex: number, index: number }) {
   const { closeModal } = useModal();
@@ -60,7 +60,7 @@ export function FaceVerificationModal({ parentIndex, index }: { parentIndex: num
         console.log("Verified successfully:", result.message);
         
         // Login the user
-        login(result.principal_id);
+        await loginWithInternetIdentity();
         
         // Close the modal
         closeModal(index, parentIndex);

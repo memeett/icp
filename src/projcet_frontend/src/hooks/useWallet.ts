@@ -8,7 +8,7 @@ import {
     getBalanceController,
     topUpWalletController,
 } from '../controller/tokenController';
-import { CashFlowHistory } from '../../../declarations/user/user.did';
+import { CashFlowHistory } from '../../declarations/projcet_backend_single/projcet_backend_single.did';
 import { Token } from '../interface/Token';
 
 export const useWallet = () => {
@@ -81,7 +81,7 @@ export const useWallet = () => {
             if (!job) return;
 
             const owner = await getUserById(job.userId);
-            const ownerName = owner?.username ?? 'Unknown Owner';
+            const ownerName = (owner && "ok" in owner) ? owner.ok.username : 'Unknown Owner';
 
             setJobAndOwnerInfo((prev) => ({
                 ...prev,

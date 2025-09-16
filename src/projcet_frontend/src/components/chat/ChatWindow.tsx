@@ -47,6 +47,7 @@ const ChatWindow: React.FC = () => {
     aiAssistActive,
     setAiAssistActive,
     aiSuggestions,
+    setAiSuggestions,
     getAiSuggestions
   } = useChat();
   const [selectedContact] = useAtom(selectedContactAtom);
@@ -114,7 +115,7 @@ const ChatWindow: React.FC = () => {
 
         // Load other user data
         const userResult = await getUserById(otherUserId);
-        if (userResult?.ok) {
+        if (userResult && "ok" in userResult) {
           setOtherUser(userResult.ok);
         }
 

@@ -1,5 +1,5 @@
 import { X, Calendar, DollarSign, Users, Tag, Clock, MapPin, User } from "lucide-react";
-import { Job } from "../../../../declarations/job/job.did";
+import { Job } from "../../shared/types/Job";
 import { motion } from "framer-motion";
 import { formatDate } from "../../utils/dateUtils";
 
@@ -73,7 +73,7 @@ export default function JobDetailModal({ job, onClose }: { job: Job; onClose: ()
                         <div className="mb-8">
                             <div className="flex items-center justify-between mb-2">
                                 <h2 className="text-3xl font-bold text-gray-800">{job.jobName}</h2>
-                                <div className={`px-4 py-2 rounded-full text-sm font-medium ${job.jobStatus === "Start"
+                                <div className={`px-4 py-2 rounded-full text-sm font-medium ${job.jobStatus === "Open"
                                         ? "bg-green-100 text-green-700"
                                         : job.jobStatus === "Ongoing"
                                             ? "bg-yellow-100 text-yellow-700"
@@ -125,7 +125,7 @@ export default function JobDetailModal({ job, onClose }: { job: Job; onClose: ()
                                 <h3 className="text-lg font-semibold text-gray-800">Job Category</h3>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {job.jobTags?.map((tag, index) => {
+                                {job.jobTags?.map((tag: any, index: number) => {
                                     const colorStyle = getCategoryColor(tag.jobCategoryName);
                                     return (
                                         <span

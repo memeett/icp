@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { UserInvitationPayload } from "../../../../declarations/invitation/invitation.did";
+import { UserInvitationPayload } from "../../shared/types/Invitation";
+import { Job } from "../../shared/types/Job";
 import { getInvitationByUserId } from "../../controller/invitationController";
 import FreelancerInvitationCard from "../cards/FreelancerInvitationCard";
 import { motion } from "framer-motion";
-import { Job } from "../../../../declarations/job/job.did";
 import ErrorModal from "../modals/ErrorModal";
 
 export default function ProfileInvitationSection({

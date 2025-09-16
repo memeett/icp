@@ -4,7 +4,7 @@ import { getUserTransaction } from "../../controller/userController";
 import {
   CashFlowHistory,
   TransactionType,
-} from "../../../../declarations/user/user.did";
+} from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { getUserById } from "../../controller/userController";
 import { getJobById } from "../../controller/jobController";
 import { formatDate } from "../../utils/dateUtils";
@@ -184,8 +184,8 @@ function TransactionCard({
       try {
         // Get from user name
         const fromResult = await getUserById(transaction.fromId);
-        if (fromResult) {
-          setFromName(fromResult.username);
+        if (fromResult && "ok" in fromResult) {
+          setFromName(fromResult.ok.username);
         } else {
           const fromJob = await getJobById(transaction.fromId);
           if (fromJob) {
@@ -196,17 +196,18 @@ function TransactionCard({
         const toNamesResult = await Promise.all(
           transaction.toId.map(async (id) => {
             const userResult = await getUserById(id);
-            if (userResult) {
-              return userResult.username;
+            if (userResult && "ok" in userResult) {
+              return userResult.ok.username;
             }
 
             try {
               const jobResult = await getJobById(id);
               const clientResult = await getUserById(jobResult?.userId || "");
               if (jobResult) {
+                const clientName = (clientResult && "ok" in clientResult) ? clientResult.ok.username : "Unknown";
                 return (
                   `${jobResult.jobName}` +
-                  ` (created by ${clientResult?.username})`
+                  ` (created by ${clientName})`
                 );
               }
             } catch (jobError) {

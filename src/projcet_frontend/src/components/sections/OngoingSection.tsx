@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ResponseSubmission } from "../../../../declarations/submission/submission.did";
+import { Submission } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { motion } from "framer-motion";
 import { Inbox } from "lucide-react";
 import HistorySubmissionCard from "../cards/HistorySubmissionCard";
@@ -8,7 +8,7 @@ import { createInbox } from "../../controller/inboxController";
 import { Job } from "../../shared/types/Job";
 
 export default function OngoingSection({ job }: { job: Job }) {
-  const [submission, setSubmission] = useState<ResponseSubmission[] | []>([]);
+  const [submission, setSubmission] = useState<Submission[] | []>([]);
   const [file, setFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [additionalMessage, setAdditionalMessage] = useState<string>('');
@@ -63,10 +63,11 @@ export default function OngoingSection({ job }: { job: Job }) {
     const parsedData = JSON.parse(userData ? userData : "");
     if (job) {
       try {
+        // TODO: Handle file upload properly - for now pass empty string
         await createSubmission(
           job.id,
           parsedData.ok,
-          fileBlob,
+          "", // fileBlob should be converted to string path/URL
           additionalMessage
         );
         console.log("Submission created successfully");

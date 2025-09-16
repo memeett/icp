@@ -75,7 +75,7 @@ export default function ClientHistoryCard({ job }: { job: Job }) {
                         jobId={job.id}
                         jobStatus={job.jobStatus}
                         clientId={job.userId}
-                        freelancerId={job.acceptedFreelancerId}
+                        freelancerId={undefined} // TODO: Fetch accepted freelancer separately
                     />
                     <button onClick={viewDetails} className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-all duration-300">
                         View Details

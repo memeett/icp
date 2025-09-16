@@ -7,15 +7,15 @@ import { agentService } from "../singleton/agentService";
 import { storage } from "../utils/storage";
 import { ProfilePictureService } from "../services/profilePictureService";
 
-// Helper untuk memproses URL profile picture dari backend  
+// Helper untuk memproses URL profile picture dari backend
 const processProfilePictureUrl = (profilePictureUrl: BackendUser['profilePictureUrl']): string | null => {
   try {
-    if (profilePictureUrl && profilePictureUrl.length > 0) {
+    if (profilePictureUrl && profilePictureUrl.length > 0 && profilePictureUrl[0]) {
       const url = profilePictureUrl[0];
       console.log('Profile picture URL from backend:', url);
       return url;
     }
-    
+
     console.log('No profile picture URL');
     return ProfilePictureService.getDefaultProfilePictureUrl();
   } catch (error) {
@@ -83,7 +83,7 @@ const convertBackendUserToFrontend = (userData: BackendUser): User => {
         updatedAt: BigInt(userData.updatedAt),
         isFaceRecognitionOn: userData.isFaceRecognitionOn,
         isProfileCompleted: userData.isProfileCompleted,
-        subAccount: userData.subAccount && userData.subAccount.length > 0 ? [new Uint8Array(userData.subAccount[0])] as [Uint8Array] : [] as [],
+        subAccount: userData.subAccount && userData.subAccount.length > 0 ? [Array.isArray(userData.subAccount[0]) ? new Uint8Array(userData.subAccount[0]) : userData.subAccount[0] as Uint8Array] as [Uint8Array] : [] as [],
         chatTokens: tokensData,
     };
 

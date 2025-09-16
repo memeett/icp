@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Briefcase, DollarSign, Users } from "lucide-react";
 import { addIncrementUserClicked } from "../../controller/userClickedController";
-import { Job } from "../../interface/job/Job";
+import { Job } from "../../shared/types/Job";
 
 export default function JobCard({ job }: { job: Job }) {
   const nav = useNavigate();
@@ -69,7 +69,7 @@ export default function JobCard({ job }: { job: Job }) {
             Job Description
           </h4>
           <ul className="text-gray-600 space-y-2 text-xs">
-            {job.jobDescription.slice(0, 2).map((desc, index) => (
+            {job.jobDescription.slice(0, 2).map((desc: string, index: number) => (
               <li key={index} className="flex items-start">
                 <span className="w-1.5 h-1.5 mt-1 mr-2 bg-purple-300 rounded-full flex-shrink-0"></span>
                 <span className="line-clamp-1">{desc}</span>

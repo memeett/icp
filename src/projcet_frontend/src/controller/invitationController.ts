@@ -1,5 +1,7 @@
 import { projcet_backend_single } from "../../../declarations/projcet_backend_single";
 import { Invitation } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
+import { UserInvitationPayload } from "../shared/types/Invitation";
+import { getJobById } from "./jobController";
 
 export const createInvitation = async (
   job_id: string,
@@ -26,12 +28,25 @@ export const createInvitation = async (
 
 export const getInvitationByUserId = async (
   userId: string
-): Promise<Invitation[]> => {
-  const result = await projcet_backend_single.getInvitationByUserID(
+): Promise<UserInvitationPayload[]> => {
+  const backendInvitations = await projcet_backend_single.getInvitationByUserID(
     userId,
   );
 
-  return result;
+  // Convert backend invitations to frontend format
+  const convertedInvitations: UserInvitationPayload[] = await Promise.all(
+    backendInvitations.map(async (invitation) => {
+      const job = await getJobById(invitation.jobId);
+      return {
+        id: invitation.id,
+        job: job || {} as any, // TODO: Handle case where job is not found
+        invitedAt: invitation.createdAt,
+        isAccepted: invitation.status === "accepted",
+      };
+    })
+  );
+
+  return convertedInvitations;
 };
 
 export const acceptInvitation = async (

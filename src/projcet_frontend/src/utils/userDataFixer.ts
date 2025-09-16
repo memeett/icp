@@ -52,7 +52,7 @@ export async function fixUserData(): Promise<User | null> {
     // Create proper User object
     const user: User = {
       id: fixedUser.id,
-      profilePicture: null, // Don't store blob in localStorage
+      profilePictureUrl: null, // Don't store blob in localStorage
       username: fixedUser.username || 'User',
       dob: fixedUser.dob || '',
       preference: fixedUser.preference || [],
@@ -63,7 +63,14 @@ export async function fixUserData(): Promise<User | null> {
       updatedAt: BigInt(fixedUser.updatedAt || '0'),
       isFaceRecognitionOn: fixedUser.isFaceRecognitionOn || false,
       isProfileCompleted: fixedUser.isProfileCompleted || false,
-      subAccount: [new Uint8Array()]
+      subAccount: fixedUser.subAccount || [],
+      chatTokens: fixedUser.chatTokens || {
+        availableTokens: 5,
+        dailyFreeRemaining: 5,
+        lastTokenReset: Date.now(),
+        totalTokensEarned: 5,
+        totalTokensSpent: 0,
+      }
     };
     
     // Save the fixed user data

@@ -36,9 +36,9 @@ const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ childre
                 // Get fresh user data to check if profile is complete
                 const userData = await getUserById(user.id);
                 console.log('ProfileCompletionGuard - User data received:', userData);
-                if (userData) {
-                    setCurrentUser(userData);
-                    console.log('ProfileCompletionGuard - Profile completed?', userData.isProfileCompleted);
+                if (userData && "ok" in userData) {
+                    setCurrentUser(userData.ok);
+                    console.log('ProfileCompletionGuard - Profile completed?', userData.ok.isProfileCompleted);
                 }
             } catch (error) {
                 console.error('ProfileCompletionGuard - Error fetching user data:', error);

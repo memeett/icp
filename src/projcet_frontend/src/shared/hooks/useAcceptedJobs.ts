@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { message } from 'antd';
-import { JobTransaction } from '../../../declarations/projcet_backend_single/projcet_backend_single.did';
+import { JobTransaction } from '../../../../declarations/projcet_backend_single/projcet_backend_single.did';
 import { getActiveTransactionByFreelancer, getFreelancerHistory } from '../../controller/freelancerController';
 
 type CacheEntry = {

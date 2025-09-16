@@ -8,7 +8,7 @@ import {
     getBalanceController,
     topUpWalletController,
 } from '../controller/tokenController';
-import { CashFlowHistory } from '../../declarations/projcet_backend_single/projcet_backend_single.did';
+import { CashFlowHistory } from '../../../declarations/projcet_backend_single/projcet_backend_single.did';
 import { Token } from '../interface/Token';
 
 export const useWallet = () => {

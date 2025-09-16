@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { getClientHistory } from "../../controller/freelancerController";
-import { JobTransaction } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
+import { JobTransaction } from "../../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { getJobById, getUserJobByStatusFinished } from "../../controller/jobController";
 import { getUserById } from "../../controller/userController";
 import ClientHistoryCard from "../cards/ClientHistoryCard";

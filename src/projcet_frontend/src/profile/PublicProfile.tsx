@@ -8,7 +8,7 @@
 // import { getUserById } from "../../controller/userController";
 // import LoadingOverlay from "../../components/ui/loading-animation";
 // import InviteModal from "../../components/modals/InviteModel";
-// import { JobTransaction } from "../../../../declarations/job_transaction/job_transaction.did";
+// import { JobTransaction } from "../../../../../../../declarations/job_transaction/job_transaction.did";
 // import { getFreelancerHistory } from "../../controller/freelancerController";
 // import PublicProfileJobHistoryCard from "../../components/cards/PublicProfileJobHistoryCard";
 // import { formatDate } from "../../utils/dateUtils";

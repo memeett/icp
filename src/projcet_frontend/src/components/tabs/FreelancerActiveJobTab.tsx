@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { JobTransaction } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
+import { JobTransaction } from "../../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { getActiveTransactionByFreelancer } from "../../controller/freelancerController";
 import FreelancerJobCard from "./FreelancerJobCard";
 

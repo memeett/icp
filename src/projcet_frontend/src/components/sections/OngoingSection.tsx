@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Submission } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
+import { Submission } from "../../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { motion } from "framer-motion";
 import { Inbox } from "lucide-react";
 import HistorySubmissionCard from "../cards/HistorySubmissionCard";

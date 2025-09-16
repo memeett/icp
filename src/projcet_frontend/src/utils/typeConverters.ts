@@ -37,7 +37,7 @@ type BackendUserNew = {
 
 type BackendUser = BackendUserOld | BackendUserNew;
 
-import { Job as BackendJob } from '../../declarations/projcet_backend_single/projcet_backend_single.did';
+import { Job as BackendJob } from '../../../declarations/projcet_backend_single/projcet_backend_single.did';
 import { Job as FrontendJob, JobCategory } from '../shared/types/Job';
 import { User as FrontendUser } from '../shared/types/User';
 

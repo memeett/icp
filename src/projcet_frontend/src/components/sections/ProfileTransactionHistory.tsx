@@ -4,7 +4,7 @@ import { getUserTransaction } from "../../controller/userController";
 import {
   CashFlowHistory,
   TransactionType,
-} from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
+} from "../../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { getUserById } from "../../controller/userController";
 import { getJobById } from "../../controller/jobController";
 import { formatDate } from "../../utils/dateUtils";

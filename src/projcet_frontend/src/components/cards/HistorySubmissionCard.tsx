@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Download } from 'lucide-react';
-import { Submission } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
+import { Submission } from "../../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { useEffect, useState } from 'react';
 import { getFileSubmissionbyId } from '../../controller/submissionController';
 

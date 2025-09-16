@@ -1,6 +1,6 @@
 import React from 'react';
 import { List } from 'antd';
-import { CashFlowHistory } from '../../../declarations/projcet_backend_single/projcet_backend_single.did';
+import { CashFlowHistory } from '../../../../declarations/projcet_backend_single/projcet_backend_single.did';
 import TransactionItem from './TransactionItem';
 
 interface TransactionListProps {

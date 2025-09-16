@@ -313,43 +313,103 @@ export class ChatService {
     return channel;
   }
 
-  // Get chat rooms for user
+  // Get chat rooms for user with multiple fallback strategies
   static async getUserChatRooms(userId: string): Promise<ChatRoom[]> {
     try {
       console.log('📨 Attempting to fetch chat rooms for user:', userId);
-      
-      const { data: rooms, error } = await supabase
+
+      // Strategy 1: Try filtered query first (most efficient)
+      console.log('🎯 Strategy 1: Trying filtered query...');
+      const { data: filteredRooms, error: filterError } = await supabase
         .from('chat_rooms')
         .select('*')
         .or(`client_id.eq.${userId},freelancer_id.eq.${userId}`)
         .eq('status', 'active')
         .order('updated_at', { ascending: false });
 
-      if (error) {
-        if (error.code === '42P01') {
-          console.warn('🚨 Table "chat_rooms" does not exist. Please create the table in Supabase.');
-          return [];
-        }
-        if (error.code === '42704') {
-          console.warn('🚨 Database configuration issue. Please run the quick setup SQL.');
-          return [];
-        }
-        if (error.message?.includes('app.current_user_id')) {
-          console.warn('🚨 RLS configuration issue. Using quick setup without RLS.');
-          return [];
-        }
-        console.warn('Supabase error:', error);
-        return [];
+      if (!filterError && filteredRooms) {
+        console.log('✅ Filtered query successful:', filteredRooms.length, 'rooms');
+        return this.validateAndFilterRooms(filteredRooms, userId);
       }
-      
-      console.log('✅ Chat rooms fetched successfully:', rooms?.length || 0);
-      return rooms || [];
-      
+
+      console.log('⚠️ Filtered query failed, trying alternative strategies...');
+
+      // Strategy 2: Get all rooms and filter client-side
+      console.log('🔄 Strategy 2: Client-side filtering...');
+      const { data: allRooms, error: allError } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('status', 'active')
+        .order('updated_at', { ascending: false });
+
+      if (!allError && allRooms) {
+        const clientFiltered = allRooms.filter(room =>
+          room.client_id === userId || room.freelancer_id === userId
+        );
+        console.log('✅ Client-side filtering successful:', clientFiltered.length, 'rooms');
+        return clientFiltered;
+      }
+
+      // Strategy 3: Manual query construction (last resort)
+      console.log('🔧 Strategy 3: Manual query construction...');
+      const { data: manualRooms, error: manualError } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('status', 'active')
+        .or(`client_id.eq.${userId}`)
+        .order('updated_at', { ascending: false });
+
+      if (!manualError && manualRooms) {
+        const freelancerRooms = await supabase
+          .from('chat_rooms')
+          .select('*')
+          .eq('status', 'active')
+          .eq('freelancer_id', userId)
+          .order('updated_at', { ascending: false });
+
+        const combined = [
+          ...(manualRooms || []),
+          ...(freelancerRooms.data || [])
+        ];
+
+        // Remove duplicates
+        const uniqueRooms = combined.filter((room, index, self) =>
+          index === self.findIndex(r => r.id === room.id)
+        );
+
+        console.log('✅ Manual query successful:', uniqueRooms.length, 'rooms');
+        return uniqueRooms;
+      }
+
+      console.error('❌ All strategies failed');
+      return [];
+
     } catch (error) {
       console.error('Error getting user chat rooms:', error);
-      console.warn('💡 This is expected if Supabase tables are not set up yet.');
       return [];
     }
+  }
+
+  // Validate and double-check filtering
+  private static validateAndFilterRooms(rooms: ChatRoom[], userId: string): ChatRoom[] {
+    const validRooms = rooms.filter(room => {
+      const isValid = room.client_id === userId || room.freelancer_id === userId;
+      if (!isValid) {
+        console.warn('🚨 Invalid room found in filtered results:', {
+          roomId: room.id,
+          client: room.client_id,
+          freelancer: room.freelancer_id,
+          userId: userId
+        });
+      }
+      return isValid;
+    });
+
+    if (validRooms.length !== rooms.length) {
+      console.warn(`⚠️ Filtered out ${rooms.length - validRooms.length} invalid rooms`);
+    }
+
+    return validRooms;
   }
 
   // Mark messages as read

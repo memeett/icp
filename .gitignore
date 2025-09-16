@@ -83,7 +83,6 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # Project specific
-src/projcet_frontend/src/shared
 .kilocode/
 
 # Backup files

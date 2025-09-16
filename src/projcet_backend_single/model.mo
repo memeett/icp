@@ -55,7 +55,7 @@ module {
     // Tipe dari User/model.mo
     public type User = {
         id: Text;
-        profilePicture: Blob;
+        profilePictureUrl: ?Text; // Changed from Blob to optional Text URL
         username: Text;
         dob: Text;
         preference: [JobCategory]; // Menggunakan JobCategory yang sudah didefinisikan di atas
@@ -73,7 +73,7 @@ module {
 
     public type UpdateUserPayload = {
         username: ?Text;
-        profilePicture: ?Blob;
+        profilePictureUrl: ?Text; // Changed from Blob to Text URL
         description: ?Text;
         dob : ?Text;
         preference: ?[JobCategory]; // Menggunakan JobCategory yang sudah didefinisikan di atas

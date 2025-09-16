@@ -115,7 +115,7 @@ const CompleteProfilePage: React.FC = () => {
 
       // Add profile picture if uploaded
       if (uploadedFile) {
-        updatePayload.profilePicture = uploadedFile; // Pass File directly
+        updatePayload.profilePicture = uploadedFile; // Pass File directly for Supabase upload
       }
 
       console.log('Update payload prepared:', updatePayload);

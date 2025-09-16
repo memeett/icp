@@ -19,7 +19,7 @@ import {
 import { motion } from 'framer-motion';
 import Navbar from '../ui/components/Navbar';
 import { useAuth } from '../hooks/useAuth';
-import { getProfilePictureUrl } from '../controller/userController';
+import { ProfilePictureService } from '../services/profilePictureService';
 import dayjs from 'dayjs';
 import { JobCategory } from '../shared/types/Job';
 import { User } from '../shared/types/User';
@@ -57,9 +57,10 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (user && user.profilePictureUrl) {
       setProfileImage(user.profilePictureUrl);
+    } else if (user) {
+      // Set default profile picture
+      setProfileImage(ProfilePictureService.getDefaultProfilePictureUrl());
     }
-
-    
   }, [user]);
 
   const handleSave = async (values: any) => {
@@ -79,10 +80,7 @@ const ProfilePage: React.FC = () => {
     }
 
     if (uploadedFile) {
-      payload.profilePicture = new Blob([uploadedFile], { type: uploadedFile.type });
-    }
-    else {
-      payload.profilePicture = user.profilePicture;
+      payload.profilePicture = uploadedFile; // Pass File directly for Supabase upload
     }
 
     payload.isProfileCompleted = user.isProfileCompleted;

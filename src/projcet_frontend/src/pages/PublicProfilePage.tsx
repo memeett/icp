@@ -29,7 +29,8 @@ import {
 import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
 import Navbar from '../ui/components/Navbar';
-import { getUserById, getProfilePictureUrl } from '../controller/userController';
+import { getUserById } from '../controller/userController';
+import { ProfilePictureService } from '../services/profilePictureService';
 import { User } from '../shared/types/User';
 import dayjs from 'dayjs';
 import { formatDate } from '../utils/dateUtils';
@@ -96,9 +97,7 @@ const PublicProfilePage: React.FC = () => {
     );
   }
 
-  const profilePictureUrl = user.profilePicture
-    ? getProfilePictureUrl(user.id, user.profilePicture)
-    : undefined;
+  const profilePictureUrl = user.profilePictureUrl || ProfilePictureService.getDefaultProfilePictureUrl();
 
   return (
     <div className="min-h-screen bg-background">

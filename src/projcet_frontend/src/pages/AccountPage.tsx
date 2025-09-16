@@ -25,7 +25,7 @@ import Navbar from '../ui/components/Navbar';
 
 import { Token } from '../interface/Token';
 import { getBalanceController } from '../controller/tokenController';
-import { getProfilePictureUrl } from '../controller/userController';
+import { ProfilePictureService } from '../services/profilePictureService';
 
 
 const { Title, Text, Paragraph } = Typography;
@@ -91,9 +91,7 @@ const AccountPage: React.FC = () => {
     setIsModalOpen(true);
   }, []);
 
-  const profilePictureUrl = user?.profilePicture
-    ? getProfilePictureUrl(user.id, user.profilePicture)
-    : undefined;
+  const profilePictureUrl = user?.profilePictureUrl || ProfilePictureService.getDefaultProfilePictureUrl();
 
   return (
     <div className="min-h-screen bg-background">

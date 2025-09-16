@@ -23,6 +23,8 @@ export interface User {
   isProfileCompleted: boolean;
   subAccount: [Uint8Array] | [];
   chatTokens: ChatTokenBalance;
+  // Legacy field for backward compatibility - will be removed
+  profilePicture?: Blob | null;
 }
 
 export interface UserProfile extends User {
@@ -36,7 +38,7 @@ export interface UserProfile extends User {
 
 export interface UpdateUserPayload {
   username?: [] | [string];
-  profilePicture?: [] | [Uint8Array | number[]];
+  profilePictureUrl?: [] | [string];
   description?: [] | [string];
   dob?: [] | [string];
   preference?: [] | [JobCategory[]];

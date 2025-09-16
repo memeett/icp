@@ -5,58 +5,27 @@ import { UpdateUserPayload, CashFlowHistory, User as BackendUser, JobCategory } 
 import { HttpAgent } from "@dfinity/agent";
 import { agentService } from "../singleton/agentService";
 import { storage } from "../utils/storage";
+import { ProfilePictureService } from "../services/profilePictureService";
 
-// Helper untuk membuat URL gambar dan menyimpannya di objek pengguna
-const processProfilePicture = (picture: BackendUser['profilePicture']): string | null => {
+// Helper untuk memproses URL profile picture dari backend  
+const processProfilePictureUrl = (profilePictureUrl: BackendUser['profilePictureUrl']): string | null => {
   try {
-  if (picture && picture.length > 0) {
-      console.log('Processing profile picture, size:', picture.length);
-      
-    // Konversi eksplisit ke ArrayBuffer yang kompatibel
-    const buffer = new ArrayBuffer(picture.length);
-    const view = new Uint8Array(buffer);
-    for (let i = 0; i < picture.length; i++) {
-        view[i] = picture[i];
-    }
-      
-      // Detect image type from header bytes
-      let mimeType = 'image/jpeg'; // default
-      if (picture.length >= 4) {
-        const header = picture.slice(0, 4);
-        console.log('Image header bytes:', header);
-        
-        // PNG signature: 137, 80, 78, 71
-        if (header[0] === 137 && header[1] === 80 && header[2] === 78 && header[3] === 71) {
-          mimeType = 'image/png';
-          console.log('Detected PNG image');
-        }
-        // JPEG signature: 255, 216, 255
-        else if (header[0] === 255 && header[1] === 216 && header[2] === 255) {
-          mimeType = 'image/jpeg';
-          console.log('Detected JPEG image');
-        }
-        // WebP signature: 82, 73, 70, 70
-        else if (header[0] === 82 && header[1] === 73 && header[2] === 70 && header[3] === 70) {
-          mimeType = 'image/webp';
-          console.log('Detected WebP image');
-        }
-      }
-      
-      const blob = new Blob([view], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      console.log('Generated profile picture URL:', url);
+    if (profilePictureUrl && profilePictureUrl.length > 0) {
+      const url = profilePictureUrl[0];
+      console.log('Profile picture URL from backend:', url);
       return url;
     }
-    console.log('No profile picture data');
-    return null;
+    
+    console.log('No profile picture URL');
+    return ProfilePictureService.getDefaultProfilePictureUrl();
   } catch (error) {
-    console.error('Error processing profile picture:', error);
-    return null;
+    console.error('Error processing profile picture URL:', error);
+    return ProfilePictureService.getDefaultProfilePictureUrl();
   }
 };
 
 // Export untuk ProfilePage
-export const getProfilePictureUrl = processProfilePicture;
+export const getProfilePictureUrl = processProfilePictureUrl;
 
 const convertBackendUserToFrontend = (userData: BackendUser): User => {
 
@@ -100,13 +69,13 @@ const convertBackendUserToFrontend = (userData: BackendUser): User => {
 
     const finalUserData = {
         id: userData.id,
-        profilePictureUrl: processProfilePicture(userData.profilePicture),
+        profilePictureUrl: processProfilePictureUrl(userData.profilePictureUrl),
         username: userData.username,
         dob: userData.dob,
-        preference: userData.preference.map((pref: any) => ({
+        preference: userData.preference ? userData.preference.map((pref: any) => ({
             id: pref.id.toString(),
             jobCategoryName: pref.jobCategoryName
-        })),
+        })) : [],
         description: userData.description,
         wallet: userData.wallet,
         rating: userData.rating,
@@ -114,7 +83,7 @@ const convertBackendUserToFrontend = (userData: BackendUser): User => {
         updatedAt: BigInt(userData.updatedAt),
         isFaceRecognitionOn: userData.isFaceRecognitionOn,
         isProfileCompleted: userData.isProfileCompleted,
-        subAccount: userData.subAccount[0] ? [new Uint8Array(userData.subAccount[0])] as [Uint8Array] : [] as [],
+        subAccount: userData.subAccount && userData.subAccount.length > 0 ? [new Uint8Array(userData.subAccount[0])] as [Uint8Array] : [] as [],
         chatTokens: tokensData,
     };
 
@@ -175,16 +144,12 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
         const identity = authClient.getIdentity();
         const principalId = identity.getPrincipal().toString();
         
-        const defaultImagePath = "/assets/profilePicture/default_profile_pict.jpg";
-        const response = await fetch(defaultImagePath);
-        const imageBlob = await response.blob();
-        const arrayBuffer = await imageBlob.arrayBuffer();
-        const profilePicBlob = new Uint8Array(arrayBuffer);
+        const defaultProfilePictureUrl = ProfilePictureService.getDefaultProfilePictureUrl();
         
         let userDetailResult = await projcet_backend_single.getUserById(principalId);
 
         if (!("ok" in userDetailResult)) {
-            await projcet_backend_single.createUser(principalId, profilePicBlob);
+            await projcet_backend_single.createUser(principalId, [defaultProfilePictureUrl]);
             userDetailResult = await projcet_backend_single.getUserById(principalId);
         }
 
@@ -268,7 +233,7 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
             description: [],
             preference: [],
             isProfileCompleted: [],
-            profilePicture: []
+            profilePictureUrl: []
         };
         
         if (payload.username !== undefined) {
@@ -301,16 +266,27 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
             updatePayload.isProfileCompleted = [payload.isProfileCompleted];
         }
 
-        // Handle profile picture if provided
-        if (payload.profilePictureUrl) {
+        // Handle profile picture upload to Supabase if provided
+        if (payload.profilePicture && payload.profilePicture instanceof File) {
             try {
-                const arrayBuffer = await (payload.profilePictureUrl as any).arrayBuffer();
-                const uint8Array = new Uint8Array(arrayBuffer);
-                updatePayload.profilePicture = [Array.from(uint8Array)];
-                console.log('Profile picture processed, size:', uint8Array.length);
+                console.log('Uploading profile picture...');
+                const uploadResult = await ProfilePictureService.uploadWithFallback(payload.profilePicture, currentUser.id);
+                
+                if (!uploadResult.url) {
+                    console.error('Profile picture upload failed:', uploadResult.error);
+                    throw new Error(uploadResult.error);
+                }
+                
+                if (uploadResult.error) {
+                    console.warn('Profile picture uploaded with fallback:', uploadResult.error);
+                } else {
+                    console.log('Profile picture uploaded successfully:', uploadResult.url);
+                }
+                
+                updatePayload.profilePictureUrl = [uploadResult.url];
             } catch (error) {
-                console.error('Error processing profile picture:', error);
-                // Continue without profile picture
+                console.error('Error uploading profile picture:', error);
+                throw error; // Rethrow to show user the error
             }
         }
 
@@ -330,8 +306,8 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
             // Update local storage with new data
             const updatedUser = convertBackendUserToFrontend(result.ok);
             storage.setUser(updatedUser);
-            
-    return true;
+
+            return true;
         } else {
             console.error('Backend update failed:', result.err);
             return false;

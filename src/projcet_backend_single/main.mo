@@ -17,7 +17,7 @@ import Nat16 "mo:base/Nat16";
 import Error "mo:base/Error";
 import Nat32 "mo:base/Nat32";
 
-actor SingleBackend {
+persistent actor SingleBackend {
 
     // =================================================================================
     // State - Gabungan dari semua state canister
@@ -25,7 +25,7 @@ actor SingleBackend {
 
     // Dari User Canister
     private stable var usersEntries : [(Text, Model.User)] = [];
-    private var users = HashMap.fromIter<Text, Model.User>(
+    private transient var users = HashMap.fromIter<Text, Model.User>(
         usersEntries.vals(), 0, Text.equal, Text.hash
     );
     private stable var cashFlowHistories: [Model.CashFlowHistory] = [];
@@ -35,54 +35,54 @@ actor SingleBackend {
     private stable var nextCategoryId : Nat = 0;
     private stable var jobsEntries : [(Text, Model.Job)] = [];
     private stable var jobCategoriesEntries : [(Text, Model.JobCategory)] = [];
-    private var jobs = HashMap.fromIter<Text, Model.Job>(
+    private transient var jobs = HashMap.fromIter<Text, Model.Job>(
         jobsEntries.vals(), 0, Text.equal, Text.hash
     );
-    private var jobCategories = HashMap.fromIter<Text, Model.JobCategory>(
+    private transient var jobCategories = HashMap.fromIter<Text, Model.JobCategory>(
         jobCategoriesEntries.vals(), 0, Text.equal, Text.hash
     );
 
     // Dari JobTransaction Canister
     private stable var jobTransactionsEntries : [(Text, Model.JobTransaction)] = [];
-    private var jobTransactions = HashMap.fromIter<Text, Model.JobTransaction>(
+    private transient var jobTransactions = HashMap.fromIter<Text, Model.JobTransaction>(
         jobTransactionsEntries.vals(), 0, Text.equal, Text.hash
     );
 
     // Dari Applier Canister
     private stable var appliersEntries : [(Text, Model.Applier)] = [];
-    private var appliers = HashMap.fromIter<Text, Model.Applier>(
+    private transient var appliers = HashMap.fromIter<Text, Model.Applier>(
         appliersEntries.vals(), 0, Text.equal, Text.hash
     );
 
     // Dari Inbox Canister
     private stable var inboxesEntries : [(Text, Model.Inbox)] = [];
-    private var inboxes = HashMap.fromIter<Text, Model.Inbox>(
+    private transient var inboxes = HashMap.fromIter<Text, Model.Inbox>(
         inboxesEntries.vals(), 0, Text.equal, Text.hash
     );
     
     // Dari Invitation Canister
     private stable var invitationsEntries : [(Nat, Model.Invitation)] = [];
-    private var invitations = HashMap.fromIter<Nat, Model.Invitation>(
+    private transient var invitations = HashMap.fromIter<Nat, Model.Invitation>(
         invitationsEntries.vals(), 0, Nat.equal, (func(n: Nat) : Nat32 { Nat32.fromNat(n) })
     );
     private stable var nextInvitationId : Nat = 0;
     
     // Dari Rating Canister
     private stable var ratingsEntries : [(Nat, Model.Rating)] = [];
-    private var ratings = HashMap.fromIter<Nat, Model.Rating>(
+    private transient var ratings = HashMap.fromIter<Nat, Model.Rating>(
         ratingsEntries.vals(), 0, Nat.equal, (func(n: Nat) : Nat32 { Nat32.fromNat(n) })
     );
     private stable var nextRatingId : Nat = 0;
     
     // Dari Submission Canister
     private stable var submissionsEntries : [(Text, Model.Submission)] = [];
-    private var submissions = HashMap.fromIter<Text, Model.Submission>(
+    private transient var submissions = HashMap.fromIter<Text, Model.Submission>(
         submissionsEntries.vals(), 0, Text.equal, Text.hash
     );
 
     // Chat Token System Constants
-    private let DAILY_FREE_TOKENS : Nat = 10;
-    private let ONE_DAY_IN_NANO : Nat = 86400000000000; // 24 hours in nanoseconds
+    private transient let DAILY_FREE_TOKENS : Nat = 10;
+    private transient let ONE_DAY_IN_NANO : Nat = 86400000000000; // 24 hours in nanoseconds
 
 
 
@@ -160,7 +160,7 @@ actor SingleBackend {
             
             return {
                 id = user.id;
-                profilePicture = user.profilePicture;
+                profilePictureUrl = user.profilePictureUrl;
                 username = user.username;
                 dob = user.dob;
                 preference = user.preference;
@@ -196,7 +196,7 @@ actor SingleBackend {
                     
                     let finalUser: Model.User = {
                         id = updatedUser.id;
-                        profilePicture = updatedUser.profilePicture;
+                        profilePictureUrl = updatedUser.profilePictureUrl;
                         username = updatedUser.username;
                         dob = updatedUser.dob;
                         preference = updatedUser.preference;
@@ -259,7 +259,7 @@ actor SingleBackend {
                 
                 let finalUser: Model.User = {
                     id = updatedUser.id;
-                    profilePicture = updatedUser.profilePicture;
+                    profilePictureUrl = updatedUser.profilePictureUrl;
                     username = updatedUser.username;
                     dob = updatedUser.dob;
                     preference = updatedUser.preference;
@@ -375,13 +375,13 @@ actor SingleBackend {
         };
     };
 
-    public func createUser(newid : Text, profilePic : Blob) : async Model.User {
+    public func createUser(newid : Text, profilePictureUrl : ?Text) : async Model.User {
         let timestamp = Time.now();
         let sub = newSubaccount(newid);
 
         let newUser : Model.User = {
             id = newid;
-            profilePicture = profilePic;
+            profilePictureUrl = profilePictureUrl;
             username = "";
             dob = "";
             preference = [];
@@ -429,7 +429,10 @@ actor SingleBackend {
                 let timestamp = Time.now();
                 let updatedUser : Model.User = {
                     id = currUser.id;
-                    profilePicture = Option.get(payload.profilePicture, currUser.profilePicture);
+                    profilePictureUrl = switch(payload.profilePictureUrl) {
+                        case (?url) { ?url };
+                        case null { currUser.profilePictureUrl };
+                    };
                     username = Option.get(payload.username, currUser.username);
                     dob = Option.get(payload.dob, currUser.dob);
                     description = Option.get(payload.description, currUser.description);

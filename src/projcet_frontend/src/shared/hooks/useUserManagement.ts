@@ -25,12 +25,14 @@ export const useUserManagement = (): UseUserManagementReturn => {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [searchUsers, setSearchUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-
+  
+  
   // Fetch all users (cached after first load)
   const fetchAllUsers = useCallback(async () => {
     setLoading(true);
     try {
       const users = await getAllUsers();
+      console.log(users)
       if (users) {
         setAllUsers(users);
       }
@@ -107,7 +109,6 @@ export const useUserManagement = (): UseUserManagementReturn => {
     // Data
     allUsers,
     searchUsers,
-    
     // State
     loading,
     

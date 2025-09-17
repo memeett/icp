@@ -38,6 +38,7 @@ import { useUserManagement } from '../shared/hooks';
 import { User } from '../shared/types/User';
 import { JobCategory } from '../shared/types/Job';
 import { useJobCategories } from '../utils/useJobCategories';
+import { useAuth } from '../hooks/useAuth';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -51,22 +52,23 @@ const BrowseFreelancerPage: React.FC = () => {
   const [minRating, setMinRating] = useState(0);
   const { allUsers, loading } = useUserManagement();
   const { data } = useJobCategories()
+  const { user } = useAuth()
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const filterFreelancers = useCallback((users: User[]) => {
-    return users.filter(user => {
+    return users.filter(u => {
       const searchMatch = !debouncedSearchTerm ||
-        user.username.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        user.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+        u.username.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        u.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
       const categoryMatch = !selectedCategory ||
-        user.preference.some(pref => pref.jobCategoryName === selectedCategory);
+        u.preference.some(pref => pref.jobCategoryName === selectedCategory);
 
-      const ratingMatch = user.rating >= minRating;
+      const ratingMatch = u.rating >= minRating;
 
-      
+      const notCurrentUser = u.id != user?.id;
 
-      return searchMatch && categoryMatch && ratingMatch;
+      return searchMatch && categoryMatch && ratingMatch && notCurrentUser;
     });
   }, [debouncedSearchTerm, selectedCategory, minRating]);
 
@@ -86,6 +88,7 @@ const BrowseFreelancerPage: React.FC = () => {
   }, [sortBy]);
 
   const filteredAndSortedFreelancers = useMemo(() => {
+    console.log(allUsers)
     const filtered = filterFreelancers(allUsers);
     return sortFreelancers(filtered);
   }, [allUsers, filterFreelancers, sortFreelancers]);

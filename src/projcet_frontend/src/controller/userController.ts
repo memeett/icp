@@ -286,16 +286,14 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
                 updatePayload.profilePictureUrl = [uploadResult.url];
             } catch (error) {
                 console.error('Error uploading profile picture:', error);
-                throw error; // Rethrow to show user the error
+                throw error; // Renpmthrow to show user the error
             }
         }
 
         console.log('Sending update payload to backend:', JSON.stringify(updatePayload, null, 2));
         
-        // Get authenticated agent
         const agent = await agentService.getAgent();
         
-        // Call backend updateUser function
         const result = await projcet_backend_single.updateUser(currentUser.id, updatePayload);
         
         console.log('Backend update result:', result);
@@ -303,7 +301,6 @@ export const updateUserProfile = async (payload: Partial<User>): Promise<boolean
         if ('ok' in result) {
             console.log('Profile updated successfully');
             
-            // Update local storage with new data
             const updatedUser = convertBackendUserToFrontend(result.ok);
             storage.setUser(updatedUser);
 
@@ -333,8 +330,15 @@ export const needsProfileCompletion = (): boolean => {
 };
 
 // Fungsi lain yang mungkin Anda perlukan dari kode lama Anda
-export const getAllUsers = async (): Promise<User[] | null> => {
-    return [];
+export const getAllUsers = async (): Promise<User[]> => {
+    const users = await projcet_backend_single.getAllUsers()
+    const listUser : User[]= []; 
+    users.forEach(u => {
+        
+        const convertedUser = convertBackendUserToFrontend(u)
+        listUser.push(convertedUser)
+    });
+    return listUser;
 };
 export const getUserById = async (userId: string): Promise<{ ok: User } | { err: string } | null> => {
     try {

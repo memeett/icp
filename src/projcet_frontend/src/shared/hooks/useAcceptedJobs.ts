@@ -6,7 +6,7 @@ import { getActiveTransactionByFreelancer, getFreelancerHistory } from '../../co
 type CacheEntry = {
   active: JobTransaction[];
   history: JobTransaction[];
-  ts: number; // timestamp (ms)
+  ts: number;
 };
 
 interface UseAcceptedJobsReturn {

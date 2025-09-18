@@ -13,9 +13,6 @@ dotenv.config({ path: "../../.env" });
 export default defineConfig({
   build: {
     emptyOutDir: true,
-    rollupOptions: {
-      external: ["react", "react-dom"],
-    },
   },
   optimizeDeps: {
     esbuildOptions: {

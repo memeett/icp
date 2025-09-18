@@ -382,7 +382,7 @@ export const useChat = (): UseChatReturn => {
       }
       
       // Send to advisor agent
-      const response = await fetch('http://127.0.0.1:8002/api/chat', {
+      const response = await fetch('https://34.122.202.222:8002/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

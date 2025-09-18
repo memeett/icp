@@ -1395,14 +1395,18 @@ async def handle_get_jobs(ctx: Context) -> JobsResponse:
             status=f"error: {str(e)}"
         )
 
-# Tambahkan CORS headers jika diperlukan (optional)
+# Tambahkan CORS headers untuk akses eksternal
 async def setup_cors(ctx: Context):
-    """Setup CORS jika diperlukan untuk frontend"""
+    """Setup CORS untuk akses eksternal"""
     ctx.logger.info("Agent started with REST endpoints:")
     ctx.logger.info("  POST /api/chat - Chat dengan agent")
     ctx.logger.info("  GET /api/health - Health check")
     ctx.logger.info("  GET /api/jobs - Dapatkan semua jobs")
-    ctx.logger.info(f"  Server running on http://localhost:8002")
+    ctx.logger.info(f"  External access: https://34.122.202.222:8002/api/chat")
+    ctx.logger.info(f"  ICP Local: {BASE_URL}")
+
+    # CORS setup untuk akses eksternal
+    ctx.logger.info("CORS enabled for external access from any origin")
 
 
 
@@ -1410,4 +1414,18 @@ agent.include(chat_proto)
 agent._on_startup.append(setup_cors)
 
 if __name__ == "__main__":
+    # Test external connectivity
+    import requests
+    try:
+        # Test local connectivity first
+        response = requests.get("http://localhost:8002/api/health", timeout=5)
+        print(f"✅ Local server accessible: {response.status_code}")
+    except:
+        print("⚠️  Local server not accessible yet - will be available after agent starts")
+
+    print("🚀 Starting advisor agent...")
+    print("📡 External API will be available at: https://34.122.202.222:8002/api/chat")
+    print("🔍 Health check: https://34.122.202.222:8002/api/health")
+    print("📋 Jobs endpoint: https://34.122.202.222:8002/api/jobs")
+
     agent.run()

@@ -1304,7 +1304,7 @@ async def process_query(query: str, ctx: Context, user_id: str = None) -> str:
 # uAgents bootstrap
 # --------------------------
 
-agent = Agent(name='advisor-agent', port=8002, mailbox="efb08343-de5c-4a29-8a62-2535c43734a9",endpoint="https://34.122.202.222" )
+agent = Agent(name='advisor-agent', port=8002, mailbox="efb08343-de5c-4a29-8a62-2535c43734a9",endpoint="http://34.122.202.222:8002" )
 chat_proto = Protocol(spec=chat_protocol_spec)
 
 @chat_proto.on_message(model=ChatMessage)

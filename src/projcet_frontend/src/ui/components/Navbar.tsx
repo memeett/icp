@@ -137,15 +137,6 @@ const Navbar: React.FC = () => {
     }
   };
 
-  const handleTopUp = async () => {
-    if (user?.id) {
-      try {
-        const result = await topUpWalletController(user, 10); // Top up with 10 tokens
-      } catch (error) {
-        console.error("Top-up failed:", error);
-      }
-    }
-  };
 
   const getUsernameById = useCallback(
     async (userId: string): Promise<string | null> => {
@@ -461,12 +452,6 @@ const Navbar: React.FC = () => {
                   className="flex items-center justify-center w-10 h-10"
                 />
 
-                 <Button
-                  type="text"
-                  icon={<MenuOutlined />}
-                  onClick={handleTopUp}
-                  className="flex items-center justify-center w-10 h-10"
-                />
               </div>
             </div>
           </div>

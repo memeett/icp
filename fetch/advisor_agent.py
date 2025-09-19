@@ -26,7 +26,7 @@ ASI1_HEADERS = {
 
 BACKEND_CANISTER_ID = "kke3h-myaaa-aaaal-qsssq-cai"
 
-BASE_URL = f"https://{BACKEND_CANISTER_ID}.raw.icp0.io"
+BASE_URL = f"https://icp0.io/api/v2/canister/{BACKEND_CANISTER_ID}/http_call"
 HEADERS = {
     "Content-Type": "application/json",
     "Accept": "application/json"
@@ -279,19 +279,23 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
         return cache["data"]
 
     errors = []
-    # For mainnet raw access, no Host header needed as canister ID is in subdomain
-    headers_with_host = HEADERS
-    url = f"{BASE_URL}/{endpoint}"
 
-
+    # Try POST first
     try:
-        ctx.logger.debug(f"Trying POST request to {url}")
-        resp = requests.post(url, headers=headers_with_host, json={}, timeout=15)
+        ctx.logger.debug(f"Trying POST request to {BASE_URL} for {endpoint}")
+        req = {
+            "method": "POST",
+            "url": f"/{endpoint}",
+            "headers": [],
+            "body": "",
+            "certificate_version": None
+        }
+        resp = requests.post(BASE_URL, headers=HEADERS, json=req, timeout=15)
         resp.raise_for_status()
-        
+
         # Log the raw response content for debugging
         ctx.logger.debug(f"Raw response from POST to {endpoint}: {resp.text}")
-        
+
         data = resp.json()
         if isinstance(data, list):
             ctx.logger.debug(f"Successfully fetched data via POST from {endpoint}. Data length: {len(data)}")
@@ -300,23 +304,30 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
             return data
     except requests.exceptions.RequestException as e:
         errors.append(f"POST to {endpoint} failed: {e}")
-        ctx.logger.warning(f"POST request to {url} failed: {e}")
+        ctx.logger.warning(f"POST request to {BASE_URL} failed: {e}")
     except json.JSONDecodeError as e:
         errors.append(f"Failed to decode JSON from POST to {endpoint}: {e}")
-        ctx.logger.error(f"Failed to decode JSON from POST to {url}. Response text: {resp.text}", exc_info=True)
+        ctx.logger.error(f"Failed to decode JSON from POST to {BASE_URL}. Response text: {resp.text}", exc_info=True)
     except Exception as e:
         errors.append(f"POST to {endpoint} failed: {e}")
-        ctx.logger.error(f"Unexpected error during POST to {url}: {e}", exc_info=True)
+        ctx.logger.error(f"Unexpected error during POST to {BASE_URL}: {e}", exc_info=True)
 
-    # Fallback ke GET
+    # Fallback to GET
     try:
-        ctx.logger.debug(f"Trying GET request to {url}")
-        resp = requests.get(url, headers=headers_with_host, timeout=10)
+        ctx.logger.debug(f"Trying GET request to {BASE_URL} for {endpoint}")
+        req = {
+            "method": "GET",
+            "url": f"/{endpoint}",
+            "headers": [],
+            "body": "",
+            "certificate_version": None
+        }
+        resp = requests.post(BASE_URL, headers=HEADERS, json=req, timeout=10)  # Note: still POST to gateway, but method=GET in req
         resp.raise_for_status()
-        
+
         # Log the raw response content for debugging
         ctx.logger.debug(f"Raw response from GET to {endpoint}: {resp.text}")
-        
+
         data = resp.json()
         if isinstance(data, list):
             cache["data"] = data
@@ -324,13 +335,13 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
             return data
     except requests.exceptions.RequestException as e:
         errors.append(f"GET to {endpoint} failed: {e}")
-        ctx.logger.warning(f"GET request to {url} failed: {e}")
+        ctx.logger.warning(f"GET request to {BASE_URL} failed: {e}")
     except json.JSONDecodeError as e:
         errors.append(f"Failed to decode JSON from GET to {endpoint}: {e}")
-        ctx.logger.error(f"Failed to decode JSON from GET to {url}. Response text: {resp.text}", exc_info=True)
+        ctx.logger.error(f"Failed to decode JSON from GET to {BASE_URL}. Response text: {resp.text}", exc_info=True)
     except Exception as e:
         errors.append(f"GET to {endpoint} failed: {e}")
-        ctx.logger.error(f"Unexpected error during GET to {url}: {e}", exc_info=True)
+        ctx.logger.error(f"Unexpected error during GET to {BASE_URL}: {e}", exc_info=True)
 
     raise RuntimeError(f"Failed to fetch from {endpoint}: " + " | ".join(errors))
 

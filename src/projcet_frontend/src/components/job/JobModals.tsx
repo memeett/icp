@@ -135,7 +135,7 @@ const JobModals: React.FC<JobModalsProps> = ({
 
             <div className="flex justify-end border-t pt-3">
               <Paragraph className="text-lg font-semibold m-0">
-                Total: {job.jobSalary * acceptedFreelancers.length} {walletSymbol}
+                Total: {job.jobSalary / acceptedFreelancers.length} {walletSymbol}
               </Paragraph>
             </div>
           </div>

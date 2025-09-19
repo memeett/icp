@@ -32,6 +32,8 @@ HEADERS = {
     "Accept": "application/json"
 }
 
+def with_host(headers: dict, canister_id: str) -> dict:
+    return {**headers, "Host": f"{canister_id}.raw.icp0.io"}
 
 # Cache ringan untuk jobs agar beberapa tools tidak memanggil canister berulang dalam satu sesi
 _JOBS_CACHE: Dict[str, Any] = {"data": None, "ts": 0.0}

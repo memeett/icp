@@ -26,14 +26,12 @@ ASI1_HEADERS = {
 
 BACKEND_CANISTER_ID = "kke3h-myaaa-aaaal-qsssq-cai"
 
-BASE_URL = "http://a4gq6-oaaaa-aaaab-qaa4q-cai"
+BASE_URL = "https://icp-api.io"
 HEADERS = {
     "Content-Type": "application/json",
     "Accept": "application/json"
 }
 
-def with_host(headers: dict, canister_id: str) -> dict:
-    return {**headers, "Host": f"{canister_id}.raw.icp0.io"}
 
 # Cache ringan untuk jobs agar beberapa tools tidak memanggil canister berulang dalam satu sesi
 _JOBS_CACHE: Dict[str, Any] = {"data": None, "ts": 0.0}
@@ -279,12 +277,12 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
         return cache["data"]
 
     errors = []
-    url = f"{BASE_URL}/{endpoint}"
+    url = f"https://{canister_id}.icp-api.io/{endpoint}"
 
 
     try:
         ctx.logger.debug(f"Trying POST request to {url}")
-        resp = requests.post(url, headers=with_host(HEADERS, canister_id), json={}, timeout=15)
+        resp = requests.post(url, headers=HEADERS, json={}, timeout=15)
         resp.raise_for_status()
         
         # Log the raw response content for debugging
@@ -309,7 +307,7 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
     # Fallback ke GET
     try:
         ctx.logger.debug(f"Trying GET request to {url}")
-        resp = requests.get(url, headers=with_host(HEADERS, canister_id), timeout=10)
+        resp = requests.get(url, headers=HEADERS, timeout=10)
         resp.raise_for_status()
         
         # Log the raw response content for debugging

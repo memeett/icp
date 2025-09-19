@@ -36,6 +36,22 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Debug camera permissions and browser context
+    console.log("FaceRecognition: Checking camera permissions and browser context");
+    console.log("FaceRecognition: navigator.mediaDevices:", !!navigator.mediaDevices);
+    console.log("FaceRecognition: navigator.mediaDevices.getUserMedia:", !!navigator.mediaDevices?.getUserMedia);
+    console.log("FaceRecognition: location.protocol:", location.protocol);
+    console.log("FaceRecognition: document.location.protocol:", document.location.protocol);
+
+    // Check permissions API if available
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'camera' as PermissionName }).then(result => {
+        console.log("FaceRecognition: Camera permission state:", result.state);
+      }).catch(err => {
+        console.log("FaceRecognition: Error checking camera permission:", err);
+      });
+    }
+
     const checkRegistrationStatus = async () => {
       if (!isOpen) return;
 
@@ -51,8 +67,12 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
       try {
         setMode("loading");
         setLoading(true);
-        const response = await fetch(`http://34.122.202.222:8002:8000/check-registration/${principalId}`);
+        const serviceUrl = `http://34.122.202.222:8000/check-registration/${principalId}`;
+        console.log("Attempting to connect to face recognition service:", serviceUrl);
+        const response = await fetch(serviceUrl);
+        console.log("Face recognition service response status:", response.status);
         const result = await response.json();
+        console.log("Face recognition service response:", result);
         if (result.status === "registered") {
           setMode("verify");
         } else {
@@ -113,13 +133,16 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
 
       const endpoint =
         mode === "register" ? "/register-face" : "/verify-face";
-      const response = await fetch(`http://34.122.202.222:8002:8000${endpoint}`, {
+      const serviceUrl = `http://34.122.202.222:8000${endpoint}`;
+      console.log("Attempting to connect to face recognition service for capture:", serviceUrl);
+      const response = await fetch(serviceUrl, {
         method: "POST",
         body: formData,
         headers: {
           Accept: "application/json",
         },
       });
+      console.log("Face recognition capture response status:", response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

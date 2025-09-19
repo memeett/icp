@@ -40,8 +40,8 @@ export function FaceVerificationModal({ parentIndex, index }: { parentIndex: num
       // Create form data
       const formData = new FormData();
       formData.append('file', blob, 'image.jpg');
-  
-      const response = await fetch('http://34.122.202.222:8002:8000/verify-face', {
+
+      const response = await fetch('http://34.122.202.222:8000/verify-face', {
         method: 'POST',
         body: formData,
         headers: {

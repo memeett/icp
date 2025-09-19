@@ -57,8 +57,12 @@ const AccountPage: React.FC = () => {
       if (user?.id) {
         try {
           setLoading(true);
-          const response = await fetch(`http://34.122.202.222:8002:8000/check-registration/${user.id}`);
+          const serviceUrl = `http://34.122.202.222:8000/check-registration/${user.id}`;
+          console.log("AccountPage: Attempting to connect to face recognition service:", serviceUrl);
+          const response = await fetch(serviceUrl);
+          console.log("AccountPage: Face recognition service response status:", response.status);
           const result = await response.json();
+          console.log("AccountPage: Face recognition service response:", result);
           if (result.status === "registered") {
             setFaceRecognitionEnabled(true);
           } else {

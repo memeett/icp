@@ -26,12 +26,14 @@ ASI1_HEADERS = {
 
 BACKEND_CANISTER_ID = "kke3h-myaaa-aaaal-qsssq-cai"
 
-BASE_URL = "https://icp-api.io"
+BASE_URL = f"https://{BACKEND_CANISTER_ID}.raw.icp0.io"
 HEADERS = {
     "Content-Type": "application/json",
     "Accept": "application/json"
 }
 
+def with_host(headers: dict, canister_id: str) -> dict:
+    return {**headers, "Host": f"{canister_id}.icp0.io"}
 
 # Cache ringan untuk jobs agar beberapa tools tidak memanggil canister berulang dalam satu sesi
 _JOBS_CACHE: Dict[str, Any] = {"data": None, "ts": 0.0}
@@ -277,12 +279,13 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
         return cache["data"]
 
     errors = []
-    url = f"https://{canister_id}.icp-api.io/{endpoint}"
+    headers_with_host = with_host(HEADERS, canister_id)
+    url = f"{BASE_URL}/{endpoint}"
 
 
     try:
         ctx.logger.debug(f"Trying POST request to {url}")
-        resp = requests.post(url, headers=HEADERS, json={}, timeout=15)
+        resp = requests.post(url, headers=headers_with_host, json={}, timeout=15)
         resp.raise_for_status()
         
         # Log the raw response content for debugging
@@ -307,7 +310,7 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
     # Fallback ke GET
     try:
         ctx.logger.debug(f"Trying GET request to {url}")
-        resp = requests.get(url, headers=HEADERS, timeout=10)
+        resp = requests.get(url, headers=headers_with_host, timeout=10)
         resp.raise_for_status()
         
         # Log the raw response content for debugging
@@ -1400,7 +1403,7 @@ async def setup_cors(ctx: Context):
     ctx.logger.info("  GET /api/health - Health check")
     ctx.logger.info("  GET /api/jobs - Dapatkan semua jobs")
     ctx.logger.info(f"  External access: https://34.122.202.222:8002/api/chat")
-    ctx.logger.info(f"  ICP Local: {BASE_URL}")
+    ctx.logger.info(f"  ICP Mainnet: {BASE_URL}")
 
     # CORS setup untuk akses eksternal
     ctx.logger.info("CORS enabled for external access from any origin")

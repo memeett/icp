@@ -763,9 +763,7 @@ const JobDetailPage: React.FC = () => {
               <TabPane tab={`Accepted (${acceptedFreelancers.length})`} key="accepted">
                 <AcceptedContent />
               </TabPane>
-              <TabPane tab="Submission Answer" key="submission">
-                <SubmissionContent />
-              </TabPane>
+              
 
               {job.jobStatus === "Open" && (
                 <TabPane tab="Invite Users" key="invite">

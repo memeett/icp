@@ -58,13 +58,26 @@ const JobActions: React.FC<JobActionsProps> = ({
   // Chat button for anyone when job is Ongoing/Finished
   if (user && (job.jobStatus === 'Ongoing' || job.jobStatus === 'Finished')) {
     return (
-      <div className="text-center mt-4">
+      <div className="text-center mt-4 ">
+        
         <JobChatButton
           jobId={job.id}
           jobStatus={job.jobStatus}
           clientId={job.userId}
           freelancerId={user?.id}
         />
+        
+        {isJobOwner && job.jobStatus === 'Ongoing' && acceptedFreelancers.length > 0 && (
+          <Button
+            type="primary"
+            size="large"
+            icon={<StopOutlined />}
+            onClick={onFinishJob}
+          >
+            Finish Job
+          </Button>
+        )}
+
       </div>
     );
   }
@@ -73,6 +86,7 @@ const JobActions: React.FC<JobActionsProps> = ({
   if (isJobOwner) {
     return (
       <div className="text-center space-x-4">
+        
         {job.jobStatus === 'Open' && acceptedFreelancers.length > 0 && (
           <Button
             type="primary"
@@ -84,7 +98,7 @@ const JobActions: React.FC<JobActionsProps> = ({
             Start Job
           </Button>
         )}
-        
+
         {job.jobStatus === 'Open' && acceptedFreelancers.length === 0 && (
           <Button
             type="primary"
@@ -96,16 +110,7 @@ const JobActions: React.FC<JobActionsProps> = ({
           </Button>
         )}
         
-        {job.jobStatus === 'Ongoing' && (
-          <Button
-            type="primary"
-            size="large"
-            icon={<StopOutlined />}
-            onClick={onFinishJob}
-          >
-            Finish Job
-          </Button>
-        )}
+        
       </div>
     );
   }

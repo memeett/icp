@@ -1160,22 +1160,79 @@ persistent actor SingleBackend {
     };
 
     public func ratingUser(payloads: [Model.RequestRatingPayload]): async Result.Result<Text, Text> {
-        for (payload in Iter.fromArray(payloads)) {
-            switch (ratings.get(payload.rating_id)) {
-                case (?rating) {
-                    let updatedRating : Model.Rating = {
-                        id = rating.id;
-                        jobId = rating.jobId;
-                        userId = rating.userId;
-                        rating = payload.rating;
-                        createdAt = rating.createdAt;
-                    };
-                    ratings.put(payload.rating_id, updatedRating);
+    for (payload in Iter.fromArray(payloads)) {
+        switch (ratings.get(payload.rating_id)) {
+            case (?rating) {
+                let updatedRating : Model.Rating = {
+                    id = rating.id;
+                    jobId = rating.jobId;
+                    userId = rating.userId;
+                    rating = payload.rating;
+                    createdAt = rating.createdAt;
                 };
-                case _ {};
+                ratings.put(payload.rating_id, updatedRating);
+
+                let allUserRating = await getRatingsByUserId(rating.userId);
+                switch(allUserRating) {
+                    case (#ok(r)) {
+                        let total = Array.foldLeft<Model.Rating, Nat>(
+                            r,
+                            0,
+                            func(acc, r) { acc + r.rating }
+                        );
+                        let avg = Float.fromInt(total / r.size());
+
+                        
+                        switch (users.get(rating.userId)) {
+                            case (?currUser) {
+                                let timestamp = Time.now();
+                                let updatedUser : Model.User = {
+                                    id = currUser.id;
+                                    profilePictureUrl = currUser.profilePictureUrl;
+                                    username = currUser.username;
+                                    dob = currUser.dob;
+                                    description = currUser.description;
+                                    preference = currUser.preference;
+                                    wallet = currUser.wallet;
+                                    rating = avg;
+                                    createdAt = currUser.createdAt;
+                                    updatedAt = timestamp;
+                                    isFaceRecognitionOn = currUser.isFaceRecognitionOn;
+                                    isProfileCompleted = currUser.isProfileCompleted;
+                                    subAccount = currUser.subAccount;
+                                    chatTokens = currUser.chatTokens;
+                                };
+                                users.put(rating.userId, updatedUser);
+                            };
+                            case null {
+                                return #err("User not found");
+                            };
+                        };
+                    };
+                    case (#err(msg)) {
+                        return #err("error while updating user rating: " # msg);
+                    };
+                };
             };
+            case _ {};
         };
-        return #ok("Ratings submitted");
+    };
+    return #ok("Ratings submitted");
+};
+
+
+    public query func getRatingsByUserId(userId: Text): async Result.Result<[Model.Rating], Text> {
+        let userRatings = Iter.filter<Model.Rating>(ratings.vals(), func(rating) {
+            rating.userId == userId
+        });
+        
+        let ratingsArray = Iter.toArray(userRatings);
+        
+        if (ratingsArray.size() == 0) {
+            return #err("No ratings found for this user");
+        };
+        
+        return #ok(ratingsArray);
     };
 
     public query func getRatingByUserIdJobId(jobId: Text, userId: Text): async Result.Result<Model.Rating, Text> {
@@ -1186,6 +1243,7 @@ persistent actor SingleBackend {
         };
         return #err("Rating not found");
     };
+
 
     // =================================================================================
     // Logika dari Submission Canister

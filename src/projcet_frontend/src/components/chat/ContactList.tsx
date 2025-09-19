@@ -132,8 +132,10 @@ const ContactList: React.FC<ContactListProps> = ({ isMobile = false }) => {
 
   // Filter contacts based on search
   const filteredContacts = contacts.filter(contact =>
-    contact.otherUserName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
+    contact.otherUserId !== user?.id && (
+      contact.otherUserName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   if (loading) {

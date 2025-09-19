@@ -71,7 +71,7 @@ export const useRating = (jobId: string | undefined, isJobOwner: boolean) => {
         try {
             const result = await ratingUser(payloads);
             console.log(result)
-            if (result.toLowerCase().includes("success")) {
+            if (result === "Ratings submitted") {
                 message.success("Ratings submitted successfully!");
                 setIsRatingFinalized(true);
                 await fetchRatings(); 

@@ -94,6 +94,7 @@ const ChatLayout: React.FC = () => {
     >
       <Row gutter={0} className="h-full">
         <Col span={8} className="h-full">
+        
           <Card
             className="h-full shadow-lg border-0 bg-card rounded-l-2xl rounded-r-none border-r border-border"
             bodyStyle={{ padding: 0, height: '100%' }}

@@ -2,20 +2,29 @@ import { projcet_backend_single } from "../../../declarations/projcet_backend_si
 import { Job, User } from "../../../declarations/projcet_backend_single/projcet_backend_single.did";
 import { ApplierPayload } from "../shared/types/Applier";
 import { agentService } from "../singleton/agentService";
+import { isFreelancerRegistered } from "./jobTransactionController";
 
 
 export const applyJob = async (userId: string, jobId : string): Promise<boolean> => {
     const agent = await agentService.getAgent();
     try {
-        const result = await projcet_backend_single.applyJob(userId, jobId);
-        
-        if ("ok" in result) {
-            console.log("Applied for job:", result.ok);
-            return true;
-        } else {
-            console.error("Error applying for job:", result.err);
+        const isRegitered = await isFreelancerRegistered(jobId, userId);
+        if(isRegitered[0] == "succ" && isRegitered[1] == "false"){
+            
+            const result = await projcet_backend_single.applyJob(userId, jobId);
+            
+            if ("ok" in result) {
+                console.log("Applied for job:", result.ok);
+                return true;
+            } else {
+                console.error("Error applying for job:", result.err);
+                return false;
+            }
+            
+        }else{
             return false;
         }
+
     } catch (error) {
         console.error("Failed to apply for job:", error);
         return false;

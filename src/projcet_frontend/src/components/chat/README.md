@@ -71,7 +71,7 @@ The component uses the existing advisor API:
 export const askAdvisor = async (prompt: string): Promise<string>
 ```
 
-**API Endpoint**: `https://34.122.202.222:8002/api/chat`
+**API Endpoint**: `http://34.122.202.222:8002/api/chat`
 
 **Request Format**:
 ```json

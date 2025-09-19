@@ -57,7 +57,7 @@ const AccountPage: React.FC = () => {
       if (user?.id) {
         try {
           setLoading(true);
-          const response = await fetch(`http://localhost:8000/check-registration/${user.id}`);
+          const response = await fetch(`http://34.122.202.222:8002:8000/check-registration/${user.id}`);
           const result = await response.json();
           if (result.status === "registered") {
             setFaceRecognitionEnabled(true);

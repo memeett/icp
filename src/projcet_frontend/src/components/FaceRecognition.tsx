@@ -51,7 +51,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
       try {
         setMode("loading");
         setLoading(true);
-        const response = await fetch(`http://localhost:8000/check-registration/${principalId}`);
+        const response = await fetch(`http://34.122.202.222:8002:8000/check-registration/${principalId}`);
         const result = await response.json();
         if (result.status === "registered") {
           setMode("verify");
@@ -113,7 +113,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
 
       const endpoint =
         mode === "register" ? "/register-face" : "/verify-face";
-      const response = await fetch(`http://localhost:8000${endpoint}`, {
+      const response = await fetch(`http://34.122.202.222:8002:8000${endpoint}`, {
         method: "POST",
         body: formData,
         headers: {

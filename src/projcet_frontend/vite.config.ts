@@ -22,10 +22,11 @@ export default defineConfig({
     },
   },
   server: {
-    https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'certs/localhost-key.pem')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'certs/localhost-cert.pem')),
-    },
+    // Disabled HTTPS for development to avoid mixed content errors with external API
+    // https: {
+    //   key: fs.readFileSync(path.resolve(__dirname, 'certs/localhost-key.pem')),
+    //   cert: fs.readFileSync(path.resolve(__dirname, 'certs/localhost-cert.pem')),
+    // },
     proxy: {
       "/api": {
         target: "http://127.0.0.1:4943",

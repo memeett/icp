@@ -1,6 +1,6 @@
 import { storage } from '../utils/storage';
 
-const ADVISOR_API_URL = "https://34.122.202.222:8002/api/chat";
+const ADVISOR_API_URL = "http://34.122.202.222:8002/api/chat";
 
 export const askAdvisor = async (prompt: string): Promise<string> => {
     try {
@@ -49,7 +49,7 @@ export const askAdvisor = async (prompt: string): Promise<string> => {
         
         // More specific error messages
         if (error.message.includes('Failed to fetch')) {
-            return "Tidak dapat terhubung ke AI Advisor. Pastikan koneksi internet stabil dan server tersedia di https://34.122.202.222:8002/api/chat";
+            return "Tidak dapat terhubung ke AI Advisor. Pastikan koneksi internet stabil dan server tersedia di http://34.122.202.222:8002/api/chat";
         } else if (error.message.includes('400')) {
             return "Format permintaan tidak valid. Mohon coba lagi.";
         } else if (error.message.includes('500')) {

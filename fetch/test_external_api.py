@@ -8,7 +8,7 @@ import time
 
 def test_external_api():
     """Test akses API eksternal"""
-    base_url = "https://34.122.202.222:8002"
+    base_url = "http://34.122.202.222:8002"
 
     print("🧪 Testing External API Access")
     print(f"📡 Target: {base_url}")

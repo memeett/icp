@@ -24,16 +24,16 @@ ASI1_HEADERS = {
     "Content-Type": "application/json"
 }
 
-BACKEND_CANISTER_ID = "kke3h-myaaa-aaaal-qsssq-cai "
+BACKEND_CANISTER_ID = "kke3h-myaaa-aaaal-qsssq-cai"
 
-BASE_URL = "http://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io"
+BASE_URL = "http://a4gq6-oaaaa-aaaab-qaa4q-cai"
 HEADERS = {
     "Content-Type": "application/json",
     "Accept": "application/json"
 }
 
 def with_host(headers: dict, canister_id: str) -> dict:
-    return {**headers, "Host": f"{canister_id}.localhost"}
+    return {**headers, "Host": f"{canister_id}.raw.icp0.io"}
 
 # Cache ringan untuk jobs agar beberapa tools tidak memanggil canister berulang dalam satu sesi
 _JOBS_CACHE: Dict[str, Any] = {"data": None, "ts": 0.0}

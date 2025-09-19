@@ -24,9 +24,9 @@ ASI1_HEADERS = {
     "Content-Type": "application/json"
 }
 
-BACKEND_CANISTER_ID = "uzt4z-lp777-77774-qaabq-cai"
+BACKEND_CANISTER_ID = "kke3h-myaaa-aaaal-qsssq-cai "
 
-BASE_URL = "http://127.0.0.1:4943"
+BASE_URL = "http://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io"
 HEADERS = {
     "Content-Type": "application/json",
     "Accept": "application/json"

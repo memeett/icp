@@ -279,7 +279,8 @@ async def _fetch_canister_data(ctx: Context, cache: Dict, endpoint: str, caniste
         return cache["data"]
 
     errors = []
-    headers_with_host = with_host(HEADERS, canister_id)
+    # For mainnet raw access, no Host header needed as canister ID is in subdomain
+    headers_with_host = HEADERS
     url = f"{BASE_URL}/{endpoint}"
 
 

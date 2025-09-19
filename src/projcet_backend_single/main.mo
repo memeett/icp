@@ -375,6 +375,34 @@ persistent actor SingleBackend {
         };
     };
 
+public func jobPaymentTranfer(user_id: Text, job_id: Text, amount: Float): async Result.Result<Text, Text> {
+    switch (users.get(user_id)) {
+        case (?fromUser) {
+            let jobResult = await getJob(job_id);
+            switch (jobResult) {
+                case (#ok(jobData)) {
+                    addTransaction({
+                        fromId = user_id;
+                        transactionAt = Time.now();
+                        amount = amount;
+                        transactionType = #transferToJob;
+                        toId = ?job_id;
+                    });
+
+                    return #ok("Transferred to job successfully");
+                };
+                case (#err(errMsg)) {
+                    return #err("Failed to fetch job details in user: " # errMsg);
+                };
+            };
+        };
+        case null {
+            return #err("Sender not found");
+        };
+    };
+};
+
+
     public func createUser(newid : Text, profilePictureUrl : ?Text) : async Model.User {
         let timestamp = Time.now();
         let sub = newSubaccount(newid);
@@ -1175,13 +1203,22 @@ persistent actor SingleBackend {
                 let allUserRating = await getRatingsByUserId(rating.userId);
                 switch(allUserRating) {
                     case (#ok(r)) {
-                        let total = Array.foldLeft<Model.Rating, Nat>(
-                            r,
-                            0,
-                            func(acc, r) { acc + r.rating }
-                        );
-                        let avg = Float.fromInt(total / r.size());
+                        var total : Nat = 0;
+                        var count : Nat = 0;
+                        for (ra in Iter.fromArray(r)) {
+                            if (ra.rating > 0) {
+                                total += ra.rating;
+                                count += 1;
+                            };
+                        };
+                        let avg = if (count > 0) {
+                            (Float.fromInt(total) / Float.fromInt(count)) / 10.0
+                        } else {
+                            0.0
+                        };
 
+                        
+                        
                         
                         switch (users.get(rating.userId)) {
                             case (?currUser) {

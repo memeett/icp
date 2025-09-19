@@ -137,16 +137,16 @@ export async function transferToJobController(curr_user: User, curr_job: Job, am
 
   if ("Ok" in result) {
     // Backend logic for this is not yet implemented in the single canister
-    // const next_result = await projcet_backend_single.jobPaymentTranfer(curr_user.id, curr_job.id, amount);
-    // console.log("Add job transaction result:", next_result);
-    // if("ok" in next_result) {
-    //   return { ok: result.Ok.toString() };
-    // }else{
-    //   throw new Error(
-    //     "Failed to histry transfer to job: " 
-    //   );
-    // }
-    return { ok: result.Ok.toString() };
+    const next_result = await projcet_backend_single.jobPaymentTranfer(curr_user.id, curr_job.id, amount);
+    console.log("Add job transaction result:", next_result);
+    if("ok" in next_result) {
+      return { ok: result.Ok.toString() };
+    }else{
+      throw new Error(
+        "Failed to histry transfer to job: " 
+      );
+    }
+ 
     
   } else {
     throw new Error(

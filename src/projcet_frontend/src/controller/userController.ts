@@ -362,5 +362,13 @@ export const getUserByName = async (username: string): Promise<User | null> => {
     return null;
 };
 export const getUserTransaction = async (userId: string): Promise<CashFlowHistory[] | null> => {
-    return [];
+    try {
+        const result = await projcet_backend_single.getUserTransactions(userId);
+        // console.log(result)
+        return result;
+    } catch (error) {
+        console.error("Failed to get user transaction:", error);
+        return null;
+    }
+
 }

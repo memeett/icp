@@ -405,7 +405,15 @@ export const useChat = (): UseChatReturn => {
       }
       
       // Send to advisor agent
-      const response = await fetch('http://http://34.122.202.222:8002/api/chat', {
+      const advisorUrl = 'http://34.122.202.222:8002/api/chat';
+
+      // DEBUG: Log environment and URL details for AI suggestions
+      console.log('🔍 [CHAT AI DEBUG] Environment check for AI suggestions:');
+      console.log('🔍 [CHAT AI DEBUG] - Current location protocol:', window.location.protocol);
+      console.log('🔍 [CHAT AI DEBUG] - Advisor API URL:', advisorUrl);
+      console.log('🔍 [CHAT AI DEBUG] - Is HTTPS page with HTTP API?', window.location.protocol === 'https:' && advisorUrl.startsWith('http://'));
+
+      const response = await fetch(advisorUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

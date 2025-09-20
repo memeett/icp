@@ -13,7 +13,12 @@ export const askAdvisor = async (prompt: string): Promise<string> => {
             userId: userId  // Include user ID in the request
         };
 
-        console.log('Sending message to advisor via REST:', JSON.stringify(payload, null, 2));
+        // DEBUG: Log environment and URL details
+        console.log('🔍 [ADVISOR DEBUG] Environment check:');
+        console.log('🔍 [ADVISOR DEBUG] - Current location protocol:', window.location.protocol);
+        console.log('🔍 [ADVISOR DEBUG] - Advisor API URL:', ADVISOR_API_URL);
+        console.log('🔍 [ADVISOR DEBUG] - Is HTTPS page with HTTP API?', window.location.protocol === 'https:' && ADVISOR_API_URL.startsWith('http://'));
+        console.log('🔍 [ADVISOR DEBUG] Sending message to advisor via REST:', JSON.stringify(payload, null, 2));
 
         const response = await fetch(ADVISOR_API_URL, {
             method: 'POST',

@@ -57,9 +57,21 @@ const AccountPage: React.FC = () => {
       if (user?.id) {
         try {
           setLoading(true);
-          const serviceUrl = `http://34.122.202.222:8000/check-registration/${user.id}`;
-          console.log("AccountPage: Attempting to connect to face recognition service:", serviceUrl);
-          const response = await fetch(serviceUrl);
+          const serviceUrl = (import.meta as any).env?.DEV
+            ? `/face-api/check-registration/${user.id}`
+            : `https://34.122.202.222:8000/check-registration/${user.id}`;
+          
+          // DEBUG: Log SSL and URL details
+          console.log('🔍 [ACCOUNT PAGE DEBUG] Environment check:');
+          console.log('🔍 [ACCOUNT PAGE DEBUG] - Current location protocol:', window.location.protocol);
+          console.log('🔍 [ACCOUNT PAGE DEBUG] - Face registration check URL:', serviceUrl);
+          console.log('🔍 [ACCOUNT PAGE DEBUG] - Is HTTPS page with HTTP API?', window.location.protocol === 'https:' && serviceUrl.startsWith('http://'));
+          
+          // Ensure we're using the correct protocol - don't auto-upgrade http to https
+          const apiUrl = serviceUrl.replace('https://', 'http://');
+          
+          console.log("AccountPage: Attempting to connect to face recognition service:", apiUrl);
+          const response = await fetch(apiUrl);
           console.log("AccountPage: Face recognition service response status:", response.status);
           const result = await response.json();
           console.log("AccountPage: Face recognition service response:", result);

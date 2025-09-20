@@ -41,7 +41,18 @@ export function FaceVerificationModal({ parentIndex, index }: { parentIndex: num
       const formData = new FormData();
       formData.append('file', blob, 'image.jpg');
 
-      const response = await fetch('http://34.122.202.222:8000/verify-face', {
+      // Use dev proxy in development to avoid SSL issues, real HTTPS in production
+      const apiUrl = (import.meta as any).env?.DEV
+        ? '/face-api/verify-face'
+        : 'https://34.122.202.222:8000/verify-face';
+      
+      // DEBUG: Log SSL and URL details
+      console.log('🔍 [FACE VERIFY DEBUG] Environment check:');
+      console.log('🔍 [FACE VERIFY DEBUG] - Current location protocol:', window.location.protocol);
+      console.log('🔍 [FACE VERIFY DEBUG] - Face verify URL:', apiUrl);
+      console.log('🔍 [FACE VERIFY DEBUG] - Is HTTPS page with HTTP API?', window.location.protocol === 'https:' && apiUrl.startsWith('http://'));
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
         headers: {

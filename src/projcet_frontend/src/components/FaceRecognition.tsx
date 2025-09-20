@@ -9,7 +9,9 @@ import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 
 // Face recognition service configuration
-const FACE_RECOGNITION_BASE_URL = process.env.REACT_APP_FACE_RECOGNITION_URL || "https://34.122.202.222:8000";
+const FACE_RECOGNITION_BASE_URL = (import.meta as any).env?.DEV
+  ? "/face-api"
+  : (process.env.REACT_APP_FACE_RECOGNITION_URL || "https://34.122.202.222:8000");
 
 interface FaceRecognitionProps {
   principalId: string;
@@ -77,7 +79,11 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
         console.log("🔍 [FACE RECOG DEBUG] - Face recognition URL:", serviceUrl);
         console.log("🔍 [FACE RECOG DEBUG] - Is HTTPS page with HTTP API?", window.location.protocol === 'https:' && serviceUrl.startsWith('http://'));
         console.log("🔍 [FACE RECOG DEBUG] Attempting to connect to face recognition service:", serviceUrl);
-        const response = await fetch(serviceUrl);
+        
+        // Ensure we're using the correct protocol - don't auto-upgrade http to https
+        const apiUrl = serviceUrl.replace('https://', 'http://');
+        
+        const response = await fetch(apiUrl);
         console.log("Face recognition service response status:", response.status);
         const result = await response.json();
         console.log("Face recognition service response:", result);
@@ -148,12 +154,17 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
       console.log("🔍 [FACE RECOG CAPTURE DEBUG] - Face recognition URL:", serviceUrl);
       console.log("🔍 [FACE RECOG CAPTURE DEBUG] - Is HTTPS page with HTTP API?", window.location.protocol === 'https:' && serviceUrl.startsWith('http://'));
       console.log("🔍 [FACE RECOG CAPTURE DEBUG] Attempting to connect to face recognition service for capture:", serviceUrl);
-      const response = await fetch(serviceUrl, {
+      
+      // Ensure we're using the correct protocol - don't auto-upgrade http to https
+      const apiUrl = serviceUrl.replace('https://', 'http://');
+      
+      const response = await fetch(apiUrl, {
         method: "POST",
         body: formData,
         headers: {
           Accept: "application/json",
         },
+        mode: 'cors' // Explicitly set CORS mode
       });
       console.log("Face recognition capture response status:", response.status);
 

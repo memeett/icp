@@ -405,7 +405,7 @@ export const useChat = (): UseChatReturn => {
       }
       
       // Send to advisor agent
-      const advisorUrl = process.env.REACT_APP_ADVISOR_API_URL || 'https://34.122.202.222:8002/api/chat';
+  const advisorUrl = (import.meta as any).env?.DEV ? '/advisor-api/api/chat' : (process.env.REACT_APP_ADVISOR_API_URL || 'https://34.122.202.222:8002/api/chat');
 
       // DEBUG: Log environment and URL details for AI suggestions
       console.log('🔍 [CHAT AI DEBUG] Environment check for AI suggestions:');
@@ -413,7 +413,10 @@ export const useChat = (): UseChatReturn => {
       console.log('🔍 [CHAT AI DEBUG] - Advisor API URL:', advisorUrl);
       console.log('🔍 [CHAT AI DEBUG] - Is HTTPS page with HTTP API?', window.location.protocol === 'https:' && advisorUrl.startsWith('http://'));
 
-      const response = await fetch(advisorUrl, {
+  // Use env as-is; if you're on HTTP page and HTTPS fails, consider adding retry similar to advisorController.
+  const apiUrl = advisorUrl;
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -427,7 +430,8 @@ export const useChat = (): UseChatReturn => {
             assistance_type: 'suggest_reply'
           }),
           userId: user.id
-        })
+        }),
+        mode: 'cors' // Explicitly set CORS mode
       });
       
       // Process response

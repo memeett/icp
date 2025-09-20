@@ -19,8 +19,22 @@ export const askAdvisor = async (prompt: string): Promise<string> => {
         console.log('🔍 [ADVISOR DEBUG] - Advisor API URL:', ADVISOR_API_URL);
         console.log('🔍 [ADVISOR DEBUG] - Is HTTPS page with HTTP API?', window.location.protocol === 'https:' && ADVISOR_API_URL.startsWith('http://'));
         console.log('🔍 [ADVISOR DEBUG] Sending message to advisor via REST:', JSON.stringify(payload, null, 2));
+        
+        // Choose URL based on environment
+        const isDev = !!(import.meta as any).env?.DEV;
+        const isLocalDfx = (import.meta as any).env?.DFX_NETWORK === 'local';
+        const isHttpPage = typeof window !== 'undefined' && window.location.protocol === 'http:';
+        let apiUrl = ADVISOR_API_URL;
+        if (isDev) {
+            apiUrl = "/advisor-api/api/chat"; // Vite proxy
+        } else if (isLocalDfx && isHttpPage) {
+            // When serving built assets via local dfx (http), prefer HTTP to avoid SSL errors
+            apiUrl = ADVISOR_API_URL.replace('https://', 'http://');
+        }
+        console.log('🔍 [ADVISOR DEBUG] - Final API URL used:', apiUrl);
+        let response: Response | null = null;
 
-        const response = await fetch(ADVISOR_API_URL, {
+        const doFetch = async (url: string) => fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -29,8 +43,24 @@ export const askAdvisor = async (prompt: string): Promise<string> => {
             body: JSON.stringify(payload),
             // Add timeout and credentials handling
             signal: AbortSignal.timeout(30000), // 30 second timeout
-            credentials: 'same-origin'
+            mode: 'cors' // Explicitly set CORS mode
         });
+
+        try {
+            response = await doFetch(apiUrl);
+        } catch (err: any) {
+            // If HTTPS fails, and we're on an HTTP page, try HTTP fallback once
+            const isTypeError = err && err.name === 'TypeError';
+            const canTryHttp = apiUrl.startsWith('https://') && isHttpPage;
+            if (isTypeError && canTryHttp) {
+                const httpUrl = apiUrl.replace('https://', 'http://');
+                console.warn('🔁 [ADVISOR DEBUG] HTTPS failed, retrying via HTTP:', httpUrl);
+                response = await doFetch(httpUrl);
+                apiUrl = httpUrl;
+            } else {
+                throw err;
+            }
+        }
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -38,7 +68,7 @@ export const askAdvisor = async (prompt: string): Promise<string> => {
             throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
-        const responseData = await response.json();
+    const responseData = await response.json();
         console.log('Received response from advisor:', responseData);
         
         // Handle the REST API response (ChatResponse model)
@@ -56,8 +86,8 @@ export const askAdvisor = async (prompt: string): Promise<string> => {
         console.error("Error communicating with advisor agent:", error);
         
         // More specific error messages
-        if (error.message.includes('Failed to fetch')) {
-            return "Tidak dapat terhubung ke AI Advisor. Pastikan koneksi internet stabil dan server tersedia di http://34.122.202.222:8002/api/chat";
+        if (String(error?.message || '').includes('Failed to fetch')) {
+            return "Tidak dapat terhubung ke AI Advisor. Pastikan koneksi internet stabil dan server tersedia di "+ ADVISOR_API_URL;
         } else if (error.message.includes('400')) {
             return "Format permintaan tidak valid. Mohon coba lagi.";
         } else if (error.message.includes('500')) {

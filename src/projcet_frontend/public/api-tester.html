@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Connection Tester</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background-color: #f8f9fa;
+    }
+    .endpoint {
+      margin-bottom: 20px;
+    }
+    h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    pre {
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>API Connection Tester</h1>
+  <p>Use this tool to test connections to your API endpoints, especially after fixing HTTP/HTTPS issues.</p>
+  
+  <div class="card">
+    <h2>Environment</h2>
+    <div id="environment-info">Loading...</div>
+  </div>
+
+  <div class="endpoint card">
+    <h2>Advisor API Test</h2>
+  <p>Test connection to: <code id="advisor-url">https://34.122.202.222:8002/api/chat</code></p>
+    <div>
+      <button onclick="testAdvisorAPI()">Test Connection</button>
+      <span id="advisor-status"></span>
+    </div>
+    <pre id="advisor-response"></pre>
+  </div>
+
+  <div class="endpoint card">
+    <h2>Face Recognition API Test</h2>
+  <p>Test connection to: <code id="face-recognition-url">https://34.122.202.222:8000/check-registration/test</code></p>
+    <div>
+      <button onclick="testFaceRecognitionAPI()">Test Connection</button>
+      <span id="face-recognition-status"></span>
+    </div>
+    <pre id="face-recognition-response"></pre>
+  </div>
+
+  <script>
+    // Display environment info
+    function showEnvironmentInfo() {
+      const envInfo = document.getElementById('environment-info');
+      envInfo.innerHTML = `
+        <ul>
+          <li><strong>Protocol:</strong> ${window.location.protocol}</li>
+          <li><strong>Host:</strong> ${window.location.host}</li>
+          <li><strong>Origin:</strong> ${window.location.origin}</li>
+          <li><strong>User Agent:</strong> ${navigator.userAgent}</li>
+        </ul>
+      `;
+    }
+    
+    // Function to ensure HTTP protocol is used (not HTTPS)
+    function ensureHttpProtocol(url) {
+      return url.replace('https://', 'http://');
+    }
+
+    // Test Advisor API
+    async function testAdvisorAPI() {
+      const statusEl = document.getElementById('advisor-status');
+      const responseEl = document.getElementById('advisor-response');
+      statusEl.innerHTML = 'Testing...';
+      statusEl.className = '';
+      
+      try {
+        const urlEl = document.getElementById('advisor-url');
+        const url = ensureHttpProtocol(urlEl.textContent);
+        urlEl.textContent = url; // Update displayed URL
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            message: "Hello, testing connection",
+            userId: "test-user-id"
+          }),
+          mode: 'cors'
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        responseEl.textContent = JSON.stringify(data, null, 2);
+        statusEl.innerHTML = '✅ Success';
+        statusEl.className = 'success';
+        
+      } catch (error) {
+        console.error('Error testing Advisor API:', error);
+        responseEl.textContent = `Error: ${error.message}`;
+        statusEl.innerHTML = '❌ Failed';
+        statusEl.className = 'error';
+      }
+    }
+
+    // Test Face Recognition API
+    async function testFaceRecognitionAPI() {
+      const statusEl = document.getElementById('face-recognition-status');
+      const responseEl = document.getElementById('face-recognition-response');
+      statusEl.innerHTML = 'Testing...';
+      statusEl.className = '';
+      
+      try {
+        const urlEl = document.getElementById('face-recognition-url');
+        const url = ensureHttpProtocol(urlEl.textContent);
+        urlEl.textContent = url; // Update displayed URL
+        
+        const response = await fetch(url);
+        
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          data = { text: await response.text() };
+        }
+        
+        responseEl.textContent = JSON.stringify(data, null, 2);
+        
+        if (response.ok) {
+          statusEl.innerHTML = '✅ Success';
+          statusEl.className = 'success';
+        } else {
+          statusEl.innerHTML = `❌ Failed (${response.status})`;
+          statusEl.className = 'error';
+        }
+        
+      } catch (error) {
+        console.error('Error testing Face Recognition API:', error);
+        responseEl.textContent = `Error: ${error.message}`;
+        statusEl.innerHTML = '❌ Failed';
+        statusEl.className = 'error';
+      }
+    }
+
+    // Initialize
+    showEnvironmentInfo();
+  </script>
+</body>
+</html>

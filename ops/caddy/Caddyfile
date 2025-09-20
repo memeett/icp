@@ -1,0 +1,40 @@
+# Caddy reverse proxy with automatic HTTPS using sslip.io hostnames
+# Replace the IP below if your server IP changes.
+
+{
+	# Optional: receive ACME notifications
+	# email you@example.com
+}
+
+advisor.130.211.124.157.sslip.io {
+	encode zstd gzip
+
+	@preflight method OPTIONS
+	header @preflight {
+		Access-Control-Allow-Origin "*"
+		Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+		Access-Control-Allow-Headers "Content-Type, Authorization"
+	}
+	header {
+		# You can restrict origins to your IC frontend origin instead of * once stable
+		Access-Control-Allow-Origin "*"
+	}
+
+	reverse_proxy 127.0.0.1:8002
+}
+
+face.130.211.124.157.sslip.io {
+	encode zstd gzip
+
+	@preflight method OPTIONS
+	header @preflight {
+		Access-Control-Allow-Origin "*"
+		Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+		Access-Control-Allow-Headers "Content-Type, Authorization"
+	}
+	header {
+		Access-Control-Allow-Origin "*"
+	}
+
+	reverse_proxy 127.0.0.1:8000
+}

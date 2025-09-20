@@ -81,9 +81,9 @@ async def register_face(
         if not file.content_type.startswith('image/'):
             raise HTTPException(status_code=422, detail="File must be an image")
         
-    contents = await file.read()
-    # Use frombuffer (fromstring is deprecated for binary data)
-    nparr = np.frombuffer(contents, dtype=np.uint8)
+        contents = await file.read()
+        # Use frombuffer (fromstring is deprecated for binary data)
+        nparr = np.frombuffer(contents, dtype=np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
         if img is None:

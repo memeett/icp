@@ -405,7 +405,7 @@ export const useChat = (): UseChatReturn => {
       }
       
       // Send to advisor agent
-      const advisorUrl = 'http://34.122.202.222:8002/api/chat';
+      const advisorUrl = process.env.REACT_APP_ADVISOR_API_URL || 'https://34.122.202.222:8002/api/chat';
 
       // DEBUG: Log environment and URL details for AI suggestions
       console.log('🔍 [CHAT AI DEBUG] Environment check for AI suggestions:');

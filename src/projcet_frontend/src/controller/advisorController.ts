@@ -1,6 +1,6 @@
 import { storage } from '../utils/storage';
 
-const ADVISOR_API_URL = "http://34.122.202.222:8002/api/chat";
+const ADVISOR_API_URL = process.env.REACT_APP_ADVISOR_API_URL || "https://34.122.202.222:8002/api/chat";
 
 export const askAdvisor = async (prompt: string): Promise<string> => {
     try {
@@ -27,6 +27,9 @@ export const askAdvisor = async (prompt: string): Promise<string> => {
                 'Accept': 'application/json'
             },
             body: JSON.stringify(payload),
+            // Add timeout and credentials handling
+            signal: AbortSignal.timeout(30000), // 30 second timeout
+            credentials: 'same-origin'
         });
 
         if (!response.ok) {

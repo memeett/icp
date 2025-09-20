@@ -8,6 +8,9 @@ import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
+// Face recognition service configuration
+const FACE_RECOGNITION_BASE_URL = process.env.REACT_APP_FACE_RECOGNITION_URL || "https://34.122.202.222:8000";
+
 interface FaceRecognitionProps {
   principalId: string;
   onSuccess: (data?: any) => void;
@@ -67,8 +70,13 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
       try {
         setMode("loading");
         setLoading(true);
-        const serviceUrl = `http://34.122.202.222:8000/check-registration/${principalId}`;
-        console.log("Attempting to connect to face recognition service:", serviceUrl);
+        const serviceUrl = `${FACE_RECOGNITION_BASE_URL}/check-registration/${principalId}`;
+        // DEBUG: Log SSL and URL details
+        console.log("🔍 [FACE RECOG DEBUG] Environment check:");
+        console.log("🔍 [FACE RECOG DEBUG] - Current location protocol:", window.location.protocol);
+        console.log("🔍 [FACE RECOG DEBUG] - Face recognition URL:", serviceUrl);
+        console.log("🔍 [FACE RECOG DEBUG] - Is HTTPS page with HTTP API?", window.location.protocol === 'https:' && serviceUrl.startsWith('http://'));
+        console.log("🔍 [FACE RECOG DEBUG] Attempting to connect to face recognition service:", serviceUrl);
         const response = await fetch(serviceUrl);
         console.log("Face recognition service response status:", response.status);
         const result = await response.json();
@@ -133,8 +141,13 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
 
       const endpoint =
         mode === "register" ? "/register-face" : "/verify-face";
-      const serviceUrl = `http://34.122.202.222:8000${endpoint}`;
-      console.log("Attempting to connect to face recognition service for capture:", serviceUrl);
+      const serviceUrl = `${FACE_RECOGNITION_BASE_URL}${endpoint}`;
+      // DEBUG: Log SSL and URL details for capture
+      console.log("🔍 [FACE RECOG CAPTURE DEBUG] Environment check:");
+      console.log("🔍 [FACE RECOG CAPTURE DEBUG] - Current location protocol:", window.location.protocol);
+      console.log("🔍 [FACE RECOG CAPTURE DEBUG] - Face recognition URL:", serviceUrl);
+      console.log("🔍 [FACE RECOG CAPTURE DEBUG] - Is HTTPS page with HTTP API?", window.location.protocol === 'https:' && serviceUrl.startsWith('http://'));
+      console.log("🔍 [FACE RECOG CAPTURE DEBUG] Attempting to connect to face recognition service for capture:", serviceUrl);
       const response = await fetch(serviceUrl, {
         method: "POST",
         body: formData,

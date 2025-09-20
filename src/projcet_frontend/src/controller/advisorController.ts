@@ -27,14 +27,11 @@ export const askAdvisor = async (prompt: string): Promise<string> => {
         const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
         let apiUrl = ADVISOR_API_URL;
         if (isDev) {
-            apiUrl = "/advisor-api/api/chat"; // Vite proxy
+            apiUrl = "/advisor-api/api/chat"; // Vite proxy for local development
         } else if (isLocalDfx && isHttpPage) {
-            // When serving built assets via local dfx (http), prefer HTTP to avoid SSL errors
+            // When serving built assets via local dfx over HTTP, allow HTTP to avoid SSL errors locally
             apiUrl = ADVISOR_API_URL.replace('https://', 'http://');
-        } else if (isHttpsPage) {
-            // When serving via HTTPS (like mainnet), force HTTP since external server doesn't support HTTPS
-            apiUrl = ADVISOR_API_URL.replace('https://', 'http://');
-        }
+        } // On HTTPS pages (production), keep HTTPS
         console.log('🔍 [ADVISOR DEBUG] - Final API URL used:', apiUrl);
         let response: Response | null = null;
 

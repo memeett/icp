@@ -80,10 +80,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
         console.log("🔍 [FACE RECOG DEBUG] - Is HTTPS page with HTTP API?", window.location.protocol === 'https:' && serviceUrl.startsWith('http://'));
         console.log("🔍 [FACE RECOG DEBUG] Attempting to connect to face recognition service:", serviceUrl);
         
-        // Ensure we're using the correct protocol - don't auto-upgrade http to https
-        const apiUrl = serviceUrl.replace('https://', 'http://');
-        
-        const response = await fetch(apiUrl);
+  const response = await fetch(serviceUrl);
         console.log("Face recognition service response status:", response.status);
         const result = await response.json();
         console.log("Face recognition service response:", result);
@@ -155,10 +152,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
       console.log("🔍 [FACE RECOG CAPTURE DEBUG] - Is HTTPS page with HTTP API?", window.location.protocol === 'https:' && serviceUrl.startsWith('http://'));
       console.log("🔍 [FACE RECOG CAPTURE DEBUG] Attempting to connect to face recognition service for capture:", serviceUrl);
       
-      // Ensure we're using the correct protocol - don't auto-upgrade http to https
-      const apiUrl = serviceUrl.replace('https://', 'http://');
-      
-      const response = await fetch(apiUrl, {
+  const response = await fetch(serviceUrl, {
         method: "POST",
         body: formData,
         headers: {

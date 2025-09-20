@@ -24,11 +24,15 @@ export const askAdvisor = async (prompt: string): Promise<string> => {
         const isDev = !!(import.meta as any).env?.DEV;
         const isLocalDfx = (import.meta as any).env?.DFX_NETWORK === 'local';
         const isHttpPage = typeof window !== 'undefined' && window.location.protocol === 'http:';
+        const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
         let apiUrl = ADVISOR_API_URL;
         if (isDev) {
             apiUrl = "/advisor-api/api/chat"; // Vite proxy
         } else if (isLocalDfx && isHttpPage) {
             // When serving built assets via local dfx (http), prefer HTTP to avoid SSL errors
+            apiUrl = ADVISOR_API_URL.replace('https://', 'http://');
+        } else if (isHttpsPage) {
+            // When serving via HTTPS (like mainnet), force HTTP since external server doesn't support HTTPS
             apiUrl = ADVISOR_API_URL.replace('https://', 'http://');
         }
         console.log('🔍 [ADVISOR DEBUG] - Final API URL used:', apiUrl);

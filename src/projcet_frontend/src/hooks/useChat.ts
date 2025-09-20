@@ -405,7 +405,16 @@ export const useChat = (): UseChatReturn => {
       }
       
       // Send to advisor agent
-  const advisorUrl = (import.meta as any).env?.DEV ? '/advisor-api/api/chat' : (process.env.REACT_APP_ADVISOR_API_URL || 'https://34.122.202.222:8002/api/chat');
+      const isDev = !!(import.meta as any).env?.DEV;
+      const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      let advisorUrl = process.env.REACT_APP_ADVISOR_API_URL || 'https://34.122.202.222:8002/api/chat';
+
+      if (isDev) {
+        advisorUrl = '/advisor-api/api/chat'; // Vite proxy
+      } else if (isHttpsPage) {
+        // When serving via HTTPS (like mainnet), force HTTP since external server doesn't support HTTPS
+        advisorUrl = advisorUrl.replace('https://', 'http://');
+      }
 
       // DEBUG: Log environment and URL details for AI suggestions
       console.log('🔍 [CHAT AI DEBUG] Environment check for AI suggestions:');
@@ -413,8 +422,7 @@ export const useChat = (): UseChatReturn => {
       console.log('🔍 [CHAT AI DEBUG] - Advisor API URL:', advisorUrl);
       console.log('🔍 [CHAT AI DEBUG] - Is HTTPS page with HTTP API?', window.location.protocol === 'https:' && advisorUrl.startsWith('http://'));
 
-  // Use env as-is; if you're on HTTP page and HTTPS fails, consider adding retry similar to advisorController.
-  const apiUrl = advisorUrl;
+      const apiUrl = advisorUrl;
 
       const response = await fetch(apiUrl, {
         method: 'POST',

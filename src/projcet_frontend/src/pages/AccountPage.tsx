@@ -59,7 +59,7 @@ const AccountPage: React.FC = () => {
           setLoading(true);
           const serviceUrl = (import.meta as any).env?.DEV
             ? `/face-api/check-registration/${user.id}`
-            : `https://34.122.202.222:8000/check-registration/${user.id}`;
+            : `https://130.211.124.157:8000/check-registration/${user.id}`;
           
           // DEBUG: Log SSL and URL details
           console.log('🔍 [ACCOUNT PAGE DEBUG] Environment check:');

@@ -59,7 +59,12 @@
 
   <div class="endpoint card">
     <h2>Advisor API Test</h2>
-  <p>Test connection to: <code id="advisor-url">https://34.122.202.222:8002/api/chat</code></p>
+  <p>Test connection to: <code id="advisor-url">https://130.211.124.157:8002/api/chat</code></p>
+    <div style="margin: 8px 0;">
+      <label><input type="radio" name="advisor-mode" value="auto" checked> Auto</label>
+      <label style="margin-left: 12px;"><input type="radio" name="advisor-mode" value="https"> HTTPS</label>
+      <label style="margin-left: 12px;"><input type="radio" name="advisor-mode" value="proxy"> Dev Proxy</label>
+    </div>
     <div>
       <button onclick="testAdvisorAPI()">Test Connection</button>
       <span id="advisor-status"></span>
@@ -69,7 +74,12 @@
 
   <div class="endpoint card">
     <h2>Face Recognition API Test</h2>
-  <p>Test connection to: <code id="face-recognition-url">https://34.122.202.222:8000/check-registration/test</code></p>
+  <p>Test connection to: <code id="face-recognition-url">https://130.211.124.157:8000/check-registration/test</code></p>
+    <div style="margin: 8px 0;">
+      <label><input type="radio" name="face-mode" value="auto" checked> Auto</label>
+      <label style="margin-left: 12px;"><input type="radio" name="face-mode" value="https"> HTTPS</label>
+      <label style="margin-left: 12px;"><input type="radio" name="face-mode" value="proxy"> Dev Proxy</label>
+    </div>
     <div>
       <button onclick="testFaceRecognitionAPI()">Test Connection</button>
       <span id="face-recognition-status"></span>
@@ -91,9 +101,18 @@
       `;
     }
     
-    // Function to ensure HTTP protocol is used (not HTTPS)
-    function ensureHttpProtocol(url) {
-      return url.replace('https://', 'http://');
+    function getSelected(name) {
+      const els = document.querySelectorAll(`input[name="${name}"]`);
+      for (const el of els) if (el.checked) return el.value;
+      return 'auto';
+    }
+
+    function fetchWithTimeout(resource, options = {}) {
+      const { timeout = 10000, ...rest } = options;
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      return fetch(resource, { ...rest, signal: controller.signal })
+        .finally(() => clearTimeout(id));
     }
 
     // Test Advisor API
@@ -105,10 +124,16 @@
       
       try {
         const urlEl = document.getElementById('advisor-url');
-        const url = ensureHttpProtocol(urlEl.textContent);
-        urlEl.textContent = url; // Update displayed URL
+        const mode = getSelected('advisor-mode');
+        let url = urlEl.textContent.trim();
+        if (mode === 'proxy' || (mode === 'auto' && window.location.protocol === 'http:')) {
+          url = '/advisor-api/api/chat';
+        } else if (mode === 'https') {
+          // keep as is
+        } // auto + https keeps as is
+        const started = performance.now();
         
-        const response = await fetch(url, {
+        const response = await fetchWithTimeout(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -118,7 +143,8 @@
             message: "Hello, testing connection",
             userId: "test-user-id"
           }),
-          mode: 'cors'
+          mode: 'cors',
+          timeout: 10000
         });
         
         if (!response.ok) {
@@ -127,13 +153,14 @@
         }
         
         const data = await response.json();
-        responseEl.textContent = JSON.stringify(data, null, 2);
+        const ms = Math.round(performance.now() - started);
+        responseEl.textContent = JSON.stringify({ url, latency_ms: ms, data }, null, 2);
         statusEl.innerHTML = '✅ Success';
         statusEl.className = 'success';
         
       } catch (error) {
         console.error('Error testing Advisor API:', error);
-        responseEl.textContent = `Error: ${error.message}`;
+        responseEl.textContent = `Error: ${error.name || 'Error'} - ${error.message}`;
         statusEl.innerHTML = '❌ Failed';
         statusEl.className = 'error';
       }
@@ -148,10 +175,13 @@
       
       try {
         const urlEl = document.getElementById('face-recognition-url');
-        const url = ensureHttpProtocol(urlEl.textContent);
-        urlEl.textContent = url; // Update displayed URL
-        
-        const response = await fetch(url);
+        const mode = getSelected('face-mode');
+        let url = urlEl.textContent.trim();
+        if (mode === 'proxy' || (mode === 'auto' && window.location.protocol === 'http:')) {
+          url = '/face-api/check-registration/test';
+        }
+        const started = performance.now();
+        const response = await fetchWithTimeout(url, { timeout: 10000 });
         
         let data;
         try {
@@ -160,7 +190,8 @@
           data = { text: await response.text() };
         }
         
-        responseEl.textContent = JSON.stringify(data, null, 2);
+        const ms = Math.round(performance.now() - started);
+        responseEl.textContent = JSON.stringify({ url, latency_ms: ms, data }, null, 2);
         
         if (response.ok) {
           statusEl.innerHTML = '✅ Success';
@@ -172,7 +203,7 @@
         
       } catch (error) {
         console.error('Error testing Face Recognition API:', error);
-        responseEl.textContent = `Error: ${error.message}`;
+        responseEl.textContent = `Error: ${error.name || 'Error'} - ${error.message}`;
         statusEl.innerHTML = '❌ Failed';
         statusEl.className = 'error';
       }

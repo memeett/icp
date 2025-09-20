@@ -33,12 +33,12 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/advisor-api": {
-        target: "http://34.122.202.222:8002",
+        target: "http://130.211.124.157:8002",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/advisor-api/, ""),
       },
       "/face-api": {
-        target: "http://34.122.202.222:8000",
+        target: "http://130.211.124.157:8000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/face-api/, ""),
       },

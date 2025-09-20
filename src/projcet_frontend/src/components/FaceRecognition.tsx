@@ -11,7 +11,7 @@ const { Title, Text } = Typography;
 // Face recognition service configuration
 const FACE_RECOGNITION_BASE_URL = (import.meta as any).env?.DEV
   ? "/face-api"
-  : (process.env.REACT_APP_FACE_RECOGNITION_URL || "https://34.122.202.222:8000");
+  : (process.env.REACT_APP_FACE_RECOGNITION_URL || "https://130.211.124.157:8000");
 
 interface FaceRecognitionProps {
   principalId: string;

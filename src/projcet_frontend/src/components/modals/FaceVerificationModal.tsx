@@ -44,7 +44,7 @@ export function FaceVerificationModal({ parentIndex, index }: { parentIndex: num
       // Use dev proxy in development to avoid SSL issues, real HTTPS in production
       const apiUrl = (import.meta as any).env?.DEV
         ? '/face-api/verify-face'
-        : 'https://34.122.202.222:8000/verify-face';
+  : 'https://130.211.124.157:8000/verify-face';
       
       // DEBUG: Log SSL and URL details
       console.log('🔍 [FACE VERIFY DEBUG] Environment check:');

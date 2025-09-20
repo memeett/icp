@@ -21,14 +21,9 @@ export async function getBalanceController(curr_user: User): Promise<Token> {
     }
   }
 
-  const authClient = await AuthClient.create();
   const OwnerPrincipal = getPrincipalAddress();
-
-  if (!await authClient.isAuthenticated()) {
-    await authClient.login({
-      identityProvider: "https://identity.ic0.app/#authorize",
-    });
-  }
+  // Do NOT force Internet Identity login just to read balance.
+  // Reading balance should not open II popup on navigation.
 
   const ledgerCanisterId = process.env.CANISTER_ID_ICRC1_LEDGER_CANISTER;
   if (!ledgerCanisterId) {
@@ -59,12 +54,10 @@ export function getPrincipalAddress(): Principal {
 }
 
 export async function topUpWalletController(curr_user: User, amount: number) {
+  // Top-up requires signed transactions; only then we prompt II
   const authClient = await AuthClient.create();
-
   if (!await authClient.isAuthenticated()) {
-    await authClient.login({
-      identityProvider: "https://identity.ic0.app/#authorize",
-    });
+    await authClient.login({ identityProvider: "https://identity.ic0.app/#authorize" });
   }
   
   const identity = authClient.getIdentity();
@@ -108,12 +101,10 @@ export async function topUpWalletController(curr_user: User, amount: number) {
 
 
 export async function transferToJobController(curr_user: User, curr_job: Job, amount: number) : Promise<{ ok: string } | { err: string }> {
+  // Transfer requires signed transactions; prompt II only here on demand
   const authClient = await AuthClient.create();
-
   if (!await authClient.isAuthenticated()) {
-    await authClient.login({
-      identityProvider: "https://identity.ic0.app/#authorize",
-    });
+    await authClient.login({ identityProvider: "https://identity.ic0.app/#authorize" });
   }
   
   const identity = authClient.getIdentity();

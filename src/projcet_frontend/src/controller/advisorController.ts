@@ -1,6 +1,6 @@
 import { storage } from '../utils/storage';
 
-const ADVISOR_API_URL = process.env.REACT_APP_ADVISOR_API_URL || "https://130.211.124.157:8002/api/chat";
+const ADVISOR_API_URL = process.env.REACT_APP_ADVISOR_API_URL || "https://advisor.130.211.124.157.sslip.io/api/chat";
 
 export const askAdvisor = async (prompt: string): Promise<string> => {
     try {

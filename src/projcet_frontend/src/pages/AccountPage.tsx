@@ -57,9 +57,10 @@ const AccountPage: React.FC = () => {
       if (user?.id) {
         try {
           setLoading(true);
-          const serviceUrl = (import.meta as any).env?.DEV
-            ? `/face-api/check-registration/${user.id}`
-            : `https://130.211.124.157:8000/check-registration/${user.id}`;
+          const base = (import.meta as any).env?.DEV
+            ? '/face-api'
+            : (process.env.REACT_APP_FACE_RECOGNITION_URL || 'https://face.130.211.124.157.sslip.io');
+          const serviceUrl = `${base}/check-registration/${user.id}`;
           
           // DEBUG: Log SSL and URL details
           console.log('🔍 [ACCOUNT PAGE DEBUG] Environment check:');

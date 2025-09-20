@@ -406,14 +406,10 @@ export const useChat = (): UseChatReturn => {
       
       // Send to advisor agent
       const isDev = !!(import.meta as any).env?.DEV;
-      const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
-      let advisorUrl = process.env.REACT_APP_ADVISOR_API_URL || 'https://34.122.202.222:8002/api/chat';
+      let advisorUrl = process.env.REACT_APP_ADVISOR_API_URL || 'https://advisor.130.211.124.157.sslip.io/api/chat';
 
       if (isDev) {
-        advisorUrl = '/advisor-api/api/chat'; // Vite proxy
-      } else if (isHttpsPage) {
-        // When serving via HTTPS (like mainnet), force HTTP since external server doesn't support HTTPS
-        advisorUrl = advisorUrl.replace('https://', 'http://');
+        advisorUrl = '/advisor-api/api/chat'; // Vite proxy in dev
       }
 
       // DEBUG: Log environment and URL details for AI suggestions

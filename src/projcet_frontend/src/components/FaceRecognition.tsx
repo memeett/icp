@@ -3,7 +3,7 @@ import Webcam from "react-webcam";
 import { Modal, Button, Progress, Typography, Space } from "antd";
 import { CameraOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
-import { loginWithInternetIdentity } from "../controller/userController";
+import { loginWithInternetIdentity, loginWithFace } from "../controller/userController";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
@@ -173,7 +173,7 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
         console.log(result.message);
         setRegistrationStatus("success");
 
-        if (mode === "verify" && result.principal_id) {
+  if (mode === "verify" && result.principal_id) {
           setTimeout(async () => {
             onSuccess({
               principalId: result.principal_id,
@@ -181,7 +181,8 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
               message: result.message,
             });
             if (purpose === "login") { // Only login if purpose is login
-              await loginWithInternetIdentity(); // Await the login call
+              // Use face-based login to set session without Internet Identity popup
+              await loginWithFace(result.principal_id);
               window.location.reload(); // Reload the page after successful login
             }
             onClose();
@@ -193,8 +194,8 @@ const FaceRecognition: React.FC<FaceRecognitionProps> = ({
             if (captureCount >= 2) {
               // If this was the 3rd capture (0-indexed)
               onSuccess();
-              if (purpose === "login") { // Only login if purpose is login
-                await loginWithInternetIdentity(); // Use the provided principalId for login, await the call
+              if (purpose === "login" && principalId) { // Only login if purpose is login
+                await loginWithFace(principalId);
                 window.location.reload(); // Reload the page after successful login
               }
               onClose();

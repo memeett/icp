@@ -1,3 +1,7 @@
+import os
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")  # Force CPU-only runtime
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")   # Reduce TF logging (errors only)
+
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from deepface import DeepFace
@@ -7,6 +11,16 @@ import uvicorn
 from typing import Dict
 import json
 import numpy as np
+
+# Extra safety: disable TF GPU from API if present
+try:
+    import tensorflow as tf
+    try:
+        tf.config.set_visible_devices([], 'GPU')
+    except Exception:
+        pass
+except Exception:
+    tf = None
 
 
 app = FastAPI()
@@ -67,8 +81,9 @@ async def register_face(
         if not file.content_type.startswith('image/'):
             raise HTTPException(status_code=422, detail="File must be an image")
         
-        contents = await file.read()
-        nparr = np.fromstring(contents, np.uint8)
+    contents = await file.read()
+    # Use frombuffer (fromstring is deprecated for binary data)
+    nparr = np.frombuffer(contents, dtype=np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
         if img is None:

@@ -1,4 +1,4 @@
-import { AuthClient } from '@dfinity/auth-client';
+// Removed direct AuthClient dependency; session validation is handled in controller
 import { message } from 'antd';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
@@ -169,32 +169,13 @@ export const useAuth = (): UseAuthReturn => {
       try {
         const sessionToken = localStorage.getItem('session');
         if (sessionToken) {
-          console.log('Session token found, validating...');
-          
-          // Use AuthClient for more robust session validation
-          const authClient = await AuthClient.create({
-            idleOptions: {
-              idleTimeout: 1000 * 60 * 60 * 8, // 8 hours session
-              disableDefaultIdleCallback: true,
-            },
-          });
-          
-          const isValid = await authClient.isAuthenticated();
-          if (isValid) {
-            console.log('Session is valid, fetching user data...');
-            const userData = await fetchUserBySession();
-            if (userData) {
-              console.log('User data fetched successfully with chat tokens:', userData.chatTokens?.availableTokens ? Number(userData.chatTokens.availableTokens) : 0);
-              console.log('Full user data:', userData);
-              console.log('Full chat tokens:', userData.chatTokens);
-              console.log('Available tokens (number):', userData.chatTokens?.availableTokens ? Number(userData.chatTokens.availableTokens) : 0);
-              authActions({ type: 'LOGIN', user: userData, session: sessionToken });
-            } else {
-              console.log('Failed to fetch user data, logging out...');
-              authActions({ type: 'LOGOUT' });
-            }
+          console.log('Session token found, fetching user by session (supports II and face-login)...');
+          const userData = await fetchUserBySession();
+          if (userData) {
+            console.log('User data fetched successfully with chat tokens:', userData.chatTokens?.availableTokens ? Number(userData.chatTokens.availableTokens) : 0);
+            authActions({ type: 'LOGIN', user: userData, session: sessionToken });
           } else {
-            console.log('Session is invalid, logging out...');
+            console.log('Failed to fetch user data for stored session, logging out...');
             authActions({ type: 'LOGOUT' });
           }
         } else {

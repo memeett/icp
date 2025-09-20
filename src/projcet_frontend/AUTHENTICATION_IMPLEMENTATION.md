@@ -192,3 +192,16 @@ The authentication system now provides a complete, modern user experience with:
 - **Proper state management** with Jotai integration
 
 The system demonstrates advanced React development practices while providing an intuitive, accessible authentication experience suitable for a modern freelance platform.
+
+## ℹ️ Update: Face Login without Internet Identity popup
+
+Face recognition login now finalizes authentication without opening Internet Identity. When the face service verifies your identity, the app stores a local session bound to your principal and fetches/creates your user in the Internet Computer canister. This means:
+
+- No redirect to Internet Identity after successful face match
+- Protected routes recognize the face-based session
+- You can still use Internet Identity login from the classic method as an alternative
+
+Technical notes:
+- New controller method `loginWithFace(principalId)` stores session and user
+- `fetchUserBySession()` supports both II sessions and face-based sessions
+- `useAuth` initialization relies on `fetchUserBySession` so face sessions are respected

@@ -178,6 +178,44 @@ export const loginWithInternetIdentity = async (): Promise<{ success: boolean; u
     }
 };
 
+// New: Login using Face Recognition principal without opening Internet Identity
+export const loginWithFace = async (principalId: string): Promise<{ success: boolean; user?: User; needsProfileCompletion?: boolean }> => {
+    try {
+        const defaultProfilePictureUrl = ProfilePictureService.getDefaultProfilePictureUrl();
+
+        // Try to get or create the user for this principal
+        let userDetailResult = await projcet_backend_single.getUserById(principalId);
+
+        if (!("ok" in userDetailResult)) {
+            await projcet_backend_single.createUser(principalId, [defaultProfilePictureUrl]);
+            userDetailResult = await projcet_backend_single.getUserById(principalId);
+        }
+
+        if ("ok" in userDetailResult) {
+            const userData = userDetailResult.ok;
+            const convertedUser = convertBackendUserToFrontend(userData);
+
+            // Store session and user without requiring II
+            storage.clear();
+            storage.setUser(convertedUser);
+            storage.setSession(principalId);
+
+            const needsCompletion = !convertedUser.isProfileCompleted;
+            return {
+                success: true,
+                user: convertedUser,
+                needsProfileCompletion: needsCompletion,
+            };
+        } else {
+            console.error("Error fetching or creating user (face login):", (userDetailResult as any).err);
+            return { success: false };
+        }
+    } catch (err) {
+        console.error("Face login failed:", err);
+        return { success: false };
+    }
+};
+
 export const logout = async (): Promise<void> => {
     const authClient = await AuthClient.create({
         idleOptions: {
@@ -190,26 +228,50 @@ export const logout = async (): Promise<void> => {
 };
 
 export const fetchUserBySession = async (): Promise<User | null> => {
-    const authClient = await AuthClient.create({
-        idleOptions: {
-            idleTimeout: 1000 * 60 * 60 * 8, // 8 hours session
-            disableDefaultIdleCallback: true,
-        },
-    });
-    if (!await authClient.isAuthenticated()) {
+    try {
+        // Try Internet Identity session first
+        const authClient = await AuthClient.create({
+            idleOptions: {
+                idleTimeout: 1000 * 60 * 60 * 8, // 8 hours session
+                disableDefaultIdleCallback: true,
+            },
+        });
+
+        if (await authClient.isAuthenticated()) {
+            const identity = authClient.getIdentity();
+            const principalId = identity.getPrincipal().toString();
+            const userRes = await projcet_backend_single.getUserById(principalId);
+
+            if ("ok" in userRes) {
+                const convertedUser = convertBackendUserToFrontend(userRes.ok);
+                storage.setUser(convertedUser);
+                storage.setSession(principalId);
+                return convertedUser;
+            } else {
+                console.error("Error fetching user:", userRes.err);
+            }
+        }
+
+        // Fallback: use locally stored session (face login or persisted session)
+        const storedSessionPrincipal = storage.getSession();
+        if (storedSessionPrincipal) {
+            let userDetailResult = await projcet_backend_single.getUserById(storedSessionPrincipal);
+            if (!("ok" in userDetailResult)) {
+                // Auto create if missing to mirror II behavior
+                const defaultProfilePictureUrl = ProfilePictureService.getDefaultProfilePictureUrl();
+                await projcet_backend_single.createUser(storedSessionPrincipal, [defaultProfilePictureUrl]);
+                userDetailResult = await projcet_backend_single.getUserById(storedSessionPrincipal);
+            }
+            if ("ok" in userDetailResult) {
+                const convertedUser = convertBackendUserToFrontend(userDetailResult.ok);
+                storage.setUser(convertedUser);
+                return convertedUser;
+            }
+        }
+
         return null;
-    }
-    const identity = authClient.getIdentity();
-    const principalId = identity.getPrincipal().toString();
-
-    const userRes = await projcet_backend_single.getUserById(principalId);
-
-    if ("ok" in userRes) {
-        const convertedUser = convertBackendUserToFrontend(userRes.ok);
-        storage.setUser(convertedUser);
-        return convertedUser;
-    } else {
-        console.error("Error fetching user:", userRes.err);
+    } catch (error) {
+        console.error("fetchUserBySession error:", error);
         return null;
     }
 };

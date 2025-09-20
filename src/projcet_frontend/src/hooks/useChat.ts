@@ -51,26 +51,49 @@ export const useChat = (): UseChatReturn => {
 
   // Initialize chat service with user context
   useEffect(() => {
+    console.log('🏠 [DEBUG] useChat initialization effect:', {
+      userId: user?.id,
+      hasUser: !!user,
+      userObject: user
+    });
+
     if (user?.id) {
       try {
+        console.log('🏠 [DEBUG] Initializing ChatService for user:', user.id);
         ChatService.initializeUser(user.id);
         loadUserRooms();
       } catch (error) {
-        console.warn('Chat service initialization failed. This is expected if Supabase is not configured yet.');
+        console.warn('❌ [DEBUG] Chat service initialization failed. This is expected if Supabase is not configured yet.');
       }
+    } else {
+      console.log('🏠 [DEBUG] No user.id available for chat initialization');
     }
   }, [user?.id]);
 
   // Load user's chat rooms
   const loadUserRooms = useCallback(async () => {
-    if (!user?.id) return;
-    
+    if (!user?.id) {
+      console.log('🏠 [DEBUG] loadUserRooms: No user.id available');
+      return;
+    }
+
+    console.log('🏠 [DEBUG] loadUserRooms called for user:', user.id);
     setLoading(true);
     try {
       const userRooms = await ChatService.getUserChatRooms(user.id);
+      console.log('🏠 [DEBUG] loadUserRooms result:', {
+        userId: user.id,
+        roomsCount: userRooms.length,
+        rooms: userRooms.map(r => ({
+          id: r.id,
+          client_id: r.client_id,
+          freelancer_id: r.freelancer_id,
+          job_id: r.job_id
+        }))
+      });
       setRooms(userRooms);
     } catch (error) {
-      console.error('Error loading chat rooms:', error);
+      console.error('❌ [DEBUG] Error loading chat rooms:', error);
     } finally {
       setLoading(false);
     }
@@ -382,7 +405,7 @@ export const useChat = (): UseChatReturn => {
       }
       
       // Send to advisor agent
-      const response = await fetch('http://34.122.202.222:8002/api/chat', {
+      const response = await fetch('http://http://34.122.202.222:8002/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -26,7 +26,16 @@ const JobChatButton: React.FC<JobChatButtonProps> = ({
   const [loading, setLoading] = useState(false);
 
   const handleChatClick = async () => {
+    console.log('💬 [DEBUG] JobChatButton clicked:', {
+      userId: user?.id,
+      jobId,
+      clientId,
+      freelancerId,
+      jobStatus
+    });
+
     if (!user?.id || !freelancerId) {
+      console.log('❌ [DEBUG] Missing user.id or freelancerId');
       message.error('Chat is not available yet');
       return;
     }
@@ -34,28 +43,44 @@ const JobChatButton: React.FC<JobChatButtonProps> = ({
     setLoading(true);
     try {
       // Check if user can access chat for this job
+      console.log('🔍 [DEBUG] Checking chat access...');
       const hasAccess = await canAccessJob(jobId);
+      console.log('🔍 [DEBUG] Chat access result:', hasAccess);
+
       if (!hasAccess) {
+        console.log('❌ [DEBUG] Chat access denied');
         message.error('Chat is only available for ongoing or completed jobs');
         return;
       }
 
       // Initialize chat room
+      console.log('🏠 [DEBUG] Initializing chat room...');
       const room = await initializeChatForJob(jobId, clientId, freelancerId);
+      console.log('🏠 [DEBUG] Chat room initialization result:', room);
+
       if (room) {
         // Navigate to chat page with room context
-        navigate('/chat', { 
-          state: { 
-            roomId: room.id, 
+        const otherUserId = user.id === clientId ? freelancerId : clientId;
+        console.log('✅ [DEBUG] Navigating to chat:', {
+          roomId: room.id,
+          jobId,
+          otherUserId,
+          isClient: user.id === clientId
+        });
+
+        navigate('/chat', {
+          state: {
+            roomId: room.id,
             jobId: jobId,
-            otherUserId: user.id === clientId ? freelancerId : clientId
-          } 
+            otherUserId: otherUserId
+          }
         });
       } else {
+        console.log('❌ [DEBUG] Failed to initialize chat room');
         message.error('Unable to start chat');
       }
     } catch (error) {
-      console.error('Error starting chat:', error);
+      console.error('❌ [DEBUG] Error starting chat:', error);
       message.error('Failed to start chat');
     } finally {
       setLoading(false);

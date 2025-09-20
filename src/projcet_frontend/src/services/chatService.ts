@@ -13,41 +13,51 @@ export class ChatService {
   // Check if user can access chat for a job
   static async canAccessChat(userId: string, jobId: string): Promise<boolean> {
     try {
+      console.log(`🔍 [DEBUG] canAccessChat called with userId: ${userId}, jobId: ${jobId}`);
+
       // Get job details from ICP backend
       const job = await getJobById(jobId);
       if (!job) {
-        console.log(`❌ Job ${jobId} not found`);
+        console.log(`❌ [DEBUG] Job ${jobId} not found`);
         return false;
       }
-      
-      console.log(`🔍 Checking chat access for user ${userId} on job ${jobId}`);
-      console.log(`📋 Job status: ${job.jobStatus}, Job owner: ${job.userId}`);
-      
+
+      console.log(`📋 [DEBUG] Job details:`, {
+        jobId: job.id,
+        jobStatus: job.jobStatus,
+        jobOwner: job.userId,
+        userId: userId,
+        isClient: job.userId === userId
+      });
+
       // Check if user is the client
       if (job.userId === userId) {
         // Client can chat if job is Ongoing or Finished
         const canChat = job.jobStatus === 'Ongoing' || job.jobStatus === 'Finished';
-        console.log(`👔 Client access: ${canChat} (status: ${job.jobStatus})`);
+        console.log(`👔 [DEBUG] Client access check: ${canChat} (job status: ${job.jobStatus})`);
         return canChat;
       }
-      
+
       // Check if user is an accepted freelancer
+      console.log(`🛠️ [DEBUG] Checking freelancer registration for user ${userId} on job ${jobId}`);
       const isAcceptedResult = await isFreelancerRegistered(jobId, userId);
+      console.log(`🛠️ [DEBUG] Freelancer registration result:`, isAcceptedResult);
+
       const isAccepted = isAcceptedResult[0] === "succ" && isAcceptedResult[1] === "true";
-      console.log(`🛠️ Freelancer registered check: ${isAccepted} (result: ${isAcceptedResult})`);
-      
+      console.log(`🛠️ [DEBUG] Freelancer accepted: ${isAccepted}`);
+
       if (!isAccepted) {
-        console.log(`❌ User ${userId} is not an accepted freelancer for job ${jobId}`);
+        console.log(`❌ [DEBUG] User ${userId} is not an accepted freelancer for job ${jobId}`);
         return false;
       }
-      
+
       // Freelancer can chat if job is Ongoing or Finished
       const canChat = job.jobStatus === 'Ongoing' || job.jobStatus === 'Finished';
-      console.log(`🛠️ Freelancer access: ${canChat} (status: ${job.jobStatus})`);
+      console.log(`🛠️ [DEBUG] Freelancer access: ${canChat} (job status: ${job.jobStatus})`);
       return canChat;
-      
+
     } catch (error) {
-      console.error('Error checking chat access:', error);
+      console.error('❌ [DEBUG] Error checking chat access:', error);
       return false;
     }
   }
@@ -317,10 +327,10 @@ export class ChatService {
   // Get chat rooms for user with multiple fallback strategies
   static async getUserChatRooms(userId: string): Promise<ChatRoom[]> {
     try {
-      console.log('📨 Attempting to fetch chat rooms for user:', userId);
+      console.log('📨 [DEBUG] getUserChatRooms called for user:', userId);
 
       // Strategy 1: Try filtered query first (most efficient)
-      console.log('🎯 Strategy 1: Trying filtered query...');
+      console.log('🎯 [DEBUG] Strategy 1: Trying filtered query...');
       const { data: filteredRooms, error: filterError } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -328,37 +338,64 @@ export class ChatService {
         .eq('status', 'active')
         .order('updated_at', { ascending: false });
 
+      console.log('🎯 [DEBUG] Filtered query result:', {
+        error: filterError,
+        roomsCount: filteredRooms?.length || 0,
+        rooms: filteredRooms?.map(r => ({
+          id: r.id,
+          client_id: r.client_id,
+          freelancer_id: r.freelancer_id,
+          job_id: r.job_id
+        }))
+      });
+
       if (!filterError && filteredRooms) {
-        console.log('✅ Filtered query successful:', filteredRooms.length, 'rooms');
+        console.log('✅ [DEBUG] Filtered query successful:', filteredRooms.length, 'rooms');
         return this.validateAndFilterRooms(filteredRooms, userId);
       }
 
-      console.log('⚠️ Filtered query failed, trying alternative strategies...');
+      console.log('⚠️ [DEBUG] Filtered query failed, trying alternative strategies...');
 
       // Strategy 2: Get all rooms and filter client-side
-      console.log('🔄 Strategy 2: Client-side filtering...');
+      console.log('🔄 [DEBUG] Strategy 2: Client-side filtering...');
       const { data: allRooms, error: allError } = await supabase
         .from('chat_rooms')
         .select('*')
         .eq('status', 'active')
         .order('updated_at', { ascending: false });
 
+      console.log('🔄 [DEBUG] All rooms query result:', {
+        error: allError,
+        roomsCount: allRooms?.length || 0
+      });
+
       if (!allError && allRooms) {
         const clientFiltered = allRooms.filter(room =>
           room.client_id === userId || room.freelancer_id === userId
         );
-        console.log('✅ Client-side filtering successful:', clientFiltered.length, 'rooms');
+        console.log('✅ [DEBUG] Client-side filtering successful:', clientFiltered.length, 'rooms');
+        console.log('✅ [DEBUG] Filtered rooms:', clientFiltered.map(r => ({
+          id: r.id,
+          client_id: r.client_id,
+          freelancer_id: r.freelancer_id,
+          job_id: r.job_id
+        })));
         return clientFiltered;
       }
 
       // Strategy 3: Manual query construction (last resort)
-      console.log('🔧 Strategy 3: Manual query construction...');
+      console.log('🔧 [DEBUG] Strategy 3: Manual query construction...');
       const { data: manualRooms, error: manualError } = await supabase
         .from('chat_rooms')
         .select('*')
         .eq('status', 'active')
         .or(`client_id.eq.${userId}`)
         .order('updated_at', { ascending: false });
+
+      console.log('🔧 [DEBUG] Manual client query result:', {
+        error: manualError,
+        roomsCount: manualRooms?.length || 0
+      });
 
       if (!manualError && manualRooms) {
         const freelancerRooms = await supabase
@@ -367,6 +404,11 @@ export class ChatService {
           .eq('status', 'active')
           .eq('freelancer_id', userId)
           .order('updated_at', { ascending: false });
+
+        console.log('🔧 [DEBUG] Manual freelancer query result:', {
+          error: freelancerRooms.error,
+          roomsCount: freelancerRooms.data?.length || 0
+        });
 
         const combined = [
           ...(manualRooms || []),
@@ -378,15 +420,21 @@ export class ChatService {
           index === self.findIndex(r => r.id === room.id)
         );
 
-        console.log('✅ Manual query successful:', uniqueRooms.length, 'rooms');
+        console.log('✅ [DEBUG] Manual query successful:', uniqueRooms.length, 'rooms');
+        console.log('✅ [DEBUG] Combined rooms:', uniqueRooms.map(r => ({
+          id: r.id,
+          client_id: r.client_id,
+          freelancer_id: r.freelancer_id,
+          job_id: r.job_id
+        })));
         return uniqueRooms;
       }
 
-      console.error('❌ All strategies failed');
+      console.error('❌ [DEBUG] All strategies failed');
       return [];
 
     } catch (error) {
-      console.error('Error getting user chat rooms:', error);
+      console.error('❌ [DEBUG] Error getting user chat rooms:', error);
       return [];
     }
   }
